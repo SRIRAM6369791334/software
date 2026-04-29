@@ -18,7 +18,22 @@ class PurchaseService
 
     public function create(array $data): Purchase
     {
-        return Purchase::create($data);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+            $purchase = Purchase::create($data);
+            
+            // Auto-trigger stock movement
+            app(\App\Services\StockService::class)->recordIn([
+                'item_name'      => $purchase->item ?? 'Poultry',
+                'quantity'       => $purchase->quantity ?? 0,
+                'rate'           => $purchase->rate ?? 0,
+                'reference_type' => Purchase::class,
+                'reference_id'   => $purchase->id,
+                'date'           => $purchase->date,
+                'created_by'     => auth()->id(),
+            ]);
+            
+            return $purchase;
+        });
     }
 
     public function find($id): Purchase

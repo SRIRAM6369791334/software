@@ -32,7 +32,7 @@ class WeeklyBillingController extends Controller
         return view('billing.weekly.bulk', compact('customers'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, \App\Services\InvoiceNumberService $invoiceService): RedirectResponse
     {
         $validated = $request->validate([
             'customer_id'      => 'required|exists:customers,id',
@@ -44,11 +44,37 @@ class WeeklyBillingController extends Controller
             'status'           => 'required|in:Generated,Pending,Paid',
         ]);
 
-        WeeklyBill::create($validated);
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $invoiceService) {
+                $validated['invoice_no'] = $invoiceService->generateUnique('INV-W', 'weekly_bills');
+
+                // Apply GST calculation
+                $gstData = \App\Helpers\GSTCalculator::calculate($validated['amount'], 18);
+                $validated['gst_percentage'] = 18;
+                $validated['gst_amount'] = $gstData['total_gst'];
+                $validated['net_amount'] = $gstData['net_amount'];
+
+                $bill = WeeklyBill::create($validated);
+
+                // Auto-trigger stock movement
+                app(\App\Services\StockService::class)->recordOut([
+                    'item_name'      => $bill->items_description ?? 'Poultry',
+                    'quantity'       => $bill->quantity_kg ?? 0,
+                    'rate'           => $bill->amount / max(1, $bill->quantity_kg ?? 1),
+                    'reference_type' => WeeklyBill::class,
+                    'reference_id'   => $bill->id,
+                    'date'           => $bill->period_end,
+                    'created_by'     => auth()->id(),
+                ]);
+            });
+        } catch (\Exception $e) {
+            return back()->with('error', 'Could not create bill due to a concurrent conflict. Please try again.');
+        }
+
         return back()->with('success', 'Weekly bill created.');
     }
 
-    public function bulkStore(Request $request): RedirectResponse
+    public function bulkStore(Request $request, \App\Services\InvoiceNumberService $invoiceService): RedirectResponse
     {
         $request->validate([
             'customer_ids'   => 'required|array',
@@ -59,15 +85,27 @@ class WeeklyBillingController extends Controller
             'status'         => 'required|in:Generated,Pending',
         ]);
 
-        foreach ($request->customer_ids as $cid) {
-            WeeklyBill::create([
-                'customer_id'  => $cid,
-                'period_start' => $request->period_start,
-                'period_end'   => $request->period_end,
-                'amount'       => $request->amount,
-                'status'       => $request->status,
-                'items_description' => 'Bulk generated',
-            ]);
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($request, $invoiceService) {
+                foreach ($request->customer_ids as $cid) {
+                    $gstData = \App\Helpers\GSTCalculator::calculate($request->amount, 18);
+
+                    WeeklyBill::create([
+                        'invoice_no'   => $invoiceService->generateUnique('INV-W', 'weekly_bills'),
+                        'customer_id'  => $cid,
+                        'period_start' => $request->period_start,
+                        'period_end'   => $request->period_end,
+                        'amount'       => $request->amount,
+                        'gst_percentage' => 18,
+                        'gst_amount'   => $gstData['total_gst'],
+                        'net_amount'   => $gstData['net_amount'],
+                        'status'       => $request->status,
+                        'items_description' => 'Bulk generated',
+                    ]);
+                }
+            });
+        } catch (\Exception $e) {
+            return back()->with('error', 'Could not create bills due to a concurrent conflict. Please try again.');
         }
 
         return back()->with('success', count($request->customer_ids) . ' bills generated.');

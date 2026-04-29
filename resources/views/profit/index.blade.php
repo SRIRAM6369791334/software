@@ -13,23 +13,32 @@
     </div>
 </div>
 
-{{-- Top Summary Cards --}}
-<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+<form method="GET" class="mb-4 flex gap-2">
+    <input type="date" name="start_date" value="{{ $startDate }}" class="text-sm border-gray-200 rounded-md">
+    <input type="date" name="end_date" value="{{ $endDate }}" class="text-sm border-gray-200 rounded-md">
+    <button type="submit" class="px-3 py-1 bg-gray-900 text-white rounded-md text-sm">Filter</button>
+</form>
+
+<div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
     <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Current Month Revenue</p>
-        <h3 class="text-2xl font-black text-emerald-600">₹{{ number_format($summary['revenue'], 2) }}</h3>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Billed</p>
+        <h3 class="text-xl font-black text-blue-600">₹{{ number_format($breakdown['total_billed'], 2) }}</h3>
     </div>
     <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Purchases</p>
-        <h3 class="text-2xl font-black text-amber-600">₹{{ number_format($summary['purchase'], 2) }}</h3>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Collected</p>
+        <h3 class="text-xl font-black text-emerald-600">₹{{ number_format($breakdown['total_collected'], 2) }}</h3>
     </div>
-    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Operational Expenses</p>
-        <h3 class="text-2xl font-black text-rose-600">₹{{ number_format($summary['expenses'], 2) }}</h3>
+    <div class="bg-amber-50 p-6 rounded-2xl border border-amber-100 shadow-sm">
+        <p class="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">Billed Profit</p>
+        <h3 class="text-xl font-black text-amber-700">₹{{ number_format($breakdown['billed_profit'], 2) }}</h3>
     </div>
-    <div class="bg-emerald-900 p-6 rounded-2xl shadow-xl">
-        <p class="text-[10px] font-bold text-emerald-300 uppercase tracking-widest mb-1">Net Profit (Estim.)</p>
-        <h3 class="text-2xl font-black text-white">₹{{ number_format($summary['profit'], 2) }}</h3>
+    <div class="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 shadow-sm">
+        <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Collected Profit</p>
+        <h3 class="text-xl font-black text-emerald-700">₹{{ number_format($breakdown['collected_profit'], 2) }}</h3>
+    </div>
+    <div class="{{ $breakdown['pending_collection'] > 0 ? 'bg-rose-50 border-rose-100' : 'bg-gray-50 border-gray-100' }} p-6 rounded-2xl border shadow-sm">
+        <p class="text-[10px] font-bold {{ $breakdown['pending_collection'] > 0 ? 'text-rose-600' : 'text-gray-500' }} uppercase tracking-widest mb-1">Pending Collection</p>
+        <h3 class="text-xl font-black {{ $breakdown['pending_collection'] > 0 ? 'text-rose-700' : 'text-gray-700' }}">₹{{ number_format($breakdown['pending_collection'], 2) }}</h3>
     </div>
 </div>
 

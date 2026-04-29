@@ -9,22 +9,39 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    const HIERARCHY = ['viewer' => 1, 'staff' => 2, 'manager' => 3, 'admin' => 4];
-
-    public function handle(Request $request, Closure $next, string $minRole): Response
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @param  string|array  $role
+     * @return \Symfony\Component\HttpFoundation\Response
+     */
+    public function handle(Request $request, Closure $next, ...$roles): Response
     {
         if (!Auth::check()) {
             return redirect()->route('login');
         }
 
         $user = Auth::user();
-        $userLevel = $user->roles->map(fn($r) => self::HIERARCHY[$r->name] ?? 0)->max() ?? 0;
-        $required  = self::HIERARCHY[$minRole] ?? 0;
 
-        if ($userLevel < $required) {
-            abort(403, 'You do not have permission to access this page.');
+        // Admin has all access
+        if ($user->hasRole('admin')) {
+            return $next($request);
         }
 
-        return $next($request);
+        // Manager can access staff routes too
+        if ($user->hasRole('manager') && in_array('staff', $roles)) {
+            return $next($request);
+        }
+
+        // Check if user has any of the required roles
+        foreach ($roles as $role) {
+            if ($user->hasRole($role)) {
+                return $next($request);
+            }
+        }
+
+        abort(403, 'You do not have permission to access this page.');
     }
 }

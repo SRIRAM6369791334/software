@@ -14,12 +14,17 @@ class ProfitController extends Controller
         private ExportService $exporter,
     ) {}
 
-    public function index(): View
+    public function index(\Illuminate\Http\Request $request): View
     {
+        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
+
         $weeklyData   = $this->service->getWeeklyBreakdown();
         $monthlyData  = $this->service->getMonthlyTrend(6);
         $summary      = $this->service->getSummary();
-        return view('profit.index', compact('weeklyData', 'monthlyData', 'summary'));
+        $breakdown    = $this->service->getProfitBreakdown($startDate, $endDate);
+        
+        return view('profit.index', compact('weeklyData', 'monthlyData', 'summary', 'breakdown', 'startDate', 'endDate'));
     }
 
     public function monthly(): View

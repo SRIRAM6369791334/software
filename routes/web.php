@@ -111,8 +111,8 @@ Route::middleware(['auth', 'role:manager'])->group(function () {
     // Billing
     Route::get('/billing/weekly',  [WeeklyBillingController::class, 'index'])->name('billing.weekly.index');
     Route::get('/billing/weekly/bulk', [WeeklyBillingController::class, 'bulk'])->name('billing.weekly.bulk'); // New View
-    Route::post('/billing/weekly', [WeeklyBillingController::class, 'store'])->name('billing.weekly.store');
-    Route::post('/billing/weekly/bulk', [WeeklyBillingController::class, 'bulkStore'])->name('billing.weekly.bulkStore');
+    Route::post('/billing/weekly', [WeeklyBillingController::class, 'store'])->name('billing.weekly.store')->middleware('throttle:billing');
+    Route::post('/billing/weekly/bulk', [WeeklyBillingController::class, 'bulkStore'])->name('billing.weekly.bulkStore')->middleware('throttle:billing');
     Route::get('/billing/weekly/{bill}', [WeeklyBillingController::class, 'show'])->name('billing.weekly.show');
     Route::get('/billing/weekly/{bill}/print', [WeeklyBillingController::class, 'print'])->name('billing.weekly.print'); // New Print View
     Route::get('/billing/weekly/{bill}/whatsapp', [WeeklyBillingController::class, 'whatsapp'])->name('billing.weekly.whatsapp');
@@ -120,20 +120,20 @@ Route::middleware(['auth', 'role:manager'])->group(function () {
 
     Route::get('/billing/daily',   [DailyBillingController::class, 'index'])->name('billing.daily.index');
     Route::get('/billing/daily/create', [DailyBillingController::class, 'create'])->name('billing.daily.create'); // New View
-    Route::post('/billing/daily',  [DailyBillingController::class, 'store'])->name('billing.daily.store');
+    Route::post('/billing/daily',  [DailyBillingController::class, 'store'])->name('billing.daily.store')->middleware('throttle:billing');
     Route::get('/billing/daily/gst', [DailyBillingController::class, 'gst'])->name('billing.daily.gst'); // New View
     Route::get('/billing/daily/export', [DailyBillingController::class, 'export'])->name('billing.daily.export');
 
     // Payments
     Route::get('/payments/customers',        [CustomerPaymentController::class, 'index'])->name('payments.customers.index');
     Route::get('/payments/customers/create', [CustomerPaymentController::class, 'create'])->name('payments.customers.create');
-    Route::post('/payments/customers',       [CustomerPaymentController::class, 'store'])->name('payments.customers.store');
+    Route::post('/payments/customers',       [CustomerPaymentController::class, 'store'])->name('payments.customers.store')->middleware('throttle:payments');
     Route::get('/payments/customers/ledger',  [CustomerPaymentController::class, 'ledger'])->name('payments.customers.ledger');
     Route::get('/payments/customers/export', [CustomerPaymentController::class, 'export'])->name('payments.customers.export');
 
     Route::get('/payments/dealers',        [DealerPaymentController::class, 'index'])->name('payments.dealers.index');
     Route::get('/payments/dealers/create', [DealerPaymentController::class, 'create'])->name('payments.dealers.create');
-    Route::post('/payments/dealers',       [DealerPaymentController::class, 'store'])->name('payments.dealers.store');
+    Route::post('/payments/dealers',       [DealerPaymentController::class, 'store'])->name('payments.dealers.store')->middleware('throttle:payments');
     Route::get('/payments/dealers/{dealer}/ledger', [DealerPaymentController::class, 'ledger'])->name('payments.dealers.ledger');
     Route::get('/payments/dealers/outstanding', [DealerPaymentController::class, 'outstanding'])->name('payments.dealers.outstanding');
     Route::get('/payments/dealers/export', [DealerPaymentController::class, 'export'])->name('payments.dealers.export');
@@ -159,6 +159,9 @@ Route::middleware(['auth', 'role:manager'])->group(function () {
     Route::get('/profit/order-wise',    [ProfitController::class, 'orderWise'])->name('profit.order-wise');
     Route::get('/profit/reports/comparison', [ProfitController::class, 'comparison'])->name('profit.reports.comparison');
     Route::get('/profit/export',        [ProfitController::class, 'export'])->name('profit.export');
+
+    // Stock
+    Route::get('/stock', [\App\Http\Controllers\StockController::class, 'index'])->name('stock.index');
 });
 
 /*

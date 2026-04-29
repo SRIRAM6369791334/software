@@ -29,7 +29,7 @@ class DailyBillingController extends Controller
         return view('billing.daily.create', compact('customers'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, \App\Services\InvoiceNumberService $invoiceService): RedirectResponse
     {
         $validated = $request->validate([
             'customer_id'       => 'required|exists:customers,id',
@@ -41,7 +41,33 @@ class DailyBillingController extends Controller
             'status'            => 'required|in:Generated,Pending,Paid',
         ]);
 
-        DailyBill::create($validated);
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $invoiceService) {
+                $validated['invoice_no'] = $invoiceService->generateUnique('INV-D', 'daily_bills');
+
+                // Apply GST calculation (Assuming 18% as standard for this example, adjust if needed)
+                $gstData = \App\Helpers\GSTCalculator::calculate($validated['amount'], 18);
+                $validated['gst_percentage'] = 18;
+                $validated['gst_amount'] = $gstData['total_gst'];
+                $validated['net_amount'] = $gstData['net_amount'];
+                
+                $bill = DailyBill::create($validated);
+
+                // Auto-trigger stock movement
+                app(\App\Services\StockService::class)->recordOut([
+                    'item_name'      => $bill->items_description ?? 'Poultry',
+                    'quantity'       => $bill->quantity_kg ?? 0,
+                    'rate'           => $bill->rate_per_kg,
+                    'reference_type' => DailyBill::class,
+                    'reference_id'   => $bill->id,
+                    'date'           => $bill->date,
+                    'created_by'     => auth()->id(),
+                ]);
+            });
+        } catch (\Exception $e) {
+            return back()->with('error', 'Could not create bill due to a concurrent conflict. Please try again.');
+        }
+
         return back()->with('success', 'Daily bill created.');
     }
 

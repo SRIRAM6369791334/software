@@ -7,11 +7,15 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __construct(private DashboardService $service) {}
+    public function __construct(
+        private DashboardService $service,
+        private \App\Services\DashboardCacheService $cache
+    ) {}
 
     public function index(): View
     {
-        $stats        = $this->service->getStats();
+        $stats = $this->cache->getStats(fn() => $this->service->getStats());
+        
         $recentSales  = $this->service->getRecentSales(5);
         $upcomingEmis = $this->service->getUpcomingEmis(7);
 
