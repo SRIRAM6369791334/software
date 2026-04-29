@@ -1,160 +1,102 @@
 @extends('layouts.app')
-@section('title', 'Statement #' . ($bill->invoice_number ?? $bill->id))
+@section('title', 'Invoice #' . ($bill->invoice_number ?? $bill->id))
 
 @section('content')
-<div class="max-w-4xl mx-auto my-8 no-print flex justify-end gap-3 mb-6">
-    <x-button variant="secondary" size="md" onclick="window.close()">
-        <x-slot name="icon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></x-slot>
-        Close Preview
-    </x-button>
-    <x-button variant="primary" size="md" onclick="window.print()">
-        <x-slot name="icon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></x-slot>
-        Print Statement
-    </x-button>
-</div>
-
-<div class="max-w-4xl mx-auto bg-white p-12 shadow-2xl rounded-[3rem] border border-slate-100 relative overflow-hidden" id="invoice-print">
-    <!-- Brand Watermark -->
-    <div class="absolute -right-20 -top-20 w-96 h-96 bg-primary-500/5 rounded-full blur-3xl pointer-events-none"></div>
-    
-    <!-- Header -->
-    <div class="flex justify-between items-start border-b border-slate-100 pb-10 mb-10 relative z-10">
+<div class="max-w-3xl mx-auto bg-white p-8 border border-gray-200 shadow-lg rounded-xl my-4" id="invoice-print">
+    <div class="flex justify-between items-start border-b pb-6 mb-6">
         <div>
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-primary-500 shadow-xl rotate-3">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                </div>
-                <h1 class="text-3xl font-black text-slate-900 tracking-tighter">Flockwise <span class="text-primary-500 italic">BizTrack</span></h1>
-            </div>
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Premium Poultry Operations Ledger</p>
+            <h1 class="text-3xl font-black text-emerald-600 tracking-tighter italic">Flockwise <span class="text-gray-900 not-italic tracking-normal font-bold">BizTrack</span></h1>
+            <p class="text-xs text-gray-400 mt-1 uppercase tracking-widest font-semibold text-center bg-gray-50 py-1 rounded">Poultry Management Solutions</p>
         </div>
         <div class="text-right">
-            <h2 class="text-4xl font-black text-slate-900 tracking-tighter uppercase opacity-10 mb-2">Statement</h2>
-            <div class="space-y-1">
-                <p class="text-sm font-black text-slate-900">Ref: <span class="text-primary-600">#INV-{{ str_pad($bill->id, 6, '0', STR_PAD_LEFT) }}</span></p>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">{{ date('d F, Y') }}</p>
-            </div>
+            <h2 class="text-xl font-bold text-gray-900">INVOICE</h2>
+            <p class="text-sm text-gray-500 font-mono mt-1">#INV-{{ str_pad($bill->id, 5, '0', STR_PAD_LEFT) }}</p>
         </div>
     </div>
 
-    <!-- Client Info -->
-    <div class="grid grid-cols-2 gap-16 mb-16 relative z-10">
-        <div class="space-y-6">
-            <div>
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Invoiced To</p>
-                <h3 class="text-2xl font-black text-slate-900 mb-2">{{ $bill->customer->name ?? 'Internal Recipient' }}</h3>
-                <div class="space-y-1 text-sm font-bold text-slate-500 leading-relaxed">
-                    <p>{{ $bill->customer->address ?? 'Administrative Registry Record' }}</p>
-                    <p class="text-slate-900">Phone: {{ $bill->customer->phone ?? 'N/A' }}</p>
-                </div>
-            </div>
+    <div class="grid grid-cols-2 gap-12 mb-10">
+        <div>
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Bill To</p>
+            <h3 class="text-lg font-bold text-gray-900">{{ $bill->customer->name ?? 'N/A' }}</h3>
+            <p class="text-sm text-gray-600 mt-1 leading-relaxed">{{ $bill->customer->address ?? 'No address provided' }}</p>
+            <p class="text-sm text-gray-600 font-medium mt-1">📞 {{ $bill->customer->phone ?? 'N/A' }}</p>
             @if($bill->customer->gst_number)
-                <div class="inline-block px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">GSTIN Registry</p>
-                    <p class="text-xs font-black text-slate-900 font-mono">{{ $bill->customer->gst_number }}</p>
-                </div>
+                <p class="text-xs text-gray-400 mt-2">GSTIN: <span class="text-gray-700 font-mono">{{ $bill->customer->gst_number }}</span></p>
             @endif
         </div>
-        <div class="text-right space-y-8">
-            <div>
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Billing Cycle</p>
-                <div class="inline-flex flex-col items-end gap-2">
-                    <span class="px-6 py-2 bg-slate-900 text-white rounded-2xl text-xs font-black tracking-widest uppercase italic shadow-lg shadow-slate-200">
-                        {{ $bill->period_start->format('d M') }} — {{ $bill->period_end->format('d M, Y') }}
-                    </span>
-                    <x-badge variant="{{ $bill->status == 'Paid' ? 'success' : 'amber' }}" class="px-5 py-1.5 rounded-full text-[10px] italic">
-                        Payment Status: {{ $bill->status }}
-                    </x-badge>
-                </div>
+        <div class="text-right">
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Invoice Details</p>
+            <div class="space-y-2">
+                <p class="text-sm text-gray-600">Date: <span class="font-semibold text-gray-900">{{ date('d M Y') }}</span></p>
+                <p class="text-sm text-gray-600">Period: <span class="font-semibold text-gray-900 italic">{{ $bill->period_start->format('d M') }} - {{ $bill->period_end->format('d M Y') }}</span></p>
+                <p class="text-sm text-gray-600">Status: <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase">{{ $bill->status }}</span></p>
             </div>
         </div>
     </div>
 
-    <!-- Table Section -->
-    <div class="mb-16 border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-sm relative z-10">
+    <div class="mb-10 overflow-hidden rounded-xl border border-gray-100">
         <table class="w-full text-left">
             <thead>
-                <tr class="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] border-b border-slate-100">
-                    <th class="px-10 py-6">Description of Goods/Services</th>
-                    <th class="px-10 py-6 text-right">Volume (Yield)</th>
-                    <th class="px-10 py-6 text-right">Unit Rate</th>
-                    <th class="px-10 py-6 text-right">Line Total</th>
+                <tr class="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                    <th class="px-6 py-4">Description</th>
+                    <th class="px-6 py-4 text-right">Quantity</th>
+                    <th class="px-6 py-4 text-right">Unit Price</th>
+                    <th class="px-6 py-4 text-right">Total</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-slate-50">
-                <tr class="group">
-                    <td class="px-10 py-8">
-                        <p class="text-base font-black text-slate-900 mb-1.5">{{ $bill->items_description ?: 'Standard Poultry Yield Liquidation' }}</p>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Weekly Cycle Aggregate Supply</p>
+            <tbody class="divide-y divide-gray-50">
+                <tr>
+                    <td class="px-6 py-5">
+                        <p class="text-sm font-bold text-gray-900">{{ $bill->items_description ?: 'Livestock/Poultry Products' }}</p>
+                        <p class="text-xs text-gray-400 mt-0.5">Weekly supply for cycle {{ $bill->period_start->format('M d') }}</p>
                     </td>
-                    <td class="px-10 py-8 text-right font-black text-slate-900">
-                        {{ number_format($bill->quantity_kg, 2) }} <span class="text-[10px] text-slate-400">KG</span>
-                    </td>
-                    <td class="px-10 py-8 text-right font-bold text-slate-500">
-                        ₹{{ number_format($bill->amount / max(1, $bill->quantity_kg), 2) }}
-                    </td>
-                    <td class="px-10 py-8 text-right font-black text-slate-900 text-lg tracking-tight">
-                        ₹{{ number_format($bill->amount, 2) }}
-                    </td>
+                    <td class="px-6 py-5 text-right font-mono text-sm text-gray-600">{{ number_format($bill->quantity_kg, 2) }} kg</td>
+                    <td class="px-6 py-5 text-right font-mono text-sm text-gray-600">₹{{ number_format($bill->amount / ($bill->quantity_kg ?: 1), 2) }}</td>
+                    <td class="px-6 py-5 text-right font-mono font-bold text-gray-900">₹{{ number_format($bill->amount, 2) }}</td>
                 </tr>
             </tbody>
         </table>
     </div>
 
-    <!-- Totals -->
-    <div class="flex justify-between items-end relative z-10">
-        <div class="max-w-xs">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 italic">Authorization & Notes</p>
-            <div class="space-y-4">
-                <p class="text-[11px] font-bold text-slate-500 italic leading-relaxed">
-                    This statement is generated electronically via BizTrack Poultry ERP. Please verify the yields and rates within 24 hours of receipt.
-                </p>
-                <div class="h-px w-32 bg-slate-100"></div>
-                <p class="text-[10px] font-black text-slate-900 uppercase tracking-widest">Digital Auth Code: <span class="font-mono text-primary-600">FW-{{ time() }}</span></p>
+    <div class="flex justify-end mb-12">
+        <div class="w-64 bg-gray-50/50 rounded-2xl p-6 border border-gray-100">
+            <div class="flex justify-between items-center mb-3">
+                <span class="text-xs text-gray-500 font-medium">Subtotal</span>
+                <span class="text-sm font-mono text-gray-900 font-semibold">₹{{ number_format($bill->amount, 2) }}</span>
             </div>
-        </div>
-        <div class="w-80 space-y-4">
-            <div class="flex justify-between items-center px-6 text-sm">
-                <span class="text-slate-400 font-bold uppercase tracking-widest">Subtotal Value</span>
-                <span class="text-slate-900 font-black">₹{{ number_format($bill->amount, 2) }}</span>
+            <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-200">
+                <span class="text-xs text-gray-500 font-medium">Tax (0%)</span>
+                <span class="text-sm font-mono text-gray-900 font-semibold">₹0.00</span>
             </div>
-            <div class="flex justify-between items-center px-6 text-sm">
-                <span class="text-slate-400 font-bold uppercase tracking-widest">Tax Provision (0%)</span>
-                <span class="text-slate-900 font-black">₹0.00</span>
-            </div>
-            <div class="bg-slate-900 rounded-[2rem] p-8 text-white shadow-2xl shadow-slate-200 rotate-1 group hover:rotate-0 transition-transform duration-500">
-                <div class="flex justify-between items-center mb-1">
-                    <span class="text-[10px] font-black uppercase tracking-[0.3em] opacity-50 italic">Statement Total</span>
-                </div>
-                <div class="flex justify-between items-end">
-                    <span class="text-3xl font-black tracking-tighter italic">₹{{ number_format($bill->amount, 2) }}</span>
-                    <span class="text-[10px] font-black uppercase tracking-widest mb-1.5">INR</span>
-                </div>
+            <div class="flex justify-between items-center">
+                <span class="text-sm font-bold text-gray-900 uppercase tracking-wider">Total Due</span>
+                <span class="text-xl font-black text-emerald-600 font-mono">₹{{ number_format($bill->amount, 2) }}</span>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <div class="mt-20 pt-10 border-t border-slate-50 text-center relative z-10">
-        <p class="text-sm font-black text-slate-900 tracking-tight mb-2">Thank you for partnering with Flockwise BizTrack</p>
-        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] italic">Precision Poultry Management Systems</p>
+    <div class="border-t pt-8 text-center">
+        <p class="text-sm text-gray-900 font-bold mb-1">Thank you for your business!</p>
+        <p class="text-xs text-gray-400">Please settle the payment within 7 days of invoice generation.</p>
+        <div class="mt-8 flex justify-center gap-4 no-print">
+            <button onclick="window.print()" class="px-6 py-2 bg-gray-900 text-white text-sm font-bold rounded-lg hover:bg-black transition-all shadow-lg hover:shadow-black/20">🖨️ Print Invoice</button>
+            <button onclick="window.close()" class="px-6 py-2 border border-gray-200 text-gray-600 text-sm font-bold rounded-lg hover:bg-gray-50 transition-all">Close</button>
+        </div>
     </div>
 </div>
 
 <style>
 @media print {
     .no-print, nav, aside, header { display: none !important; }
-    body { background: white !important; margin: 0 !important; padding: 0 !important; }
+    body { background-color: white !important; }
     #invoice-print { 
         margin: 0 !important; 
-        padding: 40px !important; 
+        padding: 0 !important; 
         border: none !important; 
         box-shadow: none !important; 
         width: 100% !important; 
         max-width: none !important; 
-        border-radius: 0 !important;
     }
-    .shadow-2xl, .shadow-xl, .shadow-lg, .shadow-sm { box-shadow: none !important; }
 }
 </style>
 @endsection
