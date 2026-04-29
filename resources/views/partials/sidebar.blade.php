@@ -29,10 +29,21 @@
         ['label' => 'Expense Categories','icon' => 'tag',           'route' => 'expenses.categories',     'min' => 'manager'],
         ['label' => 'EMI Alerts',        'icon' => 'bell',          'route' => 'expenses.emis.alerts',    'min' => 'manager'],
         
+        // Reports
+        ['header' => 'Sales Reports'],
+        ['label' => 'Daily Sales',       'icon' => 'calendar',      'route' => 'reports.sales.daily',     'min' => 'viewer'],
+        ['label' => 'Weekly Sales',      'icon' => 'file-text',     'route' => 'reports.sales.weekly',    'min' => 'viewer'],
+        ['label' => 'Monthly Sales',     'icon' => 'bar-chart',     'route' => 'reports.sales.monthly',   'min' => 'viewer'],
+        
+        ['header' => 'Purchase Reports'],
+        ['label' => 'Daily Purchase',    'icon' => 'calendar',      'route' => 'reports.purchases.daily', 'min' => 'viewer'],
+        ['label' => 'Weekly Purchase',   'icon' => 'file-text',     'route' => 'reports.purchases.weekly','min' => 'viewer'],
+        ['label' => 'Monthly Purchase',  'icon' => 'bar-chart',     'route' => 'reports.purchases.monthly','min' => 'viewer'],
+        ['label' => 'Vendor Analytics',  'icon' => 'trending-up',   'route' => 'reports.purchases.vendor-analytics','min' => 'viewer'],
+
         // Analytics
-        ['header' => 'Analytics'],
+        ['header' => 'Performance'],
         ['label' => 'Profit & Loss',     'icon' => 'trending-up',   'route' => 'profit.index',            'min' => 'manager'],
-        ['label' => 'All Reports',       'icon' => 'bar-chart',     'route' => 'reports',                 'min' => 'viewer'],
 
         // Admin
         ['header' => 'Administration', 'min' => 'admin'],

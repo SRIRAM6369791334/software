@@ -3,12 +3,12 @@
 @section('content')
 <div class="container mx-auto px-4 py-6">
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Monthly Sales Report</h1>
+        <h1 class="text-2xl font-bold text-gray-800">Monthly Purchase Report</h1>
         <div class="flex space-x-2">
             <button onclick="window.print()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded shadow transition">
                 <i class="fas fa-print mr-2"></i>Print
             </button>
-            <a href="{{ route('reports.sales.export-pdf', ['month' => $month, 'year' => $year]) }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow transition">
+            <a href="{{ route('reports.purchases.export-pdf', ['month' => $month, 'year' => $year]) }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow transition">
                 <i class="fas fa-file-pdf mr-2"></i>Export PDF
             </a>
         </div>
@@ -16,7 +16,7 @@
 
     <!-- Filter Form -->
     <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-        <form action="{{ route('reports.sales.monthly') }}" method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <form action="{{ route('reports.purchases.monthly') }}" method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
                 <select name="month" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -42,16 +42,16 @@
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500 text-center">
-            <p class="text-sm text-gray-500 uppercase font-bold">Total Monthly Sale</p>
-            <p class="text-3xl font-bold text-gray-800">₹{{ number_format($bills->sum('total_amount'), 2) }}</p>
+            <p class="text-sm text-gray-500 uppercase font-bold">Total Monthly Purchase</p>
+            <p class="text-3xl font-bold text-gray-800">₹{{ number_format($purchases->sum('total_amount'), 2) }}</p>
         </div>
         <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500 text-center">
-            <p class="text-sm text-gray-500 uppercase font-bold">Total Monthly GST</p>
-            <p class="text-3xl font-bold text-gray-800">₹{{ number_format($bills->sum('gst_amount'), 2) }}</p>
+            <p class="text-sm text-gray-500 uppercase font-bold">Total GST Paid</p>
+            <p class="text-3xl font-bold text-gray-800">₹{{ number_format($purchases->sum('gst_amount'), 2) }}</p>
         </div>
         <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-indigo-500 text-center">
-            <p class="text-sm text-gray-500 uppercase font-bold">Total Collections</p>
-            <p class="text-3xl font-bold text-gray-800">₹{{ number_format($bills->where('status', 'paid')->sum('total_amount'), 2) }}</p>
+            <p class="text-sm text-gray-500 uppercase font-bold">Vendor Count</p>
+            <p class="text-3xl font-bold text-gray-800">{{ $purchases->unique('vendor_id')->count() }}</p>
         </div>
     </div>
 
@@ -60,29 +60,29 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Sales</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orders</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total GST</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Outstanding</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @php
-                    $grouped = $bills->groupBy('customer_id');
+                    $grouped = $purchases->groupBy('vendor_id');
                 @endphp
-                @forelse($grouped as $customerId => $customerBills)
+                @forelse($grouped as $vendorId => $vendorPurchases)
                 <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $customerBills->first()->customer->name ?? '—' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">₹{{ number_format($customerBills->sum('total_amount'), 2) }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{{ number_format($customerBills->sum('gst_amount'), 2) }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-bold">₹{{ number_format($customerBills->where('status', 'unpaid')->sum('total_amount'), 2) }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $vendorPurchases->first()->vendor->name ?? $vendorPurchases->first()->vendor_name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $vendorPurchases->count() }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">₹{{ number_format($vendorPurchases->sum('total_amount'), 2) }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{{ number_format($vendorPurchases->sum('gst_amount'), 2) }}</td>
                 </tr>
                 @empty
                 <tr>
                     <td colspan="4" class="px-6 py-10 text-center text-gray-500">
                         <div class="flex flex-col items-center">
-                            <i class="fas fa-chart-line text-4xl mb-4 text-gray-300"></i>
-                            <p>No sales records found for this month.</p>
+                            <i class="fas fa-warehouse text-4xl mb-4 text-gray-300"></i>
+                            <p>No purchase records found for this month.</p>
                         </div>
                     </td>
                 </tr>

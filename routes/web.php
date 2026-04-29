@@ -45,6 +45,10 @@ Route::middleware(['auth', 'role:viewer'])->group(function () {
     Route::get('/reports/purchases/weekly', [ReportController::class, 'purchasesWeekly'])->name('reports.purchases.weekly');
     Route::get('/reports/purchases/monthly', [ReportController::class, 'purchasesMonthly'])->name('reports.purchases.monthly');
     Route::get('/reports/purchases/vendor-analytics', [ReportController::class, 'vendorAnalytics'])->name('reports.purchases.vendor-analytics');
+
+    // Export Routes
+    Route::get('/reports/sales/export-pdf',     [ReportController::class, 'exportSalesPDF'])->name('reports.sales.export-pdf');
+    Route::get('/reports/purchases/export-pdf', [ReportController::class, 'exportPurchasesPDF'])->name('reports.purchases.export-pdf');
 });
 
 /*

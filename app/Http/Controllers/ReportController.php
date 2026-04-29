@@ -11,6 +11,7 @@ use App\Models\WeeklyBill;
 use App\Models\DailyBill;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -156,11 +157,60 @@ class ReportController extends Controller
     {
         $vendorWise = Purchase::with('vendor')
             ->select('vendor_id', DB::raw('SUM(total_amount) as total'), DB::raw('COUNT(*) as orders'))
-            ->groupBy('vendor_id')
-            ->orderByDesc('total')
-            ->get();
-
+            ->groupBy('vendor_id')->orderByDesc('total')->get();
         return view('reports.purchases.vendor-analytics', compact('vendorWise'));
+    }
+
+    public function exportSalesPDF(Request $request)
+    {
+        $date = $request->get('date');
+        $start = $request->get('start');
+        $end = $request->get('end');
+        $month = $request->get('month');
+        $year = $request->get('year');
+
+        $data = [];
+        $title = "Sales Report";
+
+        if ($date) {
+            $data = DailyBill::with('customer')->whereDate('date', $date)->get();
+            $title = "Daily Sales Report - " . $date;
+        } elseif ($start && $end) {
+            $data = WeeklyBill::with('customer')->whereBetween('period_start', [$start, $end])->get();
+            $title = "Weekly Sales Report (" . $start . " to " . $end . ")";
+        } elseif ($month && $year) {
+            $data = WeeklyBill::with('customer')->whereMonth('period_start', $month)->whereYear('period_start', $year)->get();
+            $title = "Monthly Sales Report - " . date('F', mktime(0, 0, 0, $month, 1)) . " " . $year;
+        }
+
+        $pdf = Pdf::loadView('reports.pdf.sales', compact('data', 'title'));
+        return $pdf->download(strtolower(str_replace(' ', '_', $title)) . '.pdf');
+    }
+
+    public function exportPurchasesPDF(Request $request)
+    {
+        $date = $request->get('date');
+        $start = $request->get('start');
+        $end = $request->get('end');
+        $month = $request->get('month');
+        $year = $request->get('year');
+
+        $data = [];
+        $title = "Purchase Report";
+
+        if ($date) {
+            $data = Purchase::with('vendor')->whereDate('date', $date)->get();
+            $title = "Daily Purchase Report - " . $date;
+        } elseif ($start && $end) {
+            $data = Purchase::with('vendor')->whereBetween('date', [$start, $end])->get();
+            $title = "Weekly Purchase Report (" . $start . " to " . $end . ")";
+        } elseif ($month && $year) {
+            $data = Purchase::with('vendor')->whereMonth('date', $month)->whereYear('date', $year)->get();
+            $title = "Monthly Purchase Report - " . date('F', mktime(0, 0, 0, $month, 1)) . " " . $year;
+        }
+
+        $pdf = Pdf::loadView('reports.pdf.purchases', compact('data', 'title'));
+        return $pdf->download(strtolower(str_replace(' ', '_', $title)) . '.pdf');
     }
 
     public function customerRanking(): View
