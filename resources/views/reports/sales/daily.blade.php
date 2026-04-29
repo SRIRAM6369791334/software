@@ -31,7 +31,7 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
             <p class="text-sm text-gray-500 uppercase font-bold">Total Sale</p>
-            <p class="text-2xl font-bold text-gray-800">₹{{ number_format($dailyBills->sum('amount'), 2) }}</p>
+            <p class="text-2xl font-bold text-gray-800">₹{{ number_format($totalSale, 2) }}</p>
         </div>
         <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
             <p class="text-sm text-gray-500 uppercase font-bold">Total GST</p>
@@ -39,11 +39,11 @@
         </div>
         <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-indigo-500">
             <p class="text-sm text-gray-500 uppercase font-bold">Cash Sales</p>
-            <p class="text-2xl font-bold text-gray-800">₹{{ number_format($dailyBills->where('payment_mode', 'cash')->sum('amount'), 2) }}</p>
+            <p class="text-2xl font-bold text-gray-800">₹{{ number_format($cashSales, 2) }}</p>
         </div>
         <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500">
             <p class="text-sm text-gray-500 uppercase font-bold">Credit Sales</p>
-            <p class="text-2xl font-bold text-gray-800">₹{{ number_format($dailyBills->where('payment_mode', 'credit')->sum('amount'), 2) }}</p>
+            <p class="text-2xl font-bold text-gray-800">₹{{ number_format($creditSales, 2) }}</p>
         </div>
     </div>
 
@@ -65,7 +65,7 @@
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $bill->customer->name ?? '—' }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $bill->customer->route ?? '—' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">₹{{ number_format($bill->amount, 2) }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">₹{{ number_format($bill->net_amount, 2) }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{{ number_format($bill->gst_amount, 2) }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 uppercase">
                         <span class="px-2 py-1 rounded-full text-xs font-bold {{ $bill->payment_mode == 'cash' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">

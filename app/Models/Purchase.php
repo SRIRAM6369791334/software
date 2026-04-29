@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 use Illuminate\Database\Eloquent\Model;
 
 class Purchase extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'vendor_id', 'vendor_name', 'date', 'item', 'quantity', 'unit',
         'rate', 'gst_percentage', 'gst_amount', 'total_amount', 'payment_mode',

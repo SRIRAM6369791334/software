@@ -16,7 +16,7 @@
             <div class="space-y-4">
                 <div class="space-y-1.5">
                     <label class="text-xs font-bold text-gray-700 uppercase tracking-tight">Loan / EMI Name <span class="text-red-500">*</span></label>
-                    <input type="text" name="item" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" placeholder="e.g. Poultry House Loan, Vehicle EMI">
+                    <input type="text" name="loan_name" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" placeholder="e.g. Poultry House Loan, Vehicle EMI">
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
             $table->date('date');
-            $table->enum('category', ['Fuel', 'Salary', 'Transport', 'Utility', 'Misc']);
+            $table->string('category'); // Using string for flexibility and SQLite compatibility
             $table->string('description');
             $table->decimal('amount', 10, 2);
             $table->timestamps();
@@ -21,10 +21,11 @@ return new class extends Migration {
 
         Schema::create('emis', function (Blueprint $table) {
             $table->id();
-            $table->string('item');
+            $table->string('loan_name'); // Renamed from item to match factory/test
+            $table->string('bank_name')->nullable();
             $table->decimal('amount', 10, 2);
             $table->date('due_date');
-            $table->enum('status', ['Upcoming', 'Paid', 'Overdue'])->default('Upcoming');
+            $table->string('status')->default('Upcoming'); // Using string for SQLite compatibility
             $table->timestamps();
             $table->index('due_date');
             $table->index('status');
