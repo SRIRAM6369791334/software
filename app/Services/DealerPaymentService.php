@@ -21,6 +21,11 @@ class DealerPaymentService
         $dealer = Dealer::findOrFail($data['dealer_id']);
         $dealer->decrement('pending_amount', abs($data['amount']));
         
+        // Prevent negative balance
+        if ($dealer->pending_amount < 0) {
+            $dealer->update(['pending_amount' => 0]);
+        }
+
         $data['pending_balance_after'] = $dealer->pending_amount;
         return DealerPayment::create($data);
     }
