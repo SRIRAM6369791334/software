@@ -2,115 +2,160 @@
 @section('title', 'Purchase Entry')
 
 @section('content')
-<div class="flex items-center justify-between mb-6">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-900">Purchase Entry</h1>
-        <p class="text-sm text-gray-500 mt-0.5">Record incoming purchases from vendors</p>
+<div class="space-y-8">
+    <!-- Page Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Purchase Entry</h1>
+            <p class="text-sm text-slate-500 font-medium mt-1">Record incoming inventory and asset purchases</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <x-button variant="secondary" size="md" href="{{ route('purchases.export') }}">
+                <x-slot name="icon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></x-slot>
+                Export Registry
+            </x-button>
+        </div>
     </div>
-    <a href="{{ route('purchases.export') }}" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 hover:bg-gray-50 text-sm font-medium rounded-lg transition-colors">
-        ⬇ Export CSV
-    </a>
-</div>
 
-{{-- Entry Form --}}
-<div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-    <form action="{{ route('purchases.store') }}" method="POST" id="purchase-form">
-        @csrf
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div><label class="block text-xs font-medium text-gray-700 mb-1">Vendor Name *</label>
-                <input type="text" name="vendor_name" required value="{{ old('vendor_name') }}" placeholder="Vendor name"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></div>
-            <div><label class="block text-xs font-medium text-gray-700 mb-1">Item *</label>
-                <select name="item" required class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none" onchange="recalculate()">
-                    <option value="">Select item…</option>
-                    @foreach(['Feed','Chicks','Medicines','Accessories'] as $item)
-                        <option value="{{ $item }}" {{ old('item') === $item ? 'selected' : '' }}>{{ $item }}</option>
-                    @endforeach
-                </select></div>
-            <div><label class="block text-xs font-medium text-gray-700 mb-1">Date *</label>
-                <input type="date" name="date" required value="{{ old('date', date('Y-m-d')) }}"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></div>
-            <div><label class="block text-xs font-medium text-gray-700 mb-1">Quantity *</label>
-                <input type="number" name="quantity" id="qty" required step="0.01" min="0.01" value="{{ old('quantity') }}"
-                       oninput="recalculate()" placeholder="0.00"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></div>
-            <div><label class="block text-xs font-medium text-gray-700 mb-1">Unit</label>
-                <input type="text" name="unit" value="{{ old('unit', 'kg') }}" placeholder="kg"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></div>
-            <div><label class="block text-xs font-medium text-gray-700 mb-1">Rate (₹) *</label>
-                <input type="number" name="rate" id="rate" required step="0.01" min="0.01" value="{{ old('rate') }}"
-                       oninput="recalculate()" placeholder="0.00"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></div>
-            <div><label class="block text-xs font-medium text-gray-700 mb-1">GST % *</label>
-                <input type="number" name="gst_percentage" id="gst" required step="0.01" min="0" max="28" value="{{ old('gst_percentage', 18) }}"
-                       oninput="recalculate()"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></div>
-            <div><label class="block text-xs font-medium text-gray-700 mb-1">Payment Mode *</label>
-                <select name="payment_mode" required class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                    @foreach(['NEFT','Cheque','UPI','Cash'] as $mode)
-                        <option value="{{ $mode }}" {{ old('payment_mode') === $mode ? 'selected' : '' }}>{{ $mode }}</option>
-                    @endforeach
-                </select></div>
+    <!-- Entry Form -->
+    <x-card padding="false">
+        <div class="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <h2 class="text-sm font-black text-slate-900 uppercase tracking-wider">New Purchase Record</h2>
+            <x-badge variant="primary">Manual Entry</x-badge>
         </div>
+        <form action="{{ route('purchases.store') }}" method="POST" id="purchase-form" class="p-8 lg:p-10">
+            @csrf
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="lg:col-span-2">
+                    <x-input label="Vendor Name *" name="vendor_name" required value="{{ old('vendor_name') }}" placeholder="Enter vendor or supplier name" />
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">Purchase Item *</label>
+                    <select name="item" required class="w-full bg-slate-50 border-slate-200 rounded-2xl py-3 px-5 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-primary-500/10 transition-all" onchange="recalculate()">
+                        <option value="">Select category…</option>
+                        @foreach(['Feed','Chicks','Medicines','Accessories'] as $item)
+                            <option value="{{ $item }}" {{ old('item') === $item ? 'selected' : '' }}>{{ $item }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <x-input label="Transaction Date *" type="date" name="date" required value="{{ old('date', date('Y-m-d')) }}" />
+                
+                <x-input label="Quantity *" type="number" name="quantity" id="qty" required step="0.01" min="0.01" value="{{ old('quantity') }}" oninput="recalculate()" placeholder="0.00" />
+                <x-input label="Unit" name="unit" value="{{ old('unit', 'kg') }}" placeholder="kg, bags, units" />
+                <x-input label="Rate (₹) *" type="number" name="rate" id="rate" required step="0.01" min="0.01" value="{{ old('rate') }}" oninput="recalculate()" placeholder="0.00" />
+                <x-input label="GST % *" type="number" name="gst_percentage" id="gst" required step="0.01" min="0" max="28" value="{{ old('gst_percentage', 18) }}" oninput="recalculate()" />
+            </div>
 
-        {{-- Live Calculation --}}
-        <div class="mt-5 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-6">
-            <div class="text-sm text-gray-600"><span class="text-gray-400">Base Amount: </span><strong id="base-amt">₹0.00</strong></div>
-            <div class="text-sm text-gray-600"><span class="text-gray-400">GST Amount: </span><strong id="gst-amt">₹0.00</strong></div>
-            <div class="text-base font-bold text-emerald-700"><span class="text-gray-500 font-normal">Total: </span><span id="total-amt">₹0.00</span></div>
-        </div>
-
-        <div class="flex justify-end mt-5">
-            <button type="submit"
-                    class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors">
-                Record Purchase
-            </button>
-        </div>
-    </form>
-</div>
-
-{{-- Recent Purchases --}}
-<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h2 class="text-base font-semibold text-gray-900">Recent Purchases</h2>
-        <form method="GET">
-            <input type="text" name="search" value="{{ $search }}" placeholder="Search..."
-                   class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
+                <div class="lg:col-span-2">
+                    <div class="p-6 bg-slate-900 rounded-[2rem] flex flex-col sm:flex-row items-center justify-around gap-8 relative overflow-hidden">
+                        <!-- Decoration -->
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 rounded-full blur-3xl"></div>
+                        <div class="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
+                        
+                        <div class="text-center sm:text-left z-10">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Base Subtotal</p>
+                            <p class="text-xl font-black text-white mt-1" id="base-amt">₹0.00</p>
+                        </div>
+                        <div class="w-px h-10 bg-slate-800 hidden sm:block"></div>
+                        <div class="text-center sm:text-left z-10">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">GST Component</p>
+                            <p class="text-xl font-black text-primary-400 mt-1" id="gst-amt">₹0.00</p>
+                        </div>
+                        <div class="w-px h-10 bg-slate-800 hidden sm:block"></div>
+                        <div class="text-center sm:text-left z-10">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Payable</p>
+                            <p class="text-3xl font-black text-white mt-1 tracking-tight" id="total-amt">₹0.00</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">Payment Mode *</label>
+                        <select name="payment_mode" required class="w-full bg-slate-50 border-slate-200 rounded-2xl py-3 px-5 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-primary-500/10 transition-all">
+                            @foreach(['NEFT','Cheque','UPI','Cash'] as $mode)
+                                <option value="{{ $mode }}" {{ old('payment_mode') === $mode ? 'selected' : '' }}>{{ $mode }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <x-button variant="primary" size="lg" type="submit" class="w-full shadow-2xl shadow-primary-500/20">
+                        Record Transaction
+                    </x-button>
+                </div>
+            </div>
         </form>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-gray-100 bg-gray-50">
-                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase">Date</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase">Vendor</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase">Item</th>
-                    <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase">Qty</th>
-                    <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase">Rate</th>
-                    <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase">GST</th>
-                    <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase">Total</th>
-                    <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase">Mode</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-                @forelse($purchases as $p)
-                    <tr class="hover:bg-gray-50/50">
-                        <td class="px-5 py-3.5 text-gray-500">{{ $p->date->format('d M Y') }}</td>
-                        <td class="px-5 py-3.5 font-medium text-gray-900">{{ $p->vendor_name }}</td>
-                        <td class="px-5 py-3.5"><span class="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">{{ $p->item }}</span></td>
-                        <td class="px-5 py-3.5 text-right font-mono text-gray-600">{{ number_format($p->quantity, 2) }} {{ $p->unit }}</td>
-                        <td class="px-5 py-3.5 text-right font-mono text-gray-600">₹{{ number_format($p->rate, 2) }}</td>
-                        <td class="px-5 py-3.5 text-right font-mono text-gray-500">₹{{ number_format($p->gst_amount, 2) }}</td>
-                        <td class="px-5 py-3.5 text-right font-mono font-semibold text-gray-900">₹{{ number_format($p->total_amount, 0, '.', ',') }}</td>
-                        <td class="px-5 py-3.5 text-center"><span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">{{ $p->payment_mode }}</span></td>
+    </x-card>
+
+    <!-- Recent Purchases Registry -->
+    <x-card padding="false">
+        <div class="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-sm font-black text-slate-900 uppercase tracking-wider">Purchase Registry</h2>
+                <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">Audit trail of incoming stock</p>
+            </div>
+            <form method="GET" class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </div>
+                <input type="text" name="search" value="{{ $search }}" placeholder="Quick filter..." 
+                       class="w-full md:w-64 bg-white border-slate-200 rounded-xl py-2 pl-9 pr-4 text-xs font-bold text-slate-700 focus:ring-4 focus:ring-primary-500/10 transition-all outline-none">
+            </form>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left border-b border-slate-100 bg-slate-50/30">
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Transaction</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Category</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-right">Volume</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-right">Unit Rate</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-right">Tax (GST)</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-right">Final Amount</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center">Mode</th>
                     </tr>
-                @empty
-                    <tr><td colspan="8" class="px-5 py-8 text-center text-gray-400">No purchases recorded</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-    <div class="px-5 py-3 border-t border-gray-100">{{ $purchases->withQueryString()->links() }}</div>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    @forelse($purchases as $p)
+                        <tr class="hover:bg-slate-50/50 transition-colors group">
+                            <td class="px-8 py-6">
+                                <div>
+                                    <p class="font-extrabold text-slate-900">{{ $p->vendor_name }}</p>
+                                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{{ $p->date->format('d M, Y') }}</p>
+                                </div>
+                            </td>
+                            <td class="px-8 py-6">
+                                <span class="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] rounded-full font-black uppercase tracking-wider">{{ $p->item }}</span>
+                            </td>
+                            <td class="px-8 py-6 text-right">
+                                <p class="text-slate-900 font-extrabold">{{ number_format($p->quantity, 2) }} <span class="text-[10px] text-slate-400 uppercase">{{ $p->unit }}</span></p>
+                            </td>
+                            <td class="px-8 py-6 text-right">
+                                <p class="text-slate-600 font-bold text-xs font-mono">₹{{ number_format($p->rate, 2) }}</p>
+                            </td>
+                            <td class="px-8 py-6 text-right">
+                                <p class="text-slate-400 font-bold text-xs font-mono">₹{{ number_format($p->gst_amount, 2) }}</p>
+                            </td>
+                            <td class="px-8 py-6 text-right">
+                                <p class="text-slate-900 font-black text-base">₹{{ number_format($p->total_amount, 0) }}</p>
+                            </td>
+                            <td class="px-8 py-6 text-center">
+                                <x-badge variant="slate">{{ $p->payment_mode }}</x-badge>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-8 py-12 text-center text-slate-400 font-medium italic">No purchase records found</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        @if($purchases->hasPages())
+            <div class="px-8 py-6 border-t border-slate-100 bg-slate-50/30">
+                {{ $purchases->withQueryString()->links() }}
+            </div>
+        @endif
+    </x-card>
 </div>
 @endsection
 
@@ -123,9 +168,11 @@ function recalculate() {
     const base = qty * rate;
     const gstAmt  = base * gst / 100;
     const total   = base + gstAmt;
-    document.getElementById('base-amt').textContent = '₹' + base.toFixed(2);
-    document.getElementById('gst-amt').textContent  = '₹' + gstAmt.toFixed(2);
-    document.getElementById('total-amt').textContent = '₹' + total.toFixed(2);
+    document.getElementById('base-amt').textContent = '₹' + base.toLocaleString('en-IN', {minimumFractionDigits: 2});
+    document.getElementById('gst-amt').textContent  = '₹' + gstAmt.toLocaleString('en-IN', {minimumFractionDigits: 2});
+    document.getElementById('total-amt').textContent = '₹' + total.toLocaleString('en-IN', {minimumFractionDigits: 2});
 }
+// Initial call
+recalculate();
 </script>
 @endpush
