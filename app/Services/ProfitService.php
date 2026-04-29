@@ -140,4 +140,38 @@ class ProfitService
         
         return compact('revenue', 'purchase', 'expenses', 'profit');
     }
+
+    public function getProfitBreakdown($startDate, $endDate): array
+    {
+        // Total Billed (Revenue generated)
+        $totalBilled = \App\Models\DailyBill::whereBetween('date', [$startDate, $endDate])->sum('net_amount')
+            + \App\Models\WeeklyBill::whereBetween('period_end', [$startDate, $endDate])->sum('net_amount');
+
+        // Total Collected (Actual cash received)
+        // Assume CustomerPayment records track collected cash.
+        $totalCollected = \App\Models\CustomerPayment::whereBetween('date', [$startDate, $endDate])->sum('amount');
+
+        // Total Purchase
+        $totalPurchase = \App\Models\Purchase::whereBetween('date', [$startDate, $endDate])->sum('total_amount');
+
+        // Total Expenses
+        $totalExpenses = \App\Models\Expense::whereBetween('date', [$startDate, $endDate])->sum('amount')
+            + \App\Models\Emi::whereIn('status', ['Paid', 'Overdue'])
+                ->whereBetween('due_date', [$startDate, $endDate])
+                ->sum('amount');
+
+        $billedProfit = $totalBilled - ($totalPurchase + $totalExpenses);
+        $collectedProfit = $totalCollected - ($totalPurchase + $totalExpenses);
+        $pendingCollection = $totalBilled - $totalCollected;
+
+        return [
+            'total_billed'       => round($totalBilled, 2),
+            'total_collected'    => round($totalCollected, 2),
+            'total_purchase'     => round($totalPurchase, 2),
+            'total_expenses'     => round($totalExpenses, 2),
+            'billed_profit'      => round($billedProfit, 2),
+            'collected_profit'   => round($collectedProfit, 2),
+            'pending_collection' => round($pendingCollection, 2),
+        ];
+    }
 }

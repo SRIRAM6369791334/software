@@ -129,9 +129,9 @@ class SampleDataSeeder extends Seeder
         }
 
         $emiItems = [
-            ['item' => 'Poultry Shed Loan - HDFC', 'amount' => 12500.00, 'due_date' => now()->addDays(5), 'status' => 'Upcoming'],
-            ['item' => 'Delivery Van EMI - SBI', 'amount' => 8400.00, 'due_date' => now()->addDays(12), 'status' => 'Upcoming'],
-            ['item' => 'Generator Loan - Axis', 'amount' => 4200.00, 'due_date' => now()->subDays(5), 'status' => 'Paid'],
+            ['loan_name' => 'Poultry Shed Loan - HDFC', 'amount' => 12500.00, 'due_date' => now()->addDays(5), 'status' => 'Upcoming'],
+            ['loan_name' => 'Delivery Van EMI - SBI', 'amount' => 8400.00, 'due_date' => now()->addDays(12), 'status' => 'Upcoming'],
+            ['loan_name' => 'Generator Loan - Axis', 'amount' => 4200.00, 'due_date' => now()->subDays(5), 'status' => 'Paid'],
         ];
 
         foreach ($emiItems as $e) {
