@@ -34,11 +34,9 @@ class ReportController extends Controller
         return view('reports.index', compact('summary', 'topCustomers', 'topDealers'));
     }
 
-    // ✅ FIX: Renamed from dailySales() → salesDaily() to match web.php route
     public function salesDaily(Request $request)
     {
         $date = $request->get('date', today()->toDateString());
-
         $dailyBills = DailyBill::with('customer')
             ->whereDate('date', $date)
             ->get();
@@ -53,7 +51,6 @@ class ReportController extends Controller
         ));
     }
 
-    // ✅ FIX: Renamed from weeklyReport() → salesWeekly()
     public function salesWeekly(Request $request)
     {
         $startDate = $request->get('start', now()->startOfWeek()->toDateString());
@@ -64,8 +61,6 @@ class ReportController extends Controller
             ->get();
 
         $totalSale = $bills->sum('amount');
-
-        // Route-wise breakdown
         $routeWise = $bills->groupBy('customer.route')
             ->map(fn($group) => $group->sum('amount'));
 
@@ -74,7 +69,6 @@ class ReportController extends Controller
         ));
     }
 
-    // ✅ FIX: Renamed → salesMonthly()
     public function salesMonthly(Request $request)
     {
         $month = $request->get('month', now()->month);
@@ -96,12 +90,12 @@ class ReportController extends Controller
         ));
     }
 
-    // ✅ NEW: Missing purchase reports - now implemented
     public function purchasesDaily(Request $request)
     {
         $date = $request->get('date', today()->toDateString());
-
-        $purchases = Purchase::whereDate('date', $date)->get();
+        $purchases = Purchase::with('vendor')
+            ->whereDate('date', $date)
+            ->get();
 
         $totalAmount  = $purchases->sum('total_amount');
         $totalGST     = $purchases->sum('gst_amount');
@@ -118,11 +112,16 @@ class ReportController extends Controller
         $startDate = $request->get('start', now()->startOfWeek()->toDateString());
         $endDate   = $request->get('end',   now()->endOfWeek()->toDateString());
 
-        $purchases = Purchase::whereBetween('date', [$startDate, $endDate])->get();
+        $purchases = Purchase::with('vendor')
+            ->whereBetween('date', [$startDate, $endDate])
+            ->get();
 
         $totalAmount  = $purchases->sum('total_amount');
-        $vendorWise   = $purchases->groupBy('vendor_name')
-            ->map(fn($g) => $g->sum('total_amount'));
+        $vendorWise   = $purchases->groupBy('vendor_id')
+            ->map(fn($g) => [
+                'vendor' => $g->first()->vendor ? $g->first()->vendor->firm_name : 'N/A',
+                'total'  => $g->sum('total_amount')
+            ]);
 
         return view('reports.purchases.weekly', compact(
             'purchases', 'totalAmount', 'vendorWise', 'startDate', 'endDate'
@@ -134,26 +133,30 @@ class ReportController extends Controller
         $month = $request->get('month', now()->month);
         $year  = $request->get('year',  now()->year);
 
-        $purchases = Purchase::whereMonth('date', $month)
+        $purchases = Purchase::with('vendor')
+            ->whereMonth('date', $month)
             ->whereYear('date', $year)
             ->get();
 
         $totalAmount  = $purchases->sum('total_amount');
         $itemWise     = $purchases->groupBy('item')
             ->map(fn($g) => $g->sum('total_amount'));
-        $vendorWise   = $purchases->groupBy('vendor_name')
-            ->map(fn($g) => $g->sum('total_amount'));
+        $vendorWise   = $purchases->groupBy('vendor_id')
+            ->map(fn($g) => [
+                'vendor' => $g->first()->vendor ? $g->first()->vendor->firm_name : 'N/A',
+                'total'  => $g->sum('total_amount')
+            ]);
 
         return view('reports.purchases.monthly', compact(
             'purchases', 'totalAmount', 'itemWise', 'vendorWise', 'month', 'year'
         ));
     }
 
-    // ✅ NEW: vendor analytics (was a stub before)
     public function vendorAnalytics()
     {
-        $vendorWise = Purchase::selectRaw('vendor_name, SUM(total_amount) as total, COUNT(*) as orders')
-            ->groupBy('vendor_name')
+        $vendorWise = Purchase::with('vendor')
+            ->select('vendor_id', DB::raw('SUM(total_amount) as total'), DB::raw('COUNT(*) as orders'))
+            ->groupBy('vendor_id')
             ->orderByDesc('total')
             ->get();
 

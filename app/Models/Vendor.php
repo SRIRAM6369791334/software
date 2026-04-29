@@ -13,7 +13,7 @@ class Vendor extends Model
 
     public function purchases(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(Purchase::class, 'vendor_name', 'firm_name');
+        return $this->hasMany(Purchase::class);
     }
 
     public function scopeSearch($query, ?string $term)

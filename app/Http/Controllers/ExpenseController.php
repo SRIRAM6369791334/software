@@ -96,11 +96,13 @@ class ExpenseController extends Controller
 
     public function emisAlerts(): View
     {
+        // EMIs due in the NEXT 7 days
         $emis = Emi::where('status', 'Upcoming')
-            ->whereDate('due_date', '<=', now()->addDays(7)) // next 7 days due
+            ->whereDate('due_date', '<=', now()->addDays(7))
             ->orderBy('due_date')
             ->get();
 
+        // Overdue EMIs
         $overdue = Emi::where('status', 'Upcoming')
             ->whereDate('due_date', '<', today())
             ->get();

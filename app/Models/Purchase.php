@@ -7,9 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class Purchase extends Model
 {
     protected $fillable = [
-        'vendor_name', 'date', 'item', 'quantity', 'unit',
+        'vendor_id', 'vendor_name', 'date', 'item', 'quantity', 'unit',
         'rate', 'gst_percentage', 'gst_amount', 'total_amount', 'payment_mode',
     ];
+
+    public function vendor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Vendor::class);
+    }
 
     protected $casts = [
         'date'           => 'date',

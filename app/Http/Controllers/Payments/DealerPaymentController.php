@@ -36,8 +36,23 @@ class DealerPaymentController extends Controller
 
     public function store(StoreDealerPaymentRequest $request): RedirectResponse
     {
-        $this->service->record($request->validated());
-        return back()->with('success', 'Dealer payment recorded.');
+        $validated = $request->validated();
+        
+        // 1. Record payment
+        $payment = $this->service->record($validated);
+
+        // 2. Fetch the dealer
+        $dealer = Dealer::findOrFail($validated['dealer_id']);
+
+        // 3. Deduct the amount
+        $dealer->decrement('pending_amount', $validated['amount']);
+
+        // 4. Prevent negative balance
+        if ($dealer->fresh()->pending_amount < 0) {
+            $dealer->update(['pending_amount' => 0]);
+        }
+
+        return back()->with('success', 'Dealer payment recorded and balance updated.');
     }
 
     public function ledger(Dealer $dealer): View

@@ -6,7 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class DailyBill extends Model
 {
-    protected $fillable = ['customer_id', 'date', 'items_description', 'quantity_kg', 'rate_per_kg', 'amount', 'status'];
+    protected $fillable = [
+        'customer_id', 'date', 'items_description', 'quantity_kg', 
+        'rate_per_kg', 'amount', 'gst_percentage', 'gst_amount', 
+        'net_amount', 'payment_mode', 'status'
+    ];
 
     protected $casts = [
         'date'        => 'date',

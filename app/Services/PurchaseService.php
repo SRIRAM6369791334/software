@@ -10,7 +10,10 @@ class PurchaseService
 {
     public function paginated(?string $query, int $perPage = 15): LengthAwarePaginator
     {
-        return Purchase::search($query)->latest('date')->paginate($perPage);
+        return Purchase::with('vendor')
+            ->search($query)
+            ->latest('date')
+            ->paginate($perPage);
     }
 
     public function create(array $data): Purchase
