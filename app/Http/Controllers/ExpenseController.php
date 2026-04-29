@@ -79,7 +79,7 @@ class ExpenseController extends Controller
     public function storeEmi(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'item' => 'required|string',
+            'loan_name' => 'required|string',
             'amount' => 'required|numeric',
             'due_date' => 'required|date',
             'status' => 'required|in:Upcoming,Paid,Overdue',
@@ -107,6 +107,9 @@ class ExpenseController extends Controller
             ->whereDate('due_date', '<', today())
             ->get();
 
-        return view('expenses.emis.alerts', compact('emis', 'overdue'));
+        return view('expenses.emis.alerts', [
+            'upcomingEmis' => $emis,
+            'overdue' => $overdue
+        ]);
     }
 }

@@ -34,14 +34,14 @@
             @forelse($emis as $emi)
                 <tr class="hover:bg-gray-50/30">
                     <td class="px-5 py-4">
-                        <p class="font-bold text-gray-900">{{ $emi->item }}</p>
+                        <p class="font-bold text-gray-900">{{ $emi->loan_name }}</p>
                         <p class="text-[10px] text-gray-400 font-mono uppercase tracking-widest">REF#{{ str_pad($emi->id, 4, '0', STR_PAD_LEFT) }}</p>
                     </td>
                     <td class="px-5 py-4">
                         @php $isOverdue = $emi->status != 'Paid' && $emi->due_date < now(); @endphp
                         <span class="font-semibold {{ $isOverdue ? 'text-red-600' : 'text-gray-900' }}">{{ $emi->due_date->format('d M, Y') }}</span>
                     </td>
-                    <td class="px-5 py-4 text-gray-500 italic">EM-{{ $emi->id }}</td>
+                    <td class="px-5 py-4 text-gray-500 italic">{{ $emi->bank_name ?? 'Bank Unknown' }}</td>
                     <td class="px-5 py-4 text-right font-black text-gray-900">₹{{ number_format($emi->amount, 2) }}</td>
                     <td class="px-5 py-4 text-center">
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ $emi->status == 'Paid' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">

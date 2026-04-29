@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 use Illuminate\Database\Eloquent\Model;
 
 class DailyBill extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'customer_id', 'date', 'items_description', 'quantity_kg', 
         'rate_per_kg', 'amount', 'gst_percentage', 'gst_amount', 

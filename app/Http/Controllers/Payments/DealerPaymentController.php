@@ -38,19 +38,8 @@ class DealerPaymentController extends Controller
     {
         $validated = $request->validated();
         
-        // 1. Record payment
+        // 1. Record payment (Service handles deduction)
         $payment = $this->service->record($validated);
-
-        // 2. Fetch the dealer
-        $dealer = Dealer::findOrFail($validated['dealer_id']);
-
-        // 3. Deduct the amount
-        $dealer->decrement('pending_amount', $validated['amount']);
-
-        // 4. Prevent negative balance
-        if ($dealer->fresh()->pending_amount < 0) {
-            $dealer->update(['pending_amount' => 0]);
-        }
 
         return back()->with('success', 'Dealer payment recorded and balance updated.');
     }

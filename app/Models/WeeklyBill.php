@@ -2,11 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class WeeklyBill extends Model
 {
-    protected $fillable = ['customer_id', 'period_start', 'period_end', 'items_description', 'quantity_kg', 'amount', 'status'];
+    use HasFactory;
+    
+    protected $fillable = [
+        'customer_id', 'period_start', 'period_end', 'items_description', 
+        'quantity_kg', 'amount', 'gst_percentage', 'gst_amount', 
+        'net_amount', 'status', 'payment_mode'
+    ];
 
     protected $casts = [
         'period_start' => 'date',

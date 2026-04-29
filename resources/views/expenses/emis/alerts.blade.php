@@ -16,7 +16,7 @@
                     💸
                 </div>
                 <div>
-                    <h3 class="text-base font-black text-gray-900">{{ $emi->item }}</h3>
+                    <h3 class="text-base font-black text-gray-900">{{ $emi->loan_name }}</h3>
                     <p class="text-xs text-gray-500 border-l-2 border-amber-200 pl-2">System Recorded Installment</p>
                 </div>
             </div>

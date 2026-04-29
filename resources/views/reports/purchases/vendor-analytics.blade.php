@@ -26,7 +26,7 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @foreach($vendorWise as $data)
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $data->vendor->name ?? 'Unknown' }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $data->vendor->firm_name ?? 'Unknown' }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{{ $data->orders }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">₹{{ number_format($data->total, 2) }}</td>
                     </tr>
@@ -47,7 +47,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('vendorChart').getContext('2d');
-        const labels = {!! json_encode($vendorWise->map(fn($v) => $v->vendor->name ?? 'Unknown')) !!};
+        const labels = {!! json_encode($vendorWise->map(fn($v) => $v->vendor->firm_name ?? 'Unknown')) !!};
         const data = {!! json_encode($vendorWise->pluck('total')) !!};
 
         new Chart(ctx, {

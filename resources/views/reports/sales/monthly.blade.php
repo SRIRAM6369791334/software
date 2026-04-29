@@ -43,7 +43,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500 text-center">
             <p class="text-sm text-gray-500 uppercase font-bold">Total Monthly Sale</p>
-            <p class="text-3xl font-bold text-gray-800">₹{{ number_format($bills->sum('total_amount'), 2) }}</p>
+            <p class="text-3xl font-bold text-gray-800">₹{{ number_format($totalSale, 2) }}</p>
         </div>
         <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500 text-center">
             <p class="text-sm text-gray-500 uppercase font-bold">Total Monthly GST</p>
@@ -51,7 +51,7 @@
         </div>
         <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-indigo-500 text-center">
             <p class="text-sm text-gray-500 uppercase font-bold">Total Collections</p>
-            <p class="text-3xl font-bold text-gray-800">₹{{ number_format($bills->where('status', 'paid')->sum('total_amount'), 2) }}</p>
+            <p class="text-3xl font-bold text-gray-800">₹{{ number_format($bills->where('status', 'paid')->sum('net_amount'), 2) }}</p>
         </div>
     </div>
 
@@ -73,9 +73,9 @@
                 @forelse($grouped as $customerId => $customerBills)
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $customerBills->first()->customer->name ?? '—' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">₹{{ number_format($customerBills->sum('total_amount'), 2) }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">₹{{ number_format($customerBills->sum('net_amount'), 2) }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{{ number_format($customerBills->sum('gst_amount'), 2) }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-bold">₹{{ number_format($customerBills->where('status', 'unpaid')->sum('total_amount'), 2) }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-bold">₹{{ number_format($customerBills->where('status', 'unpaid')->sum('net_amount'), 2) }}</td>
                 </tr>
                 @empty
                 <tr>

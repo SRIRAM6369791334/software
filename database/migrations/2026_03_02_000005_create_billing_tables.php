@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->string('items_description')->nullable();
             $table->decimal('quantity_kg', 10, 2)->nullable();
             $table->decimal('amount', 12, 2);
-            $table->enum('status', ['Generated', 'Pending', 'Paid'])->default('Pending');
+            $table->string('status')->default('Pending');
             $table->timestamps();
             $table->index('status');
             $table->index('period_start');
@@ -29,7 +29,7 @@ return new class extends Migration {
             $table->decimal('quantity_kg', 10, 2)->nullable();
             $table->decimal('rate_per_kg', 8, 2)->nullable();
             $table->decimal('amount', 12, 2);
-            $table->enum('status', ['Generated', 'Pending', 'Paid'])->default('Pending');
+            $table->string('status')->default('Pending');
             $table->timestamps();
             $table->index('date');
             $table->index('status');

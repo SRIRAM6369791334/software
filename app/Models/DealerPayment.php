@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 use Illuminate\Database\Eloquent\Model;
 
 class DealerPayment extends Model
 {
+    use HasFactory;
     protected $fillable = ['dealer_id', 'date', 'amount', 'payment_mode', 'notes'];
 
     protected $casts = [
