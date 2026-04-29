@@ -7,6 +7,8 @@
         'warning' => 'bg-amber-50 text-amber-700 border-amber-100',
         'info' => 'bg-blue-50 text-blue-700 border-blue-100',
         'slate' => 'bg-slate-50 text-slate-700 border-slate-100',
+        'primary' => 'bg-primary-50 text-primary-700 border-primary-100',
+        'amber' => 'bg-amber-50 text-amber-700 border-amber-100',
     ];
 @endphp
 
