@@ -31,4 +31,14 @@ class User extends Authenticatable
     {
         return $this->roles->pluck('name')->toArray();
     }
+
+    /**
+     * Get the highest role level for the user.
+     *
+     * @return int
+     */
+    public function getRoleLevel(): int
+    {
+        return $this->roles->max(fn($role) => self::ROLE_HIERARCHY[$role->name] ?? 0) ?? 0;
+    }
 }
