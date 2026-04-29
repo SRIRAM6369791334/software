@@ -21,13 +21,8 @@ export default {
                 background: "hsl(var(--background))",
                 foreground: "hsl(var(--foreground))",
                 primary: {
-                    50: "#FFF8F0",
-                    100: "#FFECD0",
-                    500: "#F97316",
-                    600: "#EA6C0A",
-                    700: "#C2570A",
-                    DEFAULT: "#F97316",
-                    foreground: "#FFFFFF",
+                    DEFAULT: "hsl(var(--primary))",
+                    foreground: "hsl(var(--primary-foreground))",
                 },
                 secondary: {
                     DEFAULT: "hsl(var(--secondary))",
@@ -54,11 +49,14 @@ export default {
                     foreground: "hsl(var(--card-foreground))",
                 },
                 sidebar: {
-                    background: "#0F172A",
-                    foreground: "#94A3B8",
-                    active: "#F97316",
-                    border: "#1E293B",
-                    ring: "#F97316",
+                    DEFAULT: "hsl(var(--sidebar-background))",
+                    foreground: "hsl(var(--sidebar-foreground))",
+                    primary: "hsl(var(--sidebar-primary))",
+                    "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
+                    accent: "hsl(var(--sidebar-accent))",
+                    "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+                    border: "hsl(var(--sidebar-border))",
+                    ring: "hsl(var(--sidebar-ring))",
                 },
             },
             borderRadius: {
@@ -67,7 +65,7 @@ export default {
                 sm: "calc(var(--radius) - 4px)",
             },
             fontFamily: {
-                sans: ['Plus Jakarta Sans', 'Inter', 'ui-sans-serif', 'system-ui'],
+                sans: ['Inter', 'ui-sans-serif', 'system-ui'],
             },
             keyframes: {
                 "accordion-down": {
@@ -90,4 +88,3 @@ export default {
         require('tailwindcss-animate'),
     ],
 }
-
