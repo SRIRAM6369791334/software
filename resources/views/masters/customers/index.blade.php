@@ -42,7 +42,11 @@
             <tbody class="divide-y divide-gray-50">
                 @forelse($customers as $customer)
                     <tr class="hover:bg-gray-50/50 transition-colors">
-                        <td class="px-5 py-3.5 font-medium text-gray-900">{{ $customer->name }}</td>
+                        <td class="px-5 py-3.5 font-medium text-emerald-600 hover:text-emerald-700">
+                            <a href="{{ route('masters.customers.show', $customer) }}" class="hover:underline" title="View Details">
+                                {{ $customer->name }}
+                            </a>
+                        </td>
                         <td class="px-5 py-3.5 text-gray-600">📞 {{ $customer->phone }}</td>
                         <td class="px-5 py-3.5 text-gray-500 hidden md:table-cell">{{ $customer->address ?: '—' }}</td>
                         <td class="px-5 py-3.5 text-gray-500 font-mono text-xs hidden lg:table-cell">{{ $customer->gst_number ?: '—' }}</td>

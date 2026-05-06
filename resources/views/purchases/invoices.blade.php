@@ -14,7 +14,7 @@
         <h2 class="text-base font-semibold text-gray-900">Invoice List</h2>
         <form method="GET" class="relative">
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-            <input type="text" name="search" value="{{ $search }}" placeholder="Search..."
+            <input type="text" name="search" value="{{ $search }}" placeholder="Search vendor or items..."
                    class="pl-9 pr-4 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
         </form>
     </div>
@@ -23,12 +23,10 @@
             <thead>
                 <tr class="border-b border-gray-100 bg-gray-50">
                     <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase">Vendor</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase">Item</th>
+                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase">Items Summary</th>
                     <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase">Date</th>
-                    <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase">Qty</th>
-                    <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase">Rate</th>
                     <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase">GST</th>
-                    <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase">Total</th>
+                    <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase">Total Amount</th>
                     <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
                 </tr>
             </thead>
@@ -36,12 +34,21 @@
                 @forelse($purchases as $p)
                     <tr class="hover:bg-gray-50/50">
                         <td class="px-5 py-3.5 font-medium text-gray-900">{{ $p->vendor_name }}</td>
-                        <td class="px-5 py-3.5">{{ $p->item }}</td>
+                        <td class="px-5 py-3.5">
+                            @php
+                                $firstItem = $p->items->first();
+                                $othersCount = $p->items->count() - 1;
+                            @endphp
+                            <div class="flex flex-col">
+                                <span class="text-gray-700 font-medium">{{ $firstItem?->item_name ?: 'No items' }}</span>
+                                @if($othersCount > 0)
+                                    <span class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">+ {{ $othersCount }} other products</span>
+                                @endif
+                            </div>
+                        </td>
                         <td class="px-5 py-3.5 text-gray-500">{{ $p->date->format('d M Y') }}</td>
-                        <td class="px-5 py-3.5 text-right font-mono">{{ number_format($p->quantity, 2) }} {{ $p->unit }}</td>
-                        <td class="px-5 py-3.5 text-right font-mono text-gray-400">₹{{ number_format($p->rate, 2) }}</td>
                         <td class="px-5 py-3.5 text-right font-mono text-gray-400">₹{{ number_format($p->gst_amount, 2) }}</td>
-                        <td class="px-5 py-3.5 text-right font-mono font-bold text-gray-900">₹{{ number_format($p->total_amount, 0, '.', ',') }}</td>
+                        <td class="px-5 py-3.5 text-right font-mono font-bold text-gray-900">₹{{ number_format($p->total_amount, 2) }}</td>
                         <td class="px-5 py-3.5 text-center">
                             <div class="flex justify-center gap-2">
                                 <a href="{{ route('purchases.show', $p->id) }}" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="View">👁️</a>
@@ -54,7 +61,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="px-5 py-8 text-center text-gray-400">No invoices found</td></tr>
+                    <tr><td colspan="6" class="px-5 py-8 text-center text-gray-400">No invoices found</td></tr>
                 @endforelse
             </tbody>
         </table>

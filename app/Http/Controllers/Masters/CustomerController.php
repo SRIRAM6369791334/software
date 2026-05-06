@@ -40,7 +40,13 @@ class CustomerController extends Controller
 
     public function show(Customer $customer): View
     {
-        return view('masters.customers.show', compact('customer'));
+        $customer->loadCount(['weeklyBills', 'payments'])
+                 ->loadSum('payments', 'amount');
+
+        $latestBill = $customer->weeklyBills()->latest()->first();
+        $latestPayment = $customer->payments()->latest()->first();
+
+        return view('masters.customers.show', compact('customer', 'latestBill', 'latestPayment'));
     }
 
     public function edit(Customer $customer): View
@@ -56,13 +62,15 @@ class CustomerController extends Controller
 
     public function billingHistory(Customer $customer): View
     {
+        $totalBilled = $customer->weeklyBills()->sum('amount');
         $bills = $customer->weeklyBills()->latest()->paginate(15);
-        return view('masters.customers.billing-history', compact('customer', 'bills'));
+        return view('masters.customers.billing-history', compact('customer', 'bills', 'totalBilled'));
     }
 
     public function paymentHistory(Customer $customer): View
     {
+        $totalPaid = $customer->payments()->sum('amount');
         $payments = $customer->payments()->latest()->paginate(15);
-        return view('masters.customers.payment-history', compact('customer', 'payments'));
+        return view('masters.customers.payment-history', compact('customer', 'payments', 'totalPaid'));
     }
 }

@@ -61,15 +61,26 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Last Bill Date</p>
-                        <p class="text-sm font-bold text-gray-900">{{ $customer->weeklyBills()->latest()->first()?->period_end->format('d M Y') ?? 'No bills yet' }}</p>
+                        <p class="text-sm font-bold text-gray-900">{{ $latestBill?->period_end->format('d M Y') ?? 'No bills yet' }}</p>
                     </div>
                     <div class="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Last Payment</p>
-                        <p class="text-sm font-bold text-gray-900">₹{{ number_format($customer->payments()->latest()->first()?->amount ?? 0, 0) }} ({{ $customer->payments()->latest()->first()?->date->format('d M') ?? 'N/A' }})</p>
+                        <p class="text-sm font-bold text-gray-900">₹{{ number_format($latestPayment?->amount ?? 0, 0) }} ({{ $latestPayment?->date->format('d M') ?? 'N/A' }})</p>
                     </div>
                 </div>
-                <div class="mt-8 text-center bg-gray-50/50 py-12 rounded-xl border-2 border-dashed border-gray-200">
-                    <p class="text-gray-400 text-sm italic">Detailed analytics coming soon...</p>
+                <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-100 text-center">
+                        <p class="text-[10px] font-bold text-emerald-600 uppercase mb-1">Total Bills Generated</p>
+                        <p class="text-xl font-black text-emerald-700">{{ $customer->weekly_bills_count }}</p>
+                    </div>
+                    <div class="p-4 bg-blue-50 rounded-xl border border-blue-100 text-center">
+                        <p class="text-[10px] font-bold text-blue-600 uppercase mb-1">Total Payments Made</p>
+                        <p class="text-xl font-black text-blue-700">{{ $customer->payments_count }}</p>
+                    </div>
+                    <div class="p-4 bg-purple-50 rounded-xl border border-purple-100 text-center">
+                        <p class="text-[10px] font-bold text-purple-600 uppercase mb-1">Total Paid Amount</p>
+                        <p class="text-xl font-black text-purple-700">₹{{ number_format($customer->payments_sum_amount ?? 0, 0) }}</p>
+                    </div>
                 </div>
             </div>
         </div>

@@ -13,12 +13,15 @@ class StorePurchaseRequest extends FormRequest
         return [
             'vendor_id'      => 'nullable|exists:vendors,id',
             'vendor_name'    => 'required|string|max:255',
-            'item'           => 'required|string|max:255',
-            'quantity'       => 'required|numeric|min:0.01',
-            'rate'           => 'required|numeric|min:0.01',
-            'gst_percentage' => 'required|numeric|min:0|max:28',
             'payment_mode'   => 'required|in:NEFT,Cheque,UPI,Cash',
             'date'           => 'required|date|before_or_equal:today',
+            'gst_percentage' => 'required|numeric|min:0|max:28',
+            
+            'items'          => 'required|array|min:1',
+            'items.*.name'   => 'required|string|max:255',
+            'items.*.qty'    => 'required|numeric|min:0.01',
+            'items.*.rate'   => 'required|numeric|min:0.01',
+            'items.*.unit'   => 'nullable|string|max:20',
         ];
     }
 }

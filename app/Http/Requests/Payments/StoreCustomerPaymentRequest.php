@@ -13,8 +13,8 @@ class StoreCustomerPaymentRequest extends FormRequest
         return [
             'customer_id'  => 'required|exists:customers,id',
             'amount'       => 'required|numeric|min:0.01',
-            'payment_mode' => 'required|in:Cash,UPI,NEFT,Cheque',
-            'payment_type' => 'required|in:Full,Part,Advance',
+            'payment_mode' => 'required|in:Cash,UPI,Bank Transfer,Cheque',
+            'payment_type' => 'required|in:Regular,Adjustment,Opening',
             'date'         => 'required|date|before_or_equal:today',
             'notes'        => 'nullable|string|max:500',
         ];
