@@ -67,4 +67,20 @@ class ProfitController extends Controller
             $rows
         );
     }
+
+    public function exportPdf(\Illuminate\Http\Request $request)
+    {
+        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
+
+        $summary = $this->service->getSummary();
+        $breakdown = $this->service->getProfitBreakdown($startDate, $endDate);
+        $weeklyData = $this->service->getWeeklyBreakdown();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('profit.pdf', compact(
+            'summary', 'breakdown', 'weeklyData', 'startDate', 'endDate'
+        ));
+
+        return $pdf->download("profit-loss-statement-{$startDate}-to-{$endDate}.pdf");
+    }
 }

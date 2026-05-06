@@ -9,6 +9,9 @@ use App\Services\PurchaseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use App\Models\Vendor;
+use App\Models\Item;
+use App\Models\Batch;
+use App\Models\Warehouse;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -21,17 +24,25 @@ class PurchaseController extends Controller
 
     public function index(Request $request): View
     {
-        $search    = $request->input('search');
-        $purchases = $this->service->paginated($search, 15);
-        $vendors   = Vendor::orderBy('firm_name')->get();
-        return view('purchases.index', compact('purchases', 'search', 'vendors'));
+        $search     = $request->input('search');
+        $purchases  = $this->service->paginated($search, 15);
+        $vendors    = Vendor::orderBy('firm_name')->get();
+        $items      = Item::active()->get();
+        $batches    = Batch::where('status', 'Active')->get();
+        $warehouses = Warehouse::active()->get();
+        
+        return view('purchases.index', compact('purchases', 'search', 'vendors', 'items', 'batches', 'warehouses'));
     }
 
     public function create(Request $request): View
     {
         $vendor_name = $request->input('vendor_name');
-        $vendors = Vendor::orderBy('firm_name')->get();
-        return view('purchases.create', compact('vendor_name', 'vendors'));
+        $vendors     = Vendor::orderBy('firm_name')->get();
+        $items       = Item::active()->get();
+        $batches     = Batch::where('status', 'Active')->get();
+        $warehouses  = Warehouse::active()->get();
+
+        return view('purchases.create', compact('vendor_name', 'vendors', 'items', 'batches', 'warehouses'));
     }
 
     public function store(StorePurchaseRequest $request): RedirectResponse
@@ -55,9 +66,13 @@ class PurchaseController extends Controller
 
     public function edit($id): View
     {
-        $purchase = $this->service->find($id);
-        $vendors = Vendor::orderBy('firm_name')->get();
-        return view('purchases.edit', compact('purchase', 'vendors'));
+        $purchase   = $this->service->find($id);
+        $vendors    = Vendor::orderBy('firm_name')->get();
+        $items      = Item::active()->get();
+        $batches    = Batch::where('status', 'Active')->get();
+        $warehouses = Warehouse::active()->get();
+
+        return view('purchases.edit', compact('purchase', 'vendors', 'items', 'batches', 'warehouses'));
     }
 
     public function update(StorePurchaseRequest $request, $id): RedirectResponse

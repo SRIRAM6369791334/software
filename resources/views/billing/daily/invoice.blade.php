@@ -121,7 +121,8 @@
         <p class="text-xs text-gray-400 font-medium">Please settle the payment according to the agreed credit terms.</p>
         
         <div class="mt-10 flex justify-center gap-4 no-print">
-            <button onclick="window.print()" class="px-8 py-3 bg-emerald-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 active:scale-95">🖨️ Print Invoice</button>
+            <button onclick="window.print()" class="px-8 py-3 bg-white border-2 border-emerald-600 text-emerald-600 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-emerald-50 transition-all shadow-xl shadow-emerald-600/5 active:scale-95">🖨️ Print Invoice</button>
+            <a href="{{ route('billing.daily.pdf', $bill) }}" class="px-8 py-3 bg-emerald-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 active:scale-95 flex items-center gap-2">📄 Download PDF</a>
             <button onclick="window.close()" class="px-8 py-3 border-2 border-gray-100 text-gray-400 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-gray-50 transition-all active:scale-95">Close Window</button>
         </div>
     </div>

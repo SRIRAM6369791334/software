@@ -13,11 +13,24 @@
     </div>
 </div>
 
-<form method="GET" class="mb-4 flex gap-2">
-    <input type="date" name="start_date" value="{{ $startDate }}" class="text-sm border-gray-200 rounded-md">
-    <input type="date" name="end_date" value="{{ $endDate }}" class="text-sm border-gray-200 rounded-md">
-    <button type="submit" class="px-3 py-1 bg-gray-900 text-white rounded-md text-sm">Filter</button>
-</form>
+<div class="mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+    <form method="GET" class="flex items-center gap-2">
+        <input type="date" name="start_date" value="{{ $startDate }}" class="px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-bold">
+        <span class="text-gray-400 font-black">→</span>
+        <input type="date" name="end_date" value="{{ $endDate }}" class="px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-bold">
+        <button type="submit" class="ml-2 px-4 py-2 bg-gray-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-gray-800 transition-all active:scale-95 shadow-lg">Filter</button>
+    </form>
+    <div class="flex items-center gap-2">
+        <a href="{{ route('profit.export', ['start_date' => $startDate, 'end_date' => $endDate]) }}" 
+           class="px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-black text-gray-500 hover:text-gray-900 hover:border-gray-300 hover:shadow-md transition-all flex items-center gap-2 uppercase tracking-widest">
+            📊 Export CSV
+        </a>
+        <a href="{{ route('profit.export-pdf', ['start_date' => $startDate, 'end_date' => $endDate]) }}" 
+           class="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-black hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all active:scale-95 flex items-center gap-2 uppercase tracking-widest">
+            📜 Download PDF
+        </a>
+    </div>
+</div>
 
 <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
     <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">

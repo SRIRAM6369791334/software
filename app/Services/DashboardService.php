@@ -29,9 +29,15 @@ class DashboardService
             $monthlyPurchase = Purchase::whereMonth('date', now()->month)->sum('total_amount');
             $activeDealers   = Dealer::where('pending_amount', '>', 0)->count();
 
+            // Poultry operational stats
+            $totalBirds     = \App\Models\Batch::where('status', 'Active')->sum('current_count');
+            $activeBatches  = \App\Models\Batch::where('status', 'Active')->count();
+            $mortalityMTD   = \App\Models\Mortality::whereMonth('date', now()->month)->sum('count');
+
             return compact(
                 'todayRevenue', 'totalCustomers', 'pendingPayments', 'pendingCount',
-                'purchasesToday', 'purchaseCount', 'monthlyRevenue', 'monthlyPurchase', 'activeDealers'
+                'purchasesToday', 'purchaseCount', 'monthlyRevenue', 'monthlyPurchase', 
+                'activeDealers', 'totalBirds', 'activeBatches', 'mortalityMTD'
             );
         });
     }

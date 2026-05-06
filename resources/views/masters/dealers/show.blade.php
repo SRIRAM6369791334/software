@@ -45,8 +45,15 @@
         <div class="bg-amber-500 rounded-xl shadow-lg p-6 text-white text-center">
             <p class="text-[10px] font-bold uppercase tracking-widest opacity-80 mb-1">Due Amount</p>
             <h2 class="text-3xl font-black">₹{{ number_format($dealer->pending_amount, 2) }}</h2>
-            <div class="mt-4 pt-4 border-t border-white/10 flex justify-center gap-2">
-                <a href="{{ route('payments.dealers.create', ['dealer_id' => $dealer->id]) }}" class="px-4 py-1.5 bg-white text-amber-700 text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all">Make Payment</a>
+            <div class="mt-6 pt-6 border-t border-white/10 flex flex-col gap-3">
+                <a href="{{ route('payments.dealers.create', ['dealer_id' => $dealer->id]) }}" 
+                   class="w-full text-center px-6 py-3 bg-white text-amber-700 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95">
+                   Make Payment 💳
+                </a>
+                <a href="{{ route('masters.dealers.ledger-pdf', $dealer) }}" 
+                   class="w-full text-center px-6 py-3 bg-amber-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl shadow-lg hover:bg-amber-700 transition-all active:scale-95">
+                   Download Ledger 📜
+                </a>
             </div>
         </div>
     </div>

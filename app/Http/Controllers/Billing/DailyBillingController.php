@@ -122,4 +122,11 @@ class DailyBillingController extends Controller
         $bill->load(['customer', 'items']);
         return view('billing.daily.invoice', compact('bill'));
     }
+
+    public function downloadPdf(DailyBill $bill)
+    {
+        $bill->load(['customer', 'items']);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('billing.daily.pdf', compact('bill'));
+        return $pdf->download("invoice-{$bill->invoice_no}.pdf");
+    }
 }

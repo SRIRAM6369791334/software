@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
+use App\Models\Item;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +13,7 @@ class PurchaseService
 {
     public function paginated(?string $query, int $perPage = 15): LengthAwarePaginator
     {
-        return Purchase::with(['vendor', 'items'])
+        return Purchase::with(['vendor', 'items.item'])
             ->search($query)
             ->latest('date')
             ->paginate($perPage);
@@ -24,45 +25,43 @@ class PurchaseService
             $items = $data['items'] ?? [];
             unset($data['items']);
             
-            // Calculate grand total from items if not provided
-            $gstPercentage = $data['gst_percentage'] ?? 18;
-            $subtotal = 0;
-            $totalTax = 0;
-            
-            foreach ($items as $item) {
-                $base = $item['qty'] * $item['rate'];
-                $subtotal += $base;
-            }
-            
-            $totalTax = round($subtotal * $gstPercentage / 100, 2);
-            $data['gst_amount'] = $totalTax;
-            $data['total_amount'] = $subtotal + $totalTax;
-
+            // Grand totals are handled by client-side or calculated here
             $purchase = Purchase::create($data);
             
             foreach ($items as $itemData) {
-                $base = $itemData['qty'] * $itemData['rate'];
-                $tax = round($base * $gstPercentage / 100, 2);
-                
-                $item = $purchase->items()->create([
-                    'item_name'    => $itemData['name'],
+                // Fetch item details if item_id is provided
+                $itemName = $itemData['name'] ?? 'Unknown';
+                if (!empty($itemData['item_id'])) {
+                    $itemMaster = Item::find($itemData['item_id']);
+                    $itemName = $itemMaster ? $itemMaster->name : $itemName;
+                }
+
+                $purchaseItem = $purchase->items()->create([
+                    'item_id'      => $itemData['item_id'] ?? null,
+                    'batch_id'     => $itemData['batch_id'] ?? null,
+                    'warehouse_id' => $itemData['warehouse_id'] ?? null,
+                    'item_name'    => $itemName,
                     'quantity'     => $itemData['qty'],
                     'unit'         => $itemData['unit'] ?? 'kg',
                     'rate'         => $itemData['rate'],
-                    'tax_amount'   => $tax,
-                    'total_amount' => $base + $tax,
+                    'tax_amount'   => $itemData['tax_amount'] ?? 0,
+                    'total_amount' => $itemData['total_amount'] ?? ($itemData['qty'] * $itemData['rate']),
                 ]);
 
-                // Record stock movement for each item
-                app(StockService::class)->recordIn([
-                    'item_name'      => $item->item_name,
-                    'quantity'       => $item->quantity,
-                    'rate'           => $item->rate,
-                    'reference_type' => Purchase::class,
-                    'reference_id'   => $purchase->id,
-                    'date'           => $purchase->date,
-                    'created_by'     => auth()->id() ?? 1,
-                ]);
+                // Record stock movement if item_id is linked
+                if ($purchaseItem->item_id) {
+                    app(StockService::class)->recordIn([
+                        'item_id'          => $purchaseItem->item_id,
+                        'batch_id'         => $purchaseItem->batch_id,
+                        'warehouse_id'     => $purchaseItem->warehouse_id,
+                        'quantity'         => $purchaseItem->quantity,
+                        'unit'             => $purchaseItem->unit,
+                        'source_type'      => 'Purchase',
+                        'source_id'        => $purchaseItem->id,
+                        'transaction_date' => $purchase->date,
+                        'remarks'          => "Purchase from {$purchase->vendor_name} (Inv: {$purchase->invoice_no})",
+                    ]);
+                }
             }
             
             return $purchase;
@@ -71,7 +70,7 @@ class PurchaseService
 
     public function find($id): Purchase
     {
-        return Purchase::with('items')->findOrFail($id);
+        return Purchase::with('items.item')->findOrFail($id);
     }
 
     public function update(Purchase $purchase, array $data): bool
@@ -80,33 +79,47 @@ class PurchaseService
             $items = $data['items'] ?? [];
             unset($data['items']);
             
-            // For simplicity in this step, we clear and recreate items on update
+            // Important: On update, we need to handle existing stock ledger entries
+            // For simplicity in this ERP, we'll clear and recreate (caution in production)
+            DB::table('stock_ledgers')->where('source_type', 'Purchase')
+                ->whereIn('source_id', $purchase->items->pluck('id'))
+                ->delete();
+                
             $purchase->items()->delete();
-            
-            $gstPercentage = $data['gst_percentage'] ?? 18;
-            $subtotal = 0;
-            
-            foreach ($items as $item) {
-                $subtotal += $item['qty'] * $item['rate'];
-            }
-            
-            $data['gst_amount'] = round($subtotal * $gstPercentage / 100, 2);
-            $data['total_amount'] = $subtotal + $data['gst_amount'];
-
             $purchase->update($data);
 
             foreach ($items as $itemData) {
-                $base = $itemData['qty'] * $itemData['rate'];
-                $tax = round($base * $gstPercentage / 100, 2);
-                
-                $purchase->items()->create([
-                    'item_name'    => $itemData['name'],
+                $itemName = $itemData['name'] ?? 'Unknown';
+                if (!empty($itemData['item_id'])) {
+                    $itemMaster = Item::find($itemData['item_id']);
+                    $itemName = $itemMaster ? $itemMaster->name : $itemName;
+                }
+
+                $purchaseItem = $purchase->items()->create([
+                    'item_id'      => $itemData['item_id'] ?? null,
+                    'batch_id'     => $itemData['batch_id'] ?? null,
+                    'warehouse_id' => $itemData['warehouse_id'] ?? null,
+                    'item_name'    => $itemName,
                     'quantity'     => $itemData['qty'],
                     'unit'         => $itemData['unit'] ?? 'kg',
                     'rate'         => $itemData['rate'],
-                    'tax_amount'   => $tax,
-                    'total_amount' => $base + $tax,
+                    'tax_amount'   => $itemData['tax_amount'] ?? 0,
+                    'total_amount' => $itemData['total_amount'] ?? ($itemData['qty'] * $itemData['rate']),
                 ]);
+
+                if ($purchaseItem->item_id) {
+                    app(StockService::class)->recordIn([
+                        'item_id'          => $purchaseItem->item_id,
+                        'batch_id'         => $purchaseItem->batch_id,
+                        'warehouse_id'     => $purchaseItem->warehouse_id,
+                        'quantity'         => $purchaseItem->quantity,
+                        'unit'             => $purchaseItem->unit,
+                        'source_type'      => 'Purchase',
+                        'source_id'        => $purchaseItem->id,
+                        'transaction_date' => $purchase->date,
+                        'remarks'          => "Updated Purchase from {$purchase->vendor_name}",
+                    ]);
+                }
             }
             
             return true;
@@ -115,7 +128,12 @@ class PurchaseService
 
     public function delete(Purchase $purchase): bool
     {
-        return $purchase->delete();
+        return DB::transaction(function () use ($purchase) {
+            DB::table('stock_ledgers')->where('source_type', 'Purchase')
+                ->whereIn('source_id', $purchase->items->pluck('id'))
+                ->delete();
+            return $purchase->delete();
+        });
     }
 
     public function allForExport(): Collection

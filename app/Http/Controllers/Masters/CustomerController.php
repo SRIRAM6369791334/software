@@ -73,4 +73,40 @@ class CustomerController extends Controller
         $payments = $customer->payments()->latest()->paginate(15);
         return view('masters.customers.payment-history', compact('customer', 'payments', 'totalPaid'));
     }
+
+    public function downloadLedgerPdf(Customer $customer)
+    {
+        $bills = $customer->weeklyBills()->get()->map(fn($b) => [
+            'date' => $b->period_end,
+            'desc' => "Invoice #{$b->invoice_no} ({$b->items_description})",
+            'debit' => $b->net_amount,
+            'credit' => 0,
+            'type' => 'bill'
+        ]);
+
+        $dailyBills = $customer->dailyBills()->get()->map(fn($b) => [
+            'date' => $b->date,
+            'desc' => "Daily Invoice #{$b->invoice_no}",
+            'debit' => $b->net_amount,
+            'credit' => 0,
+            'type' => 'bill'
+        ]);
+
+        $payments = $customer->payments()->get()->map(fn($p) => [
+            'date' => $p->date,
+            'desc' => "Payment Recv ({$p->payment_mode})",
+            'debit' => 0,
+            'credit' => $p->amount,
+            'type' => 'payment'
+        ]);
+
+        $ledger = $bills->concat($dailyBills)->concat($payments)->sortBy('date');
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('masters.customers.ledger_pdf', [
+            'customer' => $customer,
+            'ledger' => $ledger
+        ]);
+
+        return $pdf->download("ledger-{$customer->name}.pdf");
+    }
 }

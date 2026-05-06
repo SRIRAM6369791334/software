@@ -17,11 +17,14 @@ class StorePurchaseRequest extends FormRequest
             'date'           => 'required|date|before_or_equal:today',
             'gst_percentage' => 'required|numeric|min:0|max:28',
             
-            'items'          => 'required|array|min:1',
-            'items.*.name'   => 'required|string|max:255',
-            'items.*.qty'    => 'required|numeric|min:0.01',
-            'items.*.rate'   => 'required|numeric|min:0.01',
-            'items.*.unit'   => 'nullable|string|max:20',
+            'items'                 => 'required|array|min:1',
+            'items.*.item_id'       => 'required|exists:items,id',
+            'items.*.batch_id'      => 'nullable|exists:batches,id',
+            'items.*.warehouse_id'  => 'required|exists:warehouses,id',
+            'items.*.name'          => 'nullable|string|max:255',
+            'items.*.qty'           => 'required|numeric|min:0.01',
+            'items.*.rate'          => 'required|numeric|min:0.01',
+            'items.*.unit'          => 'nullable|string|max:20',
         ];
     }
 }
