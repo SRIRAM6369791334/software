@@ -65,4 +65,30 @@ class DealerController extends Controller
         // Simple logic for now, showing purchase vs payment summary
         return view('masters.dealers.outstanding-report', compact('dealer'));
     }
+
+    public function downloadLedgerPdf(Dealer $dealer)
+    {
+        $purchases = $dealer->purchases()->get()->map(fn($p) => [
+            'date' => $p->date,
+            'desc' => "Purchase #{$p->id} ({$p->item})",
+            'debit' => $p->total_amount,
+            'credit' => 0,
+        ]);
+
+        $payments = $dealer->payments()->get()->map(fn($p) => [
+            'date' => $p->date,
+            'desc' => "Payment Sent ({$p->payment_mode})",
+            'debit' => 0,
+            'credit' => $p->amount,
+        ]);
+
+        $ledger = $purchases->concat($payments)->sortBy('date');
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('masters.dealers.ledger_pdf', [
+            'dealer' => $dealer,
+            'ledger' => $ledger
+        ]);
+
+        return $pdf->download("ledger-{$dealer->firm_name}.pdf");
+    }
 }

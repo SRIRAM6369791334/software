@@ -67,6 +67,7 @@ Route::middleware(['auth', 'role:staff'])->group(function () {
     Route::delete('/masters/customers/{customer}',[CustomerController::class,'destroy'])->name('masters.customers.destroy');
     Route::get('/masters/customers/{customer}/billing-history', [CustomerController::class, 'billingHistory'])->name('masters.customers.billing-history');
     Route::get('/masters/customers/{customer}/payment-history', [CustomerController::class, 'paymentHistory'])->name('masters.customers.payment-history');
+    Route::get('/masters/customers/{customer}/ledger-pdf', [CustomerController::class, 'downloadLedgerPdf'])->name('masters.customers.ledger-pdf');
 
     // Masters — Dealers
     Route::get('/masters/dealers',           [DealerController::class, 'index'])->name('masters.dealers.index');
@@ -78,6 +79,7 @@ Route::middleware(['auth', 'role:staff'])->group(function () {
     Route::delete('/masters/dealers/{dealer}',[DealerController::class,'destroy'])->name('masters.dealers.destroy');
     Route::get('/masters/dealers/{dealer}/purchase-history', [DealerController::class, 'purchaseHistory'])->name('masters.dealers.purchase-history');
     Route::get('/masters/dealers/{dealer}/outstanding-report', [DealerController::class, 'outstandingReport'])->name('masters.dealers.outstanding-report');
+    Route::get('/masters/dealers/{dealer}/ledger-pdf', [DealerController::class, 'downloadLedgerPdf'])->name('masters.dealers.ledger-pdf');
 
     // Masters — Vendors
     Route::get('/masters/vendors',           [VendorController::class, 'index'])->name('masters.vendors.index');
@@ -100,6 +102,60 @@ Route::middleware(['auth', 'role:staff'])->group(function () {
     Route::get('/purchases/invoices',       [PurchaseController::class, 'invoices'])->name('purchases.invoices');
     Route::get('/purchases/entry/{purchase}/print', [PurchaseController::class, 'print'])->name('purchases.print');
     Route::get('/purchases/export',         [PurchaseController::class, 'export'])->name('purchases.export');
+    // Inventory - Item Master
+    Route::resource('inventory/items', \App\Http\Controllers\Inventory\ItemController::class)->names([
+        'index' => 'inventory.items.index',
+        'create' => 'inventory.items.create',
+        'store' => 'inventory.items.store',
+        'show' => 'inventory.items.show',
+        'edit' => 'inventory.items.edit',
+        'update' => 'inventory.items.update',
+        'destroy' => 'inventory.items.destroy',
+    ]);
+
+    // Inventory - Batch Management
+    Route::resource('inventory/batches', \App\Http\Controllers\Inventory\BatchController::class)->names([
+        'index' => 'inventory.batches.index',
+        'create' => 'inventory.batches.create',
+        'store' => 'inventory.batches.store',
+        'show' => 'inventory.batches.show',
+        'edit' => 'inventory.batches.edit',
+        'update' => 'inventory.batches.update',
+        'destroy' => 'inventory.batches.destroy',
+    ]);
+
+    // Inventory - Warehouse Management
+    Route::resource('inventory/warehouses', \App\Http\Controllers\Inventory\WarehouseController::class)->names([
+        'index' => 'inventory.warehouses.index',
+        'create' => 'inventory.warehouses.create',
+        'store' => 'inventory.warehouses.store',
+        'edit' => 'inventory.warehouses.edit',
+        'update' => 'inventory.warehouses.update',
+        'destroy' => 'inventory.warehouses.destroy',
+    ]);
+
+    // Inventory - Stock Dashboard & Ledgers
+    Route::get('inventory/stock', [\App\Http\Controllers\Inventory\StockController::class, 'index'])->name('inventory.stock.index');
+    Route::get('inventory/stock/movements', [\App\Http\Controllers\Inventory\StockController::class, 'movements'])->name('inventory.stock.movements');
+
+    // Inventory - Consumption Recording
+    Route::resource('inventory/consumptions', \App\Http\Controllers\Inventory\ConsumptionController::class)->names([
+        'index' => 'inventory.consumptions.index',
+        'create' => 'inventory.consumptions.create',
+        'store' => 'inventory.consumptions.store',
+        'destroy' => 'inventory.consumptions.destroy',
+    ]);
+
+    // Inventory - Mortality Tracking
+    Route::resource('inventory/mortalities', \App\Http\Controllers\Inventory\MortalityController::class)->names([
+        'index' => 'inventory.mortalities.index',
+        'create' => 'inventory.mortalities.create',
+        'store' => 'inventory.mortalities.store',
+        'destroy' => 'inventory.mortalities.destroy',
+    ]);
+
+    // Inventory - Performance Analytics
+    Route::get('inventory/analytics', [\App\Http\Controllers\Inventory\AnalyticsController::class, 'index'])->name('inventory.analytics');
 });
 
 /*
@@ -117,6 +173,7 @@ Route::middleware(['auth', 'role:manager'])->group(function () {
     Route::get('/billing/weekly/{bill}/print', [WeeklyBillingController::class, 'print'])->name('billing.weekly.print'); // New Print View
     Route::get('/billing/weekly/{bill}/whatsapp', [WeeklyBillingController::class, 'whatsapp'])->name('billing.weekly.whatsapp');
     Route::get('/billing/weekly/export', [WeeklyBillingController::class, 'export'])->name('billing.weekly.export');
+    Route::get('/billing/weekly/{bill}/pdf', [WeeklyBillingController::class, 'downloadPdf'])->name('billing.weekly.pdf');
 
     Route::get('/billing/daily',   [DailyBillingController::class, 'index'])->name('billing.daily.index');
     Route::get('/billing/daily/create', [DailyBillingController::class, 'create'])->name('billing.daily.create'); // New View
@@ -124,6 +181,7 @@ Route::middleware(['auth', 'role:manager'])->group(function () {
     Route::get('/billing/daily/gst', [DailyBillingController::class, 'gst'])->name('billing.daily.gst'); // New View
     Route::get('/billing/daily/export', [DailyBillingController::class, 'export'])->name('billing.daily.export');
     Route::get('/billing/daily/{bill}/invoice', [DailyBillingController::class, 'invoice'])->name('billing.daily.invoice');
+    Route::get('/billing/daily/{bill}/pdf', [DailyBillingController::class, 'downloadPdf'])->name('billing.daily.pdf');
 
     // Payments
     Route::get('/payments/customers',        [CustomerPaymentController::class, 'index'])->name('payments.customers.index');
@@ -160,6 +218,7 @@ Route::middleware(['auth', 'role:manager'])->group(function () {
     Route::get('/profit/order-wise',    [ProfitController::class, 'orderWise'])->name('profit.order-wise');
     Route::get('/profit/reports/comparison', [ProfitController::class, 'comparison'])->name('profit.reports.comparison');
     Route::get('/profit/export',        [ProfitController::class, 'export'])->name('profit.export');
+    Route::get('/profit/export-pdf',    [ProfitController::class, 'exportPdf'])->name('profit.export-pdf');
 
     // Stock
     Route::get('/stock', [\App\Http\Controllers\StockController::class, 'index'])->name('stock.index');

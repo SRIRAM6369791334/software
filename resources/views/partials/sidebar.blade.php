@@ -13,9 +13,16 @@
         ['label' => 'Customers',         'icon' => 'users',         'route' => 'masters.customers.index', 'min' => 'staff'],
         ['label' => 'Dealers',           'icon' => 'truck',         'route' => 'masters.dealers.index',   'min' => 'staff'],
         ['label' => 'Vendors',           'icon' => 'package',       'route' => 'masters.vendors.index',   'min' => 'staff'],
+        ['label' => 'Warehouse Master',  'icon' => 'home',          'route' => 'inventory.warehouses.index', 'min' => 'staff'],
         
         // Operations
         ['header' => 'Operations'],
+        ['label' => 'Stock Dashboard',    'icon' => 'pie-chart',     'route' => 'inventory.stock.index',   'min' => 'staff'],
+        ['label' => 'Daily Usage (FCR)',  'icon' => 'pie-chart',     'route' => 'inventory.consumptions.index', 'min' => 'staff'],
+        ['label' => 'Mortality Tracking', 'icon' => 'activity',      'route' => 'inventory.mortalities.index', 'min' => 'staff'],
+        ['label' => 'Item Master',        'icon' => 'package',       'route' => 'inventory.items.index',   'min' => 'staff'],
+        ['label' => 'Batch Management',   'icon' => 'folder',        'route' => 'inventory.batches.index', 'min' => 'staff'],
+        ['label' => 'Batch Performance',  'icon' => 'trending-up',   'route' => 'inventory.analytics',     'min' => 'staff'],
         ['label' => 'Purchase List',     'icon' => 'shopping-cart', 'route' => 'purchases.entry',         'min' => 'staff'],
         ['label' => 'Purchase Invoices', 'icon' => 'receipt',       'route' => 'purchases.invoices',      'min' => 'staff'],
         ['label' => 'Weekly Billing',    'icon' => 'file-text',     'route' => 'billing.weekly.index',    'min' => 'manager'],
@@ -88,6 +95,8 @@
                     <span class="text-base w-5 text-center opacity-70">
                         @switch($item['icon'])
                             @case('grid') 📊 @break
+                            @case('pie-chart') 🥧 @break
+                            @case('activity') 📉 @break
                             @case('users') 👥 @break
                             @case('truck') 🚛 @break
                             @case('package') 📦 @break

@@ -145,4 +145,11 @@ class WeeklyBillingController extends Controller
         ]);
         return $this->exporter->streamCsv('weekly-billing', ['Customer','From','To','Items','Qty(kg)','Amount','Status'], $rows);
     }
+
+    public function downloadPdf(WeeklyBill $bill)
+    {
+        $bill->load('customer');
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('billing.weekly.pdf', compact('bill'));
+        return $pdf->download("invoice-{$bill->invoice_no}.pdf");
+    }
 }

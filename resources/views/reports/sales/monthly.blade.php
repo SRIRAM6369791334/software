@@ -1,91 +1,107 @@
 @extends('layouts.app')
+@section('title', 'Monthly Financial Audit')
 
 @section('content')
-<div class="container mx-auto px-4 py-6">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Monthly Sales Report</h1>
-        <div class="flex space-x-2">
-            <button onclick="window.print()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded shadow transition">
-                <i class="fas fa-print mr-2"></i>Print
-            </button>
-            <a href="{{ route('reports.sales.export-pdf', ['month' => $month, 'year' => $year]) }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow transition">
-                <i class="fas fa-file-pdf mr-2"></i>Export PDF
-            </a>
-        </div>
+<div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div>
+        <h1 class="text-3xl font-black text-gray-900 tracking-tight">Monthly Financial Audit</h1>
+        <p class="text-gray-500 font-medium italic">High-level executive summary of monthly revenue streams</p>
     </div>
-
-    <!-- Filter Form -->
-    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-        <form action="{{ route('reports.sales.monthly') }}" method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
-                <select name="month" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    @foreach(range(1, 12) as $m)
-                        <option value="{{ $m }}" {{ $month == $m ? 'selected' : '' }}>{{ date('F', mktime(0, 0, 0, $m, 1)) }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
-                <select name="year" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    @foreach(range(now()->year - 5, now()->year) as $y)
-                        <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md shadow transition">
-                Filter
-            </button>
-        </form>
+    <div class="flex items-center gap-3">
+        <button onclick="window.print()" class="px-6 py-3 bg-white border border-gray-200 text-gray-500 hover:text-gray-900 text-sm font-black rounded-xl transition-all shadow-sm active:scale-95 flex items-center gap-2 uppercase tracking-widest">
+            🖨️ Print View
+        </button>
+        <a href="{{ route('reports.sales.export-pdf', ['month' => $month, 'year' => $year]) }}" 
+           class="px-6 py-3 bg-emerald-600 text-white text-sm font-black rounded-xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 active:scale-95 flex items-center gap-2 uppercase tracking-widest">
+            📜 Export PDF
+        </a>
     </div>
+</div>
 
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500 text-center">
-            <p class="text-sm text-gray-500 uppercase font-bold">Total Monthly Sale</p>
-            <p class="text-3xl font-bold text-gray-800">₹{{ number_format($totalSale, 2) }}</p>
+{{-- Filter Hub --}}
+<div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/50 mb-10">
+    <form action="{{ route('reports.sales.monthly') }}" method="GET" class="flex flex-col md:flex-row items-end gap-6">
+        <div class="space-y-2 flex-1">
+            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Target Month</label>
+            <select name="month" class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-black text-gray-900 appearance-none">
+                @foreach(range(1, 12) as $m)
+                    <option value="{{ $m }}" {{ $month == $m ? 'selected' : '' }}>{{ date('F', mktime(0, 0, 0, $m, 1)) }}</option>
+                @endforeach
+            </select>
         </div>
-        <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500 text-center">
-            <p class="text-sm text-gray-500 uppercase font-bold">Total Monthly GST</p>
-            <p class="text-3xl font-bold text-gray-800">₹{{ number_format($bills->sum('gst_amount'), 2) }}</p>
+        <div class="space-y-2 flex-1">
+            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Target Year</label>
+            <select name="year" class="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-black text-gray-900 appearance-none">
+                @foreach(range(now()->year - 5, now()->year) as $y)
+                    <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
+                @endforeach
+            </select>
         </div>
-        <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-indigo-500 text-center">
-            <p class="text-sm text-gray-500 uppercase font-bold">Total Collections</p>
-            <p class="text-3xl font-bold text-gray-800">₹{{ number_format($bills->where('status', 'paid')->sum('net_amount'), 2) }}</p>
-        </div>
+        <button type="submit" class="w-full md:w-auto px-10 py-4 bg-gray-900 text-white font-black rounded-2xl hover:bg-gray-800 transition-all shadow-lg active:scale-95 uppercase tracking-widest text-sm">
+            Refresh Report
+        </button>
+    </form>
+</div>
+
+{{-- Strategic Insights --}}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+    <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/50 group hover:border-emerald-200 transition-all border-l-8 border-l-blue-500">
+        <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Gross Monthly Sale</h3>
+        <p class="text-3xl font-black text-gray-900">₹{{ number_format($totalSale, 2) }}</p>
     </div>
+    <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/50 group hover:border-emerald-200 transition-all border-l-8 border-l-emerald-500">
+        <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Accrued GST</h3>
+        <p class="text-3xl font-black text-emerald-600">₹{{ number_format($bills->sum('gst_amount'), 2) }}</p>
+    </div>
+    <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/50 group hover:border-emerald-200 transition-all border-l-8 border-l-indigo-500">
+        <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Liquid Collections</h3>
+        <p class="text-3xl font-black text-indigo-600">₹{{ number_format($bills->where('status', 'paid')->sum('net_amount'), 2) }}</p>
+    </div>
+</div>
 
-    <!-- Data Table -->
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Sales</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total GST</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Outstanding</th>
+{{-- Data Hub --}}
+<div class="bg-white rounded-[3rem] border border-gray-200 shadow-2xl overflow-hidden mb-12">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+            <thead>
+                <tr class="bg-gray-900 text-white font-black uppercase text-[10px] tracking-widest border-b border-gray-100">
+                    <th class="px-10 py-6">Customer Portfolio</th>
+                    <th class="px-10 py-6 text-right">Aggregate Sales</th>
+                    <th class="px-10 py-6 text-right">Tax Contribution</th>
+                    <th class="px-10 py-6 text-right">Unrealized Due</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @php
-                    $grouped = $bills->groupBy('customer_id');
-                @endphp
+            <tbody class="divide-y divide-gray-100">
+                @php $grouped = $bills->groupBy('customer_id'); @endphp
                 @forelse($grouped as $customerId => $customerBills)
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $customerBills->first()->customer->name ?? '—' }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">₹{{ number_format($customerBills->sum('net_amount'), 2) }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{{ number_format($customerBills->sum('gst_amount'), 2) }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-bold">₹{{ number_format($customerBills->where('status', 'unpaid')->sum('net_amount'), 2) }}</td>
-                </tr>
+                    <tr class="hover:bg-emerald-50/30 transition-all group">
+                        <td class="px-10 py-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center font-black text-gray-500 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-all shadow-inner">
+                                    {{ substr($customerBills->first()->customer->name ?? '?', 0, 1) }}
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="font-black text-gray-900 tracking-tight text-lg">{{ $customerBills->first()->customer->name ?? 'WALK-IN' }}</span>
+                                    <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ $customerBills->count() }} Transactions</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-10 py-6 text-right font-black text-gray-900 text-lg italic">₹{{ number_format($customerBills->sum('net_amount'), 2) }}</td>
+                        <td class="px-10 py-6 text-right font-bold text-emerald-600">₹{{ number_format($customerBills->sum('gst_amount'), 2) }}</td>
+                        <td class="px-10 py-6 text-right font-black text-red-600 text-lg">
+                            ₹{{ number_format($customerBills->where('status', 'unpaid')->sum('net_amount'), 2) }}
+                        </td>
+                    </tr>
                 @empty
-                <tr>
-                    <td colspan="4" class="px-6 py-10 text-center text-gray-500">
-                        <div class="flex flex-col items-center">
-                            <i class="fas fa-chart-line text-4xl mb-4 text-gray-300"></i>
-                            <p>No sales records found for this month.</p>
-                        </div>
-                    </td>
-                </tr>
+                    <tr>
+                        <td colspan="4" class="px-10 py-32 text-center">
+                            <div class="flex flex-col items-center opacity-30">
+                                <span class="text-8xl mb-6">📊</span>
+                                <h3 class="text-2xl font-black text-gray-900 uppercase tracking-widest">No Data Available</h3>
+                                <p class="text-gray-500 font-medium">Monthly revenue stream is empty for this period</p>
+                            </div>
+                        </td>
+                    </tr>
                 @endforelse
             </tbody>
         </table>
