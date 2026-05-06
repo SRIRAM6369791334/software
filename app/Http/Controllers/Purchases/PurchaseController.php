@@ -8,6 +8,7 @@ use App\Services\ExportService;
 use App\Services\PurchaseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use App\Models\Vendor;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -22,13 +23,15 @@ class PurchaseController extends Controller
     {
         $search    = $request->input('search');
         $purchases = $this->service->paginated($search, 15);
-        return view('purchases.index', compact('purchases', 'search'));
+        $vendors   = Vendor::orderBy('firm_name')->get();
+        return view('purchases.index', compact('purchases', 'search', 'vendors'));
     }
 
     public function create(Request $request): View
     {
         $vendor_name = $request->input('vendor_name');
-        return view('purchases.create', compact('vendor_name'));
+        $vendors = Vendor::orderBy('firm_name')->get();
+        return view('purchases.create', compact('vendor_name', 'vendors'));
     }
 
     public function store(StorePurchaseRequest $request): RedirectResponse
@@ -53,7 +56,8 @@ class PurchaseController extends Controller
     public function edit($id): View
     {
         $purchase = $this->service->find($id);
-        return view('purchases.edit', compact('purchase'));
+        $vendors = Vendor::orderBy('firm_name')->get();
+        return view('purchases.edit', compact('purchase', 'vendors'));
     }
 
     public function update(StorePurchaseRequest $request, $id): RedirectResponse

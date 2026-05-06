@@ -4,7 +4,7 @@
 @section('content')
 <div class="mb-6 flex justify-between items-end">
     <div>
-        <a href="{{ route('purchases.invoices') }}" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 uppercase tracking-wider mb-2 inline-block">← Back to Invoices</a>
+        <a href="{{ route('purchases.entry') }}" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 uppercase tracking-wider mb-2 inline-block">← Back to Purchases</a>
         <h1 class="text-2xl font-bold text-gray-900">Purchase Invoice</h1>
         <p class="text-sm text-gray-500 mt-0.5">Reference: #PUR{{ str_pad($purchase->id, 5, '0', STR_PAD_LEFT) }}</p>
     </div>
@@ -49,15 +49,22 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
+                @php $subtotal = 0; @endphp
+                @foreach($purchase->items as $item)
+                @php 
+                    $rowTotal = $item->quantity * $item->rate;
+                    $subtotal += $rowTotal;
+                @endphp
                 <tr class="text-gray-900">
                     <td class="py-6">
-                        <p class="font-bold border-l-4 border-emerald-500 pl-3">{{ $purchase->item }}</p>
+                        <p class="font-bold border-l-4 border-emerald-500 pl-3">{{ $item->item_name }}</p>
                         <p class="text-xs text-gray-400 pl-3">Standard stock procurement</p>
                     </td>
-                    <td class="py-6 text-right font-mono">{{ number_format($purchase->quantity, 2) }} {{ $purchase->unit }}</td>
-                    <td class="py-6 text-right">₹{{ number_format($purchase->rate, 2) }}</td>
-                    <td class="py-6 text-right font-bold">₹{{ number_format($purchase->quantity * $purchase->rate, 2) }}</td>
+                    <td class="py-6 text-right font-mono">{{ number_format($item->quantity, 2) }} {{ $item->unit }}</td>
+                    <td class="py-6 text-right">₹{{ number_format($item->rate, 2) }}</td>
+                    <td class="py-6 text-right font-bold">₹{{ number_format($rowTotal, 2) }}</td>
                 </tr>
+                @endforeach
             </tbody>
         </table>
 
@@ -65,7 +72,7 @@
             <div class="w-full md:w-64 space-y-3">
                 <div class="flex justify-between text-sm text-gray-500">
                     <span>Subtotal</span>
-                    <span>₹{{ number_format($purchase->quantity * $purchase->rate, 2) }}</span>
+                    <span>₹{{ number_format($subtotal, 2) }}</span>
                 </div>
                 <div class="flex justify-between text-sm text-gray-500">
                     <span>GST ({{ $purchase->gst_percentage }}%)</span>

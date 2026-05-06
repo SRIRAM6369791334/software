@@ -3,34 +3,41 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DailyBill extends Model
 {
     use HasFactory;
+
     protected $fillable = [
-        'customer_id', 'date', 'items_description', 'quantity_kg', 
-        'rate_per_kg', 'amount', 'gst_percentage', 'gst_amount', 
+        'customer_id', 'date', 'amount', 'gst_percentage', 'gst_amount', 
         'net_amount', 'payment_mode', 'status'
     ];
 
     protected $casts = [
-        'date'        => 'date',
-        'amount'      => 'decimal:2',
-        'quantity_kg' => 'decimal:2',
-        'rate_per_kg' => 'decimal:2',
+        'date'       => 'date',
+        'amount'     => 'decimal:2',
+        'gst_amount' => 'decimal:2',
+        'net_amount' => 'decimal:2',
     ];
 
-    public function customer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(DailyBillItem::class);
     }
 
     public function scopeSearch($query, ?string $term)
     {
         if (!$term) return $query;
-        return $query->whereHas('customer', fn($q) => $q->where('name', 'like', "%{$term}%"));
+        return $query->whereHas('customer', fn($q) => $q->where('name', 'like', "%{$term}%"))
+                     ->orWhereHas('items', fn($q) => $q->where('item_name', 'like', "%{$term}%"));
     }
 
     public function getInvoiceNumberAttribute(): string

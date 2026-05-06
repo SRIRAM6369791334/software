@@ -123,6 +123,7 @@ Route::middleware(['auth', 'role:manager'])->group(function () {
     Route::post('/billing/daily',  [DailyBillingController::class, 'store'])->name('billing.daily.store')->middleware('throttle:billing');
     Route::get('/billing/daily/gst', [DailyBillingController::class, 'gst'])->name('billing.daily.gst'); // New View
     Route::get('/billing/daily/export', [DailyBillingController::class, 'export'])->name('billing.daily.export');
+    Route::get('/billing/daily/{bill}/invoice', [DailyBillingController::class, 'invoice'])->name('billing.daily.invoice');
 
     // Payments
     Route::get('/payments/customers',        [CustomerPaymentController::class, 'index'])->name('payments.customers.index');

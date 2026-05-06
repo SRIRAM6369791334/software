@@ -2,71 +2,98 @@
 @section('title', 'Dealer Master')
 
 @section('content')
-<div class="flex items-center justify-between mb-6">
+<div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
     <div>
         <h1 class="text-2xl font-bold text-gray-900">Dealer Master</h1>
-        <p class="text-sm text-gray-500 mt-0.5">Manage dealer records and purchase orders</p>
+        <p class="text-sm text-gray-500 mt-0.5">Manage key suppliers for feed and chicks</p>
     </div>
-    <button onclick="document.getElementById('add-dealer-modal').classList.remove('hidden')"
-            class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700
-                   text-white text-sm font-semibold rounded-lg shadow-sm transition-colors">
-        + Add Dealer
-    </button>
+    <div class="mt-4 md:mt-0 flex gap-2">
+        <button onclick="document.getElementById('add-dealer-modal').classList.remove('hidden')"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700
+                       text-white text-sm font-semibold rounded-lg shadow-md transition-all">
+            + Add Dealer
+        </button>
+    </div>
+</div>
+
+{{-- Summary Cards --}}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Dealers</p>
+        <h3 class="text-xl font-black text-gray-900">{{ $dealers->total() }}</h3>
+    </div>
+    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Pending</p>
+        <h3 class="text-xl font-black text-red-600">₹{{ number_format($dealers->sum('pending_amount'), 0) }}</h3>
+    </div>
 </div>
 
 <form method="GET" class="mb-4 max-w-sm">
-    <div class="relative">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
-        <input type="text" name="search" value="{{ $search }}" placeholder="Search dealers..."
-               class="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+    <div class="relative group">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm group-focus-within:text-emerald-500 transition-colors">🔍</span>
+        <input type="text" name="search" value="{{ $search }}" placeholder="Search dealers by name or route..."
+               class="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
     </div>
 </form>
 
 <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="w-full text-sm text-left">
             <thead>
-                <tr class="border-b border-gray-100 bg-gray-50">
-                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Firm Name</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Contact</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Location</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Route</th>
-                    <th class="px-5 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Pending</th>
-                    <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+                <tr class="border-b border-gray-100 bg-gray-50/50">
+                    <th class="px-5 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Firm Name</th>
+                    <th class="px-5 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Contact Details</th>
+                    <th class="px-5 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider hidden md:table-cell">Location</th>
+                    <th class="px-5 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Route</th>
+                    <th class="px-5 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Pending Amount</th>
+                    <th class="px-5 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
                 @forelse($dealers as $dealer)
-                    <tr class="hover:bg-gray-50/50 transition-colors">
-                        <td class="px-5 py-3.5 font-medium text-gray-900">{{ $dealer->firm_name }}</td>
-                        <td class="px-5 py-3.5">
-                            <div class="text-sm text-gray-800">{{ $dealer->contact_person ?: '—' }}</div>
-                            <div class="text-xs text-gray-400">📞 {{ $dealer->phone }}</div>
+                    <tr class="hover:bg-gray-50/30 transition-colors">
+                        <td class="px-5 py-4">
+                            <a href="{{ route('masters.dealers.show', $dealer) }}" class="font-bold text-emerald-600 hover:text-emerald-700 hover:underline transition-colors">
+                                {{ $dealer->firm_name }}
+                            </a>
                         </td>
-                        <td class="px-5 py-3.5 text-gray-500 hidden md:table-cell">{{ $dealer->location ?: '—' }}</td>
-                        <td class="px-5 py-3.5 text-gray-600">{{ $dealer->route ?: '—' }}</td>
-                        <td class="px-5 py-3.5 text-right font-mono font-semibold {{ $dealer->pending_amount > 0 ? 'text-red-600' : 'text-gray-400' }}">
-                            {{ $dealer->pending_amount > 0 ? '₹'.number_format($dealer->pending_amount, 0, '.', ',') : '—' }}
+                        <td class="px-5 py-4">
+                            <p class="font-semibold text-gray-800">{{ $dealer->contact_person ?: '—' }}</p>
+                            <p class="text-xs text-gray-400 font-medium">📞 {{ $dealer->phone }}</p>
                         </td>
-                        <td class="px-5 py-3.5">
-                            <div class="flex items-center justify-center gap-1">
+                        <td class="px-5 py-4 text-gray-500 hidden md:table-cell">{{ $dealer->location ?: '—' }}</td>
+                        <td class="px-5 py-4 text-gray-600 font-medium">{{ $dealer->route ?: '—' }}</td>
+                        <td class="px-5 py-4 text-right">
+                            @if($dealer->pending_amount > 0)
+                                <span class="font-black text-red-600">₹{{ number_format($dealer->pending_amount, 0) }}</span>
+                            @else
+                                <span class="text-gray-300">—</span>
+                            @endif
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="flex items-center justify-center gap-2">
                                 <button onclick="openEditDealer({{ $dealer->id }},'{{ addslashes($dealer->firm_name) }}','{{ addslashes($dealer->contact_person) }}','{{ $dealer->phone }}','{{ $dealer->gst_number }}','{{ addslashes($dealer->location) }}','{{ $dealer->route }}')"
-                                        class="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition-colors">✏️</button>
+                                        class="p-2 rounded-lg hover:bg-blue-50 text-blue-500 transition-colors border border-transparent hover:border-blue-100" title="Edit">✏️</button>
                                 <form action="{{ route('masters.dealers.destroy', $dealer) }}" method="POST"
-                                      onsubmit="return confirm('Delete {{ $dealer->firm_name }}?')">
+                                      onsubmit="return confirm('Remove this dealer record?')">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="p-1.5 rounded-lg hover:bg-red-50 text-red-500">🗑️</button>
+                                    <button type="submit" class="p-2 rounded-lg hover:bg-red-50 text-red-500 transition-colors border border-transparent hover:border-red-100" title="Delete">🗑️</button>
                                 </form>
                             </div>
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="px-5 py-10 text-center text-gray-400">No dealers found</td></tr>
+                    <tr><td colspan="6" class="px-5 py-20 text-center text-gray-400 italic font-medium">No dealers found in master record.</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
-    <div class="px-5 py-3 border-t border-gray-100">{{ $dealers->withQueryString()->links() }}</div>
+    
+    @if($dealers->hasPages())
+    <div class="px-5 py-4 border-t border-gray-100 bg-gray-50/20">
+        {{ $dealers->withQueryString()->links() }}
+    </div>
+    @endif
 </div>
 
 {{-- Add Modal --}}

@@ -3,7 +3,7 @@
 
 @section('content')
 <div class="mb-6">
-    <a href="{{ route('purchases.index') }}" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 uppercase tracking-wider mb-2 inline-block">← Back to Purchases</a>
+    <a href="{{ route('purchases.entry') }}" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 uppercase tracking-wider mb-2 inline-block">← Back to Purchases</a>
     <h1 class="text-2xl font-bold text-gray-900">New Purchase Entry</h1>
     <p class="text-sm text-gray-500 mt-0.5">Record stock inward from Vendors or Dealers</p>
 </div>
@@ -19,7 +19,14 @@
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">1. Supplier Info</h3>
                     <div class="space-y-1.5">
                         <label class="text-[10px] font-bold text-gray-700 uppercase">Vendor Name <span class="text-red-500">*</span></label>
-                        <input type="text" name="vendor_name" value="{{ $vendor_name ?? '' }}" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all" placeholder="Enter Firm Name">
+                        <select name="vendor_name" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all">
+                            <option value="">Select Vendor</option>
+                            @foreach($vendors as $vendor)
+                                <option value="{{ $vendor->firm_name }}" {{ ($vendor_name == $vendor->firm_name) ? 'selected' : '' }}>
+                                    {{ $vendor->firm_name }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="space-y-1.5">
                         <label class="text-[10px] font-bold text-gray-700 uppercase">Purchase Date <span class="text-red-500">*</span></label>
@@ -40,11 +47,13 @@
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">2. Item Details</h3>
                     <div class="space-y-1.5">
                         <label class="text-[10px] font-bold text-gray-700 uppercase">Item Type <span class="text-red-500">*</span></label>
-                        <select name="item" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all">
+                        <input type="text" name="item" list="item-options" required placeholder="Select or type item…"
+                               class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all">
+                        <datalist id="item-options">
                             @foreach(['Feed', 'Chicks', 'Medicines', 'Accessories'] as $item)
-                                <option value="{{ $item }}">{{ $item }}</option>
+                                <option value="{{ $item }}">
                             @endforeach
-                        </select>
+                        </datalist>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-1.5">

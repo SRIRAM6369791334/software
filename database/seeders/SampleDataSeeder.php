@@ -99,7 +99,7 @@ class SampleDataSeeder extends Seeder
                 'date' => now()->subDays(2),
                 'amount' => 5000.00,
                 'payment_mode' => 'UPI',
-                'payment_type' => 'Part',
+                'payment_type' => 'Regular',
                 'balance_after' => $customer->balance - 5000.00,
                 'notes' => 'Partial payment received for last week',
             ]);
