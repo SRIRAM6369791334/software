@@ -15,7 +15,7 @@ class StoreCustomerRequest extends FormRequest
             'phone'      => 'required|string|min:10|max:15',
             'address'    => 'nullable|string|max:500',
             'gst_number' => 'nullable|string|max:20',
-            'route'      => 'nullable|string|max:100',
+            'route_id'   => 'nullable|exists:routes,id',
             'type'       => 'required|in:Retail,Wholesale',
         ];
     }

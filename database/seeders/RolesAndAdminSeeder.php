@@ -21,7 +21,10 @@ class RolesAndAdminSeeder extends Seeder
         ];
 
         foreach ($systemRoles as $roleData) {
-            Role::firstOrCreate(['name' => $roleData['name']], $roleData);
+            Role::firstOrCreate(
+                ['name' => $roleData['name'], 'guard_name' => 'web'],
+                $roleData
+            );
         }
 
         // ── Default Admin User ───────────────────────────────────────────────────
@@ -33,9 +36,8 @@ class RolesAndAdminSeeder extends Seeder
             ]
         );
 
-        $adminRole = Role::where('name', 'admin')->first();
-        if ($adminRole && !$admin->roles()->where('role_id', $adminRole->id)->exists()) {
-            UserRole::create(['user_id' => $admin->id, 'role_id' => $adminRole->id]);
+        if (!$admin->hasRole('admin')) {
+            $admin->assignRole('admin');
         }
 
         $this->command->info('✅ 4 system roles created. Admin user: admin@poultrypro.local / Admin@1234');

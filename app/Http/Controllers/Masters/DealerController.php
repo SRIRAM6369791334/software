@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Masters;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Masters\StoreDealerRequest;
 use App\Models\Dealer;
+use App\Models\Route;
 use App\Services\DealerService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,13 +18,14 @@ class DealerController extends Controller
     public function index(Request $request): View
     {
         $search  = $request->input('search');
-        $dealers = $this->service->search($search, 15);
+        $dealers = Dealer::with('routeRelation')->search($search)->orderBy('name')->paginate(15);
         return view('masters.dealers.index', compact('dealers', 'search'));
     }
 
     public function create(): View
     {
-        return view('masters.dealers.create');
+        $routes = Route::orderBy('route_name')->get();
+        return view('masters.dealers.create', compact('routes'));
     }
 
     public function store(StoreDealerRequest $request): RedirectResponse
@@ -45,7 +47,8 @@ class DealerController extends Controller
 
     public function edit(Dealer $dealer): View
     {
-        return view('masters.dealers.edit', compact('dealer'));
+        $routes = Route::orderBy('route_name')->get();
+        return view('masters.dealers.edit', compact('dealer', 'routes'));
     }
 
     public function destroy(Dealer $dealer): RedirectResponse
@@ -62,7 +65,6 @@ class DealerController extends Controller
 
     public function outstandingReport(Dealer $dealer): View
     {
-        // Simple logic for now, showing purchase vs payment summary
         return view('masters.dealers.outstanding-report', compact('dealer'));
     }
 

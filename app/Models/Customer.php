@@ -3,20 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Customer extends Model
 {
-    use HasFactory;
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
-    protected $fillable = ['name', 'phone', 'address', 'gst_number', 'route', 'type', 'balance'];
+    protected $fillable = [
+        'name', 'phone', 'address', 'gst_number', 'route', 'route_id', 'type', 'balance'
+    ];
 
-    protected $casts = ['balance' => 'decimal:2'];
+    protected $casts = [
+        'balance' => 'decimal:2'
+    ];
 
     // ── Relationships ──────────────────────────────────────────────────────────
+    public function routeRelation()
+    {
+        return $this->belongsTo(Route::class, 'route_id');
+    }
+
     public function weeklyBills(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(WeeklyBill::class);

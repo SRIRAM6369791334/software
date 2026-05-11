@@ -13,9 +13,7 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles;
 
-    const ROLE_HIERARCHY = ['viewer' => 1, 'staff' => 2, 'manager' => 3, 'admin' => 4];
-
-    protected $fillable = ['name', 'email', 'password', 'phone'];
+    protected $fillable = ['name', 'email', 'password', 'phone', 'username', 'is_active'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -24,21 +22,12 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 
-    public function getRoleNamesAttribute()
+    public function activityLogs()
     {
-        return $this->roles->pluck('name')->toArray();
-    }
-
-    /**
-     * Get the highest role level for the user.
-     *
-     * @return int
-     */
-    public function getRoleLevel(): int
-    {
-        return $this->roles->max(fn($role) => self::ROLE_HIERARCHY[$role->name] ?? 0) ?? 0;
+        return $this->hasMany(ActivityLog::class);
     }
 }
