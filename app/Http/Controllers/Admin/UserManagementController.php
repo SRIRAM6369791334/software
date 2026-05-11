@@ -3,77 +3,91 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Role;
 use App\Models\User;
-use App\Models\UserRole;
+use Spatie\Permission\Models\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
+use App\Services\ActivityLogger;
 
 class UserManagementController extends Controller
 {
     public function index(): View
     {
-        $users     = User::with('roles')->orderBy('name')->get();
-        $roles     = Role::orderBy('name')->get();
-        return view('admin.users.index', compact('users', 'roles'));
+        $users = User::with('roles')->orderBy('name')->get();
+        $roles = Role::orderBy('name')->get();
+        $activityLogs = \App\Models\ActivityLog::with('user')->latest('timestamp')->take(10)->get();
+        return view('admin.users.index', compact('users', 'roles', 'activityLogs'));
     }
 
-    public function assignRole(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'role_id' => 'required|exists:roles,id',
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|unique:users,username',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'role' => 'required|exists:roles,name',
         ]);
 
-        // Prevent duplicate assignment
-        $exists = UserRole::where('user_id', $request->user_id)
-                          ->where('role_id', $request->role_id)
-                          ->exists();
-
-        if ($exists) {
-            return back()->with('error', 'User already has this role.');
-        }
-
-        UserRole::create([
-            'user_id'     => $request->user_id,
-            'role_id'     => $request->role_id,
-            'assigned_by' => Auth::id(),
+        $user = User::create([
+            'name' => $request->name,
+            'username' => $request->username,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'is_active' => true,
         ]);
 
-        return back()->with('success', 'Role assigned successfully.');
+        $user->assignRole($request->role);
+
+        ActivityLogger::log('Created User', 'UserManagement', $user->id);
+
+        return back()->with('success', 'User created successfully.');
     }
 
-    public function removeRole(UserRole $userRole): RedirectResponse
-    {
-        $userRole->delete();
-        return back()->with('success', 'Role removed.');
-    }
-
-    public function storeRole(Request $request): RedirectResponse
+    public function update(Request $request, User $user): RedirectResponse
     {
         $request->validate([
-            'name'        => 'required|string|max:50|unique:roles,name',
-            'description' => 'nullable|string|max:255',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'role' => 'required|exists:roles,name',
         ]);
 
-        Role::create([
-            'name'        => strtolower(trim($request->name)),
-            'description' => $request->description,
-            'is_system'   => false,
-            'created_by'  => Auth::id(),
-        ]);
+        $user->update($request->only('name', 'email', 'is_active'));
 
-        return back()->with('success', 'Role created.');
+        if ($request->password) {
+            $user->update(['password' => Hash::make($request->password)]);
+        }
+
+        $user->syncRoles([$request->role]);
+
+        ActivityLogger::log('Updated User', 'UserManagement', $user->id);
+
+        return back()->with('success', 'User updated successfully.');
     }
 
-    public function destroyRole(Role $role): RedirectResponse
+    public function toggleStatus(User $user): RedirectResponse
     {
-        if ($role->is_system) {
-            return back()->with('error', 'System roles cannot be deleted.');
+        $user->is_active = !$user->is_active;
+        $user->save();
+
+        ActivityLogger::log($user->is_active ? 'Activated User' : 'Deactivated User', 'UserManagement', $user->id);
+
+        return back()->with('success', 'User status updated.');
+    }
+
+    public function destroy(User $user): RedirectResponse
+    {
+        if ($user->id === Auth::id()) {
+            return back()->with('error', 'You cannot delete yourself.');
         }
-        $role->delete();
-        return back()->with('success', 'Role deleted.');
+
+        $user->delete();
+
+        ActivityLogger::log('Deleted User', 'UserManagement', $user->id);
+
+        return back()->with('success', 'User deleted.');
     }
 }

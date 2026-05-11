@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,21 +22,37 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): RedirectResponse
     {
-        $credentials = $request->only('email', 'password');
+        $loginField = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        
+        $credentials = [
+            $loginField => $request->login,
+            'password' => $request->password,
+        ];
 
         if (!Auth::attempt($credentials, $request->boolean('remember'))) {
             return back()
-                ->withInput($request->only('email'))
-                ->withErrors(['email' => 'These credentials do not match our records.']);
+                ->withInput($request->only('login'))
+                ->withErrors(['login' => 'These credentials do not match our records.']);
+        }
+
+        $user = Auth::user();
+
+        if (!$user->is_active) {
+            Auth::logout();
+            return back()->withErrors(['login' => 'Your account is deactivated.']);
         }
 
         $request->session()->regenerate();
+        
+        ActivityLogger::log('Login', 'Auth', $user->id);
 
         return redirect()->intended(route('dashboard'));
     }
 
     public function logout(Request $request): RedirectResponse
     {
+        ActivityLogger::log('Logout', 'Auth', Auth::id());
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

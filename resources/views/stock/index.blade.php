@@ -1,120 +1,149 @@
 @extends('layouts.app')
-@section('title', 'Stock & Inventory')
+
+@section('title', 'Stock Inventory')
 
 @section('content')
-<div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div class="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
     <div>
         <h1 class="text-3xl font-black text-gray-900 tracking-tight">Stock Inventory</h1>
-        <p class="text-gray-500 font-medium">Real-time tracking of poultry stock and inventory movements</p>
+        <p class="text-gray-500 font-medium">Track stock levels and inventory transactions.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        <button type="button" onclick="openModal('adjustModal')" class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700">
+            Quick Adjust
+        </button>
+        <a href="{{ route('stock.batches.index') }}" class="px-4 py-2 rounded-xl bg-white border border-gray-200 text-sm font-semibold hover:bg-gray-50">
+            Batch Management
+        </a>
     </div>
 </div>
 
-{{-- Stock Summaries --}}
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    @foreach($summaries as $summary)
-        <div class="bg-white p-6 rounded-[2.5rem] border {{ $summary->current_stock < 10 ? 'border-red-200 shadow-red-100' : 'border-gray-100' }} shadow-xl shadow-gray-200/50 group transition-all relative overflow-hidden">
-            @if($summary->current_stock < 10)
-                <div class="absolute top-0 right-0 px-4 py-1 bg-red-500 text-[8px] font-black text-white uppercase tracking-widest rounded-bl-xl">Low Stock</div>
-            @endif
-            <div class="flex items-center gap-4 mb-4">
-                <div class="w-12 h-12 rounded-2xl {{ $summary->current_stock < 10 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600' }} flex items-center justify-center text-xl font-black group-hover:scale-110 transition-transform">
-                    {{ substr($summary->item_name, 0, 1) }}
-                </div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+    @forelse($summaries as $item)
+        <div class="bg-white border {{ $item->current_stock < $item->reorder_level ? 'border-red-200' : 'border-gray-200' }} rounded-2xl p-5 shadow-sm">
+            <div class="flex items-start justify-between gap-4">
                 <div>
-                    <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{{ $summary->unit }}</h3>
-                    <p class="text-sm font-black text-gray-900 truncate max-w-[120px]">{{ $summary->item_name }}</p>
+                    <p class="text-xs text-gray-400 uppercase font-bold">{{ $item->category }}</p>
+                    <h3 class="font-bold text-gray-900 mt-1">{{ $item->item_name }}</h3>
                 </div>
+                @if($item->current_stock < $item->reorder_level)
+                    <span class="text-[10px] px-2 py-1 rounded-full bg-red-50 text-red-600 font-bold uppercase">Low</span>
+                @endif
             </div>
-            <div class="flex items-end justify-between">
-                <p class="text-3xl font-black {{ $summary->current_stock < 10 ? 'text-red-600' : 'text-gray-900' }} tracking-tighter">
-                    {{ number_format($summary->current_stock, 1) }}
-                </p>
-                <span class="text-[10px] font-bold text-gray-400 uppercase">{{ $summary->last_updated->diffForHumans() }}</span>
+            <div class="mt-6 flex items-baseline gap-2">
+                <span class="text-3xl font-black {{ $item->current_stock < $item->reorder_level ? 'text-red-600' : 'text-gray-900' }}">
+                    {{ number_format($item->current_stock, 1) }}
+                </span>
+                <span class="text-xs text-gray-500 uppercase font-bold">{{ $item->unit }}</span>
             </div>
+            <p class="mt-2 text-xs text-gray-400">Reorder level: {{ number_format($item->reorder_level, 1) }}</p>
         </div>
-    @endforeach
+    @empty
+        <div class="bg-white border border-gray-200 rounded-2xl p-8 text-center text-gray-500 md:col-span-2 lg:col-span-4">
+            No stock items found.
+        </div>
+    @endforelse
 </div>
 
-{{-- Movement History --}}
-<div class="bg-white rounded-[2.5rem] border border-gray-200 shadow-2xl overflow-hidden mb-12">
-    <div class="p-8 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gray-50/50">
-        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest">Inventory Log & Movements</h3>
-        <form method="GET" class="flex flex-wrap items-center gap-3">
-            <div class="relative">
-                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400 uppercase tracking-widest">From</span>
-                <input type="date" name="from" value="{{ $from }}" class="pl-14 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-bold">
-            </div>
-            <div class="relative">
-                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400 uppercase tracking-widest">To</span>
-                <input type="date" name="to" value="{{ $to }}" class="pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-bold">
-            </div>
-            <button type="submit" class="px-6 py-3 bg-gray-900 text-white text-xs font-black rounded-xl hover:bg-gray-800 transition-all uppercase tracking-widest">Apply Filter</button>
+<div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+    <div class="p-5 border-b border-gray-100 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+            <h2 class="font-black text-gray-900">Transaction History</h2>
+            <p class="text-sm text-gray-500">Movements from {{ $from }} to {{ $to }}.</p>
+        </div>
+        <form method="GET" class="flex flex-wrap gap-3">
+            <input type="date" name="from" value="{{ $from }}" class="px-3 py-2 rounded-lg border border-gray-200 text-sm">
+            <input type="date" name="to" value="{{ $to }}" class="px-3 py-2 rounded-lg border border-gray-200 text-sm">
+            <button type="submit" class="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-bold">Filter</button>
         </form>
     </div>
 
     <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left">
-            <thead>
-                <tr class="bg-gray-50/50 text-gray-400 font-black uppercase text-[10px] tracking-widest border-b border-gray-100">
-                    <th class="px-8 py-5">Timestamp</th>
-                    <th class="px-8 py-5">Event Type</th>
-                    <th class="px-8 py-5">Resource Item</th>
-                    <th class="px-8 py-5 text-right">Volume Adjustment</th>
-                    <th class="px-8 py-5 text-right">Unit Rate</th>
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                <tr>
+                    <th class="px-5 py-3 text-left">Date</th>
+                    <th class="px-5 py-3 text-left">Item</th>
+                    <th class="px-5 py-3 text-left">Type</th>
+                    <th class="px-5 py-3 text-right">Quantity</th>
+                    <th class="px-5 py-3 text-left">Notes</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-50">
-                @foreach($movements as $movement)
-                    <tr class="hover:bg-gray-50/30 transition-all">
-                        <td class="px-8 py-5">
-                            <span class="font-black text-gray-900 tracking-tighter">{{ $movement->date->format('M d, Y') }}</span>
-                        </td>
-                        <td class="px-8 py-5">
-                            @php
-                                $typeMap = [
-                                    'purchase_in' => ['label' => 'INBOUND', 'class' => 'bg-blue-50 text-blue-600 border-blue-100', 'icon' => '📥'],
-                                    'sale_out' => ['label' => 'OUTBOUND', 'class' => 'bg-emerald-50 text-emerald-600 border-emerald-100', 'icon' => '📤'],
-                                    'adjustment' => ['label' => 'ADJUSTMENT', 'class' => 'bg-amber-50 text-amber-600 border-amber-100', 'icon' => '⚙️']
-                                ];
-                                $style = $typeMap[$movement->type] ?? $typeMap['adjustment'];
-                            @endphp
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 {{ $style['class'] }} border text-[9px] font-black rounded-lg uppercase tracking-tighter">
-                                <span>{{ $style['icon'] }}</span>
-                                {{ $style['label'] }}
-                            </span>
-                        </td>
-                        <td class="px-8 py-5">
-                            <span class="font-bold text-gray-700 tracking-tight">{{ $movement->item_name }}</span>
-                        </td>
-                        <td class="px-8 py-5 text-right">
-                            <span class="text-base font-black {{ $movement->type === 'sale_out' ? 'text-red-500' : 'text-emerald-500' }}">
-                                {{ $movement->type === 'sale_out' ? '-' : '+' }}{{ number_format($movement->quantity, 2) }}
-                                <span class="text-[10px] text-gray-400 ml-1">{{ strtoupper($movement->unit) }}</span>
-                            </span>
-                        </td>
-                        <td class="px-8 py-5 text-right font-black text-gray-900">
-                            ₹{{ number_format($movement->rate, 2) }}
-                        </td>
-                    </tr>
-                @endforeach
-                @if($movements->isEmpty())
+            <tbody class="divide-y divide-gray-100">
+                @forelse($movements as $txn)
                     <tr>
-                        <td colspan="5" class="px-8 py-20 text-center">
-                            <div class="flex flex-col items-center">
-                                <div class="text-6xl mb-6">📉</div>
-                                <h3 class="text-xl font-black text-gray-900">No Movements Recorded</h3>
-                                <p class="text-gray-400 font-medium mt-1">Transaction history for the selected period is empty.</p>
-                            </div>
+                        <td class="px-5 py-4 whitespace-nowrap">{{ optional($txn->date)->format('Y-m-d') }}</td>
+                        <td class="px-5 py-4 font-semibold">{{ $txn->item_name }}</td>
+                        <td class="px-5 py-4">
+                            <span class="px-2 py-1 rounded-full text-xs font-bold {{ $txn->txn_type === 'OUT' ? 'bg-red-50 text-red-600' : ($txn->txn_type === 'IN' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600') }}">
+                                {{ $txn->txn_type ?? $txn->type }}
+                            </span>
                         </td>
+                        <td class="px-5 py-4 text-right font-bold">
+                            {{ $txn->txn_type === 'OUT' ? '-' : '+' }}{{ number_format($txn->quantity, 1) }} {{ $txn->unit }}
+                        </td>
+                        <td class="px-5 py-4 text-gray-500">{{ $txn->notes }}</td>
                     </tr>
-                @endif
+                @empty
+                    <tr>
+                        <td colspan="5" class="px-5 py-12 text-center text-gray-500">No transactions found for this period.</td>
+                    </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
-    @if($movements->hasPages())
-        <div class="p-8 border-t border-gray-50 bg-gray-50/30">
-            {{ $movements->appends(['from' => $from, 'to' => $to])->links() }}
+
+    <div class="p-5 border-t border-gray-100">
+        {{ $movements->appends(['from' => $from, 'to' => $to])->links() }}
+    </div>
+</div>
+
+<div id="adjustModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-lg font-black">Adjust Stock</h3>
+            <button type="button" onclick="closeModal('adjustModal')" class="text-gray-500 hover:text-gray-900">Close</button>
         </div>
-    @endif
+        <form method="POST" action="{{ route('stock.adjust') }}" class="space-y-4">
+            @csrf
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Item</label>
+                <select name="item_name" required class="w-full rounded-lg border border-gray-200 px-3 py-2">
+                    @foreach($summaries as $item)
+                        <option value="{{ $item->item_name }}">{{ $item->item_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Quantity Change</label>
+                    <input type="number" step="0.001" name="quantity" required class="w-full rounded-lg border border-gray-200 px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Date</label>
+                    <input type="date" name="date" value="{{ now()->toDateString() }}" required class="w-full rounded-lg border border-gray-200 px-3 py-2">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Reason</label>
+                <input type="text" name="reason" required class="w-full rounded-lg border border-gray-200 px-3 py-2">
+            </div>
+            <button type="submit" class="w-full rounded-lg bg-emerald-600 px-4 py-2 font-bold text-white hover:bg-emerald-700">Save Adjustment</button>
+        </form>
+    </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function openModal(id) {
+        document.getElementById(id)?.classList.remove('hidden');
+        document.getElementById(id)?.classList.add('flex');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id)?.classList.add('hidden');
+        document.getElementById(id)?.classList.remove('flex');
+    }
+</script>
+@endpush

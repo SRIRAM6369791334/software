@@ -1,125 +1,81 @@
 @extends('layouts.app')
-@section('title', 'User Management')
+
+@section('title', 'Sovereign Console')
 
 @section('content')
-<div class="flex items-center justify-between mb-6">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-900">User Management</h1>
-        <p class="text-sm text-gray-500 mt-0.5">Manage users, roles, and permissions</p>
-    </div>
-    <button onclick="document.getElementById('create-role-modal').classList.remove('hidden')"
-            class="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-sm font-medium rounded-lg">+ Create Role</button>
-</div>
+<div class="relative min-h-screen">
+    <div class="glow-orb w-[600px] h-[600px] bg-violet-600/10 top-[-300px] left-[-300px]"></div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-    {{-- Users Table --}}
-    <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-100">
-            <h2 class="text-base font-semibold text-gray-900">Users & Roles</h2>
+    <div class="page-header relative z-10">
+        <div>
+            <h1 class="page-title gradient-text">Sovereign Console</h1>
+            <p class="page-subtitle">Identity orchestration and system-wide audit trails.</p>
         </div>
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-gray-100 bg-gray-50">
-                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase">User</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase">Roles</th>
-                    <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase">Assign Role</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
+        <button onclick="openModal('userModal')" class="bg-primary text-white px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all flex items-center gap-2">
+            <span>🛡️</span> Deploy Agent
+        </button>
+    </div>
+
+    <div class="bento-grid relative z-10">
+        
+        {{-- Agents Monitor --}}
+        <div class="bento-item col-span-1 md:col-span-2 lg:col-span-4 xl:col-span-4">
+            <h3 class="font-bold mb-6 flex items-center gap-2">
+                <span class="text-primary">👥</span> Active Agents
+            </h3>
+            
+            <div class="space-y-4">
                 @foreach($users as $user)
-                    <tr class="hover:bg-gray-50/50">
-                        <td class="px-5 py-3.5">
-                            <div class="font-medium text-gray-900">{{ $user->name }}</div>
-                            <div class="text-xs text-gray-400">{{ $user->email }}</div>
-                        </td>
-                        <td class="px-5 py-3.5">
-                            <div class="flex flex-wrap gap-1">
-                                @forelse($user->roles as $role)
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
-                                                 {{ $role->is_system ? 'bg-emerald-100 text-emerald-700' : 'bg-purple-100 text-purple-700' }}">
-                                        {{ $role->name }}
-                                        @if(!$role->is_system)
-                                            <form action="{{ route('admin.user-roles.destroy', $role->pivot->id ?? 0) }}" method="POST" class="inline"
-                                                  onsubmit="return confirm('Remove role?')">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="text-purple-400 hover:text-red-600 leading-none text-sm font-bold ml-0.5">×</button>
-                                            </form>
-                                        @endif
-                                    </span>
-                                @empty
-                                    <span class="text-xs text-gray-400">No roles</span>
-                                @endforelse
-                            </div>
-                        </td>
-                        <td class="px-5 py-3.5 text-center">
-                            <form action="{{ route('admin.users.assign-role') }}" method="POST" class="flex items-center gap-1 justify-center">
-                                @csrf
-                                <input type="hidden" name="user_id" value="{{ $user->id }}">
-                                <select name="role_id" required class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500">
-                                    <option value="">Role…</option>
-                                    @foreach($roles as $r)
-                                        <option value="{{ $r->id }}">{{ $r->name }}</option>
-                                    @endforeach
-                                </select>
-                                <button type="submit" class="text-xs px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition-colors">Assign</button>
-                            </form>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-
-    {{-- Role Management --}}
-    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden self-start">
-        <div class="px-5 py-4 border-b border-gray-100">
-            <h2 class="text-base font-semibold text-gray-900">All Roles</h2>
-        </div>
-        <ul class="divide-y divide-gray-50">
-            @foreach($roles as $role)
-                <li class="px-5 py-3 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-900">{{ $role->name }}</p>
-                        @if($role->description)
-                            <p class="text-xs text-gray-400">{{ $role->description }}</p>
-                        @endif
+                <div class="flex items-center gap-4 p-4 rounded-2xl bg-muted/20 border border-transparent hover:border-border transition-all">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-lg font-bold text-primary">
+                        {{ substr($user->name, 0, 1) }}
                     </div>
-                    @if(!$role->is_system)
-                        <form action="{{ route('admin.roles.destroy', $role) }}" method="POST"
-                              onsubmit="return confirm('Delete role {{ $role->name }}?')">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="text-gray-400 hover:text-red-500 transition-colors">🗑️</button>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                            <p class="font-bold">{{ $user->name }}</p>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase font-bold tracking-tighter">
+                                {{ $user->roles->first()?->name ?? 'No Role' }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-muted-foreground">{{ $user->email }} · @ {{ $user->username }}</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <form action="{{ route('admin.users.toggle-status', $user) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors {{ $user->is_active ? 'bg-success' : 'bg-muted' }}">
+                                <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform {{ $user->is_active ? 'translate-x-5' : 'translate-x-1' }}"></span>
+                            </button>
                         </form>
-                    @else
-                        <span class="text-xs text-emerald-600 font-medium bg-emerald-50 px-2 py-0.5 rounded-full">system</span>
-                    @endif
-                </li>
-            @endforeach
-        </ul>
-    </div>
-</div>
-
-{{-- Create Role Modal --}}
-<div id="create-role-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-gray-100">
-        <div class="flex items-center justify-between px-6 py-4 border-b">
-            <h2 class="text-base font-semibold text-gray-900">Create Custom Role</h2>
-            <button onclick="document.getElementById('create-role-modal').classList.add('hidden')" class="text-gray-400 text-xl">✕</button>
-        </div>
-        <form action="{{ route('admin.roles.store') }}" method="POST" class="p-6 space-y-4">
-            @csrf
-            <div><label class="block text-xs font-medium text-gray-700 mb-1">Role Name *</label>
-                <input type="text" name="name" required placeholder="e.g. accountant"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></div>
-            <div><label class="block text-xs font-medium text-gray-700 mb-1">Description</label>
-                <input type="text" name="description" placeholder="What does this role do?"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></div>
-            <div class="flex justify-end gap-3 pt-2">
-                <button type="button" onclick="document.getElementById('create-role-modal').classList.add('hidden')" class="px-4 py-2 text-sm text-gray-600">Cancel</button>
-                <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg">Create Role</button>
+                        <button class="p-2 hover:bg-muted rounded-xl transition-all">⚙️</button>
+                    </div>
+                </div>
+                @endforeach
             </div>
-        </form>
+        </div>
+
+        {{-- Activity Stream --}}
+        <div class="bento-item col-span-1 md:col-span-2 lg:col-span-2 xl:col-span-2">
+            <h3 class="font-bold mb-6 flex items-center gap-2">
+                <span class="text-primary">🧬</span> Neural Stream
+            </h3>
+            <div class="space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-px before:bg-border">
+                @foreach($activityLogs ?? [] as $log)
+                <div class="relative pl-10">
+                    <div class="absolute left-[13px] top-1.5 w-2 h-2 rounded-full bg-primary border-4 border-card shadow-[0_0_0_4px_rgba(var(--primary),0.1)]"></div>
+                    <p class="text-xs font-bold leading-none">{{ $log->action }}</p>
+                    <p class="text-[10px] text-muted-foreground mt-1">{{ $log->module }} · {{ $log->timestamp->diffForHumans() }}</p>
+                    <p class="text-[10px] text-primary/70 mt-0.5">by {{ $log->user->name ?? 'System' }}</p>
+                </div>
+                @endforeach
+                @if(empty($activityLogs))
+                <div class="text-center py-10 opacity-30">
+                    <span class="text-4xl block mb-2">📡</span>
+                    <p class="text-[10px] uppercase font-bold">No telemetry data</p>
+                </div>
+                @endif
+            </div>
+        </div>
+
     </div>
 </div>
 @endsection

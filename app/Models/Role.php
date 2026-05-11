@@ -2,21 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\Permission\Models\Role as SpatieRole;
 
-use Illuminate\Database\Eloquent\Model;
-
-class Role extends Model
+class Role extends SpatieRole
 {
-    use HasFactory;
-    protected $fillable = ['name', 'description', 'is_system', 'created_by'];
+    protected $fillable = ['name', 'guard_name', 'description', 'is_system', 'created_by'];
 
     protected $casts = ['is_system' => 'boolean'];
-
-    public function users(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
-    {
-        return $this->belongsToMany(User::class, 'user_roles')->withTimestamps();
-    }
 
     public function userRoles(): \Illuminate\Database\Eloquent\Relations\HasMany
     {

@@ -16,7 +16,7 @@ class StoreDealerRequest extends FormRequest
             'contact_person' => 'nullable|string|max:255',
             'gst_number'     => 'nullable|string|max:20',
             'location'       => 'nullable|string|max:255',
-            'route'          => 'nullable|string|max:100',
+            'route_id'       => 'nullable|exists:routes,id',
         ];
     }
 }

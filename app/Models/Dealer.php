@@ -3,18 +3,26 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Dealer extends Model
 {
-    use HasFactory;
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
-    protected $fillable = ['firm_name', 'gst_number', 'location', 'contact_person', 'phone', 'route', 'pending_amount'];
+    protected $fillable = [
+        'firm_name', 'gst_number', 'location', 'contact_person', 'phone', 'route', 'route_id', 'pending_amount'
+    ];
 
-    protected $casts = ['pending_amount' => 'decimal:2'];
+    protected $casts = [
+        'pending_amount' => 'decimal:2'
+    ];
+
+    // ── Relationships ──────────────────────────────────────────────────────────
+    public function routeRelation()
+    {
+        return $this->belongsTo(Route::class, 'route_id');
+    }
 
     public function payments(): \Illuminate\Database\Eloquent\Relations\HasMany
     {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Masters;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Masters\StoreCustomerRequest;
 use App\Models\Customer;
+use App\Models\Route;
 use App\Services\CustomerService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,13 +18,14 @@ class CustomerController extends Controller
     public function index(Request $request): View
     {
         $search    = $request->input('search');
-        $customers = $this->service->search($search, 15);
+        $customers = Customer::with('routeRelation')->search($search)->orderBy('name')->paginate(15);
         return view('masters.customers.index', compact('customers', 'search'));
     }
 
     public function create(): View
     {
-        return view('masters.customers.create');
+        $routes = Route::orderBy('route_name')->get();
+        return view('masters.customers.create', compact('routes'));
     }
 
     public function store(StoreCustomerRequest $request): RedirectResponse
@@ -51,7 +53,8 @@ class CustomerController extends Controller
 
     public function edit(Customer $customer): View
     {
-        return view('masters.customers.edit', compact('customer'));
+        $routes = Route::orderBy('route_name')->get();
+        return view('masters.customers.edit', compact('customer', 'routes'));
     }
 
     public function destroy(Customer $customer): RedirectResponse

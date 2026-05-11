@@ -13,7 +13,9 @@ class RoleFactory extends Factory
     {
         return [
             'name' => 'viewer',
-            'display_name' => 'Viewer',
+            'guard_name' => 'web',
+            'description' => 'Viewer',
+            'is_system' => true,
         ];
     }
 }

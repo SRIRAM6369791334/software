@@ -28,6 +28,16 @@
         ['label' => 'Weekly Billing',    'icon' => 'file-text',     'route' => 'billing.weekly.index',    'min' => 'manager'],
         ['label' => 'Daily Billing',     'icon' => 'calendar',      'route' => 'billing.daily.index',     'min' => 'manager'],
         
+        // Logistics
+        ['header' => 'Logistics'],
+        ['label' => 'Route Management',  'icon' => 'map',           'route' => 'routes.index',            'min' => 'delivery_staff'],
+        ['label' => 'Vehicle Fleet',     'icon' => 'truck',         'route' => 'routes.index',            'min' => 'delivery_staff'],
+        
+        // Inventory
+        ['header' => 'Inventory'],
+        ['label' => 'Stock Overview',    'icon' => 'package',       'route' => 'stock.index',             'min' => 'data_entry'],
+        ['label' => 'Bird Batches',      'icon' => 'bird',          'route' => 'stock.batches.index',      'min' => 'data_entry'],
+        
         // Finance
         ['header' => 'Finance & Payments'],
         ['label' => 'Customer Payments', 'icon' => 'credit-card',   'route' => 'payments.customers.index', 'min' => 'manager'],
@@ -112,6 +122,10 @@
                             @case('trending-up') 📈 @break
                             @case('bar-chart') 📊 @break
                             @case('settings') ⚙️ @break
+                            @case('map') 🗺️ @break
+                            @case('bird') 🐤 @break
+                            @case('activity') 🧬 @break
+                            @default ◦
                             @default ◦
                         @endswitch
                     </span>

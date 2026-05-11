@@ -26,34 +26,49 @@ class RolesAndPermissionsSeeder extends Seeder
             'view expenses', 'create expenses', 'edit expenses', 'delete expenses',
             'view emis', 'create emis', 'edit emis', 'delete emis',
             'view reports', 'view profit dashboard',
-            'manage users', 'manage roles'
+            'manage users', 'manage roles',
+            'view stock', 'create stock', 'edit stock', 'delete stock',
+            'view routes', 'create routes', 'edit routes', 'delete routes',
+            'view batches', 'create batches', 'edit batches', 'delete batches',
+            'mark delivery status'
         ];
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // Create Roles and Assign Permissions
+        // ROLE 1 - Admin: Full access
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $adminRole->givePermissionTo(Permission::all());
 
-        $managerRole = Role::firstOrCreate(['name' => 'manager']);
-        $managerRole->givePermissionTo([
+        // ROLE 2 - Accountant: Billing, Payment, Reports, Profit, Expenses. NO delete, NO user management.
+        $accountantRole = Role::firstOrCreate(['name' => 'accountant']);
+        $accountantRole->givePermissionTo([
+            'view customers', 'view dealers', 'view vendors',
+            'view bills', 'create bills', 'edit bills',
+            'view payments', 'create payments', 'edit payments',
+            'view expenses', 'create expenses', 'edit expenses',
+            'view reports', 'view profit dashboard',
+            'view stock'
+        ]);
+
+        // ROLE 3 - Delivery Staff: View Route, view Bills, mark delivery status. NO financial data.
+        $deliveryStaffRole = Role::firstOrCreate(['name' => 'delivery_staff']);
+        $deliveryStaffRole->givePermissionTo([
+            'view routes',
+            'view bills',
+            'mark delivery status'
+        ]);
+
+        // ROLE 4 - Data Entry Operator: Purchase Entry, Stock Entry, Master (Add/Edit only). NO delete.
+        $dataEntryRole = Role::firstOrCreate(['name' => 'data_entry']);
+        $dataEntryRole->givePermissionTo([
             'view customers', 'create customers', 'edit customers',
             'view dealers', 'create dealers', 'edit dealers',
             'view vendors', 'create vendors', 'edit vendors',
-            'view bills', 'create bills', 'edit bills',
             'view purchases', 'create purchases', 'edit purchases',
-            'view payments', 'create payments', 'edit payments',
-            'view expenses', 'create expenses', 'edit expenses',
-            'view emis', 'create emis', 'edit emis',
-            'view reports', 'view profit dashboard'
-        ]);
-
-        $staffRole = Role::firstOrCreate(['name' => 'staff']);
-        $staffRole->givePermissionTo([
-            'view bills', 'create bills',
-            'view customers'
+            'view stock', 'create stock', 'edit stock',
+            'view batches', 'create batches', 'edit batches'
         ]);
 
         // Create Default Admin User
@@ -61,9 +76,11 @@ class RolesAndPermissionsSeeder extends Seeder
             ['email' => 'admin@poultry.com'],
             [
                 'name' => 'Super Admin',
-                'password' => Hash::make('Admin@1234')
+                'username' => 'admin',
+                'password' => Hash::make('Admin@1234'),
+                'is_active' => true
             ]
         );
-        $admin->assignRole('admin');
+        $admin->syncRoles(['admin']);
     }
 }

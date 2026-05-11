@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-class StockMovement extends Model
+class StockTransaction extends Model
 {
+    protected $table = 'stock_transactions';
+
     protected $fillable = [
-        'type', 'item_name', 'quantity', 'unit', 'rate', 
+        'txn_type', 'item_name', 'quantity', 'unit', 'rate', 
         'reference_type', 'reference_id', 'notes', 'date', 'created_by'
     ];
 
