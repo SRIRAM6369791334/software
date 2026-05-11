@@ -48,13 +48,13 @@
                 <td style="width: 33.33%;">
                     <div class="summary-card">
                         <div class="summary-label">Total Tax Paid</div>
-                        <div class="summary-value">₹{{ number_format($data->sum('gst_amount'), 2) }}</div>
+                        <div class="summary-value">Rs {{ number_format($data->sum('gst_amount'), 2) }}</div>
                     </div>
                 </td>
                 <td style="width: 33.33%;">
                     <div class="summary-card" style="border-left: 4px solid #4f46e5;">
                         <div class="summary-label">Total Investment</div>
-                        <div class="summary-value" style="color: #4f46e5;">₹{{ number_format($data->sum('total_amount'), 2) }}</div>
+                        <div class="summary-value" style="color: #4f46e5;">Rs {{ number_format($data->sum('total_amount'), 2) }}</div>
                     </div>
                 </td>
             </tr>
@@ -87,7 +87,7 @@
                     <td class="text-right">
                         {{ number_format($row->quantity, 2) }} {{ $row->unit ?? 'units' }}
                     </td>
-                    <td class="text-right font-bold">₹{{ number_format($row->total_amount, 2) }}</td>
+                    <td class="text-right font-bold">Rs {{ number_format($row->total_amount, 2) }}</td>
                 </tr>
                 @endforeach
             </tbody>

@@ -36,7 +36,7 @@
             <h1 class="company-name">Flockwise BizTrack</h1>
             <div class="report-title">Profit & Loss Performance Statement</div>
             <div style="font-size: 8px; color: #999; margin-top: 5px;">
-                Period: {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} — {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
+                Period: {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
             </div>
         </div>
 
@@ -45,25 +45,25 @@
                 <td style="width: 25%;">
                     <div class="summary-card">
                         <div class="label">Total Revenue</div>
-                        <div class="value revenue">₹{{ number_format($summary['total_revenue'] ?? 0, 2) }}</div>
+                        <div class="value revenue">Rs {{ number_format($summary['total_revenue'] ?? 0, 2) }}</div>
                     </div>
                 </td>
                 <td style="width: 25%;">
                     <div class="summary-card">
                         <div class="label">Procurement Cost</div>
-                        <div class="value expense">₹{{ number_format($summary['total_purchases'] ?? 0, 2) }}</div>
+                        <div class="value expense">Rs {{ number_format($summary['total_purchases'] ?? 0, 2) }}</div>
                     </div>
                 </td>
                 <td style="width: 25%;">
                     <div class="summary-card">
                         <div class="label">Operating Expenses</div>
-                        <div class="value expense">₹{{ number_format($summary['total_expenses'] ?? 0, 2) }}</div>
+                        <div class="value expense">Rs {{ number_format($summary['total_expenses'] ?? 0, 2) }}</div>
                     </div>
                 </td>
                 <td style="width: 25%;">
                     <div class="summary-card" style="border-left: 4px solid #059669;">
                         <div class="label">Net Profit</div>
-                        <div class="value" style="color: #059669; font-size: 18px;">₹{{ number_format($summary['net_profit'] ?? 0, 2) }}</div>
+                        <div class="value" style="color: #059669; font-size: 18px;">Rs {{ number_format($summary['net_profit'] ?? 0, 2) }}</div>
                     </div>
                 </td>
             </tr>
@@ -84,12 +84,12 @@
                 @foreach($weeklyData as $week)
                 <tr>
                     <td class="font-bold">{{ $week['week'] }}</td>
-                    <td class="text-right revenue">₹{{ number_format($week['revenue'], 2) }}</td>
-                    <td class="text-right expense">₹{{ number_format($week['purchase'], 2) }}</td>
-                    <td class="text-right expense">₹{{ number_format($week['expenses'], 2) }}</td>
+                    <td class="text-right revenue">Rs {{ number_format($week['revenue'], 2) }}</td>
+                    <td class="text-right expense">Rs {{ number_format($week['purchase'], 2) }}</td>
+                    <td class="text-right expense">Rs {{ number_format($week['expenses'], 2) }}</td>
                     <td class="text-right font-bold">
                         <span class="{{ $week['profit'] >= 0 ? 'revenue' : 'expense' }}">
-                            ₹{{ number_format($week['profit'], 2) }}
+                            Rs {{ number_format($week['profit'], 2) }}
                         </span>
                     </td>
                 </tr>
@@ -106,11 +106,11 @@
                 </tr>
                 <tr>
                     <td class="label">Avg Rate Realized</td>
-                    <td class="text-right font-bold">₹{{ number_format($breakdown['avg_rate'] ?? 0, 2) }} / KG</td>
+                    <td class="text-right font-bold">Rs {{ number_format($breakdown['avg_rate'] ?? 0, 2) }} / KG</td>
                 </tr>
                 <tr>
                     <td class="label">Mortality Loss Valuation</td>
-                    <td class="text-right expense font-bold">₹{{ number_format($breakdown['mortality_valuation'] ?? 0, 2) }}</td>
+                    <td class="text-right expense font-bold">Rs {{ number_format($breakdown['mortality_valuation'] ?? 0, 2) }}</td>
                 </tr>
             </table>
         </div>

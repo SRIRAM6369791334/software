@@ -211,8 +211,8 @@
                         <div style="font-size: 9px; color: #999; margin-top: 3px;">POULTRY PRODUCT</div>
                     </td>
                     <td class="text-center">{{ number_format($item->quantity_kg, 2) }} {{ $item->unit }}</td>
-                    <td class="text-right">₹{{ number_format($item->rate_per_kg, 2) }}</td>
-                    <td class="text-right font-bold">₹{{ number_format($item->quantity_kg * $item->rate_per_kg, 2) }}</td>
+                    <td class="text-right">Rs {{ number_format($item->rate_per_kg, 2) }}</td>
+                    <td class="text-right font-bold">Rs {{ number_format($item->quantity_kg * $item->rate_per_kg, 2) }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -221,15 +221,15 @@
         <div class="total-box">
             <div class="total-row">
                 Subtotal
-                <span>₹{{ number_format($bill->amount, 2) }}</span>
+                <span>Rs {{ number_format($bill->amount, 2) }}</span>
             </div>
             <div class="total-row" style="margin-bottom: 20px;">
                 GST ({{ $bill->gst_percentage }}%)
-                <span>₹{{ number_format($bill->gst_amount, 2) }}</span>
+                <span>Rs {{ number_format($bill->gst_amount, 2) }}</span>
             </div>
             <div class="grand-total">
                 Total Net
-                <span>₹{{ number_format($bill->net_amount, 2) }}</span>
+                <span>Rs {{ number_format($bill->net_amount, 2) }}</span>
             </div>
         </div>
 

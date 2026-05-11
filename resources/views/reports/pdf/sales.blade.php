@@ -48,13 +48,13 @@
                 <td style="width: 33.33%;">
                     <div class="summary-card">
                         <div class="summary-label">Total Base Amount</div>
-                        <div class="summary-value">₹{{ number_format($data->sum('amount'), 2) }}</div>
+                        <div class="summary-value">Rs {{ number_format($data->sum('amount'), 2) }}</div>
                     </div>
                 </td>
                 <td style="width: 33.33%;">
                     <div class="summary-card" style="border-left: 4px solid #059669;">
                         <div class="summary-label">Total Net Revenue</div>
-                        <div class="summary-value" style="color: #059669;">₹{{ number_format($data->sum('net_amount'), 2) }}</div>
+                        <div class="summary-value" style="color: #059669;">Rs {{ number_format($data->sum('net_amount'), 2) }}</div>
                     </div>
                 </td>
             </tr>
@@ -87,9 +87,9 @@
                         </div>
                         <div style="font-size: 8px; color: #999; margin-top: 2px;">STATUS: {{ strtoupper($row->status) }}</div>
                     </td>
-                    <td class="text-right">₹{{ number_format($row->amount, 2) }}</td>
-                    <td class="text-right">₹{{ number_format($row->gst_amount, 2) }}</td>
-                    <td class="text-right font-bold">₹{{ number_format($row->net_amount, 2) }}</td>
+                    <td class="text-right">Rs {{ number_format($row->amount, 2) }}</td>
+                    <td class="text-right">Rs {{ number_format($row->gst_amount, 2) }}</td>
+                    <td class="text-right font-bold">Rs {{ number_format($row->net_amount, 2) }}</td>
                 </tr>
                 @endforeach
             </tbody>

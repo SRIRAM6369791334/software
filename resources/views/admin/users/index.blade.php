@@ -4,15 +4,15 @@
 
 @section('content')
 <div class="relative min-h-screen">
-    <div class="glow-orb w-[600px] h-[600px] bg-violet-600/10 top-[-300px] left-[-300px]"></div>
+    <div class="glow-orb w-[600px] h-[600px] bg-primary/10 top-[-300px] left-[-300px]"></div>
 
     <div class="page-header relative z-10">
         <div>
             <h1 class="page-title gradient-text">Sovereign Console</h1>
             <p class="page-subtitle">Identity orchestration and system-wide audit trails.</p>
         </div>
-        <button onclick="openModal('userModal')" class="bg-primary text-white px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all flex items-center gap-2">
-            <span>🛡️</span> Deploy Agent
+        <button onclick="openModal('userModal')" class="bg-gradient-to-r from-emerald-600 to-sky-500 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all flex items-center gap-2">
+            <span></span> Deploy Agent
         </button>
     </div>
 
@@ -21,7 +21,7 @@
         {{-- Agents Monitor --}}
         <div class="bento-item col-span-1 md:col-span-2 lg:col-span-4 xl:col-span-4">
             <h3 class="font-bold mb-6 flex items-center gap-2">
-                <span class="text-primary">👥</span> Active Agents
+                <span class="text-primary"></span> Active Agents
             </h3>
             
             <div class="space-y-4">
@@ -46,7 +46,7 @@
                                 <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform {{ $user->is_active ? 'translate-x-5' : 'translate-x-1' }}"></span>
                             </button>
                         </form>
-                        <button class="p-2 hover:bg-muted rounded-xl transition-all">⚙️</button>
+                        <button class="p-2 hover:bg-muted rounded-xl transition-all">⚙
                     </div>
                 </div>
                 @endforeach
@@ -56,7 +56,7 @@
         {{-- Activity Stream --}}
         <div class="bento-item col-span-1 md:col-span-2 lg:col-span-2 xl:col-span-2">
             <h3 class="font-bold mb-6 flex items-center gap-2">
-                <span class="text-primary">🧬</span> Neural Stream
+                <span class="text-primary"></span> Neural Stream
             </h3>
             <div class="space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-px before:bg-border">
                 @foreach($activityLogs ?? [] as $log)
@@ -69,7 +69,7 @@
                 @endforeach
                 @if(empty($activityLogs))
                 <div class="text-center py-10 opacity-30">
-                    <span class="text-4xl block mb-2">📡</span>
+                    <span class="text-4xl block mb-2"></span>
                     <p class="text-[10px] uppercase font-bold">No telemetry data</p>
                 </div>
                 @endif

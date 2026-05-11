@@ -177,7 +177,7 @@
                 <td style="padding-left: 50px;">
                     <div class="section-label">Billing Period</div>
                     <div style="font-size: 14px; font-weight: bold;">
-                        {{ $bill->period_start->format('d M') }} — {{ $bill->period_end->format('d M, Y') }}
+                        {{ $bill->period_start->format('d M') }} - {{ $bill->period_end->format('d M, Y') }}
                     </div>
                     <table style="font-size: 11px; margin-top: 10px;">
                         <tr>
@@ -209,8 +209,8 @@
                         <div style="font-size: 9px; color: #999; margin-top: 3px;">CONSOLIDATED WEEKLY PROCUREMENT</div>
                     </td>
                     <td class="text-center">{{ number_format($bill->quantity_kg, 2) }} KG</td>
-                    <td class="text-right">₹{{ number_format($bill->amount / max(1, $bill->quantity_kg), 2) }}</td>
-                    <td class="text-right font-bold">₹{{ number_format($bill->amount, 2) }}</td>
+                    <td class="text-right">Rs {{ number_format($bill->amount / max(1, $bill->quantity_kg), 2) }}</td>
+                    <td class="text-right font-bold">Rs {{ number_format($bill->amount, 2) }}</td>
                 </tr>
             </tbody>
         </table>
@@ -218,15 +218,15 @@
         <div class="total-box" style="background-color: #1e1b4b;">
             <div class="total-row">
                 Subtotal
-                <span>₹{{ number_format($bill->amount, 2) }}</span>
+                <span>Rs {{ number_format($bill->amount, 2) }}</span>
             </div>
             <div class="total-row" style="margin-bottom: 20px;">
                 GST ({{ $bill->gst_percentage }}%)
-                <span>₹{{ number_format($bill->gst_amount, 2) }}</span>
+                <span>Rs {{ number_format($bill->gst_amount, 2) }}</span>
             </div>
             <div class="grand-total" style="color: #c7d2fe;">
                 Total Net
-                <span>₹{{ number_format($bill->net_amount, 2) }}</span>
+                <span>Rs {{ number_format($bill->net_amount, 2) }}</span>
             </div>
         </div>
 
