@@ -3,23 +3,22 @@
 
 @section('content')
 <div class="w-full max-w-md">
-
-    {{-- Logo --}}
-    <div class="flex items-center justify-center gap-3 mb-8">
-        <div class="h-12 w-12 flex items-center justify-center rounded-2xl bg-emerald-600 shadow-lg text-2xl">🥚</div>
+    <div class="mb-8 flex items-center justify-center gap-3">
+        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-600 to-sky-500 text-white shadow-lg shadow-emerald-100">
+            <span class="material-symbols-rounded text-3xl">egg</span>
+        </div>
         <div>
-            <h1 class="text-xl font-bold text-gray-900">PoultryPro</h1>
-            <p class="text-xs text-gray-500">Management System</p>
+            <h1 class="text-xl font-black tracking-tight text-slate-950">PoultryPro</h1>
+            <p class="text-xs font-semibold text-slate-500">Management System</p>
         </div>
     </div>
 
-    {{-- Card --}}
-    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-        <h2 class="text-lg font-semibold text-gray-800 mb-1">Welcome back</h2>
-        <p class="text-sm text-gray-500 mb-6">Sign in to your account</p>
+    <div class="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 p-8 shadow-md shadow-slate-200/60">
+        <h2 class="mb-1 text-xl font-black tracking-tight text-slate-950">Welcome back</h2>
+        <p class="mb-6 text-sm font-medium text-slate-500">Sign in to your account</p>
 
         @if($errors->any())
-            <div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+            <div class="mb-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
                 {{ $errors->first() }}
             </div>
         @endif
@@ -28,37 +27,33 @@
             @csrf
 
             <div>
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label for="email" class="mb-1 block text-sm font-bold text-slate-700">Email</label>
                 <input type="email" id="email" name="email" required autofocus
                        value="{{ old('email') }}"
                        placeholder="you@example.com"
-                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm
-                              focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent
-                              @error('email') border-red-400 @enderror">
+                       class="w-full rounded-2xl border border-slate-200 bg-emerald-50 px-4 py-3 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 @error('email') border-red-400 @enderror">
             </div>
 
             <div>
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label for="password" class="mb-1 block text-sm font-bold text-slate-700">Password</label>
                 <input type="password" id="password" name="password" required
-                       placeholder="••••••••"
-                       class="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm
-                              focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                       placeholder="Password"
+                       class="w-full rounded-2xl border border-slate-200 bg-emerald-50 px-4 py-3 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10">
             </div>
 
             <div class="flex items-center gap-2">
                 <input type="checkbox" id="remember" name="remember" value="1"
-                       class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
-                <label for="remember" class="text-sm text-gray-600">Remember me</label>
+                       class="rounded border-slate-300 text-primary focus:ring-primary">
+                <label for="remember" class="text-sm font-medium text-slate-600">Remember me</label>
             </div>
 
             <button type="submit"
-                    class="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700
-                           text-white font-semibold text-sm transition-colors duration-200 shadow-sm">
+                    class="w-full rounded-2xl bg-primary px-4 py-3 text-sm font-black text-white shadow-lg shadow-emerald-100 transition-colors duration-200 hover:bg-emerald-700">
                 Sign In
             </button>
         </form>
     </div>
 
-    <p class="text-center text-xs text-gray-400 mt-6">PoultryPro v1.0 • Secure Access</p>
+    <p class="mt-6 text-center text-xs font-semibold text-slate-400">PoultryPro v1.0 - Secure Access</p>
 </div>
 @endsection

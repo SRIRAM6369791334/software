@@ -30,4 +30,22 @@ class User extends Authenticatable
     {
         return $this->hasMany(ActivityLog::class);
     }
+
+    /**
+     * Get the highest role level for the user.
+     */
+    public function getRoleLevel(): int
+    {
+        $hierarchy = [
+            'viewer' => 1,
+            'staff' => 2,
+            'delivery_staff' => 2,
+            'data_entry' => 2,
+            'accountant' => 3,
+            'manager' => 3,
+            'admin' => 4
+        ];
+
+        return $this->roles->map(fn($role) => $hierarchy[$role->name] ?? 0)->max() ?? 0;
+    }
 }

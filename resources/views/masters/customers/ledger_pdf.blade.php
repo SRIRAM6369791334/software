@@ -58,7 +58,7 @@
                 <td style="width: 40%; padding: 0 0 0 15px;">
                     <div class="info-box" style="border-left: 4px solid #059669;">
                         <div class="label">Current Balance</div>
-                        <div class="value" style="font-size: 20px; color: #059669;">₹{{ number_format($customer->balance, 2) }}</div>
+                        <div class="value" style="font-size: 20px; color: #059669;">Rs {{ number_format($customer->balance, 2) }}</div>
                         <div style="font-size: 8px; color: #999; margin-top: 5px;">OUTSTANDING RECEIVABLE</div>
                     </div>
                 </td>
@@ -86,18 +86,18 @@
                         <td>{{ \Carbon\Carbon::parse($row['date'])->format('d M Y') }}</td>
                         <td>{{ $row['desc'] }}</td>
                         <td class="text-right debit">
-                            {{ $row['debit'] > 0 ? '₹' . number_format($row['debit'], 2) : '—' }}
+                            {{ $row['debit'] > 0 ? 'Rs ' . number_format($row['debit'], 2) : '-' }}
                         </td>
                         <td class="text-right credit">
-                            {{ $row['credit'] > 0 ? '₹' . number_format($row['credit'], 2) : '—' }}
+                            {{ $row['credit'] > 0 ? 'Rs ' . number_format($row['credit'], 2) : '-' }}
                         </td>
-                        <td class="text-right font-bold">₹{{ number_format($runningBalance, 2) }}</td>
+                        <td class="text-right font-bold">Rs {{ number_format($runningBalance, 2) }}</td>
                     </tr>
                 @endforeach
                 <tr class="balance-row">
                     <td colspan="4" class="text-right font-bold" style="padding: 15px;">Final Outstanding Balance</td>
                     <td class="text-right font-bold" style="padding: 15px; font-size: 12px; color: #059669;">
-                        ₹{{ number_format($runningBalance, 2) }}
+                        Rs {{ number_format($runningBalance, 2) }}
                     </td>
                 </tr>
             </tbody>

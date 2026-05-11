@@ -58,7 +58,7 @@
                 <td style="width: 40%; padding: 0 0 0 15px;">
                     <div class="info-box" style="border-left: 4px solid #4f46e5;">
                         <div class="label">Pending Payable</div>
-                        <div class="value" style="font-size: 20px; color: #4f46e5;">₹{{ number_format($dealer->pending_amount, 2) }}</div>
+                        <div class="value" style="font-size: 20px; color: #4f46e5;">Rs {{ number_format($dealer->pending_amount, 2) }}</div>
                         <div style="font-size: 8px; color: #999; margin-top: 5px;">ACCOUNT PAYABLE LIABILITY</div>
                     </div>
                 </td>
@@ -86,18 +86,18 @@
                         <td>{{ \Carbon\Carbon::parse($row['date'])->format('d M Y') }}</td>
                         <td>{{ $row['desc'] }}</td>
                         <td class="text-right debit">
-                            {{ $row['debit'] > 0 ? '₹' . number_format($row['debit'], 2) : '—' }}
+                            {{ $row['debit'] > 0 ? 'Rs ' . number_format($row['debit'], 2) : '-' }}
                         </td>
                         <td class="text-right credit">
-                            {{ $row['credit'] > 0 ? '₹' . number_format($row['credit'], 2) : '—' }}
+                            {{ $row['credit'] > 0 ? 'Rs ' . number_format($row['credit'], 2) : '-' }}
                         </td>
-                        <td class="text-right font-bold">₹{{ number_format($runningLiability, 2) }}</td>
+                        <td class="text-right font-bold">Rs {{ number_format($runningLiability, 2) }}</td>
                     </tr>
                 @endforeach
                 <tr class="balance-row">
                     <td colspan="4" class="text-right font-bold" style="padding: 15px;">Final Outstanding Liability</td>
                     <td class="text-right font-bold" style="padding: 15px; font-size: 12px; color: #4f46e5;">
-                        ₹{{ number_format($runningLiability, 2) }}
+                        Rs {{ number_format($runningLiability, 2) }}
                     </td>
                 </tr>
             </tbody>

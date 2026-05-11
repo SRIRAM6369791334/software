@@ -55,8 +55,8 @@
             <tr>
                 <th>Item Description</th>
                 <th style="text-align: right;">Quantity</th>
-                <th style="text-align: right;">Rate (₹)</th>
-                <th style="text-align: right;">Total (₹)</th>
+                <th style="text-align: right;">Rate (Rs )</th>
+                <th style="text-align: right;">Total (Rs )</th>
             </tr>
         </thead>
         <tbody>
@@ -72,15 +72,15 @@
     <div class="total-section">
         <div class="total-row">
             <span>Subtotal</span>
-            <span>₹{{ number_format($purchase->quantity * $purchase->rate, 2) }}</span>
+            <span>Rs {{ number_format($purchase->quantity * $purchase->rate, 2) }}</span>
         </div>
         <div class="total-row">
             <span>GST ({{ $purchase->gst_percentage }}%)</span>
-            <span>₹{{ number_format($purchase->gst_amount, 2) }}</span>
+            <span>Rs {{ number_format($purchase->gst_amount, 2) }}</span>
         </div>
         <div class="total-row grand-total">
             <span>Total Amount</span>
-            <span>₹{{ number_format($purchase->total_amount, 2) }}</span>
+            <span>Rs {{ number_format($purchase->total_amount, 2) }}</span>
         </div>
     </div>
 

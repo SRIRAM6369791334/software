@@ -11,8 +11,8 @@
             <h1 class="page-title gradient-text">Batch Evolution</h1>
             <p class="page-subtitle">Monitoring lifecycle dynamics and biological stability.</p>
         </div>
-        <button onclick="openModal('batchModal')" class="bg-primary text-white px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all flex items-center gap-2">
-            <span>🥚</span> New Batch
+        <button onclick="openModal('batchModal')" class="bg-gradient-to-r from-emerald-600 to-sky-500 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all flex items-center gap-2">
+            <span></span> New Batch
         </button>
     </div>
 
@@ -59,7 +59,7 @@
         </div>
         @empty
         <div class="bento-item col-span-1 md:col-span-6 flex flex-col items-center justify-center py-20 text-center">
-            <span class="text-6xl mb-4 opacity-20">🐣</span>
+            <span class="text-6xl mb-4 opacity-20"></span>
             <h3 class="text-xl font-bold">Swarm Empty</h3>
             <p class="text-muted-foreground max-w-xs mt-2">No active biological batches detected in the system. Initialize a new batch to begin tracking.</p>
         </div>

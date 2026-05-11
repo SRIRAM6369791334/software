@@ -17,6 +17,13 @@ use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Masters\RouteController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\BirdBatchController;
+use App\Http\Controllers\Inventory\AnalyticsController as InventoryAnalyticsController;
+use App\Http\Controllers\Inventory\BatchController as InventoryBatchController;
+use App\Http\Controllers\Inventory\ConsumptionController as InventoryConsumptionController;
+use App\Http\Controllers\Inventory\ItemController as InventoryItemController;
+use App\Http\Controllers\Inventory\MortalityController as InventoryMortalityController;
+use App\Http\Controllers\Inventory\StockController as InventoryStockController;
+use App\Http\Controllers\Inventory\WarehouseController as InventoryWarehouseController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -46,6 +53,8 @@ Route::middleware(['auth'])->group(function () {
     */
     Route::middleware(['role:admin|data_entry'])->group(function () {
         // Masters
+        Route::get('masters/customers/{customer}/ledger-pdf', [CustomerController::class, 'downloadLedgerPdf'])->name('masters.customers.ledger-pdf');
+        Route::get('masters/dealers/{dealer}/ledger-pdf', [DealerController::class, 'downloadLedgerPdf'])->name('masters.dealers.ledger-pdf');
         Route::resource('masters/customers', CustomerController::class)->names('masters.customers');
         Route::resource('masters/dealers', DealerController::class)->names('masters.dealers');
         Route::resource('masters/vendors', VendorController::class)->names('masters.vendors');
@@ -64,6 +73,17 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/stock/batches', [BirdBatchController::class, 'index'])->name('stock.batches.index');
         Route::post('/stock/batches', [BirdBatchController::class, 'store'])->name('stock.batches.store');
         Route::post('/stock/batches/{batch}/mortality', [BirdBatchController::class, 'recordMortality'])->name('stock.batches.mortality');
+
+        Route::prefix('inventory')->name('inventory.')->group(function () {
+            Route::get('analytics', [InventoryAnalyticsController::class, 'index'])->name('analytics');
+            Route::get('stock', [InventoryStockController::class, 'index'])->name('stock.index');
+            Route::get('stock/movements', [InventoryStockController::class, 'movements'])->name('stock.movements');
+            Route::resource('warehouses', InventoryWarehouseController::class)->except(['show']);
+            Route::resource('items', InventoryItemController::class)->except(['show']);
+            Route::resource('batches', InventoryBatchController::class);
+            Route::resource('consumptions', InventoryConsumptionController::class)->only(['index', 'create', 'store', 'destroy']);
+            Route::resource('mortalities', InventoryMortalityController::class)->only(['index', 'create', 'store', 'destroy']);
+        });
     });
 
     /*
@@ -74,6 +94,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:admin|accountant'])->group(function () {
         // Billing
         Route::prefix('billing')->name('billing.')->group(function () {
+            Route::get('weekly/bulk', [WeeklyBillingController::class, 'bulk'])->name('weekly.bulk');
             Route::resource('weekly', WeeklyBillingController::class);
             Route::post('weekly/bulk', [WeeklyBillingController::class, 'bulkStore'])->name('weekly.bulkStore');
             Route::get('weekly/{bill}/whatsapp', [WeeklyBillingController::class, 'whatsapp'])->name('weekly.whatsapp');
@@ -91,12 +112,43 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('dealers', DealerPaymentController::class);
         });
 
-        // Expenses & Profit
+        // Expenses & EMIs
+        Route::get('expenses/emis', [ExpenseController::class, 'emisIndex'])->name('expenses.emis.index');
+        Route::get('expenses/emis/create', [ExpenseController::class, 'emisCreate'])->name('expenses.emis.create');
+        Route::get('expenses/emis/alerts', [ExpenseController::class, 'emisAlerts'])->name('expenses.emis.alerts');
+        Route::post('expenses/emis', [ExpenseController::class, 'storeEmi'])->name('expenses.emis.store');
+        Route::delete('expenses/emis/{emi}', [ExpenseController::class, 'destroyEmi'])->name('expenses.emis.destroy');
+        Route::get('expenses/categories', [ExpenseController::class, 'categories'])->name('expenses.categories');
+        Route::get('expenses/export/csv', [ExpenseController::class, 'export'])->name('expenses.export');
         Route::resource('expenses', ExpenseController::class);
-        Route::get('/profit', [ProfitController::class, 'index'])->name('profit.index');
+
+        // Profit Analysis
+        Route::prefix('profit')->name('profit.')->group(function () {
+            Route::get('/', [ProfitController::class, 'index'])->name('index');
+            Route::get('/monthly', [ProfitController::class, 'monthly'])->name('monthly');
+            Route::get('/expense-vs-income', [ProfitController::class, 'expenseVsIncome'])->name('expense-vs-income');
+            Route::get('/batch', [ProfitController::class, 'batch'])->name('batch');
+            Route::get('/order-wise', [ProfitController::class, 'orderWise'])->name('order-wise');
+            Route::get('/comparison', [ProfitController::class, 'comparison'])->name('comparison');
+            Route::get('/export/csv', [ProfitController::class, 'export'])->name('export.csv');
+            Route::get('/export/pdf', [ProfitController::class, 'exportPdf'])->name('export.pdf');
+        });
 
         // Reports
-        Route::get('/reports', [ReportController::class, 'index'])->name('reports');
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/', [ReportController::class, 'index'])->name('index');
+            Route::get('/sales/daily', [ReportController::class, 'salesDaily'])->name('sales.daily');
+            Route::get('/sales/weekly', [ReportController::class, 'salesWeekly'])->name('sales.weekly');
+            Route::get('/sales/monthly', [ReportController::class, 'salesMonthly'])->name('sales.monthly');
+            Route::get('/purchases/daily', [ReportController::class, 'purchasesDaily'])->name('purchases.daily');
+            Route::get('/purchases/weekly', [ReportController::class, 'purchasesWeekly'])->name('purchases.weekly');
+            Route::get('/purchases/monthly', [ReportController::class, 'purchasesMonthly'])->name('purchases.monthly');
+            Route::get('/purchases/vendor-analytics', [ReportController::class, 'vendorAnalytics'])->name('purchases.vendor-analytics');
+            Route::get('/customers/ranking', [ReportController::class, 'customerRanking'])->name('customers.ranking');
+            Route::get('/purchases/analytics', [ReportController::class, 'purchaseAnalytics'])->name('purchases.analytics');
+            Route::get('/sales/pdf', [ReportController::class, 'exportSalesPDF'])->name('sales.pdf');
+            Route::get('/purchases/pdf', [ReportController::class, 'exportPurchasesPDF'])->name('purchases.pdf');
+        });
     });
 
     /*
