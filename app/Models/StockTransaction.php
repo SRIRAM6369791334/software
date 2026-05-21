@@ -10,7 +10,7 @@ class StockTransaction extends Model
     protected $table = 'stock_transactions';
 
     protected $fillable = [
-        'txn_type', 'item_name', 'quantity', 'unit', 'rate', 
+        'type', 'txn_type', 'item_name', 'quantity', 'unit', 'rate', 
         'reference_type', 'reference_id', 'notes', 'date', 'created_by'
     ];
 

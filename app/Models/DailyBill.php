@@ -44,4 +44,37 @@ class DailyBill extends Model
     {
         return 'INV-D-' . str_pad($this->id, 4, '0', STR_PAD_LEFT);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Backward Compatibility Accessors
+    |--------------------------------------------------------------------------
+    */
+
+    public function getItemsDescriptionAttribute(): ?string
+    {
+        if (array_key_exists('items_description', $this->attributes)) {
+            return $this->attributes['items_description'];
+        }
+        $firstItem = $this->items()->first();
+        return $firstItem ? $firstItem->item_name : null;
+    }
+
+    public function getQuantityKgAttribute(): float
+    {
+        if (array_key_exists('quantity_kg', $this->attributes)) {
+            return (float) $this->attributes['quantity_kg'];
+        }
+        return (float) $this->items()->sum('quantity_kg');
+    }
+
+    public function getRatePerKgAttribute(): float
+    {
+        if (array_key_exists('rate_per_kg', $this->attributes)) {
+            return (float) $this->attributes['rate_per_kg'];
+        }
+        $firstItem = $this->items()->first();
+        return $firstItem ? (float) $firstItem->rate_per_kg : 0.0;
+    }
 }
+

@@ -42,4 +42,46 @@ class Purchase extends Model
               });
         });
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Backward Compatibility Accessors
+    |--------------------------------------------------------------------------
+    */
+
+    public function getQuantityAttribute(): float
+    {
+        if (array_key_exists('quantity', $this->attributes)) {
+            return (float) $this->attributes['quantity'];
+        }
+        return (float) $this->items()->sum('quantity');
+    }
+
+    public function getUnitAttribute(): ?string
+    {
+        if (array_key_exists('unit', $this->attributes)) {
+            return $this->attributes['unit'];
+        }
+        $firstItem = $this->items()->first();
+        return $firstItem ? $firstItem->unit : null;
+    }
+
+    public function getRateAttribute(): float
+    {
+        if (array_key_exists('rate', $this->attributes)) {
+            return (float) $this->attributes['rate'];
+        }
+        $firstItem = $this->items()->first();
+        return $firstItem ? (float) $firstItem->rate : 0.0;
+    }
+
+    public function getItemAttribute(): ?string
+    {
+        if (array_key_exists('item', $this->attributes)) {
+            return $this->attributes['item'];
+        }
+        $firstItem = $this->items()->first();
+        return $firstItem ? $firstItem->item_name : null;
+    }
 }
+

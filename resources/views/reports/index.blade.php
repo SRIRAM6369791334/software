@@ -10,13 +10,13 @@
 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
     @php
         $tiles = [
-            ['label'=>'Total Customers',  'value'=>$summary['total_customers'],   'icon'=>'
-            ['label'=>'Total Dealers',    'value'=>$summary['total_dealers'],     'icon'=>'
-            ['label'=>'Revenue (Month)',  'value'=>'Rs '.number_format($summary['total_revenue_month'],0,'.', ','),   'icon'=>'
-            ['label'=>'Purchases (Month)','value'=>'Rs '.number_format($summary['total_purchases_month'],0,'.', ','),'icon'=>'
-            ['label'=>'Expenses (Month)', 'value'=>'Rs '.number_format($summary['total_expenses_month'],0,'.', ','), 'icon'=>'
-            ['label'=>'Pending Receivables','value'=>'Rs '.number_format($summary['pending_receivables'],0,'.', ','),'icon'=>'
-            ['label'=>'Pending Payables',  'value'=>'Rs '.number_format($summary['pending_payables'],0,'.', ','),   'icon'=>'
+            ['label'=>'Total Customers',  'value'=>$summary['total_customers'],   'icon'=>'👥', 'color' => 'sky'],
+            ['label'=>'Total Dealers',    'value'=>$summary['total_dealers'],     'icon'=>'🏢', 'color' => 'amber'],
+            ['label'=>'Revenue (Month)',  'value'=>'Rs '.number_format($summary['total_revenue_month'],0,'.', ','),   'icon'=>'📈', 'color' => 'emerald'],
+            ['label'=>'Purchases (Month)','value'=>'Rs '.number_format($summary['total_purchases_month'],0,'.', ','),'icon'=>'🛒', 'color' => 'rose'],
+            ['label'=>'Expenses (Month)', 'value'=>'Rs '.number_format($summary['total_expenses_month'],0,'.', ','), 'icon'=>'💸', 'color' => 'orange'],
+            ['label'=>'Pending Receivables','value'=>'Rs '.number_format($summary['pending_receivables'],0,'.', ','),'icon'=>'⏳', 'color' => 'indigo'],
+            ['label'=>'Pending Payables',  'value'=>'Rs '.number_format($summary['pending_payables'],0,'.', ','),   'icon'=>'💳', 'color' => 'violet'],
         ];
     @endphp
     @foreach($tiles as $tile)

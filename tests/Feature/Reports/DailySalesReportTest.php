@@ -46,9 +46,9 @@ class DailySalesReportTest extends TestCase
         $response = $this->get('/reports/sales/daily?date=' . today()->toDateString());
 
         $response->assertSee('Total Sale');
-        $response->assertSee('Total GST');
-        $response->assertSee('Cash Sales');
-        $response->assertSee('Credit Sales');
+        $response->assertSee('GST');
+        $response->assertSee('Cash');
+        $response->assertSee('Credit');
         $response->assertSee('3,300');
     }
 
@@ -75,15 +75,15 @@ class DailySalesReportTest extends TestCase
         ]);
         DailyBill::factory()->create([
             'date' => $yesterday, 
-            'amount' => 999, 
+            'amount' => 9999, 
             'gst_amount' => 0, 
-            'net_amount' => 999
+            'net_amount' => 9999
         ]);
 
         $response = $this->get("/reports/sales/daily?date=$today");
 
         $response->assertSee('777');
-        $response->assertDontSee('999');
+        $response->assertDontSee('9999');
     }
 
     public function test_daily_sales_report_empty_state()

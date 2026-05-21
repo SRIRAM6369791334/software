@@ -39,6 +39,7 @@ return new class extends Migration
 
         // Now remove item specific columns from purchases table
         Schema::table('purchases', function (Blueprint $table) {
+            $table->dropIndex(['item']);
             $table->dropColumn(['item', 'quantity', 'unit', 'rate', 'gst_amount']);
         });
     }
@@ -51,6 +52,7 @@ return new class extends Migration
             $table->string('unit')->nullable();
             $table->decimal('rate', 10, 2)->nullable();
             $table->decimal('gst_amount', 10, 2)->nullable();
+            $table->index('item');
         });
 
         // Restore data if possible (only for the first item of each purchase)

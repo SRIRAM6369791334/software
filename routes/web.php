@@ -108,6 +108,10 @@ Route::middleware(['auth'])->group(function () {
 
         // Payments
         Route::prefix('payments')->name('payments.')->group(function () {
+            Route::get('customers/export', [CustomerPaymentController::class, 'export'])->name('customers.export');
+            Route::get('dealers/export', [DealerPaymentController::class, 'export'])->name('dealers.export');
+            Route::get('dealers/{dealer}/ledger', [DealerPaymentController::class, 'ledger'])->name('dealers.ledger');
+
             Route::resource('customers', CustomerPaymentController::class);
             Route::resource('dealers', DealerPaymentController::class);
         });
@@ -130,8 +134,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/batch', [ProfitController::class, 'batch'])->name('batch');
             Route::get('/order-wise', [ProfitController::class, 'orderWise'])->name('order-wise');
             Route::get('/comparison', [ProfitController::class, 'comparison'])->name('comparison');
-            Route::get('/export/csv', [ProfitController::class, 'export'])->name('export.csv');
-            Route::get('/export/pdf', [ProfitController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('/export/csv', [ProfitController::class, 'export'])->name('export');
+            Route::get('/export/pdf', [ProfitController::class, 'exportPdf'])->name('export-pdf');
         });
 
         // Reports
@@ -146,8 +150,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/purchases/vendor-analytics', [ReportController::class, 'vendorAnalytics'])->name('purchases.vendor-analytics');
             Route::get('/customers/ranking', [ReportController::class, 'customerRanking'])->name('customers.ranking');
             Route::get('/purchases/analytics', [ReportController::class, 'purchaseAnalytics'])->name('purchases.analytics');
-            Route::get('/sales/pdf', [ReportController::class, 'exportSalesPDF'])->name('sales.pdf');
-            Route::get('/purchases/pdf', [ReportController::class, 'exportPurchasesPDF'])->name('purchases.pdf');
+            Route::get('/sales/export-pdf', [ReportController::class, 'exportSalesPDF'])->name('sales.export-pdf');
+            Route::get('/purchases/export-pdf', [ReportController::class, 'exportPurchasesPDF'])->name('purchases.export-pdf');
         });
     });
 

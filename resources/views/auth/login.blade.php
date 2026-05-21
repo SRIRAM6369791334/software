@@ -27,11 +27,11 @@
             @csrf
 
             <div>
-                <label for="email" class="mb-1 block text-sm font-bold text-slate-700">Email</label>
-                <input type="email" id="email" name="email" required autofocus
-                       value="{{ old('email') }}"
+                <label for="login" class="mb-1 block text-sm font-bold text-slate-700">Email or Username</label>
+                <input type="text" id="login" name="login" required autofocus
+                       value="{{ old('login') }}"
                        placeholder="you@example.com"
-                       class="w-full rounded-2xl border border-slate-200 bg-emerald-50 px-4 py-3 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 @error('email') border-red-400 @enderror">
+                       class="w-full rounded-2xl border border-slate-200 bg-emerald-50 px-4 py-3 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 @error('login') border-red-400 @enderror">
             </div>
 
             <div>

@@ -59,6 +59,7 @@ class ConsumptionController extends Controller
             // 1. Check current stock before allowing consumption
             $currentStock = $this->stockService->getCurrentStock($validated['item_id']);
             if ($currentStock < $validated['quantity']) {
+                DB::rollBack();
                 return back()->with('error', "Insufficient stock! Current stock for {$item->name} is {$currentStock} {$item->base_unit}.")->withInput();
             }
 
@@ -101,10 +102,8 @@ class ConsumptionController extends Controller
         try {
             DB::beginTransaction();
             
-            // Delete associated stock ledger entry
-            \App\Models\StockLedger::where('source_type', 'Consumption')
-                ->where('source_id', $consumption->id)
-                ->delete();
+            // Revert stock transaction and ledger entry via StockService
+            $this->stockService->revertMovement(Consumption::class, $consumption->id);
                 
             $consumption->delete();
             

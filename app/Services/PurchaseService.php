@@ -37,9 +37,6 @@ class PurchaseService
                 }
 
                 $purchaseItem = $purchase->items()->create([
-                    'item_id'      => $itemData['item_id'] ?? null,
-                    'batch_id'     => $itemData['batch_id'] ?? null,
-                    'warehouse_id' => $itemData['warehouse_id'] ?? null,
                     'item_name'    => $itemName,
                     'quantity'     => $itemData['qty'],
                     'unit'         => $itemData['unit'] ?? 'kg',
@@ -49,11 +46,12 @@ class PurchaseService
                 ]);
 
                 // Record stock movement if item_id is linked
-                if ($purchaseItem->item_id) {
+                $itemId = $itemData['item_id'] ?? null;
+                if ($itemId) {
                     app(StockService::class)->recordIn([
-                        'item_id'          => $purchaseItem->item_id,
-                        'batch_id'         => $purchaseItem->batch_id,
-                        'warehouse_id'     => $purchaseItem->warehouse_id,
+                        'item_id'          => $itemId,
+                        'batch_id'         => $itemData['batch_id'] ?? null,
+                        'warehouse_id'     => $itemData['warehouse_id'] ?? null,
                         'quantity'         => $purchaseItem->quantity,
                         'unit'             => $purchaseItem->unit,
                         'source_type'      => 'Purchase',
@@ -79,11 +77,11 @@ class PurchaseService
             $items = $data['items'] ?? [];
             unset($data['items']);
             
-            // Important: On update, we need to handle existing stock ledger entries
-            // For simplicity in this ERP, we'll clear and recreate (caution in production)
-            DB::table('stock_ledgers')->where('source_type', 'Purchase')
-                ->whereIn('source_id', $purchase->items->pluck('id'))
-                ->delete();
+            // Important: On update, we need to handle existing stock ledger and transaction entries
+            $stockService = app(StockService::class);
+            foreach ($purchase->items as $item) {
+                $stockService->revertMovement(\App\Models\PurchaseItem::class, $item->id);
+            }
                 
             $purchase->items()->delete();
             $purchase->update($data);
@@ -96,9 +94,6 @@ class PurchaseService
                 }
 
                 $purchaseItem = $purchase->items()->create([
-                    'item_id'      => $itemData['item_id'] ?? null,
-                    'batch_id'     => $itemData['batch_id'] ?? null,
-                    'warehouse_id' => $itemData['warehouse_id'] ?? null,
                     'item_name'    => $itemName,
                     'quantity'     => $itemData['qty'],
                     'unit'         => $itemData['unit'] ?? 'kg',
@@ -107,11 +102,12 @@ class PurchaseService
                     'total_amount' => $itemData['total_amount'] ?? ($itemData['qty'] * $itemData['rate']),
                 ]);
 
-                if ($purchaseItem->item_id) {
-                    app(StockService::class)->recordIn([
-                        'item_id'          => $purchaseItem->item_id,
-                        'batch_id'         => $purchaseItem->batch_id,
-                        'warehouse_id'     => $purchaseItem->warehouse_id,
+                $itemId = $itemData['item_id'] ?? null;
+                if ($itemId) {
+                    $stockService->recordIn([
+                        'item_id'          => $itemId,
+                        'batch_id'         => $itemData['batch_id'] ?? null,
+                        'warehouse_id'     => $itemData['warehouse_id'] ?? null,
                         'quantity'         => $purchaseItem->quantity,
                         'unit'             => $purchaseItem->unit,
                         'source_type'      => 'Purchase',
@@ -129,9 +125,10 @@ class PurchaseService
     public function delete(Purchase $purchase): bool
     {
         return DB::transaction(function () use ($purchase) {
-            DB::table('stock_ledgers')->where('source_type', 'Purchase')
-                ->whereIn('source_id', $purchase->items->pluck('id'))
-                ->delete();
+            $stockService = app(StockService::class);
+            foreach ($purchase->items as $item) {
+                $stockService->revertMovement(\App\Models\PurchaseItem::class, $item->id);
+            }
             return $purchase->delete();
         });
     }
