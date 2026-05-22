@@ -21,17 +21,12 @@
         ['label' => 'Dealers', 'icon' => 'local_shipping', 'route' => 'masters.dealers.index', 'min' => 'staff'],
         ['label' => 'Vendors', 'icon' => 'inventory_2', 'route' => 'masters.vendors.index', 'min' => 'staff'],
         ['header' => 'Operations'],
-        ['label' => 'Stock Overview', 'icon' => 'inventory', 'route' => 'stock.index', 'min' => 'data_entry'],
-        ['label' => 'Bird Batches', 'icon' => 'egg_alt', 'route' => 'stock.batches.index', 'min' => 'data_entry'],
         ['label' => 'Purchase List', 'icon' => 'shopping_cart', 'route' => 'purchases.entry', 'min' => 'staff'],
         ['label' => 'Purchase Invoices', 'icon' => 'receipt_long', 'route' => 'purchases.invoices', 'min' => 'staff'],
-        ['label' => 'Weekly Billing', 'icon' => 'description', 'route' => 'billing.weekly.index', 'min' => 'manager'],
-        ['label' => 'Daily Billing', 'icon' => 'event_note', 'route' => 'billing.daily.index', 'min' => 'manager'],
+        ['label' => 'Dealer billing', 'icon' => 'description', 'route' => 'billing.weekly.index', 'min' => 'manager'],
+        ['label' => 'Customer Billing', 'icon' => 'event_note', 'route' => 'billing.daily.index', 'min' => 'manager'],
 
-        ['header' => 'Logistics'],
-        ['label' => 'Route Management', 'icon' => 'map', 'route' => 'routes.index', 'min' => 'delivery_staff'],
-        ['label' => 'Vehicle Fleet', 'icon' => 'local_shipping', 'route' => 'routes.index', 'min' => 'delivery_staff'],
-
+        
         ['header' => 'Finance & Payments'],
         ['label' => 'Customer Payments', 'icon' => 'credit_card', 'route' => 'payments.customers.index', 'min' => 'manager'],
         ['label' => 'Dealer Payments', 'icon' => 'account_balance', 'route' => 'payments.dealers.index', 'min' => 'manager'],
@@ -48,8 +43,7 @@
         ['label' => 'Daily Purchase', 'icon' => 'calendar_today', 'route' => 'reports.purchases.daily', 'min' => 'viewer'],
         ['label' => 'Weekly Purchase', 'icon' => 'date_range', 'route' => 'reports.purchases.weekly', 'min' => 'viewer'],
         ['label' => 'Monthly Purchase', 'icon' => 'bar_chart', 'route' => 'reports.purchases.monthly', 'min' => 'viewer'],
-        ['label' => 'Vendor Analytics', 'icon' => 'trending_up', 'route' => 'reports.purchases.vendor-analytics', 'min' => 'viewer'],
-
+        
         ['header' => 'Performance'],
         ['label' => 'Profit & Loss', 'icon' => 'show_chart', 'route' => 'profit.index', 'min' => 'manager'],
 

@@ -81,10 +81,11 @@ document.addEventListener('click', (event) => {
 
     const url = new URL(link.href, window.location.href);
     const isModified = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
-    const isDownload = link.hasAttribute('download');
+    const isDownload = link.hasAttribute('download') || link.classList.contains('download') || link.getAttribute('title')?.toLowerCase().includes('download');
     const target = link.getAttribute('target');
+    const isPdfOrExport = url.pathname.includes('pdf') || url.pathname.includes('export') || url.pathname.includes('download') || url.searchParams.get('export') === 'pdf';
 
-    if (isModified || isDownload || target === '_blank' || url.origin !== window.location.origin || url.hash) {
+    if (isModified || isDownload || isPdfOrExport || target === '_blank' || url.origin !== window.location.origin || url.hash) {
         return;
     }
 
@@ -93,6 +94,42 @@ document.addEventListener('click', (event) => {
 
 document.addEventListener('submit', (event) => {
     const form = event.target;
+
+    // Intercept native confirm() handlers and replace with SweetAlert2
+    const onsubmitAttr = form.getAttribute('onsubmit');
+    if (onsubmitAttr && onsubmitAttr.includes('confirm(')) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        // Extract the message from confirm('...')
+        let message = "Are you sure you want to perform this action?";
+        const match = onsubmitAttr.match(/confirm\(['"](.*?)['"]\)/);
+        if (match && match[1]) {
+            message = match[1];
+        }
+
+        // Show SweetAlert2
+        Swal.fire({
+            title: 'Confirmation',
+            text: message,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#10b981', // emerald-600
+            cancelButtonColor: '#ef4444',  // red-500
+            confirmButtonText: 'Yes, proceed',
+            cancelButtonText: 'Cancel',
+            background: document.documentElement.dataset.theme === 'dark' ? '#1e293b' : '#ffffff',
+            color: document.documentElement.dataset.theme === 'dark' ? '#f8fafc' : '#0f172a',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Temporarily strip the attribute to avoid re-triggering and submit form
+                form.removeAttribute('onsubmit');
+                form.submit();
+            }
+        });
+        return;
+    }
+
     if (form?.dataset?.skipSkeleton === 'true') return;
     showSkeleton();
-});
+}, true);

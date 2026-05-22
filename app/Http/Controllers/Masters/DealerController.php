@@ -59,7 +59,7 @@ class DealerController extends Controller
 
     public function purchaseHistory(Dealer $dealer): View
     {
-        $purchases = $dealer->purchases()->latest()->paginate(15);
+        $purchases = $dealer->purchases()->with('items')->latest()->paginate(15);
         return view('masters.dealers.purchase-history', compact('dealer', 'purchases'));
     }
 

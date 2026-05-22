@@ -1,27 +1,51 @@
 @if(session('success'))
-    <div class="mb-5 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 shadow-sm">
-        <span class="material-symbols-rounded text-xl">check_circle</span>
-        {{ session('success') }}
-    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: "{{ session('success') }}",
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                background: document.documentElement.dataset.theme === 'dark' ? '#1e293b' : '#ffffff',
+                color: document.documentElement.dataset.theme === 'dark' ? '#f8fafc' : '#0f172a',
+            });
+        });
+    </script>
 @endif
 
 @if(session('error'))
-    <div class="mb-5 flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 shadow-sm">
-        <span class="material-symbols-rounded text-xl">error</span>
-        {{ session('error') }}
-    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: "{{ session('error') }}",
+                confirmButtonColor: '#ef4444',
+                background: document.documentElement.dataset.theme === 'dark' ? '#1e293b' : '#ffffff',
+                color: document.documentElement.dataset.theme === 'dark' ? '#f8fafc' : '#0f172a',
+            });
+        });
+    </script>
 @endif
 
 @if($errors->any())
-    <div class="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm">
-        <p class="mb-1 flex items-center gap-2 font-bold">
-            <span class="material-symbols-rounded text-xl">warning</span>
-            Please fix the following errors:
-        </p>
-        <ul class="list-inside list-disc space-y-0.5">
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Failed',
+                html: `<ul style="text-align: left; list-style-type: disc; padding-left: 20px;">
+                    @foreach($errors->all() as $error)
+                        <li>{{ addslashes($error) }}</li>
+                    @endforeach
+                </ul>`,
+                confirmButtonColor: '#ef4444',
+                background: document.documentElement.dataset.theme === 'dark' ? '#1e293b' : '#ffffff',
+                color: document.documentElement.dataset.theme === 'dark' ? '#f8fafc' : '#0f172a',
+            });
+        });
+    </script>
 @endif

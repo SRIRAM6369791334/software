@@ -25,6 +25,15 @@ class PurchaseService
             $items = $data['items'] ?? [];
             unset($data['items']);
             
+            // Calculate total_amount and gst_amount
+            $subtotal = 0;
+            foreach ($items as $itemData) {
+                $subtotal += ($itemData['qty'] ?? 0) * ($itemData['rate'] ?? 0);
+            }
+            $gstPercent = $data['gst_percentage'] ?? 0;
+            $data['gst_amount'] = $subtotal * ($gstPercent / 100);
+            $data['total_amount'] = $subtotal + $data['gst_amount'];
+            
             // Grand totals are handled by client-side or calculated here
             $purchase = Purchase::create($data);
             
@@ -62,6 +71,14 @@ class PurchaseService
                 }
             }
             
+            // Record direct expense for this purchase
+            \App\Models\Expense::create([
+                'date'        => $purchase->date,
+                'category'    => 'Purchase',
+                'description' => "Purchase from {$purchase->vendor_name} (Inv: " . ($purchase->invoice_no ?: 'N/A') . ") [Ref: PR-{$purchase->id}]",
+                'amount'      => $purchase->total_amount,
+            ]);
+            
             return $purchase;
         });
     }
@@ -77,6 +94,15 @@ class PurchaseService
             $items = $data['items'] ?? [];
             unset($data['items']);
             
+            // Calculate total_amount and gst_amount
+            $subtotal = 0;
+            foreach ($items as $itemData) {
+                $subtotal += ($itemData['qty'] ?? 0) * ($itemData['rate'] ?? 0);
+            }
+            $gstPercent = $data['gst_percentage'] ?? 0;
+            $data['gst_amount'] = $subtotal * ($gstPercent / 100);
+            $data['total_amount'] = $subtotal + $data['gst_amount'];
+
             // Important: On update, we need to handle existing stock ledger and transaction entries
             $stockService = app(StockService::class);
             foreach ($purchase->items as $item) {
@@ -118,6 +144,15 @@ class PurchaseService
                 }
             }
             
+            // Revert and record updated expense entry
+            \App\Models\Expense::where('description', 'like', "%[Ref: PR-{$purchase->id}]%")->delete();
+            \App\Models\Expense::create([
+                'date'        => $purchase->date,
+                'category'    => 'Purchase',
+                'description' => "Purchase from {$purchase->vendor_name} (Inv: " . ($purchase->invoice_no ?: 'N/A') . ") [Ref: PR-{$purchase->id}]",
+                'amount'      => $purchase->total_amount,
+            ]);
+            
             return true;
         });
     }
@@ -129,6 +164,10 @@ class PurchaseService
             foreach ($purchase->items as $item) {
                 $stockService->revertMovement(\App\Models\PurchaseItem::class, $item->id);
             }
+            
+            // Delete corresponding expense entry
+            \App\Models\Expense::where('description', 'like', "%[Ref: PR-{$purchase->id}]%")->delete();
+            
             return $purchase->delete();
         });
     }

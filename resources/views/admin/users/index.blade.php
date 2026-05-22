@@ -72,7 +72,7 @@
         </div>
 
         {{-- Activity Stream --}}
-        <div class="lg:col-span-4 bg-slate-950 rounded-[2.5rem] shadow-2xl shadow-slate-900/20 overflow-hidden text-white flex flex-col">
+        <!-- <div class="lg:col-span-4 bg-slate-950 rounded-[2.5rem] shadow-2xl shadow-slate-900/20 overflow-hidden text-white flex flex-col">
             <div class="p-8 border-b border-white/10 bg-white/5">
                 <h3 class="font-black flex items-center gap-3 uppercase tracking-widest text-xs text-emerald-400">
                     <span class="material-symbols-rounded">analytics</span>
@@ -111,7 +111,7 @@
                     </span>
                 </div>
             </div>
-        </div>
+        </div> -->
 
     </div>
 </div>

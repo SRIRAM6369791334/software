@@ -15,9 +15,16 @@ class CustomerController extends Controller
 {
     public function __construct(private CustomerService $service) {}
 
-    public function index(Request $request): View
+    public function index(Request $request)
     {
-        $search    = $request->input('search');
+        $search = $request->input('search');
+
+        if ($request->input('export') === 'pdf') {
+            $customers = Customer::with('routeRelation')->search($search)->orderBy('name')->get();
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('masters.customers.pdf', compact('customers'));
+            return $pdf->download('customer-directory.pdf');
+        }
+
         $customers = Customer::with('routeRelation')->search($search)->orderBy('name')->paginate(15);
         return view('masters.customers.index', compact('customers', 'search'));
     }
@@ -42,13 +49,48 @@ class CustomerController extends Controller
 
     public function show(Customer $customer): View
     {
-        $customer->loadCount(['weeklyBills', 'payments'])
+        $customer->loadCount(['weeklyBills', 'dailyBills', 'payments'])
                  ->loadSum('payments', 'amount');
 
-        $latestBill = $customer->weeklyBills()->latest()->first();
+        $latestWeeklyBill = $customer->weeklyBills()->latest()->first();
+        $latestDailyBill = $customer->dailyBills()->latest()->first();
+
+        // Determine the actual latest bill across both weekly and daily billing
+        $latestBill = null;
+        if ($latestWeeklyBill && $latestDailyBill) {
+            $latestBill = $latestWeeklyBill->period_end > $latestDailyBill->date ? $latestWeeklyBill : $latestDailyBill;
+        } else {
+            $latestBill = $latestWeeklyBill ?: $latestDailyBill;
+        }
+
         $latestPayment = $customer->payments()->latest()->first();
 
-        return view('masters.customers.show', compact('customer', 'latestBill', 'latestPayment'));
+        // Fetch top retail products bought
+        $topRetailProducts = \App\Models\DailyBillItem::whereIn('daily_bill_id', $customer->dailyBills()->pluck('id'))
+            ->select('item_name', \DB::raw('SUM(quantity_kg) as total_qty'), \DB::raw('COUNT(*) as times_bought'))
+            ->groupBy('item_name')
+            ->orderByDesc('total_qty')
+            ->limit(5)
+            ->get();
+
+        // Aggregate top wholesale products bought from weekly items
+        $topWholesaleProducts = \App\Models\WeeklyBillItem::whereIn('weekly_bill_id', $customer->weeklyBills()->pluck('id'))
+            ->select('item_name', \DB::raw('SUM(quantity_kg) as total_qty'), \DB::raw('COUNT(*) as times_bought'))
+            ->groupBy('item_name')
+            ->orderByDesc('total_qty')
+            ->limit(5)
+            ->get()
+            ->toArray();
+
+        return view('masters.customers.show', compact(
+            'customer', 
+            'latestBill', 
+            'latestWeeklyBill',
+            'latestDailyBill',
+            'latestPayment',
+            'topRetailProducts',
+            'topWholesaleProducts'
+        ));
     }
 
     public function edit(Customer $customer): View
@@ -65,9 +107,25 @@ class CustomerController extends Controller
 
     public function billingHistory(Customer $customer): View
     {
-        $totalBilled = $customer->weeklyBills()->sum('amount');
-        $bills = $customer->weeklyBills()->latest()->paginate(15);
-        return view('masters.customers.billing-history', compact('customer', 'bills', 'totalBilled'));
+        $totalWeeklyBilled = $customer->weeklyBills()->sum('amount');
+        $totalDailyBilled = $customer->dailyBills()->sum('amount');
+        $totalBilled = $totalWeeklyBilled + $totalDailyBilled;
+
+        $weeklyBills = $customer->weeklyBills()->latest()->paginate(10, ['*'], 'weekly_page');
+        $dailyBills = $customer->dailyBills()->with('items')->latest()->paginate(10, ['*'], 'daily_page');
+
+        // Maintain compatibility with existing templates expecting $bills
+        $bills = $weeklyBills;
+
+        return view('masters.customers.billing-history', compact(
+            'customer', 
+            'bills', 
+            'weeklyBills', 
+            'dailyBills', 
+            'totalBilled', 
+            'totalWeeklyBilled', 
+            'totalDailyBilled'
+        ));
     }
 
     public function paymentHistory(Customer $customer): View

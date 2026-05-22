@@ -12,11 +12,12 @@ class Purchase extends Model
     use HasFactory;
     
     protected $fillable = [
-        'vendor_id', 'vendor_name', 'date', 'gst_percentage', 'gst_amount', 'total_amount', 'payment_mode',
+        'vendor_id', 'vendor_name', 'date', 'due_date', 'gst_percentage', 'gst_amount', 'total_amount', 'payment_mode',
     ];
 
     protected $casts = [
         'date'           => 'date',
+        'due_date'       => 'date',
         'gst_percentage' => 'decimal:2',
         'gst_amount'     => 'decimal:2',
         'total_amount'   => 'decimal:2',

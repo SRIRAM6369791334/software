@@ -2,85 +2,844 @@
 @section('title', 'Outstanding Report - ' . $dealer->firm_name)
 
 @section('content')
-<div class="mb-6">
-    <a href="{{ route('masters.dealers.show', $dealer) }}" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 uppercase tracking-wider mb-2 inline-block">← Back to Dealer Details</a>
-    <h1 class="text-2xl font-bold text-slate-950">Outstanding Report</h1>
-    <p class="text-sm text-slate-500 mt-0.5">{{ $dealer->firm_name }} | Reconciliation summary</p>
-</div>
+<div class="cm-page">
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div class="lg:col-span-2 space-y-6">
-        <div class="bg-gradient-to-br from-white via-emerald-50/40 to-sky-50/40 rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-emerald-50/70 to-sky-50/70">
-                <h3 class="text-sm font-bold text-slate-950 uppercase tracking-tight">Financial Summary</h3>
+    {{-- Back Link --}}
+    <a href="{{ route('masters.dealers.index') }}" class="cm-back-btn">
+        <span class="material-symbols-rounded" style="font-size: 16px;">arrow_back</span>
+        Back to Directory
+    </a>
+
+    {{-- Top Bar --}}
+    <div class="cm-topbar">
+        <div class="cm-profile-header">
+            <div class="cm-avatar-lg cm-avatar-lg--{{ strtolower(substr($dealer->firm_name, 0, 1)) }}">
+                {{ strtoupper(substr($dealer->firm_name, 0, 2)) }}
             </div>
-            <div class="p-6 grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
-                    <p class="text-[10px] font-bold text-emerald-600 uppercase mb-1">Total Purchased</p>
-                    <p class="text-xl font-black text-emerald-900">Rs {{ number_format($dealer->purchases()->sum('total_amount'), 2) }}</p>
-                </div>
-                <div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                    <p class="text-[10px] font-bold text-blue-600 uppercase mb-1">Total Paid</p>
-                    <p class="text-xl font-black text-blue-900">Rs {{ number_format($dealer->payments()->sum('amount'), 2) }}</p>
-                </div>
-                <div class="p-4 bg-amber-50 rounded-xl border border-amber-100">
-                    <p class="text-[10px] font-bold text-amber-600 uppercase mb-1">Current Outstanding</p>
-                    <p class="text-xl font-black text-amber-900">Rs {{ number_format($dealer->pending_amount, 2) }}</p>
+            <div>
+                <h1 class="cm-page-title">{{ $dealer->firm_name }}</h1>
+                <div class="cm-page-sub">
+                    <span class="cm-badge cm-badge--wholesale">Supplier / Partner</span>
+                    <span class="cm-badge cm-badge--route">
+                        <span class="material-symbols-rounded" style="font-size: 12px; margin-right: 2px;">alt_route</span>
+                        {{ $dealer->route ?: 'General Area' }}
+                    </span>
                 </div>
             </div>
         </div>
 
-        <div class="bg-gradient-to-br from-white via-emerald-50/40 to-sky-50/40 rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6">
-            <h4 class="text-sm font-bold text-slate-950 mb-4 uppercase tracking-tight">Aging Analysis (Conceptual)</h4>
-            <div class="space-y-4">
-                <div class="flex justify-between items-center text-sm">
-                    <span class="text-slate-600">0 - 30 Days</span>
-                    <span class="font-bold text-slate-950">Rs {{ number_format($dealer->pending_amount * 0.7, 0) }}</span>
-                </div>
-                <div class="w-full bg-sky-50 h-2 rounded-full overflow-hidden">
-                    <div class="bg-emerald-500 h-full" style="width: 70%"></div>
-                </div>
+        <div class="cm-actions-group">
+            <a href="{{ route('masters.dealers.edit', $dealer) }}" class="cm-btn-outline">
+                <span class="material-symbols-rounded" style="font-size: 16px;">edit</span>
+                Edit Profile
+            </a>
+            <form action="{{ route('masters.dealers.destroy', $dealer) }}" method="POST" onsubmit="return confirm('Archive {{ $dealer->firm_name }}? This will keep their transaction history intact.')" style="display: inline-block;">
+                @csrf @method('DELETE')
+                <button type="submit" class="cm-btn-danger">
+                    <span class="material-symbols-rounded" style="font-size: 16px;">archive</span>
+                    Archive
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {{-- Layout Grid --}}
+    <div class="cm-detail-layout">
+        
+        {{-- Side Column: Profile & Balance (Visually Identical for Instant Transitions) --}}
+        <div class="cm-side-col">
+            
+            {{-- Outstanding Balance Card --}}
+            <div class="cm-balance-card">
+                <div class="cm-balance-label">Total Payable</div>
+                <div class="cm-balance-amount">Rs {{ number_format($dealer->pending_amount, 2) }}</div>
                 
-                <div class="flex justify-between items-center text-sm">
-                    <span class="text-slate-600">31 - 60 Days</span>
-                    <span class="font-bold text-slate-950">Rs {{ number_format($dealer->pending_amount * 0.2, 0) }}</span>
-                </div>
-                <div class="w-full bg-sky-50 h-2 rounded-full overflow-hidden">
-                    <div class="bg-amber-500 h-full" style="width: 20%"></div>
-                </div>
-
-                <div class="flex justify-between items-center text-sm">
-                    <span class="text-slate-600">60+ Days</span>
-                    <span class="font-bold text-red-600">Rs {{ number_format($dealer->pending_amount * 0.1, 0) }}</span>
-                </div>
-                <div class="w-full bg-sky-50 h-2 rounded-full overflow-hidden">
-                    <div class="bg-red-500 h-full" style="width: 10%"></div>
+                <div class="cm-balance-actions">
+                    <a href="{{ route('payments.dealers.create', ['dealer_id' => $dealer->id]) }}" class="cm-balance-btn-pay">
+                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">payments</span>
+                        Record Payment
+                    </a>
+                    <a href="{{ route('masters.dealers.ledger-pdf', $dealer) }}" class="cm-balance-btn-dl">
+                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">download</span>
+                        Download Ledger
+                    </a>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div class="space-y-6">
-        <div class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 rounded-xl shadow-md p-6 text-white">
-            <h3 class="text-xs font-bold uppercase tracking-widest text-emerald-400 mb-4">Payment Health</h3>
-            <div class="space-y-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg">⚡</div>
-                    <div>
-                        <p class="text-[10px] font-bold uppercase opacity-60">Avg. Payment Days</p>
-                        <p class="text-sm font-bold">12 Days</p>
+            {{-- Profile Card --}}
+            <div class="cm-card">
+                <h3 class="cm-card-title">
+                    <span class="material-symbols-rounded" style="font-size: 16px;">contact_page</span>
+                    Firm Credentials
+                </h3>
+                <div class="cm-info-list">
+                    <div class="cm-info-item">
+                        <span class="material-symbols-rounded cm-info-icon" style="font-size: 18px;">person</span>
+                        <div>
+                            <div class="cm-info-label">Contact Person</div>
+                            <div class="cm-info-val">{{ $dealer->contact_person ?: '-' }}</div>
+                        </div>
                     </div>
-                </div>
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg"></div>
-                    <div>
-                        <p class="text-[10px] font-bold uppercase opacity-60">Credit Limit</p>
-                        <p class="text-sm font-bold">Rs 5,00,000</p>
+                    <div class="cm-info-item">
+                        <span class="material-symbols-rounded cm-info-icon" style="font-size: 18px;">call</span>
+                        <div>
+                            <div class="cm-info-label">Contact Phone</div>
+                            <div class="cm-info-val">{{ $dealer->phone }}</div>
+                        </div>
+                    </div>
+                    <div class="cm-info-item">
+                        <span class="material-symbols-rounded cm-info-icon" style="font-size: 18px;">location_on</span>
+                        <div>
+                            <div class="cm-info-label">Store Location</div>
+                            <div class="cm-info-val">{{ $dealer->location ?: 'Not provided' }}</div>
+                        </div>
+                    </div>
+                    <div class="cm-info-item">
+                        <span class="material-symbols-rounded cm-info-icon" style="font-size: 18px;">badge</span>
+                        <div>
+                            <div class="cm-info-label">GSTIN / Registration</div>
+                            <div class="cm-info-val cm-info-val--mono">{{ $dealer->gst_number ?: 'Unregistered (No GST)' }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <button class="w-full mt-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-xs font-bold rounded-lg transition-colors">Generate Official PDF</button>
+
         </div>
+
+        {{-- Main Column: Tabs --}}
+        <div class="cm-main-col">
+            
+            <div class="cm-tabs-card">
+                {{-- Tabs Navigation --}}
+                <div class="cm-tabs-header">
+                    <a href="{{ route('masters.dealers.show', $dealer) }}" class="cm-tab-link">
+                        Quick Overview
+                    </a>
+                    <a href="{{ route('masters.dealers.purchase-history', $dealer) }}" class="cm-tab-link">
+                        Purchase Orders
+                    </a>
+                    <a href="{{ route('payments.dealers.ledger', $dealer) }}" class="cm-tab-link">
+                        Payment Ledger
+                    </a>
+                    <a href="{{ route('masters.dealers.outstanding-report', $dealer) }}" class="cm-tab-link cm-tab-link--active">
+                        Outstanding Report
+                    </a>
+                </div>
+
+                {{-- Tab Content Pane --}}
+                <div class="cm-tab-content">
+                    <h4 class="cm-tab-title">Financial Reconciliation & Metrics</h4>
+
+                    {{-- Financial Summary Cards --}}
+                    <div class="cm-overview-stats">
+                        <div class="cm-stat-card cm-stat-card--blue">
+                            <div class="cm-stat-icon">
+                                <span class="material-symbols-rounded">shopping_bag</span>
+                            </div>
+                            <div>
+                                <div class="cm-stat-label">Total Purchased</div>
+                                <div class="cm-stat-value">Rs {{ number_format($dealer->purchases()->sum('total_amount'), 0) }}</div>
+                            </div>
+                        </div>
+
+                        <div class="cm-stat-card cm-stat-card--emerald">
+                            <div class="cm-stat-icon">
+                                <span class="material-symbols-rounded">payments</span>
+                            </div>
+                            <div>
+                                <div class="cm-stat-label">Total Paid</div>
+                                <div class="cm-stat-value">Rs {{ number_format($dealer->payments()->sum('amount'), 0) }}</div>
+                            </div>
+                        </div>
+
+                        <div class="cm-stat-card cm-stat-card--purple">
+                            <div class="cm-stat-icon">
+                                <span class="material-symbols-rounded">account_balance_wallet</span>
+                            </div>
+                            <div>
+                                <div class="cm-stat-label">Outstanding</div>
+                                <div class="cm-stat-value">Rs {{ number_format($dealer->pending_amount, 0) }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Bottom Sections: Aging & Payment Health --}}
+                    <div class="cm-report-grid" style="margin-top: 2rem;">
+                        
+                        {{-- Aging Analysis --}}
+                        <div class="cm-sub-card">
+                            <h5 class="cm-sub-card-title">Aging Analysis (Conceptual)</h5>
+                            <div class="cm-aging-list">
+                                <div class="cm-aging-item">
+                                    <div class="cm-aging-row">
+                                        <span class="cm-aging-label">0 - 30 Days</span>
+                                        <span class="cm-aging-val">Rs {{ number_format($dealer->pending_amount * 0.7, 0) }}</span>
+                                    </div>
+                                    <div class="cm-progress-bar cm-progress-bar--green" style="--cm-p-width: 70%;"></div>
+                                </div>
+
+                                <div class="cm-aging-item">
+                                    <div class="cm-aging-row">
+                                        <span class="cm-aging-label">31 - 60 Days</span>
+                                        <span class="cm-aging-val">Rs {{ number_format($dealer->pending_amount * 0.2, 0) }}</span>
+                                    </div>
+                                    <div class="cm-progress-bar cm-progress-bar--amber" style="--cm-p-width: 20%;"></div>
+                                </div>
+
+                                <div class="cm-aging-item">
+                                    <div class="cm-aging-row">
+                                        <span class="cm-aging-label">60+ Days</span>
+                                        <span class="cm-aging-val cm-aging-val--danger">Rs {{ number_format($dealer->pending_amount * 0.1, 0) }}</span>
+                                    </div>
+                                    <div class="cm-progress-bar cm-progress-bar--red" style="--cm-p-width: 10%;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Payment Health --}}
+                        <div class="cm-sub-card cm-sub-card--indigo">
+                            <h5 class="cm-sub-card-title" style="color: #4f46e5;">Payment Health</h5>
+                            <div class="cm-health-list">
+                                <div class="cm-health-item">
+                                    <div class="cm-health-icon">⚡</div>
+                                    <div>
+                                        <p class="cm-health-label">Avg. Payment Days</p>
+                                        <p class="cm-health-val">12 Days</p>
+                                    </div>
+                                </div>
+
+                                <div class="cm-health-item">
+                                    <div class="cm-health-icon">🛡️</div>
+                                    <div>
+                                        <p class="cm-health-label">Credit Limit</p>
+                                        <p class="cm-health-val">Rs 5,00,000</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button class="cm-btn-primary cm-btn-primary--indigo" style="width: 100%; justify-content: center; margin-top: 1.5rem;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                </svg>
+                                Generate Official PDF
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
     </div>
+
 </div>
 @endsection
+
+@push('styles')
+<style>
+/* ── Reset / Custom CSS Variables (Sleek Theme Matrix) ── */
+:root {
+    --cm-bg: #f8fafc;
+    --cm-card-bg: #ffffff;
+    --cm-card-border: #e2e8f0;
+    --cm-text-primary: #0f172a;
+    --cm-text-secondary: #475569;
+    --cm-text-muted: #94a3b8;
+    --cm-accent-emerald: #10b981;
+    --cm-accent-emerald-hover: #059669;
+    --cm-accent-emerald-light: #e6fbf2;
+    --cm-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --cm-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    --cm-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='dark'] {
+    --cm-bg: #090d16;
+    --cm-card-bg: #111827;
+    --cm-card-border: #1f2937;
+    --cm-text-primary: #f3f4f6;
+    --cm-text-secondary: #9ca3af;
+    --cm-text-muted: #6b7280;
+    --cm-accent-emerald-light: rgba(16, 185, 129, 0.1);
+    --cm-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+    --cm-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+    --cm-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Container & Layout ── */
+.cm-page { padding: 1rem 0 3rem; }
+.cm-hidden { display: none !important; }
+
+/* ── Back Link ── */
+.cm-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--cm-accent-emerald);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    margin-bottom: 1.25rem;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+.cm-back-btn:hover {
+    color: var(--cm-accent-emerald-hover);
+    transform: translateX(-4px);
+}
+
+/* ── Top Bar ── */
+.cm-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+.cm-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+.cm-avatar-lg {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.375rem;
+    font-weight: 700;
+    box-shadow: var(--cm-shadow-md);
+    background: linear-gradient(135deg, #10b981, #06b6d4);
+    color: #ffffff;
+}
+
+/* Dynamic avatar colors by starting letter */
+.cm-avatar-lg--a, .cm-avatar-lg--e, .cm-avatar-lg--i, .cm-avatar-lg--m, .cm-avatar-lg--q, .cm-avatar-lg--u, .cm-avatar-lg--y {
+    background: linear-gradient(135deg, #10b981, #3b82f6);
+}
+.cm-avatar-lg--b, .cm-avatar-lg--f, .cm-avatar-lg--j, .cm-avatar-lg--n, .cm-avatar-lg--r, .cm-avatar-lg--v, .cm-avatar-lg--z {
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+}
+.cm-avatar-lg--c, .cm-avatar-lg--g, .cm-avatar-lg--k, .cm-avatar-lg--o, .cm-avatar-lg--s, .cm-avatar-lg--w {
+    background: linear-gradient(135deg, #f59e0b, #ec4899);
+}
+.cm-avatar-lg--d, .cm-avatar-lg--h, .cm-avatar-lg--l, .cm-avatar-lg--p, .cm-avatar-lg--t, .cm-avatar-lg--x {
+    background: linear-gradient(135deg, #ef4444, #f97316);
+}
+
+.cm-page-title {
+    font-size: 1.625rem;
+    font-weight: 800;
+    color: var(--cm-text-primary);
+    letter-spacing: -0.025em;
+    margin: 0;
+    line-height: 1.2;
+}
+.cm-page-sub {
+    font-size: 0.8125rem;
+    color: var(--cm-text-secondary);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ── Actions Group ── */
+.cm-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ── Buttons ── */
+.cm-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: var(--cm-card-bg);
+    color: var(--cm-text-secondary);
+    border: 1px solid var(--cm-card-border);
+    border-radius: 12px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    box-shadow: var(--cm-shadow-sm);
+}
+.cm-btn-outline:hover {
+    background: var(--cm-bg);
+    color: var(--cm-text-primary);
+    border-color: var(--cm-text-secondary);
+}
+
+.cm-btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fee2e2;
+    border-radius: 12px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+.cm-btn-danger:hover {
+    background: #dc2626;
+    color: #ffffff;
+    border-color: #dc2626;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+}
+[data-theme='dark'] .cm-btn-danger {
+    background: rgba(220, 38, 38, 0.1);
+    border-color: rgba(220, 38, 38, 0.2);
+}
+[data-theme='dark'] .cm-btn-danger:hover {
+    background: #dc2626;
+    color: #ffffff;
+    border-color: #dc2626;
+}
+
+.cm-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    background: #0f172a;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+    text-decoration: none;
+}
+.cm-btn-primary:hover { opacity: 0.85; }
+.cm-btn-primary--indigo { background: #4f46e5; }
+.cm-btn-primary--indigo:hover { background: #4338ca; opacity: 1; }
+
+/* ── Content Grid ── */
+.cm-detail-layout {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
+}
+@media (max-width: 1024px) {
+    .cm-detail-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Column 1: Info & Balance ── */
+.cm-side-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.cm-card {
+    background: var(--cm-card-bg);
+    border: 1px solid var(--cm-card-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--cm-shadow-sm);
+}
+
+.cm-card-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--cm-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--cm-card-border);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cm-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+.cm-info-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+.cm-info-icon {
+    color: var(--cm-text-muted);
+    margin-top: 2px;
+}
+.cm-info-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--cm-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+.cm-info-val {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--cm-text-primary);
+    word-break: break-word;
+}
+.cm-info-val--mono {
+    font-family: monospace;
+    letter-spacing: -0.02em;
+}
+
+/* Balance Card */
+.cm-balance-card {
+    background: linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #eab308 100%);
+    border-radius: 18px;
+    padding: 2.25rem 1.75rem;
+    color: #ffffff;
+    text-align: center;
+    box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+.cm-balance-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+    pointer-events: none;
+}
+.cm-balance-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    opacity: 0.85;
+    margin-bottom: 0.5rem;
+}
+.cm-balance-amount {
+    font-size: 2.375rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+.cm-balance-actions {
+    margin-top: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.cm-balance-btn-pay {
+    background: #ffffff;
+    color: #b45309;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.cm-balance-btn-pay:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    background: #f8fafc;
+}
+.cm-balance-btn-dl {
+    background: rgba(180, 83, 9, 0.4);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+.cm-balance-btn-dl:hover {
+    transform: translateY(-2px);
+    background: rgba(180, 83, 9, 0.6);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Column 2: Activity Tabs ── */
+.cm-main-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.cm-tabs-card {
+    background: var(--cm-card-bg);
+    border: 1px solid var(--cm-card-border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--cm-shadow-sm);
+}
+
+.cm-tabs-header {
+    display: flex;
+    border-bottom: 1px solid var(--cm-card-border);
+    background: var(--cm-bg);
+}
+.cm-tab-link {
+    flex: 1;
+    text-align: center;
+    padding: 1.125rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--cm-text-secondary);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+.cm-tab-link:hover {
+    color: var(--cm-text-primary);
+    background: var(--cm-card-bg);
+}
+.cm-tab-link--active {
+    color: var(--cm-accent-emerald);
+    border-bottom-color: var(--cm-accent-emerald);
+    background: var(--cm-card-bg);
+    font-weight: 700;
+}
+
+.cm-tab-content {
+    padding: 2rem;
+}
+
+.cm-tab-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--cm-text-primary);
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Overview / Report Mini Cards */
+.cm-overview-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+@media (max-width: 640px) {
+    .cm-overview-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+.cm-stat-card {
+    background: var(--cm-card-bg);
+    border: 1px solid var(--cm-card-border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--cm-shadow-sm);
+    transition: all 0.2s ease;
+}
+.cm-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--cm-shadow-md);
+}
+.cm-stat-card--blue   { background: rgba(59, 130, 246, 0.03); border-color: rgba(59, 130, 246, 0.15); }
+.cm-stat-card--emerald{ background: rgba(16, 185, 129, 0.03); border-color: rgba(16, 185, 129, 0.15); }
+.cm-stat-card--purple { background: rgba(139, 92, 246, 0.03); border-color: rgba(139, 92, 246, 0.15); }
+
+.cm-stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.cm-stat-card--blue .cm-stat-icon   { background: #dbeafe; color: #1d4ed8; }
+.cm-stat-card--emerald .cm-stat-icon { background: #d1fae5; color: #047857; }
+.cm-stat-card--purple .cm-stat-icon { background: #ede9fe; color: #6d28d9; }
+
+.cm-stat-label {
+    font-size: 0.6875rem;
+    color: var(--cm-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 2px;
+}
+.cm-stat-value {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--cm-text-primary);
+}
+
+/* Report Grid layout */
+.cm-report-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 1.5rem;
+}
+@media (max-width: 768px) {
+    .cm-report-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.cm-sub-card {
+    background: var(--cm-card-bg);
+    border: 1px solid var(--cm-card-border);
+    border-radius: 14px;
+    padding: 1.5rem;
+}
+.cm-sub-card--indigo {
+    background: rgba(79, 70, 229, 0.02);
+    border-color: rgba(79, 70, 229, 0.12);
+}
+
+.cm-sub-card-title {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--cm-text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 1.25rem 0;
+}
+
+/* Aging Analysis progress bars */
+.cm-aging-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+.cm-aging-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.cm-aging-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.cm-aging-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--cm-text-secondary);
+}
+.cm-aging-val {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--cm-text-primary);
+}
+.cm-aging-val--danger {
+    color: #dc2626;
+}
+
+.cm-progress-bar {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--cm-bg);
+    position: relative;
+    overflow: hidden;
+}
+.cm-progress-bar::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--cm-p-width, 0%);
+    border-radius: 4px;
+}
+.cm-progress-bar--green::after { background: var(--cm-accent-emerald); }
+.cm-progress-bar--amber::after { background: #f59e0b; }
+.cm-progress-bar--red::after   { background: #dc2626; }
+
+/* Payment Health icons and rows */
+.cm-health-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.cm-health-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.cm-health-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--cm-bg);
+    border: 0.5px solid var(--cm-card-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+.cm-health-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--cm-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 2px 0;
+}
+.cm-health-val {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--cm-text-primary);
+    margin: 0;
+}
+
+/* ── Badges ── */
+.cm-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.cm-badge--wholesale { background: rgba(59, 130, 246, 0.12); color: #2563eb; }
+.cm-badge--route     { background: rgba(107, 114, 128, 0.06); color: var(--cm-text-secondary); border: 1px solid var(--cm-card-border); }
+
+[data-theme='dark'] .cm-badge--wholesale { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+</style>
+@endpush

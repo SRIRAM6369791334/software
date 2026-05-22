@@ -12,6 +12,9 @@ use App\Models\Vendor;
 use App\Models\Item;
 use App\Models\Batch;
 use App\Models\Warehouse;
+use App\Models\Customer;
+use App\Models\DailyBill;
+use App\Models\WeeklyBill;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -24,14 +27,21 @@ class PurchaseController extends Controller
 
     public function index(Request $request): View
     {
-        $search     = $request->input('search');
-        $purchases  = $this->service->paginated($search, 15);
-        $vendors    = Vendor::orderBy('firm_name')->get();
-        $items      = Item::active()->get();
-        $batches    = Batch::where('status', 'Active')->get();
-        $warehouses = Warehouse::active()->get();
+        $search      = $request->input('search');
+        $purchases   = $this->service->paginated($search, 15);
+        $vendors     = Vendor::orderBy('firm_name')->get();
+        $items       = Item::active()->get();
+        $batches     = Batch::where('status', 'Active')->get();
+        $warehouses  = Warehouse::active()->get();
         
-        return view('purchases.index', compact('purchases', 'search', 'vendors', 'items', 'batches', 'warehouses'));
+        $customers   = Customer::orderBy('name')->get();
+        $dailyBills  = DailyBill::with(['customer', 'items'])->latest()->take(10)->get();
+        $weeklyBills = WeeklyBill::with('customer')->latest()->take(10)->get();
+        
+        return view('purchases.index', compact(
+            'purchases', 'search', 'vendors', 'items', 'batches', 'warehouses',
+            'customers', 'dailyBills', 'weeklyBills'
+        ));
     }
 
     public function create(Request $request): View

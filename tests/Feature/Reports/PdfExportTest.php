@@ -53,4 +53,14 @@ class PdfExportTest extends TestCase
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'application/pdf');
     }
+
+    public function test_customer_pdf_export_returns_pdf_response()
+    {
+        \App\Models\Customer::factory()->create();
+
+        $response = $this->get('/masters/customers?export=pdf');
+
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Type', 'application/pdf');
+    }
 }

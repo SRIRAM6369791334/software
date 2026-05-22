@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Billing;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\DailyBill;
+use App\Models\Item;
 use App\Services\ExportService;
 use App\Services\InvoiceNumberService;
 use App\Services\StockService;
@@ -24,7 +25,13 @@ class DailyBillingController extends Controller
         $search    = $request->input('search');
         $bills     = DailyBill::with(['customer', 'items'])->search($search)->latest()->paginate(15);
         $customers = Customer::orderBy('name')->get();
-        return view('billing.daily.index', compact('bills', 'customers', 'search'));
+        $items     = Item::active()->get();
+        return view('billing.daily.index', compact('bills', 'customers', 'search', 'items'));
+    }
+
+    public function create(): RedirectResponse
+    {
+        return redirect()->route('billing.daily.index');
     }
 
     public function store(Request $request, InvoiceNumberService $invoiceService): RedirectResponse

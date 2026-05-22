@@ -2,494 +2,877 @@
 @section('title', 'Customer Master')
 
 @section('content')
-    <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+
+<div class="cm-page">
+
+    {{-- Top Bar --}}
+    <div class="cm-topbar">
         <div>
-            <h1 class="text-3xl font-black text-slate-950 tracking-tight">Customer Master</h1>
-            <p class="text-slate-500 font-medium">Directory of retail buyers and wholesale partners</p>
+            <h1 class="cm-page-title">Customer master</h1>
+            <p class="cm-page-sub">Directory of retail buyers and wholesale partners</p>
         </div>
-        <div class="flex flex-wrap items-center gap-3">
-            <button onclick="document.getElementById('add-customer-modal').classList.remove('hidden')"
-                class="px-6 py-4 bg-gradient-to-r from-emerald-600 to-sky-500 text-white text-sm font-black rounded-xl hover:bg-emerald-700 transition-all shadow-md shadow-emerald-600/20 active:scale-95">
-                + Register Customer
-            </button>
+        <button onclick="document.getElementById('add-customer-modal').classList.remove('cm-hidden')"
+            class="cm-btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Register customer
+        </button>
+    </div>
+
+    {{-- Stats --}}
+    <div class="cm-stats">
+        <div class="cm-stat-card">
+            <div class="cm-stat-icon cm-icon-teal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+            </div>
+            <div>
+                <div class="cm-stat-label">Total active</div>
+                <div class="cm-stat-value">{{ $customers->total() }}</div>
+            </div>
+        </div>
+        <div class="cm-stat-card">
+            <div class="cm-stat-icon cm-icon-blue">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+            </div>
+            <div>
+                <div class="cm-stat-label">Wholesale</div>
+                <div class="cm-stat-value">{{ $customers->where('type', 'Wholesale')->count() }}</div>
+            </div>
+        </div>
+        <div class="cm-stat-card">
+            <div class="cm-stat-icon cm-icon-amber">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+            </div>
+            <div>
+                <div class="cm-stat-label">Retail</div>
+                <div class="cm-stat-value">{{ $customers->where('type', 'Retail')->count() }}</div>
+            </div>
+        </div>
+        <div class="cm-stat-card cm-stat-card--danger">
+            <div class="cm-stat-icon cm-icon-red">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                    <line x1="1" y1="10" x2="23" y2="10"/>
+                </svg>
+            </div>
+            <div>
+                <div class="cm-stat-label">With balance</div>
+                <div class="cm-stat-value">{{ $customers->where('balance', '>', 0)->count() }}</div>
+            </div>
         </div>
     </div>
 
-    {{-- Master Stats --}}
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div
-            class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 p-6 rounded-2xl border border-slate-200 shadow-md shadow-slate-200/60 flex items-center gap-6 group hover:border-emerald-200 transition-all">
-            <div
-                class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                <span class="material-symbols-rounded">groups</span>
-            </div>
-            <div>
-                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Active</h3>
-                <p class="text-2xl font-black text-slate-950">{{ $customers->total() }}</p>
-            </div>
-        </div>
-        <div
-            class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 p-6 rounded-2xl border border-slate-200 shadow-md shadow-slate-200/60 flex items-center gap-6 group hover:border-blue-200 transition-all">
-            <div
-                class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                <span class="material-symbols-rounded">storefront</span>
-            </div>
-            <div>
-                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Wholesale</h3>
-                <p class="text-2xl font-black text-slate-950">{{ $customers->where('type', 'Wholesale')->count() }}</p>
-            </div>
-        </div>
-        <div
-            class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 p-6 rounded-2xl border border-slate-200 shadow-md shadow-slate-200/60 flex items-center gap-6 group hover:border-amber-200 transition-all">
-            <div
-                class="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                <span class="material-symbols-rounded">shopping_basket</span>
-            </div>
-            <div>
-                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Retail</h3>
-                <p class="text-2xl font-black text-slate-950">{{ $customers->where('type', 'Retail')->count() }}</p>
-            </div>
-        </div>
-        <div
-            class="bg-gradient-to-br from-red-50 via-white to-red-50/30 border border-red-100 p-6 rounded-2xl shadow-md shadow-red-100/40 flex items-center gap-6 group hover:border-red-200 transition-all">
-            <div class="w-14 h-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                <span class="material-symbols-rounded">account_balance_wallet</span>
-            </div>
-            <div>
-                <h3 class="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">With Balance</h3>
-                <p class="text-2xl font-black text-slate-950">{{ $customers->where('balance', '>', 0)->count() }} Accounts</p>
-            </div>
-        </div>
-    </div>
-
-    {{-- Search & Table --}}
-    <div
-        class="bg-gradient-to-br from-white via-emerald-50/40 to-sky-50/40 rounded-2xl border border-slate-200 shadow-lg overflow-hidden mb-12">
-        <div
-            class="p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-emerald-50/80 to-sky-50/80">
-            <form method="GET" class="relative w-full max-w-md">
-                <span class="material-symbols-rounded absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-                <input type="text" name="search" value="{{ $search }}" placeholder="Search by name, phone or route..."
-                    class="w-full pl-12 pr-4 py-4 bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-medium text-sm">
+    {{-- Table Card --}}
+    <div class="cm-table-card">
+        <div class="cm-table-toolbar">
+            <form method="GET" class="cm-search-wrap">
+                <svg class="cm-search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" name="search" value="{{ $search }}"
+                    placeholder="Search by name, phone or route…" class="cm-search-input">
             </form>
+            <div class="cm-toolbar-right">
+                <a href="{{ request()->fullUrlWithQuery(['export' => 'pdf']) }}" class="cm-filter-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Export
+                </a>
+            </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left">
+        <div class="cm-table-wrap">
+            <table class="cm-table">
                 <thead>
-                    <tr
-                        class="bg-gradient-to-r from-emerald-50/80 to-sky-50/80 text-slate-400 font-black uppercase text-[10px] tracking-widest border-b border-slate-200">
-                        <th class="px-8 py-5">Identity</th>
-                        <th class="px-8 py-5">Communication</th>
-                        <th class="px-8 py-5">Operational Details</th>
-                        <th class="px-8 py-5 text-center">Type</th>
-                        <th class="px-8 py-5 text-right">Outstanding</th>
-                        <th class="px-8 py-5 text-center">Actions</th>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Contact</th>
+                        <th>Route</th>
+                        <th>Type</th>
+                        <th class="cm-th-right">Outstanding</th>
+                        <th class="cm-th-center">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody>
                     @forelse($customers as $customer)
-                        <tr class="hover:bg-emerald-50/30 transition-all group">
-                            <td class="px-8 py-5">
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center font-black text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-all">
-                                        {{ substr($customer->name, 0, 1) }}
-                                    </div>
-                                    <div class="flex flex-col">
-                                        <a href="{{ route('masters.customers.show', $customer) }}"
-                                            class="font-black text-slate-950 tracking-tight hover:text-emerald-600 transition-colors">{{ $customer->name }}</a>
-                                        <span
-                                            class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{{ $customer->gst_number ?: 'NO GST' }}</span>
-                                    </div>
+                    <tr class="cm-tr">
+                        <td class="cm-td">
+                            <div class="cm-identity">
+                                <div class="cm-avatar cm-avatar--{{ strtolower(substr($customer->name, 0, 1)) }}">
+                                    {{ strtoupper(substr($customer->name, 0, 2)) }}
                                 </div>
-                            </td>
-                            <td class="px-8 py-5">
-                                <div class="flex flex-col">
-                                    <span class="font-bold text-slate-950 leading-tight"> {{ $customer->phone }}</span>
-                                    <span
-                                        class="text-[10px] text-slate-400 font-medium truncate max-w-[150px]">{{ $customer->address ?: 'No Address' }}</span>
+                                <div>
+                                    <a href="{{ route('masters.customers.show', $customer) }}"
+                                        class="cm-cust-name">{{ $customer->name }}</a>
+                                    <div class="cm-cust-meta">{{ $customer->gst_number ?: 'No GST' }}</div>
                                 </div>
-                            </td>
-                            <td class="px-8 py-5">
-                                <div class="flex flex-col">
-                                    <span class="text-[10px] font-black text-slate-400 uppercase mb-0.5">Assigned Route</span>
-                                    <span
-                                        class="font-bold text-slate-700 tracking-tight">{{ $customer->route ?: 'General' }}</span>
-                                </div>
-                            </td>
-                            <td class="px-8 py-5 text-center">
-                                <span
-                                    class="px-3 py-1.5 {{ $customer->type === 'Wholesale' ? 'bg-blue-50 text-blue-600' : 'bg-sky-50 text-slate-600' }} text-[9px] font-black rounded-lg tracking-tighter">
-                                    {{ strtoupper($customer->type) }}
-                                </span>
-                            </td>
-                            <td class="px-8 py-5 text-right">
-                                <span
-                                    class="text-lg font-black {{ $customer->balance > 0 ? 'text-red-500' : 'text-slate-300' }}">
-                                    Rs {{ number_format($customer->balance, 0) }}
-                                </span>
-                            </td>
-                            <td class="px-8 py-5 text-center">
-                                <div class="flex items-center justify-center gap-2">
-                                    <a href="{{ route('masters.customers.ledger-pdf', $customer) }}"
-                                        class="w-9 h-9 flex items-center justify-center bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 rounded-xl text-slate-400 hover:text-emerald-600 hover:border-emerald-200 hover:shadow-lg transition-all"
-                                        title="Download Ledger PDF">
-                                        <span class="material-symbols-rounded text-lg">picture_as_pdf</span>
-                                    </a>
-                                    <button
-                                        onclick="openEditCustomer({{ $customer->id }}, '{{ addslashes($customer->name) }}','{{ $customer->phone }}','{{ addslashes($customer->address) }}','{{ $customer->gst_number }}','{{ $customer->route }}','{{ $customer->type }}')"
-                                        class="w-9 h-9 flex items-center justify-center bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 rounded-xl text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:shadow-lg transition-all">
-                                        <span class="material-symbols-rounded text-lg">edit_square</span>
+                            </div>
+                        </td>
+                        <td class="cm-td">
+                            <div class="cm-cust-name">{{ $customer->phone }}</div>
+                            <div class="cm-cust-meta cm-truncate">{{ $customer->address ?: 'No address' }}</div>
+                        </td>
+                        <td class="cm-td">
+                            <span class="cm-route">{{ $customer->route ?: 'General' }}</span>
+                        </td>
+                        <td class="cm-td">
+                            @if($customer->type === 'Wholesale')
+                                <span class="cm-badge cm-badge--wholesale">Wholesale</span>
+                            @else
+                                <span class="cm-badge cm-badge--retail">Retail</span>
+                            @endif
+                        </td>
+                        <td class="cm-td cm-td-right">
+                            @if($customer->balance > 0)
+                                <span class="cm-balance cm-balance--due">Rs {{ number_format($customer->balance, 0) }}</span>
+                            @else
+                                <span class="cm-balance cm-balance--clear">Rs 0</span>
+                            @endif
+                        </td>
+                        <td class="cm-td">
+                            <div class="cm-actions">
+                                <a href="{{ route('masters.customers.ledger-pdf', $customer) }}"
+                                    class="cm-action-btn" title="Download ledger PDF">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                        <line x1="16" y1="13" x2="8" y2="13"/>
+                                        <line x1="16" y1="17" x2="8" y2="17"/>
+                                        <polyline points="10 9 9 9 8 9"/>
+                                    </svg>
+                                </a>
+                                <button
+                                    data-id="{{ $customer->id }}"
+                                    data-name="{{ $customer->name }}"
+                                    data-phone="{{ $customer->phone }}"
+                                    data-address="{{ $customer->address }}"
+                                    data-gst="{{ $customer->gst_number }}"
+                                    data-route="{{ $customer->route }}"
+                                    data-type="{{ $customer->type }}"
+                                    onclick="openEditCustomer(this)"
+                                    class="cm-action-btn cm-action-btn--edit" title="Edit customer">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                    </svg>
+                                </button>
+                                <form action="{{ route('masters.customers.destroy', $customer) }}" method="POST"
+                                    onsubmit="return confirm('Archive {{ $customer->name }}?')" style="display:inline;">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="cm-action-btn cm-action-btn--danger" title="Archive customer">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"/>
+                                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                            <path d="M10 11v6"/><path d="M14 11v6"/>
+                                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                                        </svg>
                                     </button>
-                                    <form action="{{ route('masters.customers.destroy', $customer) }}" method="POST"
-                                        onsubmit="return confirm('Archive {{ $customer->name }}?')">
-                                        @csrf @method('DELETE')
-                                        <button type="submit"
-                                            class="w-9 h-9 flex items-center justify-center bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 rounded-xl text-slate-400 hover:text-red-600 hover:border-red-200 hover:shadow-lg transition-all">
-                                            <span class="material-symbols-rounded text-lg">delete</span>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
                     @empty
-                        <tr>
-                            <td colspan="6" class="px-8 py-20 text-center">
-                                <div class="flex flex-col items-center">
-                                    <div
-                                        class="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
-                                        <span class="material-symbols-rounded text-4xl">folder_open</span>
-                                    </div>
-                                    <h3 class="text-xl font-black text-slate-950">No Customers Found</h3>
-                                    <p class="text-slate-400 font-medium mt-1">Start by adding your first buyer.</p>
-                                </div>
-                            </td>
-                        </tr>
+                    <tr>
+                        <td colspan="6" class="cm-empty">
+                            <div class="cm-empty-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                </svg>
+                            </div>
+                            <p class="cm-empty-title">No customers found</p>
+                            <p class="cm-empty-sub">Start by registering your first buyer.</p>
+                        </td>
+                    </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
+
         @if($customers->hasPages())
-            <div class="p-8 border-t border-slate-100 bg-gradient-to-r from-emerald-50/70 to-sky-50/70">
+        <div class="cm-pagination">
+            <span class="cm-pg-info">
+                Showing {{ $customers->firstItem() }}–{{ $customers->lastItem() }} of {{ $customers->total() }} customers
+            </span>
+            <div class="cm-pg-links">
                 {{ $customers->withQueryString()->links() }}
             </div>
+        </div>
         @endif
     </div>
 
-    {{-- Add Customer Modal --}}
-    <div id="add-customer-modal"
-        class="hidden fixed inset-0 z-[100] overflow-y-auto bg-slate-950/60 backdrop-blur-xl px-4 py-6 sm:px-6 transition-all duration-500">
-        <div class="mx-auto flex min-h-full w-full max-w-2xl items-center justify-center">
-            <div
-                class="w-full flex flex-col overflow-hidden rounded-[2.5rem] border border-white/40 bg-white/90 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] backdrop-blur-2xl transition-all">
-                {{-- Modal Header --}}
-                <div
-                    class="relative shrink-0 border-b border-slate-100 bg-gradient-to-r from-emerald-50/50 to-sky-50/50 px-10 py-8">
-                    <div class="absolute -top-24 -right-24 w-48 h-48 bg-emerald-400/10 blur-[80px] rounded-full"></div>
-                    <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-sky-400/10 blur-[80px] rounded-full"></div>
+</div>
 
-                    <div class="flex items-center justify-between relative z-10">
-                        <div>
-                            <div class="flex items-center gap-3 mb-2">
-                                <div
-                                    class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/20">
-                                    <span class="material-symbols-rounded text-xl">person_add</span>
-                                </div>
-                                <h2 class="text-2xl font-black text-slate-950 tracking-tight uppercase tracking-widest">
-                                    Register Customer</h2>
-                            </div>
-                            <p class="text-sm text-slate-500 font-medium ml-12">Onboard a new partner to the sovereign
-                                ecosystem</p>
-                        </div>
-                        <button onclick="document.getElementById('add-customer-modal').classList.add('hidden')"
-                            class="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-100 hover:bg-red-50 transition-all shadow-sm active:scale-90">
-                            <span class="material-symbols-rounded">close</span>
-                        </button>
-                    </div>
+{{-- ================================================ --}}
+{{-- ADD CUSTOMER MODAL                               --}}
+{{-- ================================================ --}}
+<div id="add-customer-modal" class="cm-modal-overlay cm-hidden">
+    <div class="cm-modal">
+        <div class="cm-modal-header">
+            <div class="cm-modal-title-row">
+                <div class="cm-modal-icon cm-modal-icon--green">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                        <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
+                    </svg>
                 </div>
-
-                {{-- Modal Body --}}
-                <form action="{{ route('masters.customers.store') }}" method="POST"
-                    class="p-10 space-y-8 bg-white/50 relative z-10">
-                    @csrf
-                    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2">
-                        <div class="space-y-3 group">
-                            <label
-                                class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-                                <span class="w-1 h-1 rounded-full bg-emerald-500"></span>
-                                Full Identity *
-                            </label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-rounded absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors">badge</span>
-                                <input type="text" name="name" required placeholder="e.g. John Poultry Hub"
-                                    class="w-full pl-14 pr-6 py-5 bg-slate-50/50 border border-slate-200 rounded-[1.25rem] focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-black placeholder:text-slate-300">
-                            </div>
-                        </div>
-                        <div class="space-y-3 group">
-                            <label
-                                class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-                                <span class="w-1 h-1 rounded-full bg-sky-500"></span>
-                                Contact Line *
-                            </label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-rounded absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-600 transition-colors">call</span>
-                                <input type="text" name="phone" required placeholder="+91 00000 00000"
-                                    class="w-full pl-14 pr-6 py-5 bg-slate-50/50 border border-slate-200 rounded-[1.25rem] focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 outline-none transition-all font-black placeholder:text-slate-300">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3 group">
-                        <label
-                            class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-                            <span class="w-1 h-1 rounded-full bg-indigo-500"></span>
-                            Physical Headquarters
-                        </label>
-                        <div class="relative">
-                            <span
-                                class="material-symbols-rounded absolute left-5 top-6 text-slate-400 group-focus-within:text-indigo-600 transition-colors">location_on</span>
-                            <textarea name="address" rows="3" placeholder="Detailed store or office coordinates..."
-                                class="w-full pl-14 pr-6 py-5 bg-slate-50/50 border border-slate-200 rounded-[1.25rem] focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium placeholder:text-slate-300 resize-none"></textarea>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2">
-                        <div class="space-y-3 group">
-                            <label
-                                class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-                                <span class="w-1 h-1 rounded-full bg-amber-500"></span>
-                                Tax Identifier (GST)
-                            </label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-rounded absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-amber-600 transition-colors">receipt_long</span>
-                                <input type="text" name="gst_number" placeholder="Optional GSTIN"
-                                    class="w-full pl-14 pr-6 py-5 bg-slate-50/50 border border-slate-200 rounded-[1.25rem] focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all font-bold uppercase placeholder:text-slate-300">
-                            </div>
-                        </div>
-                        <div class="space-y-3 group">
-                            <label
-                                class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-                                <span class="w-1 h-1 rounded-full bg-rose-500"></span>
-                                Logistics Route
-                            </label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-rounded absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-rose-600 transition-colors">route</span>
-                                <input type="text" name="route" placeholder="e.g. North Sector"
-                                    class="w-full pl-14 pr-6 py-5 bg-slate-50/50 border border-slate-200 rounded-[1.25rem] focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all font-bold placeholder:text-slate-300">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3 group">
-                        <label
-                            class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-                            <span class="w-1 h-1 rounded-full bg-violet-500"></span>
-                            Classification
-                        </label>
-                        <div class="relative">
-                            <span
-                                class="material-symbols-rounded absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-600 transition-colors">category</span>
-                            <select name="type"
-                                class="w-full pl-14 pr-12 py-5 bg-slate-50/50 border border-slate-200 rounded-[1.25rem] focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all font-black appearance-none cursor-pointer">
-                                <option value="Retail">Retail Partner</option>
-                                <option value="Wholesale">Wholesale Distributor</option>
-                            </select>
-                            <span
-                                class="material-symbols-rounded absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
-                        </div>
-                    </div>
-
-                    {{-- Modal Footer --}}
-                    <div class="flex flex-col-reverse gap-4 pt-6 sm:flex-row sm:justify-end">
-                        <button type="button"
-                            onclick="document.getElementById('add-customer-modal').classList.add('hidden')"
-                            class="px-8 py-5 text-sm font-black uppercase tracking-widest text-slate-400 hover:text-slate-950 transition-colors rounded-[1.25rem] hover:bg-slate-50">
-                            Discard
-                        </button>
-                        <button type="submit"
-                            class="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-[1.25rem] bg-slate-950 px-10 py-5 text-sm font-black text-white shadow-2xl transition-all hover:scale-[1.02] active:scale-95">
-                            <div
-                                class="absolute inset-0 bg-gradient-to-r from-emerald-600 to-sky-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                            </div>
-                            <span class="relative z-10 flex items-center gap-2">
-                                <span class="material-symbols-rounded">check_circle</span>
-                                Activate Profile
-                            </span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    </div>
-
-    {{-- Edit Customer Modal --}}
-    <div id="edit-customer-modal"
-        class="hidden fixed inset-0 z-[100] overflow-y-auto bg-slate-950/60 backdrop-blur-xl px-4 py-6 sm:px-6 transition-all duration-500">
-        <div class="mx-auto flex min-h-full w-full max-w-2xl items-center justify-center">
-            <div
-                class="w-full flex flex-col overflow-hidden rounded-[2.5rem] border border-white/40 bg-white/90 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] backdrop-blur-2xl transition-all">
-                {{-- Modal Header --}}
-                <div
-                    class="relative shrink-0 border-b border-slate-100 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 px-10 py-8">
-                    <div class="absolute -top-24 -right-24 w-48 h-48 bg-blue-400/10 blur-[80px] rounded-full"></div>
-
-                    <div class="flex items-center justify-between relative z-10">
-                        <div>
-                            <div class="flex items-center gap-3 mb-2">
-                                <div
-                                    class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-                                    <span class="material-symbols-rounded text-xl">edit_square</span>
-                                </div>
-                                <h2 class="text-2xl font-black text-slate-950 tracking-tight uppercase tracking-widest">Edit
-                                    Partner</h2>
-                            </div>
-                            <p class="text-sm text-slate-500 font-medium ml-12">Update existing profile credentials</p>
-                        </div>
-                        <button onclick="document.getElementById('edit-customer-modal').classList.add('hidden')"
-                            class="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-100 hover:bg-red-50 transition-all shadow-sm active:scale-90">
-                            <span class="material-symbols-rounded">close</span>
-                        </button>
-                    </div>
+                <div>
+                    <div class="cm-modal-title">Register customer</div>
+                    <div class="cm-modal-sub">Onboard a new buyer or partner</div>
                 </div>
-
-                {{-- Modal Body --}}
-                <form id="edit-customer-form" method="POST" class="p-10 space-y-8 bg-white/50 relative z-10">
-                    @csrf @method('PUT')
-                    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2">
-                        <div class="space-y-3 group">
-                            <label
-                                class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-                                <span class="w-1 h-1 rounded-full bg-blue-500"></span>
-                                Full Name
-                            </label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-rounded absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors">badge</span>
-                                <input type="text" name="name" id="edit-name" required
-                                    class="w-full pl-14 pr-6 py-5 bg-slate-50/50 border border-slate-200 rounded-[1.25rem] focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-black">
-                            </div>
-                        </div>
-                        <div class="space-y-3 group">
-                            <label
-                                class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-                                <span class="w-1 h-1 rounded-full bg-indigo-500"></span>
-                                Contact Phone
-                            </label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-rounded absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors">call</span>
-                                <input type="text" name="phone" id="edit-phone" required
-                                    class="w-full pl-14 pr-6 py-5 bg-slate-50/50 border border-slate-200 rounded-[1.25rem] focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3 group">
-                        <label
-                            class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-                            <span class="w-1 h-1 rounded-full bg-slate-500"></span>
-                            Address Details
-                        </label>
-                        <div class="relative">
-                            <span
-                                class="material-symbols-rounded absolute left-5 top-6 text-slate-400 group-focus-within:text-slate-600 transition-colors">location_on</span>
-                            <textarea name="address" id="edit-address" rows="3"
-                                class="w-full pl-14 pr-6 py-5 bg-slate-50/50 border border-slate-200 rounded-[1.25rem] focus:ring-4 focus:ring-slate-500/10 focus:border-slate-500 outline-none transition-all font-medium resize-none"></textarea>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2">
-                        <div class="space-y-3 group">
-                            <label
-                                class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-                                <span class="w-1 h-1 rounded-full bg-amber-500"></span>
-                                GST Identification
-                            </label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-rounded absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-amber-600 transition-colors">receipt_long</span>
-                                <input type="text" name="gst_number" id="edit-gst"
-                                    class="w-full pl-14 pr-6 py-5 bg-slate-50/50 border border-slate-200 rounded-[1.25rem] focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all font-bold uppercase">
-                            </div>
-                        </div>
-                        <div class="space-y-3 group">
-                            <label
-                                class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-                                <span class="w-1 h-1 rounded-full bg-rose-500"></span>
-                                Mapped Route
-                            </label>
-                            <div class="relative">
-                                <span
-                                    class="material-symbols-rounded absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-rose-600 transition-colors">route</span>
-                                <input type="text" name="route" id="edit-route"
-                                    class="w-full pl-14 pr-6 py-5 bg-slate-50/50 border border-slate-200 rounded-[1.25rem] focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all font-bold">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3 group">
-                        <label
-                            class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-                            <span class="w-1 h-1 rounded-full bg-violet-500"></span>
-                            Entity Classification
-                        </label>
-                        <div class="relative">
-                            <span
-                                class="material-symbols-rounded absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-600 transition-colors">category</span>
-                            <select name="type" id="edit-type"
-                                class="w-full pl-14 pr-12 py-5 bg-slate-50/50 border border-slate-200 rounded-[1.25rem] focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all font-black appearance-none cursor-pointer">
-                                <option value="Retail">Retail Partner</option>
-                                <option value="Wholesale">Wholesale Distributor</option>
-                            </select>
-                            <span
-                                class="material-symbols-rounded absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
-                        </div>
-                    </div>
-
-                    {{-- Modal Footer --}}
-                    <div class="flex flex-col-reverse gap-4 pt-6 sm:flex-row sm:justify-end">
-                        <button type="button"
-                            onclick="document.getElementById('edit-customer-modal').classList.add('hidden')"
-                            class="px-8 py-5 text-sm font-black uppercase tracking-widest text-slate-400 hover:text-slate-950 transition-colors rounded-[1.25rem] hover:bg-slate-50">
-                            Cancel Changes
-                        </button>
-                        <button type="submit"
-                            class="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-[1.25rem] bg-slate-950 px-10 py-5 text-sm font-black text-white shadow-2xl transition-all hover:scale-[1.02] active:scale-95">
-                            <div
-                                class="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                            </div>
-                            <span class="relative z-10 flex items-center gap-2">
-                                <span class="material-symbols-rounded">save</span>
-                                Commit Updates
-                            </span>
-                        </button>
-                    </div>
-                </form>
             </div>
+            <button onclick="document.getElementById('add-customer-modal').classList.add('cm-hidden')"
+                class="cm-close-btn" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
         </div>
+
+        <form action="{{ route('masters.customers.store') }}" method="POST" class="cm-modal-body">
+            @csrf
+            <div class="cm-form-grid">
+                <div class="cm-form-group">
+                    <label class="cm-form-label">Full name <span class="cm-required">*</span></label>
+                    <input type="text" name="name" required placeholder="e.g. John Poultry Hub"
+                        class="cm-form-input">
+                </div>
+                <div class="cm-form-group">
+                    <label class="cm-form-label">Phone <span class="cm-required">*</span></label>
+                    <input type="text" name="phone" required placeholder="+91 00000 00000"
+                        class="cm-form-input">
+                </div>
+            </div>
+
+            <div class="cm-form-group">
+                <label class="cm-form-label">Address</label>
+                <textarea name="address" rows="2" placeholder="Store or office address…"
+                    class="cm-form-input cm-form-textarea"></textarea>
+            </div>
+
+            <div class="cm-form-grid">
+                <div class="cm-form-group">
+                    <label class="cm-form-label">GST number</label>
+                    <input type="text" name="gst_number" placeholder="Optional GSTIN"
+                        class="cm-form-input cm-uppercase">
+                </div>
+                <div class="cm-form-group">
+                    <label class="cm-form-label">Route</label>
+                    <input type="text" name="route" placeholder="e.g. North Sector"
+                        class="cm-form-input">
+                </div>
+            </div>
+
+            <div class="cm-form-group">
+                <label class="cm-form-label">Type</label>
+                <select name="type" class="cm-form-input cm-form-select">
+                    <option value="Retail">Retail partner</option>
+                    <option value="Wholesale">Wholesale distributor</option>
+                </select>
+            </div>
+
+            <div class="cm-modal-footer">
+                <button type="button"
+                    onclick="document.getElementById('add-customer-modal').classList.add('cm-hidden')"
+                    class="cm-btn-ghost">Cancel</button>
+                <button type="submit" class="cm-btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Activate profile
+                </button>
+            </div>
+        </form>
     </div>
+</div>
+
+{{-- ================================================ --}}
+{{-- EDIT CUSTOMER MODAL                             --}}
+{{-- ================================================ --}}
+<div id="edit-customer-modal" class="cm-modal-overlay cm-hidden">
+    <div class="cm-modal">
+        <div class="cm-modal-header">
+            <div class="cm-modal-title-row">
+                <div class="cm-modal-icon cm-modal-icon--blue">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="cm-modal-title">Edit customer</div>
+                    <div class="cm-modal-sub">Update existing profile credentials</div>
+                </div>
+            </div>
+            <button onclick="document.getElementById('edit-customer-modal').classList.add('cm-hidden')"
+                class="cm-close-btn" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <form id="edit-customer-form" method="POST" class="cm-modal-body">
+            @csrf @method('PUT')
+
+            <div class="cm-form-grid">
+                <div class="cm-form-group">
+                    <label class="cm-form-label">Full name <span class="cm-required">*</span></label>
+                    <input type="text" name="name" id="edit-name" required class="cm-form-input">
+                </div>
+                <div class="cm-form-group">
+                    <label class="cm-form-label">Phone <span class="cm-required">*</span></label>
+                    <input type="text" name="phone" id="edit-phone" required class="cm-form-input">
+                </div>
+            </div>
+
+            <div class="cm-form-group">
+                <label class="cm-form-label">Address</label>
+                <textarea name="address" id="edit-address" rows="2"
+                    class="cm-form-input cm-form-textarea"></textarea>
+            </div>
+
+            <div class="cm-form-grid">
+                <div class="cm-form-group">
+                    <label class="cm-form-label">GST number</label>
+                    <input type="text" name="gst_number" id="edit-gst"
+                        class="cm-form-input cm-uppercase">
+                </div>
+                <div class="cm-form-group">
+                    <label class="cm-form-label">Route</label>
+                    <input type="text" name="route" id="edit-route" class="cm-form-input">
+                </div>
+            </div>
+
+            <div class="cm-form-group">
+                <label class="cm-form-label">Type</label>
+                <select name="type" id="edit-type" class="cm-form-input cm-form-select">
+                    <option value="Retail">Retail partner</option>
+                    <option value="Wholesale">Wholesale distributor</option>
+                </select>
+            </div>
+
+            <div class="cm-modal-footer">
+                <button type="button"
+                    onclick="document.getElementById('edit-customer-modal').classList.add('cm-hidden')"
+                    class="cm-btn-ghost">Cancel</button>
+                <button type="submit" class="cm-btn-primary cm-btn-primary--blue">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Save changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 @endsection
 
+@push('styles')
+<style>
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ── Layout ── */
+.cm-page { padding: 2rem 0 3rem; }
+.cm-hidden { display: none !important; }
+
+/* ── Top Bar ── */
+.cm-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.cm-page-title {
+    font-size: 1.375rem;
+    font-weight: 600;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+.cm-page-sub {
+    font-size: 0.8125rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+/* ── Buttons ── */
+.cm-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #0f172a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+    text-decoration: none;
+}
+.cm-btn-primary:hover { opacity: 0.85; }
+.cm-btn-primary--blue { background: #1d4ed8; }
+.cm-btn-primary--blue:hover { background: #1e40af; opacity: 1; }
+
+.cm-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.cm-btn-ghost:hover { background: #f1f5f9; color: #0f172a; }
+
+/* ── Stats ── */
+.cm-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 1.5rem;
+}
+@media (max-width: 900px) { .cm-stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .cm-stats { grid-template-columns: 1fr; } }
+
+.cm-stat-card {
+    background: #fff;
+    border: 0.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem 1.125rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.cm-stat-card--danger { border-color: #fecaca; background: #fff; }
+
+.cm-stat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.cm-icon-teal  { background: #d1fae5; color: #065f46; }
+.cm-icon-blue  { background: #dbeafe; color: #1e40af; }
+.cm-icon-amber { background: #fef3c7; color: #92400e; }
+.cm-icon-red   { background: #fee2e2; color: #991b1b; }
+
+.cm-stat-label {
+    font-size: 0.6875rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 2px;
+}
+.cm-stat-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+/* ── Table Card ── */
+.cm-table-card {
+    background: #fff;
+    border: 0.5px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.cm-table-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.875rem 1.25rem;
+    border-bottom: 0.5px solid #e2e8f0;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.cm-search-wrap {
+    position: relative;
+    flex: 1;
+    max-width: 320px;
+}
+.cm-search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+}
+.cm-search-input {
+    width: 100%;
+    padding: 7px 12px 7px 34px;
+    border: 0.5px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    background: #f8fafc;
+    color: #0f172a;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.cm-search-input:focus {
+    border-color: #94a3b8;
+    box-shadow: 0 0 0 3px rgba(148,163,184,0.15);
+}
+.cm-toolbar-right { display: flex; align-items: center; gap: 8px; }
+.cm-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 12px;
+    border: 0.5px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    color: #64748b;
+    background: transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+}
+.cm-filter-btn:hover { background: #f1f5f9; color: #0f172a; }
+
+/* ── Table ── */
+.cm-table-wrap { overflow-x: auto; }
+.cm-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.cm-table thead tr { border-bottom: 0.5px solid #e2e8f0; }
+.cm-table th {
+    padding: 10px 16px;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    text-align: left;
+    background: #f8fafc;
+    white-space: nowrap;
+}
+.cm-th-right { text-align: right; }
+.cm-th-center { text-align: center; }
+
+.cm-tr { transition: background 0.1s; }
+.cm-tr:hover { background: #f8fafc; }
+.cm-td {
+    padding: 12px 16px;
+    border-bottom: 0.5px solid #f1f5f9;
+    vertical-align: middle;
+    color: #0f172a;
+}
+.cm-table tbody tr:last-child .cm-td { border-bottom: none; }
+.cm-td-right { text-align: right; }
+
+/* ── Identity Cell ── */
+.cm-identity { display: flex; align-items: center; gap: 10px; }
+.cm-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #dbeafe;
+    color: #1e40af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.cm-cust-name {
+    font-weight: 500;
+    color: #0f172a;
+    text-decoration: none;
+    transition: color 0.15s;
+    display: block;
+}
+a.cm-cust-name:hover { color: #1d4ed8; }
+.cm-cust-meta {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 1px;
+}
+.cm-truncate {
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cm-route { font-size: 0.8125rem; color: #334155; }
+
+/* ── Badges ── */
+.cm-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.6875rem;
+    font-weight: 500;
+}
+.cm-badge--wholesale { background: #dbeafe; color: #1e40af; }
+.cm-badge--retail    { background: #d1fae5; color: #065f46; }
+
+/* ── Balance ── */
+.cm-balance { font-weight: 500; }
+.cm-balance--due   { color: #dc2626; }
+.cm-balance--clear { color: #cbd5e1; }
+
+/* ── Action Buttons ── */
+.cm-actions { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.cm-action-btn {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0.5px solid #e2e8f0;
+    border-radius: 7px;
+    background: transparent;
+    cursor: pointer;
+    color: #94a3b8;
+    text-decoration: none;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.cm-action-btn:hover        { border-color: #cbd5e1; color: #334155; background: #f8fafc; }
+.cm-action-btn--edit:hover  { border-color: #93c5fd; color: #1d4ed8; background: #eff6ff; }
+.cm-action-btn--danger:hover{ border-color: #fca5a5; color: #dc2626; background: #fef2f2; }
+
+/* ── Empty State ── */
+.cm-empty { padding: 3rem 1rem; text-align: center; }
+.cm-empty-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: #f1f5f9;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.75rem;
+}
+.cm-empty-title { font-size: 0.9375rem; font-weight: 600; color: #0f172a; margin-bottom: 4px; }
+.cm-empty-sub   { font-size: 0.8125rem; color: #94a3b8; }
+
+/* ── Pagination ── */
+.cm-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    border-top: 0.5px solid #f1f5f9;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.cm-pg-info { font-size: 0.75rem; color: #94a3b8; }
+.cm-pg-links { display: flex; gap: 4px; }
+
+/* ── Modal Overlay ── */
+.cm-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 5vh 1rem 2rem;
+    overflow-y: auto;
+}
+.cm-modal {
+    background: #fff;
+    border-radius: 16px;
+    border: 0.5px solid #e2e8f0;
+    width: 100%;
+    max-width: 520px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px -8px rgba(15,23,42,0.15);
+}
+
+/* ── Modal Header ── */
+.cm-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.125rem 1.5rem;
+    border-bottom: 0.5px solid #f1f5f9;
+    background: #fafafa;
+}
+.cm-modal-title-row { display: flex; align-items: center; gap: 10px; }
+.cm-modal-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.cm-modal-icon--green { background: #d1fae5; color: #065f46; }
+.cm-modal-icon--blue  { background: #dbeafe; color: #1e40af; }
+.cm-modal-title { font-size: 0.9375rem; font-weight: 600; color: #0f172a; }
+.cm-modal-sub   { font-size: 0.75rem; color: #94a3b8; margin-top: 1px; }
+
+.cm-close-btn {
+    width: 28px;
+    height: 28px;
+    border: 0.5px solid #e2e8f0;
+    border-radius: 7px;
+    background: transparent;
+    cursor: pointer;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.cm-close-btn:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+
+/* ── Modal Body / Form ── */
+.cm-modal-body { padding: 1.25rem 1.5rem; }
+.cm-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+@media (max-width: 480px) { .cm-form-grid { grid-template-columns: 1fr; } }
+
+.cm-form-group { margin-bottom: 12px; }
+.cm-form-group:last-of-type { margin-bottom: 0; }
+
+.cm-form-label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 5px;
+}
+.cm-required { color: #dc2626; }
+
+.cm-form-input {
+    display: block;
+    width: 100%;
+    padding: 8px 10px;
+    border: 0.5px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    background: #f8fafc;
+    color: #0f172a;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+}
+.cm-form-input:focus {
+    border-color: #94a3b8;
+    box-shadow: 0 0 0 3px rgba(148,163,184,0.15);
+    background: #fff;
+}
+.cm-form-textarea { resize: vertical; min-height: 64px; }
+.cm-form-select   { cursor: pointer; }
+.cm-uppercase     { text-transform: uppercase; }
+
+/* ── Modal Footer ── */
+.cm-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    padding-top: 1rem;
+    margin-top: 1rem;
+    border-top: 0.5px solid #f1f5f9;
+}
+</style>
+@endpush
+
 @push('scripts')
-    <script>
-        function openEditCustomer(id, name, phone, address, gst, route, type) {
-            const form = document.getElementById('edit-customer-form');
-            form.action = `/masters/customers/${id}`;
-            document.getElementById('edit-name').value = name;
-            document.getElementById('edit-phone').value = phone;
-            document.getElementById('edit-address').value = address;
-            document.getElementById('edit-gst').value = gst;
-            document.getElementById('edit-route').value = route;
-            document.getElementById('edit-type').value = type;
-            document.getElementById('edit-customer-modal').classList.remove('hidden');
-        }
-    </script>
+<script>
+function openEditCustomer(button) {
+    const id = button.getAttribute('data-id');
+    const name = button.getAttribute('data-name');
+    const phone = button.getAttribute('data-phone');
+    const address = button.getAttribute('data-address');
+    const gst = button.getAttribute('data-gst');
+    const route = button.getAttribute('data-route');
+    const type = button.getAttribute('data-type');
+
+    const form = document.getElementById('edit-customer-form');
+    form.action = `/masters/customers/${id}`;
+    document.getElementById('edit-name').value    = name;
+    document.getElementById('edit-phone').value   = phone;
+    document.getElementById('edit-address').value = address;
+    document.getElementById('edit-gst').value     = gst;
+    document.getElementById('edit-route').value   = route;
+    document.getElementById('edit-type').value    = type;
+    document.getElementById('edit-customer-modal').classList.remove('cm-hidden');
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.cm-modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', function(e) {
+        if (e.target === this) this.classList.add('cm-hidden');
+    });
+});
+
+// Close modals on Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.cm-modal-overlay').forEach(m => m.classList.add('cm-hidden'));
+    }
+});
+</script>
 @endpush

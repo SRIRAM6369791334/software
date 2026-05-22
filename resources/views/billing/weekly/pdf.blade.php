@@ -203,6 +203,17 @@
                 </tr>
             </thead>
             <tbody>
+                @forelse($bill->items as $item)
+                <tr>
+                    <td>
+                        <div style="font-weight: bold;">{{ $item->item_name }}</div>
+                        <div style="font-size: 9px; color: #999; margin-top: 3px;">WEEKLY SUPPLY ITEM</div>
+                    </td>
+                    <td class="text-center">{{ number_format($item->quantity_kg, 2) }} KG</td>
+                    <td class="text-right">Rs {{ number_format($item->rate_per_kg, 2) }}</td>
+                    <td class="text-right font-bold">Rs {{ number_format($item->quantity_kg * $item->rate_per_kg, 2) }}</td>
+                </tr>
+                @empty
                 <tr>
                     <td>
                         <div style="font-weight: bold;">{{ $bill->items_description ?? 'Poultry Sales' }}</div>
@@ -212,6 +223,7 @@
                     <td class="text-right">Rs {{ number_format($bill->amount / max(1, $bill->quantity_kg), 2) }}</td>
                     <td class="text-right font-bold">Rs {{ number_format($bill->amount, 2) }}</td>
                 </tr>
+                @endforelse
             </tbody>
         </table>
 

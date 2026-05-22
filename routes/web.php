@@ -54,7 +54,15 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:admin|data_entry'])->group(function () {
         // Masters
         Route::get('masters/customers/{customer}/ledger-pdf', [CustomerController::class, 'downloadLedgerPdf'])->name('masters.customers.ledger-pdf');
+        Route::get('masters/customers/{customer}/billing-history', [CustomerController::class, 'billingHistory'])->name('masters.customers.billing-history');
+        Route::get('masters/customers/{customer}/payment-history', [CustomerController::class, 'paymentHistory'])->name('masters.customers.payment-history');
+
         Route::get('masters/dealers/{dealer}/ledger-pdf', [DealerController::class, 'downloadLedgerPdf'])->name('masters.dealers.ledger-pdf');
+        Route::get('masters/dealers/{dealer}/purchase-history', [DealerController::class, 'purchaseHistory'])->name('masters.dealers.purchase-history');
+        Route::get('masters/dealers/{dealer}/outstanding-report', [DealerController::class, 'outstandingReport'])->name('masters.dealers.outstanding-report');
+        Route::get('masters/vendors/{vendor}/purchase-history', [VendorController::class, 'purchaseHistory'])->name('masters.vendors.purchase-history');
+
+
         Route::resource('masters/customers', CustomerController::class)->names('masters.customers');
         Route::resource('masters/dealers', DealerController::class)->names('masters.dealers');
         Route::resource('masters/vendors', VendorController::class)->names('masters.vendors');
@@ -98,10 +106,13 @@ Route::middleware(['auth'])->group(function () {
             Route::resource('weekly', WeeklyBillingController::class);
             Route::post('weekly/bulk', [WeeklyBillingController::class, 'bulkStore'])->name('weekly.bulkStore');
             Route::get('weekly/{bill}/whatsapp', [WeeklyBillingController::class, 'whatsapp'])->name('weekly.whatsapp');
+            Route::get('weekly/{bill}/pdf', [WeeklyBillingController::class, 'downloadPdf'])->name('weekly.pdf');
 
             Route::resource('daily', DailyBillingController::class);
             Route::get('daily/gst/view', [DailyBillingController::class, 'gst'])->name('daily.gst');
             Route::get('daily/export/csv', [DailyBillingController::class, 'export'])->name('daily.export');
+            Route::get('daily/{bill}/invoice', [DailyBillingController::class, 'invoice'])->name('daily.invoice');
+            Route::get('daily/{bill}/pdf', [DailyBillingController::class, 'downloadPdf'])->name('daily.pdf');
 
             Route::get('weekly/export/csv', [WeeklyBillingController::class, 'export'])->name('weekly.export');
         });

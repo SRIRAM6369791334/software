@@ -8,7 +8,7 @@
     <div class="absolute top-1/2 -right-40 w-[600px] h-[600px] bg-sky-400/10 blur-[120px] rounded-full pointer-events-none animate-pulse" style="animation-delay: 1s"></div>
 
     {{-- Hero Section: Neural Telemetry v4 --}}
-    <section class="relative mb-10 overflow-hidden rounded-[3rem] border border-white/40 bg-white/60 backdrop-blur-3xl p-8 shadow-2xl shadow-slate-200/40 lg:p-12 z-10">
+    <!-- <section class="relative mb-10 overflow-hidden rounded-[3rem] border border-white/40 bg-white/60 backdrop-blur-3xl p-8 shadow-2xl shadow-slate-200/40 lg:p-12 z-10">
         <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-emerald-50/50 to-transparent pointer-events-none"></div>
         
         <div class="relative z-20 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-12">
@@ -58,7 +58,7 @@
                 </div>
             </div>
         </div>
-    </section>
+    </section> -->
 
     {{-- Stats Grid --}}
     <section class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 mb-10 z-10 relative">
@@ -120,7 +120,7 @@
                             <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Identiy / Date</th>
                             <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Payload</th>
                             <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Value</th>
-                            <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Protocol</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">

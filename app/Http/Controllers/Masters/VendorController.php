@@ -56,7 +56,7 @@ class VendorController extends Controller
 
     public function purchaseHistory(Vendor $vendor): View
     {
-        $purchases = $vendor->purchases()->latest()->paginate(15);
+        $purchases = $vendor->purchases()->with('items')->latest()->paginate(15);
         return view('masters.vendors.purchase-history', compact('vendor', 'purchases'));
     }
 }

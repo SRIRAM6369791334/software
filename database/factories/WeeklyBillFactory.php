@@ -20,8 +20,6 @@ class WeeklyBillFactory extends Factory
             'customer_id' => Customer::factory(),
             'period_start' => today()->subDays(7),
             'period_end' => today(),
-            'items_description' => 'Chicks & Feed',
-            'quantity_kg' => $this->faker->randomFloat(2, 500, 2000),
             'amount' => $amount,
             'gst_percentage' => $gstPercentage,
             'gst_amount' => $gstAmount,
@@ -29,5 +27,18 @@ class WeeklyBillFactory extends Factory
             'status' => $this->faker->randomElement(['Generated', 'Pending', 'Paid']),
             'payment_mode' => $this->faker->randomElement(['cash', 'credit', 'online']),
         ];
+    }
+
+    public function configure()
+    {
+        return $this->afterCreating(function (WeeklyBill $bill) {
+            $bill->items()->create([
+                'item_name' => 'Chicks & Feed',
+                'quantity_kg' => $this->faker->randomFloat(2, 500, 2000),
+                'rate_per_kg' => round($bill->amount / 1000, 2),
+                'tax_amount' => $bill->gst_amount,
+                'total_amount' => $bill->net_amount,
+            ]);
+        });
     }
 }

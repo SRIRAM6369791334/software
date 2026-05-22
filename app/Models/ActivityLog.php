@@ -10,6 +10,10 @@ class ActivityLog extends Model
 
     protected $fillable = ['user_id', 'action', 'module', 'record_id', 'timestamp'];
 
+    protected $casts = [
+        'timestamp' => 'datetime',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

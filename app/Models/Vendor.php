@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -17,6 +16,11 @@ class Vendor extends Model
     public function purchases(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Purchase::class);
+    }
+
+    public function getOutstandingBalanceAttribute(): float
+    {
+        return (float) $this->purchases()->where('payment_mode', 'Credit')->sum('total_amount');
     }
 
     public function scopeSearch($query, ?string $term)
