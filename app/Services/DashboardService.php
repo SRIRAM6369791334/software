@@ -23,16 +23,19 @@ class DashboardService
             $purchasesToday  = Purchase::whereDate('date', today())->sum('total_amount');
             $purchaseCount   = Purchase::whereDate('date', today())->count();
             
-            $monthlyRevenue  = WeeklyBill::whereMonth('period_end', now()->month)->sum('amount') +
-                               DailyBill::whereMonth('date', now()->month)->sum('amount');
+            $startOfMonth = now()->startOfMonth();
+            $endOfMonth   = now()->endOfMonth();
+
+            $monthlyRevenue  = WeeklyBill::whereBetween('period_end', [$startOfMonth, $endOfMonth])->sum('amount') +
+                               DailyBill::whereBetween('date', [$startOfMonth, $endOfMonth])->sum('amount');
                                
-            $monthlyPurchase = Purchase::whereMonth('date', now()->month)->sum('total_amount');
+            $monthlyPurchase = Purchase::whereBetween('date', [$startOfMonth, $endOfMonth])->sum('total_amount');
             $activeDealers   = Dealer::where('pending_amount', '>', 0)->count();
 
             // Poultry operational stats
             $totalBirds     = \App\Models\Batch::where('status', 'Active')->sum('current_count');
             $activeBatches  = \App\Models\Batch::where('status', 'Active')->count();
-            $mortalityMTD   = \App\Models\Mortality::whereMonth('date', now()->month)->sum('count');
+            $mortalityMTD   = \App\Models\Mortality::whereBetween('date', [$startOfMonth, $endOfMonth])->sum('count');
 
             return compact(
                 'todayRevenue', 'totalCustomers', 'pendingPayments', 'pendingCount',

@@ -26,5 +26,8 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\RateLimiter::for('payments', function (\Illuminate\Http\Request $request) {
             return \Illuminate\Cache\RateLimiting\Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
         });
+
+        \App\Models\Customer::observe(\App\Observers\CustomerObserver::class);
+        \App\Models\Item::observe(\App\Observers\ItemObserver::class);
     }
 }

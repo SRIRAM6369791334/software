@@ -13,7 +13,7 @@
     </div>
 
     <div class="flex items-center gap-3">
-        <!-- <div class="flex items-center gap-1">
+        <div class="flex items-center gap-1">
             <button class="relative rounded-xl p-2 text-amber-500 transition-all hover:bg-amber-50 hover:text-amber-600" title="Notifications">
                 <span class="material-symbols-rounded">notifications</span>
                 <span class="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-amber-500"></span>
@@ -24,7 +24,7 @@
             <button id="theme-toggle" type="button" class="rounded-xl p-2 text-violet-500 transition-all hover:bg-violet-50 hover:text-violet-600" title="Toggle theme">
                 <span class="material-symbols-rounded">dark_mode</span>
             </button>
-        </div> -->
+        </div>
 
         <div class="mx-1 h-8 w-px bg-slate-200"></div>
 

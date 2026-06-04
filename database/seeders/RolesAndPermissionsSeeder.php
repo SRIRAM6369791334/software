@@ -71,6 +71,43 @@ class RolesAndPermissionsSeeder extends Seeder
             'view batches', 'create batches', 'edit batches'
         ]);
 
+        // ROLE 5 - Manager: High level access over all business areas, including delete except user configuration.
+        $managerRole = Role::firstOrCreate(['name' => 'manager']);
+        $managerRole->givePermissionTo([
+            'view customers', 'create customers', 'edit customers', 'delete customers',
+            'view dealers', 'create dealers', 'edit dealers', 'delete dealers',
+            'view vendors', 'create vendors', 'edit vendors', 'delete vendors',
+            'view bills', 'create bills', 'edit bills', 'delete bills',
+            'view purchases', 'create purchases', 'edit purchases', 'delete purchases',
+            'view payments', 'create payments', 'edit payments', 'delete payments',
+            'view expenses', 'create expenses', 'edit expenses', 'delete expenses',
+            'view emis', 'create emis', 'edit emis', 'delete emis',
+            'view reports', 'view profit dashboard',
+            'view stock', 'create stock', 'edit stock', 'delete stock',
+            'view routes', 'create routes', 'edit routes', 'delete routes',
+            'view batches', 'create batches', 'edit batches', 'delete batches',
+            'mark delivery status'
+        ]);
+
+        // ROLE 6 - Sales: Customer operations, daily/weekly bills, payments. No expenses or backend settings.
+        $salesRole = Role::firstOrCreate(['name' => 'sales']);
+        $salesRole->givePermissionTo([
+            'view customers', 'create customers', 'edit customers',
+            'view dealers', 'create dealers', 'edit dealers',
+            'view bills', 'create bills', 'edit bills',
+            'view payments', 'create payments', 'edit payments',
+            'view routes',
+            'mark delivery status'
+        ]);
+
+        // ROLE 7 - Store Keeper: Full control over inventory, stock items, warehouses, and flock batches.
+        $storeKeeperRole = Role::firstOrCreate(['name' => 'store_keeper']);
+        $storeKeeperRole->givePermissionTo([
+            'view stock', 'create stock', 'edit stock',
+            'view batches', 'create batches', 'edit batches',
+            'view routes'
+        ]);
+
         // Create Default Admin User
         $admin = User::firstOrCreate(
             ['email' => 'admin@poultry.com'],
@@ -82,5 +119,6 @@ class RolesAndPermissionsSeeder extends Seeder
             ]
         );
         $admin->syncRoles(['admin']);
+
     }
 }
