@@ -130,6 +130,7 @@ class StockService
             // Also record in stock transactions for "Birds" category
             StockTransaction::create([
                 'txn_type' => 'OUT',
+                'type' => 'adjustment', // Add legacy type to prevent constraint violation
                 'item_name' => 'Birds (' . $batch->batch_name . ')',
                 'quantity' => $count,
                 'unit' => 'pcs',

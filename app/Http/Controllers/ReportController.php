@@ -221,8 +221,8 @@ class ReportController extends Controller
 
     public function purchaseAnalytics(): View
     {
-        $analytics = Purchase::select('item', DB::raw('SUM(total_amount) as total'), DB::raw('SUM(quantity) as qty'))
-            ->groupBy('item')
+        $analytics = \App\Models\PurchaseItem::select('item_name as item', DB::raw('SUM(total_amount) as total'), DB::raw('SUM(quantity) as qty'))
+            ->groupBy('item_name')
             ->get();
         return view('reports.purchases.analytics', compact('analytics'));
     }

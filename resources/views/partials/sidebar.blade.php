@@ -26,7 +26,6 @@
         ['label' => 'Dealer billing', 'icon' => 'description', 'route' => 'billing.weekly.index', 'min' => 'manager'],
         ['label' => 'Customer Billing', 'icon' => 'event_note', 'route' => 'billing.daily.index', 'min' => 'manager'],
 
-        
         ['header' => 'Finance & Payments'],
         ['label' => 'Customer Payments', 'icon' => 'credit_card', 'route' => 'payments.customers.index', 'min' => 'manager'],
         ['label' => 'Dealer Payments', 'icon' => 'account_balance', 'route' => 'payments.dealers.index', 'min' => 'manager'],
@@ -54,56 +53,61 @@
     $isActive = fn(string $routeName) => request()->routeIs($routeName);
 @endphp
 
-<aside id="sidebar" class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-emerald-100 bg-gradient-to-br from-white/95 via-emerald-50/80 to-sky-50/80 shadow-md shadow-emerald-100/70 backdrop-blur-xl transition-transform duration-300 ease-out lg:static lg:translate-x-0 -translate-x-full">
-    <div class="flex h-20 items-center gap-3 border-b border-emerald-100 bg-gradient-to-r from-emerald-50 to-sky-50 px-5">
-        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-sky-500 text-white shadow-lg shadow-emerald-100">
-            <span class="material-symbols-rounded text-[25px]">egg</span>
+<aside id="sidebar" class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] lg:static lg:translate-x-0 -translate-x-full">
+    {{-- Branding Header --}}
+    <div class="flex h-20 items-center gap-3 px-6">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm transition-transform hover:scale-105">
+            <span class="material-symbols-rounded text-[22px]">egg</span>
         </div>
         <div class="flex min-w-0 flex-col">
-            <span class="text-base font-black leading-none tracking-tight text-slate-950">PoultryPro</span>
-            <span class="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Management System</span>
+            <span class="text-base font-bold tracking-tight text-slate-900 leading-none">PoultryPro</span>
+            <span class="mt-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Management</span>
         </div>
-        <button class="ml-auto rounded-xl p-2 text-slate-400 transition hover:bg-sky-50 hover:text-slate-900 lg:hidden"
+        <button class="ml-auto rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900 lg:hidden"
                 onclick="document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('sidebar-overlay').classList.add('hidden')">
-            <span class="material-symbols-rounded">close</span>
+            <span class="material-symbols-rounded text-xl">close</span>
         </button>
     </div>
 
-    <nav class="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-4 py-5">
+    {{-- Navigation Links --}}
+    <nav class="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-4 py-6">
         @foreach($navItems as $item)
             @if(isset($item['header']))
                 @php $headerVisible = !isset($item['min']) || $canAccess($item['min']); @endphp
                 @if($headerVisible)
-                    <h3 class="mb-2 mt-5 px-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 first:mt-0">{{ $item['header'] }}</h3>
+                    <h3 class="mb-3 mt-6 px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 first:mt-0">
+                        {{ $item['header'] }}
+                    </h3>
                 @endif
             @elseif($canAccess($item['min']) && $routeExists($item['route']))
                 <a href="{{ route($item['route']) }}"
-                   class="group flex items-center gap-3 rounded-xl px-3.5 py-2.5 transition-all duration-200 {{ $isActive($item['route']) ? 'bg-gradient-to-r from-emerald-600 to-sky-500 text-white shadow-lg shadow-emerald-100' : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-800' }}">
-                    <span class="material-symbols-rounded text-[22px] {{ $isActive($item['route']) ? 'text-white' : 'text-slate-400 group-hover:text-primary' }} transition-colors">
+                   class="group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-300 {{ $isActive($item['route']) ? 'bg-slate-900 text-white shadow-md shadow-slate-900/10' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                    <span class="material-symbols-rounded text-[20px] {{ $isActive($item['route']) ? 'text-white' : 'text-slate-400 group-hover:text-slate-600' }} transition-colors">
                         {{ $item['icon'] }}
                     </span>
-                    <span class="truncate text-sm font-bold tracking-tight">{{ $item['label'] }}</span>
+                    <span class="truncate text-sm font-semibold tracking-tight">{{ $item['label'] }}</span>
                     @if($isActive($item['route']))
-                        <span class="ml-auto h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_8px_white]"></span>
+                        <span class="absolute right-3 h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
                     @endif
                 </a>
             @endif
         @endforeach
     </nav>
 
+    {{-- User Profile Footer --}}
     <div class="border-t border-slate-100 p-4">
-        <div class="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 transition-all hover:border-emerald-200 hover:bg-emerald-50/40">
-            <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white font-bold text-slate-700 shadow-sm transition-transform group-hover:scale-105">
+        <div class="group flex items-center gap-3 rounded-2xl bg-slate-50 p-3 transition-colors hover:bg-slate-100">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white font-bold text-slate-700 shadow-sm transition-transform group-hover:scale-105">
                 {{ substr($user?->name ?? 'A', 0, 1) }}
             </div>
             <div class="flex min-w-0 flex-col">
-                <span class="truncate text-xs font-black tracking-tight text-slate-950">{{ $user?->name ?? 'Admin' }}</span>
-                <span class="truncate text-[10px] font-bold text-slate-400">{{ $user?->email ?? 'admin@poultry.com' }}</span>
+                <span class="truncate text-sm font-bold tracking-tight text-slate-900">{{ $user?->name ?? 'Admin' }}</span>
+                <span class="truncate text-[10px] font-medium text-slate-500">{{ $user?->email ?? 'admin@poultry.com' }}</span>
             </div>
-            <form method="POST" action="{{ route('logout') }}" class="ml-auto">
+            <form method="POST" action="{{ route('logout') }}" class="ml-auto shrink-0">
                 @csrf
-                <button type="submit" class="rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500" title="Logout">
-                    <span class="material-symbols-rounded text-lg">logout</span>
+                <button type="submit" class="rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600" title="Logout">
+                    <span class="material-symbols-rounded text-[20px]">logout</span>
                 </button>
             </form>
         </div>

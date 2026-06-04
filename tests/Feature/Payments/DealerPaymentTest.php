@@ -90,4 +90,30 @@ class DealerPaymentTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('success');
     }
+
+    public function test_dealer_ledger_loads()
+    {
+        $dealer = Dealer::factory()->create();
+
+        $response = $this->get('/payments/dealers/' . $dealer->id . '/ledger');
+
+        $response->assertStatus(200);
+        $response->assertViewIs('payments.dealers.ledger');
+    }
+
+    public function test_dealer_payment_export()
+    {
+        $dealer = Dealer::factory()->create(['firm_name' => 'Test Dealer']);
+        DealerPayment::create([
+            'dealer_id' => $dealer->id,
+            'amount' => 1000,
+            'date' => today()->toDateString(),
+            'payment_mode' => 'Cash',
+            'pending_balance_after' => 0
+        ]);
+
+        $response = $this->get('/payments/dealers/export');
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Disposition', 'attachment; filename=dealer-payments.csv');
+    }
 }
