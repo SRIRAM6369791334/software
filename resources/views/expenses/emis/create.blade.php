@@ -15,8 +15,24 @@
             
             <div class="space-y-4">
                 <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-slate-700 uppercase tracking-tight">EMI Type <span class="text-red-500">*</span></label>
+                    <select name="emi_type" id="emi_type" class="w-full px-4 py-2 bg-emerald-50 border border-slate-200 rounded-lg" onchange="toggleEntitySelect()">
+                        <option value="Bank Loan">Bank Loan / Finance</option>
+                        <option value="Customer">Customer</option>
+                        <option value="Dealer">Dealer</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1.5" id="loan_name_div">
                     <label class="text-xs font-bold text-slate-700 uppercase tracking-tight">Loan / EMI Name <span class="text-red-500">*</span></label>
-                    <input type="text" name="loan_name" required class="w-full px-4 py-2 bg-emerald-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" placeholder="e.g. Poultry House Loan, Vehicle EMI">
+                    <input type="text" name="loan_name" id="loan_name" class="w-full px-4 py-2 bg-emerald-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" placeholder="e.g. Poultry House Loan, Vehicle EMI">
+                </div>
+
+                <div class="space-y-1.5 hidden" id="entity_div">
+                    <label class="text-xs font-bold text-slate-700 uppercase tracking-tight" id="entity_label">Select Person <span class="text-red-500">*</span></label>
+                    <select name="entity_id" id="entity_id" class="w-full px-4 py-2 bg-emerald-50 border border-slate-200 rounded-lg">
+                        <option value="">-- Select --</option>
+                    </select>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -51,4 +67,47 @@
         </form>
     </div>
 </div>
+</div>
+
+<script>
+    const customers = @json($customers ?? []);
+    const dealers = @json($dealers ?? []);
+    
+    function toggleEntitySelect() {
+        const type = document.getElementById('emi_type').value;
+        const entityDiv = document.getElementById('entity_div');
+        const entityLabel = document.getElementById('entity_label');
+        const entitySelect = document.getElementById('entity_id');
+        const loanNameDiv = document.getElementById('loan_name_div');
+        const loanNameInput = document.getElementById('loan_name');
+        
+        entitySelect.innerHTML = '<option value="">-- Select --</option>';
+        
+        if (type === 'Bank Loan') {
+            entityDiv.classList.add('hidden');
+            entitySelect.required = false;
+            
+            loanNameDiv.classList.remove('hidden');
+            loanNameInput.required = true;
+        } else {
+            entityDiv.classList.remove('hidden');
+            entitySelect.required = true;
+            
+            loanNameDiv.classList.add('hidden');
+            loanNameInput.required = false;
+            
+            const list = type === 'Customer' ? customers : dealers;
+            entityLabel.innerHTML = 'Select ' + type + ' <span class="text-red-500">*</span>';
+            
+            list.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.text = type === 'Customer' ? item.name : item.firm_name;
+                entitySelect.appendChild(option);
+            });
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', toggleEntitySelect);
+</script>
 @endsection

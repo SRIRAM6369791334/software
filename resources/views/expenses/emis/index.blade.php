@@ -24,7 +24,7 @@
             <tr class="text-left border-b border-slate-200 bg-gradient-to-r from-emerald-50/80 to-sky-50/80">
                 <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Loan Detail</th>
                 <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Due Date</th>
-                <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Bank Name</th>
+                <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Type / Info</th>
                 <th class="px-5 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Amount</th>
                 <th class="px-5 py-3 text-center text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
                 <th class="px-5 py-3 text-center text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions</th>
@@ -41,7 +41,14 @@
                         @php $isOverdue = $emi->status != 'Paid' && $emi->due_date < now(); @endphp
                         <span class="font-semibold {{ $isOverdue ? 'text-red-600' : 'text-slate-950' }}">{{ $emi->due_date->format('d M, Y') }}</span>
                     </td>
-                    <td class="px-5 py-4 text-slate-500 italic">{{ $emi->bank_name ?? 'Bank Unknown' }}</td>
+                    <td class="px-5 py-4">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-sky-50 text-sky-700">
+                            {{ $emi->emi_type ?? 'Bank Loan' }}
+                        </span>
+                        @if(($emi->emi_type ?? 'Bank Loan') === 'Bank Loan')
+                            <p class="text-xs text-slate-500 italic mt-1">{{ $emi->bank_name ?? 'Bank Unknown' }}</p>
+                        @endif
+                    </td>
                     <td class="px-5 py-4 text-right font-black text-slate-950">Rs {{ number_format($emi->amount, 2) }}</td>
                     <td class="px-5 py-4 text-center">
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ $emi->status == 'Paid' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">

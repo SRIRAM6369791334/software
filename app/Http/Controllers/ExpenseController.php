@@ -67,19 +67,24 @@ class ExpenseController extends Controller
 
     public function emisIndex(): View
     {
-        $emis = Emi::orderBy('due_date')->paginate(15);
+        $emis = Emi::with(['customer', 'dealer'])->orderBy('due_date')->paginate(15);
         return view('expenses.emis.index', compact('emis'));
     }
 
     public function emisCreate(): View
     {
-        return view('expenses.emis.create');
+        $customers = \App\Models\Customer::all();
+        $dealers = \App\Models\Dealer::all();
+        return view('expenses.emis.create', compact('customers', 'dealers'));
     }
 
     public function storeEmi(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'loan_name' => 'required|string',
+            'emi_type' => 'required|in:Bank Loan,Customer,Dealer',
+            'entity_id' => 'nullable|integer',
+            'loan_name' => 'nullable|string',
+            'bank_name' => 'nullable|string',
             'amount' => 'required|numeric',
             'due_date' => 'required|date',
             'status' => 'required|in:Upcoming,Paid,Overdue',
