@@ -86,15 +86,16 @@ Route::prefix('v1')->as('api.v1.')->group(function () {
         Route::get('dashboard/alerts', [DashboardController::class, 'alerts']);
 
         // Masters Module
+        // ✅ Fix 3: apiResource declared FIRST, sub-resource routes AFTER (REST best practice)
+        Route::apiResource('masters/customers', CustomerController::class);
         Route::get('masters/customers/{customer}/billing-history', [CustomerController::class, 'billingHistory']);
         Route::get('masters/customers/{customer}/payment-history', [CustomerController::class, 'paymentHistory']);
-        Route::apiResource('masters/customers', CustomerController::class);
 
-        Route::get('masters/dealers/{dealer}/purchase-history', [DealerController::class, 'purchaseHistory']);
         Route::apiResource('masters/dealers', DealerController::class);
+        Route::get('masters/dealers/{dealer}/purchase-history', [DealerController::class, 'purchaseHistory']);
 
-        Route::get('masters/vendors/{vendor}/purchase-history', [VendorController::class, 'purchaseHistory']);
         Route::apiResource('masters/vendors', VendorController::class);
+        Route::get('masters/vendors/{vendor}/purchase-history', [VendorController::class, 'purchaseHistory']);
 
         Route::apiResource('masters/routes', RouteController::class);
         Route::apiResource('masters/warehouses', WarehouseController::class);

@@ -12,12 +12,22 @@
     @include('partials.cm-style')
     @stack('styles')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Alpine.js for UI interactivity -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="h-full bg-slate-50 text-slate-900 font-sans antialiased selection:bg-indigo-500/20 selection:text-indigo-900">
+<body class="h-full bg-slate-50 text-slate-800 font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-900 flex flex-col min-h-screen">
 
-<div class="flex h-screen overflow-hidden">
-    <div id="sidebar-overlay" class="fixed inset-0 z-40 hidden bg-slate-900/20 backdrop-blur-sm lg:hidden transition-opacity"
-         onclick="document.getElementById('sidebar').classList.add('-translate-x-full'); this.classList.add('hidden')"></div>
+<div x-data="{ sidebarOpen: false }" class="flex h-screen overflow-hidden relative">
+    <!-- Overlay with Alpine Transition -->
+    <div x-show="sidebarOpen" 
+         x-transition:enter="transition-opacity ease-linear duration-300" 
+         x-transition:enter-start="opacity-0" 
+         x-transition:enter-end="opacity-100" 
+         x-transition:leave="transition-opacity ease-linear duration-300" 
+         x-transition:leave-start="opacity-100" 
+         x-transition:leave-end="opacity-0" 
+         class="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm lg:hidden"
+         @click="sidebarOpen = false"></div>
 
     @include('partials.sidebar')
 

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Helpers\GSTCalculator;
+use App\Services\Tax\GSTCalculator;
 use App\Models\Customer;
 use App\Models\WeeklyBill;
 use App\Services\InvoiceNumberService;

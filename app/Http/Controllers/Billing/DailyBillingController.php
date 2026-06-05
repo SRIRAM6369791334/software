@@ -9,7 +9,7 @@ use App\Models\Item;
 use App\Services\ExportService;
 use App\Services\InvoiceNumberService;
 use App\Services\StockService;
-use App\Helpers\GSTCalculator;
+use App\Services\Tax\GSTCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;

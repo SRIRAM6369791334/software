@@ -56,7 +56,7 @@ class WeeklyBillingController extends Controller
                     $subtotal += $item['qty'] * $item['rate'];
                 }
 
-                $gstData = \App\Helpers\GSTCalculator::calculate($subtotal, 18);
+                $gstData = \App\Services\Tax\GSTCalculator::calculate($subtotal, 18);
                 
                 $bill = WeeklyBill::create([
                     'customer_id'    => $request->input('customer_id'),
@@ -116,7 +116,7 @@ class WeeklyBillingController extends Controller
         try {
             \Illuminate\Support\Facades\DB::transaction(function () use ($request, $invoiceService) {
                 foreach ($request->customer_ids as $cid) {
-                    $gstData = \App\Helpers\GSTCalculator::calculate($request->amount, 18);
+                    $gstData = \App\Services\Tax\GSTCalculator::calculate($request->amount, 18);
 
                     $bill = WeeklyBill::create([
                         'invoice_no'   => $invoiceService->generateUnique('INV-W', 'weekly_bills'),

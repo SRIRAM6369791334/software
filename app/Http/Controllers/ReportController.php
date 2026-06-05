@@ -2,228 +2,189 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Customer;
-use App\Models\Dealer;
-use App\Models\Purchase;
-use App\Models\CustomerPayment;
-use App\Models\Expense;
-use App\Models\WeeklyBill;
-use App\Models\DailyBill;
+use App\Services\ReportService;
+use App\Http\Requests\Reports\ReportDateRequest;
+use App\Http\Requests\Reports\ReportPeriodRequest;
+use App\Http\Requests\Reports\ReportExportRequest;
 use Illuminate\View\View;
-use Illuminate\Support\Facades\DB;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
 
 class ReportController extends Controller
 {
-    public function index(): View
+    protected ReportService $reportService;
+
+    public function __construct(ReportService $reportService)
     {
-        $month = sprintf('%02d', now()->month);
-        $year = (string)now()->year;
-
-        $summary = [
-            'total_customers'       => Customer::count(),
-            'total_dealers'         => Dealer::count(),
-            'total_revenue_month'   => CustomerPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount'),
-            'total_purchases_month' => Purchase::whereMonth('date', $month)->whereYear('date', $year)->sum('total_amount'),
-            'total_expenses_month'  => Expense::whereMonth('date', $month)->whereYear('date', $year)->sum('amount'),
-            'pending_receivables'   => Customer::where('balance', '>', 0)->sum('balance'),
-            'pending_payables'      => Dealer::where('pending_amount', '>', 0)->sum('pending_amount'),
-        ];
-
-        $topCustomers = Customer::orderByDesc('balance')->limit(5)->get();
-        $topDealers   = Dealer::orderByDesc('pending_amount')->limit(5)->get();
-
-        return view('reports.index', compact('summary', 'topCustomers', 'topDealers'));
+        $this->reportService = $reportService;
     }
 
-    public function salesDaily(Request $request)
+    public function index(Request $request): View
     {
-        $date = $request->get('date', today()->toDateString());
-        $dailyBills = DailyBill::with('customer')
-            ->whereDate('date', $date)
-            ->get();
+        try {
+            $month = sprintf('%02d', now()->month);
+            $year = (string)now()->year;
 
-        $totalSale    = $dailyBills->sum('net_amount');
-        $totalGST     = $dailyBills->sum('gst_amount');
-        $cashSales    = $dailyBills->where('payment_mode', 'cash')->sum('net_amount');
-        $creditSales  = $dailyBills->where('payment_mode', 'credit')->sum('net_amount');
+            $summary = $this->reportService->getIndexSummary($month, $year);
+            $topCustomers = $this->reportService->getTopCustomers();
+            $topDealers = $this->reportService->getTopDealers();
 
-        return view('reports.sales.daily', compact(
-            'dailyBills', 'totalSale', 'totalGST', 'cashSales', 'creditSales', 'date'
-        ));
+            return view('reports.index', compact('summary', 'topCustomers', 'topDealers'));
+        } catch (\Exception $e) {
+            report($e);
+            return view('reports.index')->withErrors(['error' => 'Failed to load report summary.']);
+        }
     }
 
-    public function salesWeekly(Request $request)
+    public function salesDaily(ReportDateRequest $request)
     {
-        $startDate = $request->get('start', now()->startOfWeek()->toDateString());
-        $endDate   = $request->get('end',   now()->endOfWeek()->toDateString());
+        try {
+            $date = $request->validated('date', today()->toDateString());
+            $data = $this->reportService->getDailySales($date);
 
-        $bills = WeeklyBill::with('customer')
-            ->whereBetween('period_start', [$startDate, $endDate])
-            ->get();
-
-        $totalSale = $bills->sum('net_amount');
-        $routeWise = $bills->groupBy('customer.route')
-            ->map(fn($group) => $group->sum('net_amount'));
-
-        return view('reports.sales.weekly', compact(
-            'bills', 'totalSale', 'routeWise', 'startDate', 'endDate'
-        ));
+            return view('reports.sales.daily', $data);
+        } catch (\Exception $e) {
+            report($e);
+            return back()->withErrors(['error' => 'Failed to load daily sales report.']);
+        }
     }
 
-    public function salesMonthly(Request $request)
+    public function salesWeekly(ReportPeriodRequest $request)
     {
-        $month = $request->get('month', now()->month);
-        $year  = $request->get('year',  now()->year);
+        try {
+            $startDate = $request->validated('start', now()->startOfWeek()->toDateString());
+            $endDate   = $request->validated('end', now()->endOfWeek()->toDateString());
 
-        // User tests expect DailyBill for monthly report aggregation
-        $bills = DailyBill::with('customer')
-            ->whereMonth('date', sprintf('%02d', $month))
-            ->whereYear('date', (string)$year)
-            ->get();
+            $data = $this->reportService->getWeeklySales($startDate, $endDate);
 
-        $totalSale = $bills->sum('net_amount');
-
-        return view('reports.sales.monthly', compact(
-            'bills', 'totalSale', 'month', 'year'
-        ));
+            return view('reports.sales.weekly', $data);
+        } catch (\Exception $e) {
+            report($e);
+            return back()->withErrors(['error' => 'Failed to load weekly sales report.']);
+        }
     }
 
-    public function purchasesDaily(Request $request)
+    public function salesMonthly(ReportPeriodRequest $request)
     {
-        $date = $request->get('date', today()->toDateString());
-        $purchases = Purchase::with('vendor')
-            ->whereDate('date', $date)
-            ->get();
+        try {
+            $month = $request->validated('month', now()->month);
+            $year  = $request->validated('year', now()->year);
 
-        $totalAmount  = $purchases->sum('total_amount');
-        $totalGST     = $purchases->sum('gst_amount');
-        $categoryWise = $purchases->groupBy('item')
-            ->map(fn($g) => $g->sum('total_amount'));
+            $data = $this->reportService->getMonthlySales((int)$month, (int)$year);
 
-        return view('reports.purchases.daily', compact(
-            'purchases', 'totalAmount', 'totalGST', 'categoryWise', 'date'
-        ));
+            return view('reports.sales.monthly', $data);
+        } catch (\Exception $e) {
+            report($e);
+            return back()->withErrors(['error' => 'Failed to load monthly sales report.']);
+        }
     }
 
-    public function purchasesWeekly(Request $request)
+    public function purchasesDaily(ReportDateRequest $request)
     {
-        $startDate = $request->get('start', now()->startOfWeek()->toDateString());
-        $endDate   = $request->get('end',   now()->endOfWeek()->toDateString());
+        try {
+            $date = $request->validated('date', today()->toDateString());
+            $data = $this->reportService->getDailyPurchases($date);
 
-        $purchases = Purchase::with('vendor')
-            ->whereBetween('date', [$startDate, $endDate])
-            ->get();
-
-        $totalAmount  = $purchases->sum('total_amount');
-        $vendorWise   = $purchases->groupBy('vendor_id')
-            ->map(fn($g) => [
-                'vendor' => $g->first()->vendor ? $g->first()->vendor->firm_name : 'N/A',
-                'total'  => $g->sum('total_amount')
-            ]);
-
-        return view('reports.purchases.weekly', compact(
-            'purchases', 'totalAmount', 'vendorWise', 'startDate', 'endDate'
-        ));
+            return view('reports.purchases.daily', $data);
+        } catch (\Exception $e) {
+            report($e);
+            return back()->withErrors(['error' => 'Failed to load daily purchase report.']);
+        }
     }
 
-    public function purchasesMonthly(Request $request)
+    public function purchasesWeekly(ReportPeriodRequest $request)
     {
-        $month = $request->get('month', now()->month);
-        $year  = $request->get('year',  now()->year);
+        try {
+            $startDate = $request->validated('start', now()->startOfWeek()->toDateString());
+            $endDate   = $request->validated('end', now()->endOfWeek()->toDateString());
 
-        $purchases = Purchase::with('vendor')
-            ->whereMonth('date', sprintf('%02d', $month))
-            ->whereYear('date', (string)$year)
-            ->get();
+            $data = $this->reportService->getWeeklyPurchases($startDate, $endDate);
 
-        $totalAmount  = $purchases->sum('total_amount');
-        $itemWise     = $purchases->groupBy('item')
-            ->map(fn($g) => $g->sum('total_amount'));
-        $vendorWise   = $purchases->groupBy('vendor_id')
-            ->map(fn($g) => [
-                'vendor' => $g->first()->vendor ? $g->first()->vendor->firm_name : 'N/A',
-                'total'  => $g->sum('total_amount')
-            ]);
+            return view('reports.purchases.weekly', $data);
+        } catch (\Exception $e) {
+            report($e);
+            return back()->withErrors(['error' => 'Failed to load weekly purchase report.']);
+        }
+    }
 
-        return view('reports.purchases.monthly', compact(
-            'purchases', 'totalAmount', 'itemWise', 'vendorWise', 'month', 'year'
-        ));
+    public function purchasesMonthly(ReportPeriodRequest $request)
+    {
+        try {
+            $month = $request->validated('month', now()->month);
+            $year  = $request->validated('year', now()->year);
+
+            $data = $this->reportService->getMonthlyPurchases((int)$month, (int)$year);
+
+            return view('reports.purchases.monthly', $data);
+        } catch (\Exception $e) {
+            report($e);
+            return back()->withErrors(['error' => 'Failed to load monthly purchase report.']);
+        }
     }
 
     public function vendorAnalytics()
     {
-        $vendorWise = Purchase::with('vendor')
-            ->select('vendor_id', DB::raw('SUM(total_amount) as total'), DB::raw('COUNT(*) as orders'))
-            ->groupBy('vendor_id')->orderByDesc('total')->get();
-        return view('reports.purchases.vendor-analytics', compact('vendorWise'));
+        try {
+            $vendorWise = $this->reportService->getVendorAnalytics();
+            return view('reports.purchases.vendor-analytics', compact('vendorWise'));
+        } catch (\Exception $e) {
+            report($e);
+            return back()->withErrors(['error' => 'Failed to load vendor analytics.']);
+        }
     }
 
-    public function exportSalesPDF(Request $request)
+    public function exportSalesPDF(ReportExportRequest $request)
     {
-        $date = $request->get('date');
-        $start = $request->get('start');
-        $end = $request->get('end');
-        $month = $request->get('month');
-        $year = $request->get('year');
-
-        $data = collect();
-        $title = "Sales Report";
-
-        if ($date) {
-            $data = DailyBill::with('customer')->whereDate('date', $date)->get();
-            $title = "Daily Sales Report - " . $date;
-        } elseif ($start && $end) {
-            $data = WeeklyBill::with('customer')->whereBetween('period_start', [$start, $end])->get();
-            $title = "Weekly Sales Report (" . $start . " to " . $end . ")";
-        } elseif ($month && $year) {
-            $data = DailyBill::with('customer')->whereMonth('date', sprintf('%02d', $month))->whereYear('date', (string)$year)->get();
-            $title = "Monthly Sales Report - " . date('F', mktime(0, 0, 0, $month, 1)) . " " . $year;
+        try {
+            $data = $request->validated();
+            return $this->reportService->generateSalesPDF(
+                $data['date'] ?? null,
+                $data['start'] ?? null,
+                $data['end'] ?? null,
+                $data['month'] ?? null,
+                $data['year'] ?? null
+            );
+        } catch (\Exception $e) {
+            report($e);
+            return back()->withErrors(['error' => 'Failed to generate PDF.']);
         }
-
-        $pdf = Pdf::loadView('reports.pdf.sales', compact('data', 'title'));
-        return $pdf->download(strtolower(str_replace(' ', '_', $title)) . '.pdf');
     }
 
-    public function exportPurchasesPDF(Request $request)
+    public function exportPurchasesPDF(ReportExportRequest $request)
     {
-        $date = $request->get('date');
-        $start = $request->get('start');
-        $end = $request->get('end');
-        $month = $request->get('month');
-        $year = $request->get('year');
-
-        $data = collect();
-        $title = "Purchase Report";
-
-        if ($date) {
-            $data = Purchase::with('vendor')->whereDate('date', $date)->get();
-            $title = "Daily Purchase Report - " . $date;
-        } elseif ($start && $end) {
-            $data = Purchase::with('vendor')->whereBetween('date', [$start, $end])->get();
-            $title = "Weekly Purchase Report (" . $start . " to " . $end . ")";
-        } elseif ($month && $year) {
-            $data = Purchase::with('vendor')->whereMonth('date', sprintf('%02d', $month))->whereYear('date', (string)$year)->get();
-            $title = "Monthly Purchase Report - " . date('F', mktime(0, 0, 0, $month, 1)) . " " . $year;
+        try {
+            $data = $request->validated();
+            return $this->reportService->generatePurchasesPDF(
+                $data['date'] ?? null,
+                $data['start'] ?? null,
+                $data['end'] ?? null,
+                $data['month'] ?? null,
+                $data['year'] ?? null
+            );
+        } catch (\Exception $e) {
+            report($e);
+            return back()->withErrors(['error' => 'Failed to generate PDF.']);
         }
-
-        $pdf = Pdf::loadView('reports.pdf.purchases', compact('data', 'title'));
-        return $pdf->download(strtolower(str_replace(' ', '_', $title)) . '.pdf');
     }
 
     public function customerRanking(): View
     {
-        $customers = Customer::orderByDesc('balance')->paginate(20);
-        return view('reports.customers.ranking', compact('customers'));
+        try {
+            $customers = $this->reportService->getCustomerRanking(20);
+            return view('reports.customers.ranking', compact('customers'));
+        } catch (\Exception $e) {
+            report($e);
+            return view('reports.customers.ranking')->withErrors(['error' => 'Failed to load ranking.']);
+        }
     }
 
     public function purchaseAnalytics(): View
     {
-        $analytics = \App\Models\PurchaseItem::select('item_name as item', DB::raw('SUM(total_amount) as total'), DB::raw('SUM(quantity) as qty'))
-            ->groupBy('item_name')
-            ->get();
-        return view('reports.purchases.analytics', compact('analytics'));
+        try {
+            $analytics = $this->reportService->getPurchaseAnalytics();
+            return view('reports.purchases.analytics', compact('analytics'));
+        } catch (\Exception $e) {
+            report($e);
+            return view('reports.purchases.analytics')->withErrors(['error' => 'Failed to load analytics.']);
+        }
     }
 }

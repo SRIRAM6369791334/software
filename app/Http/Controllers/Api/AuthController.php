@@ -8,7 +8,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class AuthController extends BaseApiController
 {
@@ -17,9 +19,19 @@ class AuthController extends BaseApiController
      */
     public function login(Request $request): JsonResponse
     {
+        // ✅ Fix 2: Rate Limiting — 5 attempts per 15 minutes per IP
+        $throttleKey = 'login:' . Str::lower($request->input('login', '')) . ':' . $request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            return $this->sendError('Too many login attempts.', [
+                'retry_after_seconds' => $seconds,
+            ], 429);
+        }
+
         $validator = Validator::make($request->all(), [
-            'login'    => 'required|string',
-            'password' => 'required|string',
+            'login'    => 'required|string|max:255',
+            'password' => 'required|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -27,19 +39,25 @@ class AuthController extends BaseApiController
         }
 
         $loginField = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-
         $user = User::where($loginField, $request->login)->first();
 
+        // ✅ Use generic error message — don't reveal if email/username exists
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return $this->sendError('Unauthorized', ['login' => ['These credentials do not match our records.']], 401);
+            RateLimiter::hit($throttleKey, 900); // 15 minutes decay
+            return $this->sendError('Unauthorized', ['login' => ['Invalid credentials.']], 401);
         }
 
         if (!$user->is_active) {
             return $this->sendError('Forbidden', ['login' => ['Your account is deactivated.']], 403);
         }
 
-        // Generate Token
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // ✅ Fix 4: Named token with device info for better token management
+        $deviceName = $request->input('device_name', $request->userAgent() ?? 'unknown-device');
+        $tokenName  = Str::limit($deviceName, 50);
+        $token = $user->createToken($tokenName)->plainTextToken;
+
+        // Clear rate limiter on successful login
+        RateLimiter::clear($throttleKey);
 
         // Log Activity
         ActivityLogger::log('API Login', 'Auth', $user->id);

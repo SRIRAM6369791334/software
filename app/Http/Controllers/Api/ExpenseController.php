@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Requests\StoreExpenseRequest;
+use App\Http\Requests\Expenses\StoreExpenseRequest;
 use App\Models\Expense;
 use App\Models\Emi;
 use App\Services\ExpenseService;

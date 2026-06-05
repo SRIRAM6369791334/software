@@ -8,33 +8,39 @@ use App\Models\Customer;
 use App\Services\CustomerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class CustomerController extends BaseApiController
 {
     public function __construct(private CustomerService $service) {}
 
     /**
-     * Get a paginated list of customers.
+     * GET /api/v1/masters/customers
+     * Paginated & searchable customer list.
+     * Query params: ?search=, ?per_page=15, ?all=1
      */
     public function index(Request $request): JsonResponse
     {
-        $perPage = min((int)$request->input('per_page', 15), 100);
+        $perPage = min((int) $request->input('per_page', 15), 100);
 
+        // ?all=1 returns full list for dropdowns (cached)
         if ($request->boolean('all') || $request->input('all') === '1') {
-            $customers = \Illuminate\Support\Facades\Cache::remember('masters.customers.all', now()->addMinutes(30), function () {
+            $customers = Cache::remember('masters.customers.all', now()->addMinutes(30), function () {
                 return Customer::with('routeRelation')->orderBy('name')->get();
             });
 
-            return $this->sendResponse(CustomerResource::collection($customers), 'Customers retrieved successfully');
+            return $this->sendResponse(
+                CustomerResource::collection($customers),
+                'Customers retrieved successfully'
+            );
         }
 
         $search = $request->input('search');
 
+        // Use cache for default paginated list (no search)
         if (empty($search) && $perPage === 15) {
-            $customers = \Illuminate\Support\Facades\Cache::remember('masters.customers.paginated.default', now()->addMinutes(30), function () {
-                return Customer::with('routeRelation')
-                    ->orderBy('name')
-                    ->paginate(15);
+            $customers = Cache::remember('masters.customers.paginated.default', now()->addMinutes(30), function () {
+                return Customer::with('routeRelation')->orderBy('name')->paginate(15);
             });
         } else {
             $customers = Customer::with('routeRelation')
@@ -43,131 +49,96 @@ class CustomerController extends BaseApiController
                 ->paginate($perPage);
         }
 
+        // ✅ Fix 1: Standard REST meta+links pagination format
         return $this->sendResponse([
-            'customers' => CustomerResource::collection($customers),
-            'pagination' => [
+            'data' => CustomerResource::collection($customers),
+            'meta' => [
                 'current_page' => $customers->currentPage(),
                 'last_page'    => $customers->lastPage(),
                 'per_page'     => $customers->perPage(),
                 'total'        => $customers->total(),
-            ]
+            ],
+            'links' => [
+                'first' => $customers->url(1),
+                'last'  => $customers->url($customers->lastPage()),
+                'prev'  => $customers->previousPageUrl(),
+                'next'  => $customers->nextPageUrl(),
+            ],
         ], 'Customers retrieved successfully');
     }
 
     /**
-     * Store a new customer.
+     * POST /api/v1/masters/customers
+     * Create a new customer. Returns 201 Created.
      */
     public function store(StoreCustomerRequest $request): JsonResponse
     {
         $customer = $this->service->create($request->validated());
-        return $this->sendResponse(new CustomerResource($customer), 'Customer added successfully', 201);
+        return $this->sendResponse(new CustomerResource($customer), 'Customer created successfully', 201);
     }
 
     /**
-     * Display the specified customer's details and dynamic stats.
+     * GET /api/v1/masters/customers/{customer}
+     * Customer detail with stats and top products.
+     * ✅ Fix 2: Business logic moved to CustomerService::getDetails()
      */
     public function show(Customer $customer): JsonResponse
     {
-        $customer->loadCount(['weeklyBills', 'dailyBills', 'payments'])
-                 ->loadSum('payments', 'amount');
+        $details = $this->service->getDetails($customer);
 
-        $latestWeeklyBill = $customer->weeklyBills()->latest()->first();
-        $latestDailyBill = $customer->dailyBills()->latest()->first();
-
-        $latestBill = null;
-        if ($latestWeeklyBill && $latestDailyBill) {
-            $latestBill = $latestWeeklyBill->period_end > $latestDailyBill->date ? $latestWeeklyBill : $latestDailyBill;
-        } else {
-            $latestBill = $latestWeeklyBill ?: $latestDailyBill;
-        }
-
-        $latestPayment = $customer->payments()->latest()->first();
-
-        // Fetch top retail products bought
-        $topRetailProducts = \App\Models\DailyBillItem::whereIn('daily_bill_id', $customer->dailyBills()->pluck('id'))
-            ->select('item_name', \DB::raw('SUM(quantity_kg) as total_qty'), \DB::raw('COUNT(*) as times_bought'))
-            ->groupBy('item_name')
-            ->orderByDesc('total_qty')
-            ->limit(5)
-            ->get();
-
-        // Aggregate top wholesale products bought from weekly items
-        $topWholesaleProducts = \App\Models\WeeklyBillItem::whereIn('weekly_bill_id', $customer->weeklyBills()->pluck('id'))
-            ->select('item_name', \DB::raw('SUM(quantity_kg) as total_qty'), \DB::raw('COUNT(*) as times_bought'))
-            ->groupBy('item_name')
-            ->orderByDesc('total_qty')
-            ->limit(5)
-            ->get();
-
-        return $this->sendResponse([
-            'customer'              => new CustomerResource($customer),
-            'stats'                 => [
-                'payments_sum_amount'  => (float) $customer->payments_sum_amount,
-                'weekly_bills_count'   => $customer->weekly_bills_count,
-                'daily_bills_count'    => $customer->daily_bills_count,
-                'payments_count'       => $customer->payments_count,
-            ],
-            'latest_bill'           => $latestBill,
-            'latest_weekly_bill'    => $latestWeeklyBill,
-            'latest_daily_bill'     => $latestDailyBill,
-            'latest_payment'        => $latestPayment,
-            'top_retail_products'   => $topRetailProducts,
-            'top_wholesale_products'=> $topWholesaleProducts,
-        ], 'Customer details retrieved successfully');
+        return $this->sendResponse(
+            array_merge(['customer' => new CustomerResource($customer)], $details),
+            'Customer details retrieved successfully'
+        );
     }
 
     /**
-     * Update the specified customer.
+     * PUT /api/v1/masters/customers/{customer}
+     * Update customer record.
      */
     public function update(StoreCustomerRequest $request, Customer $customer): JsonResponse
     {
-        $updatedCustomer = $this->service->update($customer, $request->validated());
-        return $this->sendResponse(new CustomerResource($updatedCustomer), 'Customer updated successfully');
+        $updated = $this->service->update($customer, $request->validated());
+        return $this->sendResponse(new CustomerResource($updated), 'Customer updated successfully');
     }
 
     /**
-     * Delete the specified customer.
+     * DELETE /api/v1/masters/customers/{customer}
+     * ✅ Fix 4: Returns 204 No Content — proper REST standard
      */
     public function destroy(Customer $customer): JsonResponse
     {
         $this->service->delete($customer);
-        return $this->sendResponse([], 'Customer deleted successfully');
+        return response()->json(null, 204);
     }
 
     /**
-     * Get billing history for a customer.
+     * GET /api/v1/masters/customers/{customer}/billing-history
+     * Paginated billing history (weekly + daily bills).
+     * ✅ Fix 2: Logic moved to CustomerService::getBillingHistory()
      */
     public function billingHistory(Customer $customer): JsonResponse
     {
-        $totalWeeklyBilled = $customer->weeklyBills()->sum('amount');
-        $totalDailyBilled = $customer->dailyBills()->sum('amount');
-        $totalBilled = $totalWeeklyBilled + $totalDailyBilled;
+        $history = $this->service->getBillingHistory($customer);
 
-        $weeklyBills = $customer->weeklyBills()->latest()->paginate(10, ['*'], 'weekly_page');
-        $dailyBills = $customer->dailyBills()->with('items')->latest()->paginate(10, ['*'], 'daily_page');
-
-        return $this->sendResponse([
-            'customer'            => new CustomerResource($customer),
-            'total_billed'        => (float) $totalBilled,
-            'total_weekly_billed' => (float) $totalWeeklyBilled,
-            'total_daily_billed'  => (float) $totalDailyBilled,
-            'weekly_bills'        => $weeklyBills,
-            'daily_bills'         => $dailyBills,
-        ], 'Billing history retrieved successfully');
+        return $this->sendResponse(
+            array_merge(['customer' => new CustomerResource($customer)], $history),
+            'Billing history retrieved successfully'
+        );
     }
 
     /**
-     * Get payment history for a customer.
+     * GET /api/v1/masters/customers/{customer}/payment-history
+     * Paginated payment history.
+     * ✅ Fix 2: Logic moved to CustomerService::getPaymentHistory()
      */
     public function paymentHistory(Customer $customer): JsonResponse
     {
-        $totalPaid = $customer->payments()->sum('amount');
-        $payments = $customer->payments()->latest()->paginate(15);
+        $history = $this->service->getPaymentHistory($customer);
 
-        return $this->sendResponse([
-            'customer'   => new CustomerResource($customer),
-            'total_paid' => (float) $totalPaid,
-            'payments'   => $payments,
-        ], 'Payment history retrieved successfully');
+        return $this->sendResponse(
+            array_merge(['customer' => new CustomerResource($customer)], $history),
+            'Payment history retrieved successfully'
+        );
     }
 }

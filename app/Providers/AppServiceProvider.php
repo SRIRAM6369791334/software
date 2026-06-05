@@ -8,11 +8,21 @@ class AppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
+     * Binds Repository Interfaces → Eloquent Implementations (Clean Architecture).
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            \App\Repositories\Contracts\StockRepositoryInterface::class,
+            \App\Repositories\StockRepository::class
+        );
+
+        $this->app->bind(
+            \App\Repositories\Contracts\PurchaseRepositoryInterface::class,
+            \App\Repositories\PurchaseRepository::class
+        );
     }
+
 
     /**
      * Bootstrap any application services.

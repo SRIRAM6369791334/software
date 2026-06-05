@@ -53,7 +53,9 @@
     $isActive = fn(string $routeName) => request()->routeIs($routeName);
 @endphp
 
-<aside id="sidebar" class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] lg:static lg:translate-x-0 -translate-x-full">
+<aside id="sidebar" 
+    :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+    class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200/60 bg-white/80 backdrop-blur-2xl transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] lg:static lg:translate-x-0 -translate-x-full shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
     {{-- Branding Header --}}
     <div class="flex h-20 items-center gap-3 px-6">
         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm transition-transform hover:scale-105">
@@ -63,8 +65,8 @@
             <span class="text-base font-bold tracking-tight text-slate-900 leading-none">PoultryPro</span>
             <span class="mt-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Management</span>
         </div>
-        <button class="ml-auto rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900 lg:hidden"
-                onclick="document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('sidebar-overlay').classList.add('hidden')">
+        <button class="ml-auto rounded-xl p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900 lg:hidden"
+                @click="sidebarOpen = false">
             <span class="material-symbols-rounded text-xl">close</span>
         </button>
     </div>
@@ -81,13 +83,13 @@
                 @endif
             @elseif($canAccess($item['min']) && $routeExists($item['route']))
                 <a href="{{ route($item['route']) }}"
-                   class="group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-300 {{ $isActive($item['route']) ? 'bg-slate-900 text-white shadow-md shadow-slate-900/10' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                    <span class="material-symbols-rounded text-[20px] {{ $isActive($item['route']) ? 'text-white' : 'text-slate-400 group-hover:text-slate-600' }} transition-colors">
+                   class="group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-300 {{ $isActive($item['route']) ? 'bg-white shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-slate-100 text-slate-900 translate-x-1' : 'text-slate-500 border border-transparent hover:bg-slate-50 hover:text-slate-900 hover:translate-x-1' }}">
+                    <span class="material-symbols-rounded text-[20px] {{ $isActive($item['route']) ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600' }} transition-colors">
                         {{ $item['icon'] }}
                     </span>
                     <span class="truncate text-sm font-semibold tracking-tight">{{ $item['label'] }}</span>
                     @if($isActive($item['route']))
-                        <span class="absolute right-3 h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
+                        <span class="absolute right-3 h-1.5 w-1.5 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.5)]"></span>
                     @endif
                 </a>
             @endif

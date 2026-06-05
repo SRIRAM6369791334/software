@@ -1,7 +1,7 @@
 <header class="sticky top-0 z-30 flex h-20 shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 px-6 backdrop-blur-xl transition-all">
     <div class="flex min-w-0 items-center gap-4">
         <button class="rounded-xl p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 lg:hidden"
-                onclick="document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('sidebar-overlay').classList.remove('hidden')">
+                @click="sidebarOpen = true">
             <span class="material-symbols-rounded">menu</span>
         </button>
 

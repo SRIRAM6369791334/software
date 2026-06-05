@@ -3,26 +3,25 @@
 namespace App\Services;
 
 use App\Models\BirdBatch;
-use App\Models\StockItem;
-use App\Models\StockTransaction;
-use App\Models\StockLedger;
 use App\Models\Item;
+use App\Models\StockTransaction;
+use App\Repositories\Contracts\StockRepositoryInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class StockService
 {
+    public function __construct(
+        private StockRepositoryInterface $stockRepo
+    ) {}
     public function recordIn(array $data): StockTransaction
     {
         return DB::transaction(function () use ($data) {
             $data = $this->prepareTransactionData($data, 'IN');
-            
-            // Create legacy stock transaction
-            $movement = StockTransaction::create($data);
-            
-            // Create poultry stock ledger if item_id is linked
+            $movement = $this->stockRepo->createTransaction($data);
+
             if (!empty($data['item_id'])) {
-                StockLedger::create([
+                $this->stockRepo->createLedgerEntry([
                     'item_id'          => $data['item_id'],
                     'batch_id'         => $data['batch_id'] ?? null,
                     'warehouse_id'     => $data['warehouse_id'] ?? null,
@@ -36,7 +35,7 @@ class StockService
                 ]);
             }
 
-            $this->updateSummary($data['item_name'], $data['quantity'], $data['unit'] ?? 'kg');
+            $this->stockRepo->updateSummary($data['item_name'], $data['quantity'], $data['unit'] ?? 'kg');
             return $movement;
         });
     }
@@ -45,13 +44,10 @@ class StockService
     {
         return DB::transaction(function () use ($data) {
             $data = $this->prepareTransactionData($data, 'OUT');
-            
-            // Create legacy stock transaction
-            $movement = StockTransaction::create($data);
-            
-            // Create poultry stock ledger if item_id is linked
+            $movement = $this->stockRepo->createTransaction($data);
+
             if (!empty($data['item_id'])) {
-                StockLedger::create([
+                $this->stockRepo->createLedgerEntry([
                     'item_id'          => $data['item_id'],
                     'batch_id'         => $data['batch_id'] ?? null,
                     'warehouse_id'     => $data['warehouse_id'] ?? null,
@@ -65,7 +61,7 @@ class StockService
                 ]);
             }
 
-            $this->updateSummary($data['item_name'], -$data['quantity'], $data['unit'] ?? 'kg');
+            $this->stockRepo->updateSummary($data['item_name'], -$data['quantity'], $data['unit'] ?? 'kg');
             return $movement;
         });
     }
@@ -74,14 +70,11 @@ class StockService
     {
         return DB::transaction(function () use ($data) {
             $data = $this->prepareTransactionData($data, 'ADJUST');
-            
-            // Create legacy stock transaction
-            $movement = StockTransaction::create($data);
-            
-            // Create poultry stock ledger if item_id is linked
+            $movement = $this->stockRepo->createTransaction($data);
+
             if (!empty($data['item_id'])) {
                 $type = $data['quantity'] >= 0 ? 'IN' : 'OUT';
-                StockLedger::create([
+                $this->stockRepo->createLedgerEntry([
                     'item_id'          => $data['item_id'],
                     'batch_id'         => $data['batch_id'] ?? null,
                     'warehouse_id'     => $data['warehouse_id'] ?? null,
@@ -95,7 +88,7 @@ class StockService
                 ]);
             }
 
-            $this->updateSummary($data['item_name'], $data['quantity'], $data['unit'] ?? 'kg');
+            $this->stockRepo->updateSummary($data['item_name'], $data['quantity'], $data['unit'] ?? 'kg');
             return $movement;
         });
     }
@@ -103,21 +96,18 @@ class StockService
     public function revertMovement(string $referenceType, int $referenceId): void
     {
         DB::transaction(function () use ($referenceType, $referenceId) {
-            $transactions = StockTransaction::where('reference_type', $referenceType)
-                ->where('reference_id', $referenceId)
-                ->get();
+            $transactions = $this->stockRepo->findTransactionsByReference($referenceType, $referenceId);
 
             foreach ($transactions as $transaction) {
-                // Revert summary stock item amount
                 $change = $transaction->txn_type === 'IN' ? -$transaction->quantity : $transaction->quantity;
-                $this->updateSummary($transaction->item_name, $change, $transaction->unit);
+                $this->stockRepo->updateSummary($transaction->item_name, $change, $transaction->unit);
                 $transaction->delete();
             }
 
-            // Also delete associated stock ledger entries
-            StockLedger::where('source_type', $this->mapReferenceToSource($referenceType))
-                ->where('source_id', $referenceId)
-                ->delete();
+            $this->stockRepo->deleteLedgerBySource(
+                $this->mapReferenceToSource($referenceType),
+                $referenceId
+            );
         });
     }
 
@@ -153,17 +143,17 @@ class StockService
             return $itemModel ? (float) $itemModel->current_stock : 0.0;
         }
 
-        return (float) StockItem::where('item_name', $item)->value('current_stock') ?? 0.0;
+        return $this->stockRepo->getCurrentStockByName($item);
     }
 
     public function getLowStockItems(): Collection
     {
-        return StockItem::whereColumn('current_stock', '<', 'reorder_level')->get();
+        return $this->stockRepo->getLowStockItems();
     }
 
     public function getStockMovements(string $from, string $to): Collection
     {
-        return StockTransaction::whereBetween('date', [$from, $to])->orderBy('date', 'desc')->get();
+        return $this->stockRepo->getMovements($from, $to);
     }
 
     private function prepareTransactionData(array $data, string $txnType): array
@@ -231,13 +221,7 @@ class StockService
 
     private function updateSummary(string $itemName, float $quantityChange, string $unit, string $category = 'Feed'): void
     {
-        $summary = StockItem::firstOrCreate(
-            ['item_name' => $itemName],
-            ['current_stock' => 0, 'unit' => $unit, 'category' => $category]
-        );
-
-        $summary->current_stock += $quantityChange;
-        $summary->save();
+        $this->stockRepo->updateSummary($itemName, $quantityChange, $unit, $category);
     }
 }
 

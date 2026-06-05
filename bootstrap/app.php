@@ -13,7 +13,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'role'       => \App\Http\Middleware\RoleMiddleware::class,
+            'api.limit'  => \App\Http\Middleware\ApiRateLimitMiddleware::class,
+        ]);
+
+        // ✅ Security Headers applied globally to all API responses
+        $middleware->appendToGroup('api', [
+            \App\Http\Middleware\SecurityHeadersMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -42,6 +48,16 @@ return Application::configure(basePath: dirname(__DIR__))
                     'success' => false,
                     'message' => 'Resource not found'
                 ], 404);
+            }
+        });
+
+        // ✅ Fix 5: Return JSON 403 for API routes instead of redirect
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
+            if (($request->is('api/*') || $request->expectsJson()) && $e->getStatusCode() === 403) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Forbidden. You do not have permission to perform this action.',
+                ], 403);
             }
         });
     })->create();
