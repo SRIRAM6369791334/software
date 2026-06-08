@@ -30,21 +30,24 @@
 
     
     {{-- Inline Form Block --}}
-    <div class="mb-8 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden" x-data="{ showForm: false }">
-        <div class="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50 cursor-pointer hover:bg-slate-100/50 transition-colors" @click="showForm = !showForm">
-            <div class="flex items-center gap-3">
-                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
-                    <span class="material-symbols-rounded text-[20px]">add_circle</span>
+    <div class="mb-8 relative overflow-hidden rounded-[24px] bg-white border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all duration-300" :class="showForm ? 'ring-4 ring-indigo-50 border-indigo-100' : 'hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]'" x-data="{ showForm: false }">
+        <div class="flex justify-between items-center px-6 py-5 cursor-pointer transition-colors bg-gradient-to-r from-slate-50/50 to-white hover:from-slate-50 hover:to-slate-50/80" @click="showForm = !showForm">
+            <div class="flex items-center gap-4">
+                <div class="flex h-12 w-12 items-center justify-center rounded-[14px] bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/20">
+                    <span class="material-symbols-rounded text-[22px]">add_circle</span>
                 </div>
-                <h2 class="text-base font-bold text-slate-800">Record New Entry</h2>
+                <div>
+                    <h2 class="text-[1.1rem] font-extrabold text-slate-800 tracking-tight">Record Dealer Bill</h2>
+                    <p class="text-[0.75rem] font-semibold text-slate-400 mt-0.5 tracking-wide uppercase">Click to expand and fill details</p>
+                </div>
             </div>
-            <button type="button" class="cm-btn-secondary pointer-events-none">
+            <button type="button" class="flex items-center justify-center h-10 px-4 gap-2 rounded-xl bg-slate-100 text-slate-600 font-bold text-sm transition-all duration-300 pointer-events-none" :class="showForm ? 'bg-slate-800 text-white' : 'hover:bg-slate-200'">
                 <span class="material-symbols-rounded" x-text="showForm ? 'expand_less' : 'add'"></span>
-                <span x-text="showForm ? 'Hide Form' : 'New Entry'"></span>
+                <span x-text="showForm ? 'Close Panel' : 'New Entry'"></span>
             </button>
         </div>
         
-        <div x-show="showForm" x-transition class="p-6">
+        <div x-show="showForm" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-4" class="p-8 border-t border-slate-100 bg-white/50 cm-premium-form-inner">
 <div id="dealer-form-container">
         <div class="cm-card-form-large">
             <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-6">

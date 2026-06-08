@@ -575,3 +575,14 @@ a.cm-cust-name:hover { color: var(--cm-accent-emerald); }
     transform: translateY(2px);
 }
 </style>
+
+/* Premium Accordion Form Overrides */
+.cm-premium-form-inner .cm-card-form-large {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    background: transparent;
+}
+.cm-premium-form-inner .cm-form-section-title {
+    display: none; /* Hide redundant inner title */
+}
