@@ -574,7 +574,6 @@ a.cm-cust-name:hover { color: var(--cm-accent-emerald); }
 .cm-export-btn:hover svg {
     transform: translateY(2px);
 }
-</style>
 
 /* Premium Accordion Form Overrides */
 .cm-premium-form-inner .cm-card-form-large {
@@ -586,3 +585,5 @@ a.cm-cust-name:hover { color: var(--cm-accent-emerald); }
 .cm-premium-form-inner .cm-form-section-title {
     display: none; /* Hide redundant inner title */
 }
+
+</style>
