@@ -10,10 +10,7 @@
         </div>
         
         <div class="flex gap-2">
-            <button onclick="openCreateSale()" class="cm-btn-primary" type="button">
-                <span class="material-symbols-rounded text-[18px]">add_circle</span>
-                Record Sale
-            </button>
+            
             <a href="{{ route('billing.daily.export') }}" class="cm-export-btn">
 
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -29,33 +26,25 @@
 
     {{-- Entry Form Block --}}
     
-{{-- ================================================ --}}
-{{-- ADD SALE SLIDE-OVER                              --}}
-{{-- ================================================ --}}
-@push('modals')
-<div id="create-sale-modal" style="display: none;" class="relative z-[100]" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
-    <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0" id="create-sale-backdrop" onclick="closeCreateSale()"></div>
-    <div class="fixed inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute inset-0 overflow-hidden">
-            <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
-                <div id="create-sale-panel" class="pointer-events-auto w-screen max-w-5xl bg-white shadow-2xl flex flex-col h-full border-l border-slate-200 translate-x-full transition-transform duration-500 ease-in-out">
-                     
-                    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
-                        <div class="flex items-center gap-3">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
-                                <span class="material-symbols-rounded text-[20px]">point_of_sale</span>
-                            </div>
-                            <div>
-                                <h2 class="text-base font-bold text-slate-900 leading-tight">Record Retail Sale</h2>
-                                <p class="text-[11px] font-medium text-slate-500">Counter sales and receipt generation</p>
-                            </div>
-                        </div>
-                        <button onclick="closeCreateSale()" type="button" class="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-colors">
-                            <span class="material-symbols-rounded text-xl">close</span>
-                        </button>
-                    </div>
 
-                    <div class="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
+
+    
+    {{-- Inline Form Block --}}
+    <div class="mb-8 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden" x-data="{ showForm: false }">
+        <div class="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50 cursor-pointer hover:bg-slate-100/50 transition-colors" @click="showForm = !showForm">
+            <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+                    <span class="material-symbols-rounded text-[20px]">add_circle</span>
+                </div>
+                <h2 class="text-base font-bold text-slate-800">Record New Entry</h2>
+            </div>
+            <button type="button" class="cm-btn-secondary pointer-events-none">
+                <span class="material-symbols-rounded" x-text="showForm ? 'expand_less' : 'add'"></span>
+                <span x-text="showForm ? 'Hide Form' : 'New Entry'"></span>
+            </button>
+        </div>
+        
+        <div x-show="showForm" x-transition class="p-6">
 <div id="customer-form-container">
         <form action="{{ route('billing.daily.store') }}" method="POST" id="daily-sale-form" class="cm-card-form-large">
             @csrf
@@ -168,14 +157,10 @@
         </form>
     </div>
 
-                    </div>
-                </div>
-            </div>
+
         </div>
     </div>
-</div>
-@endpush
-
+        
     {{-- Insights Header Cards --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-gradient-to-br from-white via-emerald-50/10 to-sky-50/10 dark:from-slate-900 dark:to-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-6 group hover:border-emerald-200 transition-all">
@@ -320,34 +305,6 @@
 @push('scripts')
 <script>
 
-function openCreateSale() {
-    const modal = document.getElementById('create-sale-modal');
-    const backdrop = document.getElementById('create-sale-backdrop');
-    const panel = document.getElementById('create-sale-panel');
-    
-    modal.style.display = 'block';
-    setTimeout(() => {
-        backdrop.classList.remove('opacity-0');
-        backdrop.classList.add('opacity-100');
-        panel.classList.remove('translate-x-full');
-        panel.classList.add('translate-x-0');
-    }, 10);
-}
-
-function closeCreateSale() {
-    const modal = document.getElementById('create-sale-modal');
-    const backdrop = document.getElementById('create-sale-backdrop');
-    const panel = document.getElementById('create-sale-panel');
-    
-    backdrop.classList.remove('opacity-100');
-    backdrop.classList.add('opacity-0');
-    panel.classList.remove('translate-x-0');
-    panel.classList.add('translate-x-full');
-    
-    setTimeout(() => {
-        modal.style.display = 'none';
-    }, 500);
-}
 
 let saleRowCount = 1;
 const activeItems = @json($items);
@@ -407,7 +364,6 @@ function recalcSales() {
     document.getElementById('total-hidden').value = final.toFixed(2);
 }
 
-}
 
 // Auto-run on load
 window.addEventListener('DOMContentLoaded', () => {
