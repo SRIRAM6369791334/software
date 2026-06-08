@@ -444,6 +444,253 @@
 
 @push('styles')
 @include('partials.cm-style')
+<style>
+/* SweetAlert / Sleek Design Theme for Forms */
+:root {
+    --swal-bg: #f8fafc;
+    --swal-card: #ffffff;
+    --swal-primary: #10b981;
+    --swal-primary-hover: #059669;
+    --swal-text-main: #0f172a;
+    --swal-text-muted: #64748b;
+    --swal-border: #e2e8f0;
+    --swal-input-bg: #f8fafc;
+}
+
+[data-theme="dark"] {
+    --swal-bg: #0f172a;
+    --swal-card: #1e293b;
+    --swal-primary: #10b981;
+    --swal-primary-hover: #34d399;
+    --swal-text-main: #f8fafc;
+    --swal-text-muted: #94a3b8;
+    --swal-border: #334155;
+    --swal-input-bg: #0f172a;
+}
+
+.swal-form-card {
+    background: var(--swal-card);
+    border-radius: 20px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--swal-border);
+    position: relative;
+}
+
+.swal-form-header {
+    text-align: center;
+    padding: 2rem 1.5rem 1.5rem;
+    border-bottom: 1px solid var(--swal-border);
+    background: linear-gradient(180deg, rgba(16,185,129,0.05) 0%, rgba(16,185,129,0) 100%);
+    position: relative;
+}
+
+#edit-modal .swal-form-header {
+    background: linear-gradient(180deg, rgba(59,130,246,0.05) 0%, rgba(59,130,246,0) 100%);
+}
+
+.swal-icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--swal-primary);
+    margin-bottom: 1rem;
+    border: 3px solid rgba(16, 185, 129, 0.2);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+}
+
+.swal-icon-wrapper .material-symbols-rounded {
+    font-size: 32px;
+}
+
+.swal-form-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--swal-text-main);
+    letter-spacing: -0.02em;
+}
+
+.swal-form-header p {
+    margin: 0.25rem 0 0;
+    font-size: 0.875rem;
+    color: var(--swal-text-muted);
+}
+
+.swal-form {
+    padding: 1.5rem 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem 1.5rem;
+}
+
+.swal-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.swal-col-span-2 {
+    grid-column: 1 / -1;
+}
+
+.swal-input-group label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--swal-text-muted);
+    padding-left: 0.15rem;
+}
+
+.swal-input-group label .required {
+    color: #ef4444;
+}
+
+.swal-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.swal-input-icon {
+    position: absolute;
+    left: 0.875rem;
+    color: var(--swal-text-muted);
+    font-size: 18px;
+    pointer-events: none;
+    opacity: 0.6;
+    transition: color 0.3s;
+}
+
+.swal-input-wrapper input,
+.swal-input-wrapper select,
+.swal-input-wrapper textarea {
+    width: 100%;
+    background: var(--swal-input-bg);
+    border: 1.5px solid var(--swal-border);
+    color: var(--swal-text-main);
+    padding: 0.625rem 0.875rem 0.625rem 2.5rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.swal-input-wrapper select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.2em;
+}
+
+.swal-input-wrapper textarea {
+    padding-top: 0.75rem;
+    resize: vertical;
+    min-height: 60px;
+}
+
+.swal-input-wrapper input:focus,
+.swal-input-wrapper select:focus,
+.swal-input-wrapper textarea:focus {
+    border-color: var(--swal-primary);
+    background: var(--swal-card);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+}
+
+.swal-input-wrapper input:focus ~ .swal-input-icon,
+.swal-input-wrapper select:focus ~ .swal-input-icon,
+.swal-input-wrapper textarea:focus ~ .swal-input-icon {
+    color: var(--swal-primary);
+    opacity: 1;
+}
+
+#edit-modal .swal-input-wrapper input:focus,
+#edit-modal .swal-input-wrapper select:focus,
+#edit-modal .swal-input-wrapper textarea:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+#edit-modal .swal-input-wrapper input:focus ~ .swal-input-icon,
+#edit-modal .swal-input-wrapper select:focus ~ .swal-input-icon,
+#edit-modal .swal-input-wrapper textarea:focus ~ .swal-input-icon {
+    color: #3b82f6;
+}
+
+.swal-form-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+    border-top: 1px solid var(--swal-border);
+}
+
+.swal-btn-cancel {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--swal-text-muted);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.swal-btn-cancel:hover {
+    background: rgba(100, 116, 139, 0.1);
+    color: var(--swal-text-main);
+}
+
+.swal-btn-confirm {
+    padding: 0.625rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: var(--swal-primary);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+    transition: all 0.2s;
+}
+
+.swal-btn-confirm:hover {
+    background: var(--swal-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px -1px rgba(16, 185, 129, 0.3);
+}
+
+#edit-modal .swal-btn-confirm:hover {
+    background: #2563eb;
+    box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.3);
+}
+
+@media (max-width: 768px) {
+    .swal-form {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+    }
+    
+    .swal-form-header {
+        padding: 2rem 1.5rem 1.5rem;
+    }
+}
+
+</style>
 @endpush
 
 @push('scripts')

@@ -167,92 +167,70 @@
 {{-- ================================================ --}}
 {{-- ADD VENDOR SLIDE-OVER                            --}}
 {{-- ================================================ --}}
-{{-- ================================================ --}}
-{{-- ADD VENDOR SWEETALERT MODAL                      --}}
-{{-- ================================================ --}}
 @push('modals')
-<div id="create-modal" style="display: none;" class="relative z-[100]" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity opacity-0 duration-300" id="create-modal-backdrop" onclick="closeCreateVendor()"></div>
-    
-    <div class="fixed inset-0 z-10 overflow-y-auto pointer-events-none">
-        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-            <div id="create-modal-panel" class="pointer-events-auto w-full max-w-xl transform transition-all scale-95 opacity-0 duration-300 ease-out">
-                
-                <div class="swal-form-card mx-auto text-left">
-                    <button onclick="closeCreateVendor()" type="button" class="absolute top-4 right-4 rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-colors z-10">
-                        <span class="material-symbols-rounded text-xl">close</span>
-                    </button>
-                    
-                    <div class="swal-form-header">
-                        <div class="swal-icon-wrapper">
-                            <span class="material-symbols-rounded">local_shipping</span>
+<div id="create-modal" style="display: none;" class="relative z-[100]" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0" id="create-modal-backdrop" onclick="closeCreateVendor()"></div>
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute inset-0 overflow-hidden">
+            <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+                <div id="create-modal-panel" class="pointer-events-auto w-screen max-w-md bg-white shadow-2xl flex flex-col h-full border-l border-slate-200 translate-x-full transition-transform duration-500 ease-in-out">
+                     
+                    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                                <span class="material-symbols-rounded text-[20px]">local_shipping</span>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900 leading-tight">Register Vendor</h2>
+                                <p class="text-[11px] font-medium text-slate-500">Onboard a new supply partner</p>
+                            </div>
                         </div>
-                        <h2>Register New Vendor</h2>
-                        <p>Onboard a new supply partner.</p>
+                        <button onclick="closeCreateVendor()" type="button" class="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+                            <span class="material-symbols-rounded text-xl">close</span>
+                        </button>
                     </div>
 
-                    <form action="{{ route('masters.vendors.store') }}" method="POST" class="swal-form">
+                    <form action="{{ route('masters.vendors.store') }}" method="POST" class="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
                         @csrf
+                        <div class="space-y-5">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="col-span-2">
+                                    <label class="cm-form-label">Firm Name <span class="cm-required">*</span></label>
+                                    <input type="text" name="firm_name" required placeholder="e.g. Apex Feed Suppliers" class="cm-form-input">
+                                </div>
+                                <div>
+                                    <label class="cm-form-label">Contact Person</label>
+                                    <input type="text" name="contact_person" placeholder="Manager Name" class="cm-form-input">
+                                </div>
+                                <div>
+                                    <label class="cm-form-label">Phone <span class="cm-required">*</span></label>
+                                    <input type="text" name="phone" required placeholder="+91 00000 00000" class="cm-form-input">
+                                </div>
+                                <div>
+                                    <label class="cm-form-label">GSTIN</label>
+                                    <input type="text" name="gst_number" placeholder="Optional GSTIN" class="cm-form-input uppercase">
+                                </div>
+                                <div>
+                                    <label class="cm-form-label">Location / City</label>
+                                    <input type="text" name="location" placeholder="e.g. Salem, TN" class="cm-form-input">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="cm-form-label">Route</label>
+                                    <input type="text" name="route" placeholder="e.g. Main Highway Route" class="cm-form-input">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="cm-form-label">Strategic Notes</label>
+                                    <textarea name="notes" rows="2" placeholder="Vendor specifications, items supplied..." class="cm-form-input cm-form-textarea"></textarea>
+                                </div>
+                            </div>
+                        </div>
                         
-                        <div class="swal-input-group swal-col-span-2">
-                            <label>Firm Name <span class="required">*</span></label>
-                            <div class="swal-input-wrapper">
-                                <span class="material-symbols-rounded swal-input-icon">store</span>
-                                <input type="text" name="firm_name" required placeholder="e.g. Apex Feed Suppliers">
-                            </div>
-                        </div>
-
-                        <div class="swal-input-group">
-                            <label>Contact Person</label>
-                            <div class="swal-input-wrapper">
-                                <span class="material-symbols-rounded swal-input-icon">person</span>
-                                <input type="text" name="contact_person" placeholder="Manager Name">
-                            </div>
-                        </div>
-
-                        <div class="swal-input-group">
-                            <label>Phone Number <span class="required">*</span></label>
-                            <div class="swal-input-wrapper">
-                                <span class="material-symbols-rounded swal-input-icon">call</span>
-                                <input type="text" name="phone" required placeholder="e.g. +91 00000 00000">
-                            </div>
-                        </div>
-
-                        <div class="swal-input-group">
-                            <label>GSTIN</label>
-                            <div class="swal-input-wrapper">
-                                <span class="material-symbols-rounded swal-input-icon">badge</span>
-                                <input type="text" name="gst_number" placeholder="Optional GSTIN">
-                            </div>
-                        </div>
-
-                        <div class="swal-input-group">
-                            <label>Location / City</label>
-                            <div class="swal-input-wrapper">
-                                <span class="material-symbols-rounded swal-input-icon">location_on</span>
-                                <input type="text" name="location" placeholder="e.g. Salem, TN">
-                            </div>
-                        </div>
-
-                        <div class="swal-input-group swal-col-span-2">
-                            <label>Route</label>
-                            <div class="swal-input-wrapper">
-                                <span class="material-symbols-rounded swal-input-icon">alt_route</span>
-                                <input type="text" name="route" placeholder="e.g. Main Highway Route">
-                            </div>
-                        </div>
-
-                        <div class="swal-input-group swal-col-span-2">
-                            <label>Strategic Notes</label>
-                            <div class="swal-input-wrapper">
-                                <span class="material-symbols-rounded swal-input-icon">notes</span>
-                                <textarea name="notes" rows="2" placeholder="Vendor specifications, items supplied..."></textarea>
-                            </div>
-                        </div>
-
-                        <div class="swal-form-actions">
-                            <button type="button" onclick="closeCreateVendor()" class="swal-btn-cancel">Cancel</button>
-                            <button type="submit" class="swal-btn-confirm">Activate Profile</button>
+                        <div class="mt-8 flex items-center justify-end gap-3 pt-5 border-t border-slate-100">
+                            <button type="button" onclick="closeCreateVendor()" class="cm-btn-ghost">Cancel</button>
+                            <button type="submit" class="cm-btn-primary">
+                                <span class="material-symbols-rounded text-[18px]">check_circle</span>
+                                Activate Profile
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -262,90 +240,71 @@
 </div>
 
 {{-- ================================================ --}}
-{{-- EDIT VENDOR SWEETALERT MODAL                     --}}
+{{-- EDIT VENDOR SLIDE-OVER                           --}}
 {{-- ================================================ --}}
-<div id="edit-modal" style="display: none;" class="relative z-[100]" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity opacity-0 duration-300" id="edit-modal-backdrop" onclick="closeEditVendor()"></div>
-    
-    <div class="fixed inset-0 z-10 overflow-y-auto pointer-events-none">
-        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-            <div id="edit-modal-panel" class="pointer-events-auto w-full max-w-xl transform transition-all scale-95 opacity-0 duration-300 ease-out">
-                
-                <div class="swal-form-card mx-auto text-left">
-                    <button onclick="closeEditVendor()" type="button" class="absolute top-4 right-4 rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-colors z-10">
-                        <span class="material-symbols-rounded text-xl">close</span>
-                    </button>
-                    
-                    <div class="swal-form-header">
-                        <div class="swal-icon-wrapper" style="color: #3b82f6; background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.2); box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);">
-                            <span class="material-symbols-rounded">edit_document</span>
+<div id="edit-modal" style="display: none;" class="relative z-[100]" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0" id="edit-modal-backdrop" onclick="closeEditVendor()"></div>
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute inset-0 overflow-hidden">
+            <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+                <div id="edit-modal-panel" class="pointer-events-auto w-screen max-w-md bg-white shadow-2xl flex flex-col h-full border-l border-slate-200 translate-x-full transition-transform duration-500 ease-in-out">
+                     
+                    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+                                <span class="material-symbols-rounded text-[20px]">edit_document</span>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900 leading-tight">Edit Vendor</h2>
+                                <p class="text-[11px] font-medium text-slate-500">Update supply partner credentials</p>
+                            </div>
                         </div>
-                        <h2>Edit Vendor</h2>
-                        <p>Update supply partner credentials.</p>
+                        <button onclick="closeEditVendor()" type="button" class="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+                            <span class="material-symbols-rounded text-xl">close</span>
+                        </button>
                     </div>
 
-                    <form id="edit-form" method="POST" class="swal-form">
+                    <form id="edit-form" method="POST" class="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
                         @csrf @method('PUT')
+                        <div class="space-y-5">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="col-span-2">
+                                    <label class="cm-form-label">Firm Name <span class="cm-required">*</span></label>
+                                    <input type="text" id="edit-firm-name" name="firm_name" required class="cm-form-input">
+                                </div>
+                                <div>
+                                    <label class="cm-form-label">Contact Person</label>
+                                    <input type="text" id="edit-contact" name="contact_person" class="cm-form-input">
+                                </div>
+                                <div>
+                                    <label class="cm-form-label">Phone <span class="cm-required">*</span></label>
+                                    <input type="text" id="edit-phone" name="phone" required class="cm-form-input">
+                                </div>
+                                <div>
+                                    <label class="cm-form-label">GSTIN</label>
+                                    <input type="text" id="edit-gst" name="gst_number" class="cm-form-input uppercase">
+                                </div>
+                                <div>
+                                    <label class="cm-form-label">Location / City</label>
+                                    <input type="text" id="edit-location" name="location" class="cm-form-input">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="cm-form-label">Route</label>
+                                    <input type="text" id="edit-route" name="route" class="cm-form-input">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="cm-form-label">Strategic Notes</label>
+                                    <textarea id="edit-notes" name="notes" rows="2" class="cm-form-input cm-form-textarea"></textarea>
+                                </div>
+                            </div>
+                        </div>
                         
-                        <div class="swal-input-group swal-col-span-2">
-                            <label>Firm Name <span class="required">*</span></label>
-                            <div class="swal-input-wrapper">
-                                <span class="material-symbols-rounded swal-input-icon">store</span>
-                                <input type="text" id="edit-firm-name" name="firm_name" required>
-                            </div>
-                        </div>
-
-                        <div class="swal-input-group">
-                            <label>Contact Person</label>
-                            <div class="swal-input-wrapper">
-                                <span class="material-symbols-rounded swal-input-icon">person</span>
-                                <input type="text" id="edit-contact" name="contact_person">
-                            </div>
-                        </div>
-
-                        <div class="swal-input-group">
-                            <label>Phone Number <span class="required">*</span></label>
-                            <div class="swal-input-wrapper">
-                                <span class="material-symbols-rounded swal-input-icon">call</span>
-                                <input type="text" id="edit-phone" name="phone" required>
-                            </div>
-                        </div>
-
-                        <div class="swal-input-group">
-                            <label>GSTIN</label>
-                            <div class="swal-input-wrapper">
-                                <span class="material-symbols-rounded swal-input-icon">badge</span>
-                                <input type="text" id="edit-gst" name="gst_number">
-                            </div>
-                        </div>
-
-                        <div class="swal-input-group">
-                            <label>Location / City</label>
-                            <div class="swal-input-wrapper">
-                                <span class="material-symbols-rounded swal-input-icon">location_on</span>
-                                <input type="text" id="edit-location" name="location">
-                            </div>
-                        </div>
-
-                        <div class="swal-input-group swal-col-span-2">
-                            <label>Route</label>
-                            <div class="swal-input-wrapper">
-                                <span class="material-symbols-rounded swal-input-icon">alt_route</span>
-                                <input type="text" id="edit-route" name="route">
-                            </div>
-                        </div>
-
-                        <div class="swal-input-group swal-col-span-2">
-                            <label>Strategic Notes</label>
-                            <div class="swal-input-wrapper">
-                                <span class="material-symbols-rounded swal-input-icon">notes</span>
-                                <textarea id="edit-notes" name="notes" rows="2"></textarea>
-                            </div>
-                        </div>
-
-                        <div class="swal-form-actions">
-                            <button type="button" onclick="closeEditVendor()" class="swal-btn-cancel">Cancel</button>
-                            <button type="submit" class="swal-btn-confirm" style="background: #3b82f6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);">Save Changes</button>
+                        <div class="mt-8 flex items-center justify-end gap-3 pt-5 border-t border-slate-100">
+                            <button type="button" onclick="closeEditVendor()" class="cm-btn-ghost">Cancel</button>
+                            <button type="submit" class="cm-btn-primary cm-btn-primary--blue">
+                                <span class="material-symbols-rounded text-[18px]">save</span>
+                                Save Changes
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -369,12 +328,12 @@
         const panel = document.getElementById('create-modal-panel');
         
         modal.style.display = 'block';
+        // Wait a frame to allow display:block to apply before animating opacity/transform
         setTimeout(() => {
             backdrop.classList.remove('opacity-0');
             backdrop.classList.add('opacity-100');
-            
-            panel.classList.remove('opacity-0', 'scale-95');
-            panel.classList.add('opacity-100', 'scale-100');
+            panel.classList.remove('translate-x-full');
+            panel.classList.add('translate-x-0');
         }, 10);
     }
 
@@ -385,25 +344,26 @@
         
         backdrop.classList.remove('opacity-100');
         backdrop.classList.add('opacity-0');
-        
-        panel.classList.remove('opacity-100', 'scale-100');
-        panel.classList.add('opacity-0', 'scale-95');
+        panel.classList.remove('translate-x-0');
+        panel.classList.add('translate-x-full');
         
         setTimeout(() => {
             modal.style.display = 'none';
-        }, 300); 
+        }, 500); // Matches transition duration
     }
 
     function openEditVendor(id, firmName, contact, phone, gst, location, route, notes) {
+        // Set form action dynamically
         document.getElementById('edit-form').action = `/masters/vendors/${id}`;
         
+        // Populate inputs
         document.getElementById('edit-firm-name').value = firmName;
         document.getElementById('edit-contact').value = contact;
         document.getElementById('edit-phone').value = phone;
-        document.getElementById('edit-gst').value = gst || '';
-        document.getElementById('edit-location').value = location || '';
-        document.getElementById('edit-route').value = route || '';
-        document.getElementById('edit-notes').value = notes || '';
+        document.getElementById('edit-gst').value = gst;
+        document.getElementById('edit-location').value = location;
+        document.getElementById('edit-route').value = route;
+        document.getElementById('edit-notes').value = notes;
 
         const modal = document.getElementById('edit-modal');
         const backdrop = document.getElementById('edit-modal-backdrop');
@@ -413,9 +373,8 @@
         setTimeout(() => {
             backdrop.classList.remove('opacity-0');
             backdrop.classList.add('opacity-100');
-            
-            panel.classList.remove('opacity-0', 'scale-95');
-            panel.classList.add('opacity-100', 'scale-100');
+            panel.classList.remove('translate-x-full');
+            panel.classList.add('translate-x-0');
         }, 10);
     }
 
@@ -426,13 +385,12 @@
         
         backdrop.classList.remove('opacity-100');
         backdrop.classList.add('opacity-0');
-        
-        panel.classList.remove('opacity-100', 'scale-100');
-        panel.classList.add('opacity-0', 'scale-95');
+        panel.classList.remove('translate-x-0');
+        panel.classList.add('translate-x-full');
         
         setTimeout(() => {
             modal.style.display = 'none';
-        }, 300);
+        }, 500);
     }
 
     // Live search functionality
