@@ -430,7 +430,7 @@
 .cm-submit-total-btn .material-symbols-rounded { font-size: 18px; }
 
 /* ── Table ── */
-.cm-table-wrap { overflow-x: auto; }
+
 .cm-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
 .cm-table th {
     padding: 10px 14px;

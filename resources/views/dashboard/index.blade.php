@@ -21,14 +21,20 @@
     </div>
 
     {{-- Stats Grid --}}
-    <section class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 mb-8">
+    <section class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 mb-8"
+             x-data="{ showCards: false }" x-init="setTimeout(() => showCards = true, 150)">
         @foreach([
             ['label' => 'Total Birds', 'value' => number_format($stats['totalBirds'], 0), 'meta' => 'MTD Inventory', 'icon' => 'egg_alt', 'color' => 'cm-icon-teal', 'trend' => '+4.2%'],
             ['label' => 'Mortality', 'value' => number_format($stats['mortalityMTD'], 0), 'meta' => 'Loss Analytics', 'icon' => 'trending_down', 'color' => 'cm-icon-red', 'trend' => '-1.5%'],
             ['label' => 'Today\'s Revenue', 'value' => '₹' . number_format($stats['todayRevenue'], 0), 'meta' => 'Daily Inflow', 'icon' => 'payments', 'color' => 'cm-icon-blue', 'trend' => '+12%'],
             ['label' => 'Purchase Cost', 'value' => '₹' . number_format($stats['monthlyPurchase'], 0), 'meta' => 'Supply Cost', 'icon' => 'shopping_cart', 'color' => 'cm-icon-amber', 'trend' => '+2.1%'],
         ] as $card)
-            <div class="cm-stat-card group hover:-translate-y-1 hover:shadow-lg transition-all duration-300 justify-between items-start flex-col !items-stretch">
+            <div class="cm-stat-card group hover:-translate-y-1 hover:shadow-lg transition-all duration-300 justify-between items-start flex-col !items-stretch"
+                 x-show="showCards"
+                 x-transition:enter="transition ease-out duration-700"
+                 x-transition:enter-start="opacity-0 translate-y-8"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 style="transition-delay: {{ $loop->index * 100 }}ms;">
                 <div class="flex items-center gap-3 w-full">
                     <div class="cm-stat-icon {{ $card['color'] }}">
                         <span class="material-symbols-rounded text-[20px]">{{ $card['icon'] }}</span>

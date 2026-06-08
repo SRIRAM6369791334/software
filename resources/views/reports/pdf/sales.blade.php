@@ -30,7 +30,7 @@
     <div class="header-accent"></div>
     <div class="container">
         <div class="header">
-            <h1 class="company-name">Flockwise BizTrack</h1>
+            <h1 class="company-name">Poultry Management</h1>
             <div class="report-title">{{ $title }}</div>
             <div class="meta">
                 System Audit Report &bull; Generated on {{ now()->format('d M Y, h:i A') }} &bull; Admin: {{ auth()->user()->name ?? 'System' }}
@@ -96,7 +96,7 @@
         </table>
 
         <div class="footer">
-            FLOCKWISE BIZTRACK ERP &bull; CONFIDENTIAL FINANCIAL DOCUMENT &bull; PAGE 1 OF 1
+            Poultry Management ERP &bull; CONFIDENTIAL FINANCIAL DOCUMENT &bull; PAGE 1 OF 1
         </div>
     </div>
 </body>

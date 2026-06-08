@@ -18,15 +18,29 @@ class CustomerController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $type = $request->input('type');
+        $balanceFilter = $request->input('balance');
+
+        $query = Customer::with('routeRelation')->search($search);
+
+        if ($type) {
+            $query->where('type', $type);
+        }
+
+        if ($balanceFilter === 'pending') {
+            $query->where('balance', '>', 0);
+        } elseif ($balanceFilter === 'cleared') {
+            $query->where('balance', '<=', 0);
+        }
 
         if ($request->input('export') === 'pdf') {
-            $customers = Customer::with('routeRelation')->search($search)->orderBy('name')->get();
+            $customers = $query->orderBy('name')->get();
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('masters.customers.pdf', compact('customers'));
             return $pdf->download('customer-directory.pdf');
         }
 
-        $customers = Customer::with('routeRelation')->search($search)->orderBy('name')->paginate(15);
-        return view('masters.customers.index', compact('customers', 'search'));
+        $customers = $query->orderBy('name')->paginate(15);
+        return view('masters.customers.index', compact('customers', 'search', 'type', 'balanceFilter'));
     }
 
     public function create(): View
@@ -49,48 +63,19 @@ class CustomerController extends Controller
 
     public function show(Customer $customer): View
     {
-        $customer->loadCount(['weeklyBills', 'dailyBills', 'payments'])
-                 ->loadSum('payments', 'amount');
-
-        $latestWeeklyBill = $customer->weeklyBills()->latest()->first();
-        $latestDailyBill = $customer->dailyBills()->latest()->first();
-
-        // Determine the actual latest bill across both weekly and daily billing
-        $latestBill = null;
-        if ($latestWeeklyBill && $latestDailyBill) {
-            $latestBill = $latestWeeklyBill->period_end > $latestDailyBill->date ? $latestWeeklyBill : $latestDailyBill;
-        } else {
-            $latestBill = $latestWeeklyBill ?: $latestDailyBill;
-        }
-
-        $latestPayment = $customer->payments()->latest()->first();
-
-        // Fetch top retail products bought
-        $topRetailProducts = \App\Models\DailyBillItem::whereIn('daily_bill_id', $customer->dailyBills()->pluck('id'))
-            ->select('item_name', \DB::raw('SUM(quantity_kg) as total_qty'), \DB::raw('COUNT(*) as times_bought'))
-            ->groupBy('item_name')
-            ->orderByDesc('total_qty')
-            ->limit(5)
-            ->get();
-
-        // Aggregate top wholesale products bought from weekly items
-        $topWholesaleProducts = \App\Models\WeeklyBillItem::whereIn('weekly_bill_id', $customer->weeklyBills()->pluck('id'))
-            ->select('item_name', \DB::raw('SUM(quantity_kg) as total_qty'), \DB::raw('COUNT(*) as times_bought'))
-            ->groupBy('item_name')
-            ->orderByDesc('total_qty')
-            ->limit(5)
-            ->get()
-            ->toArray();
-
-        return view('masters.customers.show', compact(
-            'customer', 
-            'latestBill', 
-            'latestWeeklyBill',
-            'latestDailyBill',
-            'latestPayment',
-            'topRetailProducts',
-            'topWholesaleProducts'
-        ));
+        $details = $this->service->getDetails($customer);
+        
+        return view('masters.customers.show', [
+            'customer'             => $customer,
+            'latestBill'           => $details['latest_bill'],
+            'latestWeeklyBill'     => $details['latest_weekly_bill'],
+            'latestDailyBill'      => $details['latest_daily_bill'],
+            'latestPayment'        => $details['latest_payment'],
+            'topRetailProducts'    => $details['top_retail_products'],
+            'topWholesaleProducts' => $details['top_wholesale_products'],
+            'upcomingEmis'         => $details['upcoming_emis'],
+            'overdueEmis'          => $details['overdue_emis'],
+        ]);
     }
 
     public function edit(Customer $customer): View
@@ -107,32 +92,33 @@ class CustomerController extends Controller
 
     public function billingHistory(Customer $customer): View
     {
-        $totalWeeklyBilled = $customer->weeklyBills()->sum('amount');
-        $totalDailyBilled = $customer->dailyBills()->sum('amount');
-        $totalBilled = $totalWeeklyBilled + $totalDailyBilled;
+        $history = $this->service->getBillingHistory($customer);
 
-        $weeklyBills = $customer->weeklyBills()->latest()->paginate(10, ['*'], 'weekly_page');
-        $dailyBills = $customer->dailyBills()->with('items')->latest()->paginate(10, ['*'], 'daily_page');
-
-        // Maintain compatibility with existing templates expecting $bills
-        $bills = $weeklyBills;
-
-        return view('masters.customers.billing-history', compact(
-            'customer', 
-            'bills', 
-            'weeklyBills', 
-            'dailyBills', 
-            'totalBilled', 
-            'totalWeeklyBilled', 
-            'totalDailyBilled'
-        ));
+        return view('masters.customers.billing-history', [
+            'customer'          => $customer,
+            'bills'             => $history['weekly_bills'],
+            'weeklyBills'       => $history['weekly_bills'],
+            'dailyBills'        => $history['daily_bills'],
+            'totalBilled'       => $history['total_billed'],
+            'totalWeeklyBilled' => $history['total_weekly_billed'],
+            'totalDailyBilled'  => $history['total_daily_billed'],
+        ]);
     }
 
     public function paymentHistory(Customer $customer): View
     {
-        $totalPaid = $customer->payments()->sum('amount');
-        $payments = $customer->payments()->latest()->paginate(15);
-        return view('masters.customers.payment-history', compact('customer', 'payments', 'totalPaid'));
+        $history = $this->service->getPaymentHistory($customer);
+        return view('masters.customers.payment-history', [
+            'customer'  => $customer,
+            'payments'  => $history['payments'],
+            'totalPaid' => $history['total_paid'],
+        ]);
+    }
+
+    public function emiHistory(Customer $customer): View
+    {
+        $emis = $this->service->getEmiHistory($customer);
+        return view('masters.customers.emi-history', compact('customer', 'emis'));
     }
 
     public function downloadLedgerPdf(Customer $customer)

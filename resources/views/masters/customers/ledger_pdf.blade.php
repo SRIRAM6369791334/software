@@ -33,7 +33,7 @@
     <div class="header-accent"></div>
     <div class="container">
         <div class="company-header">
-            <h1 class="company-name">Flockwise BizTrack</h1>
+            <h1 class="company-name">Poultry Management</h1>
             <div class="report-title">Customer Ledger Statement</div>
             <div style="font-size: 8px; color: #999; margin-top: 5px;">
                 Statement Period: Up to {{ now()->format('d M Y') }}
@@ -104,7 +104,7 @@
         </table>
 
         <div class="footer">
-            FLOCKWISE BIZTRACK ERP &bull; COMPUTER GENERATED STATEMENT &bull; NO SIGNATURE REQUIRED
+            Poultry Management ERP &bull; COMPUTER GENERATED STATEMENT &bull; NO SIGNATURE REQUIRED
         </div>
     </div>
 </body>

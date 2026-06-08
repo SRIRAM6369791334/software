@@ -137,7 +137,7 @@
         <table>
             <tr>
                 <td class="company-header">
-                    <h1>Flockwise BizTrack</h1>
+                    <h1>Poultry Management</h1>
                     <p>Poultry Management Solutions</p>
                     <div style="margin-top: 15px; color: #666;">
                         <strong>Poultry Farm Unit #1</strong><br>

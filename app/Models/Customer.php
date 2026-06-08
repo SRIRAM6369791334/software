@@ -39,6 +39,11 @@ class Customer extends Model
         return $this->hasMany(CustomerPayment::class);
     }
 
+    public function emis(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Emi::class, 'entity_id')->where('emi_type', 'Customer');
+    }
+
     // ── Scopes ─────────────────────────────────────────────────────────────────
     public function scopeSearch($query, ?string $term)
     {

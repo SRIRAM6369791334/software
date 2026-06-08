@@ -344,7 +344,7 @@
 }
 
 /* ── Table ── */
-.cm-table-wrap { overflow-x: auto; }
+
 .cm-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
 .cm-table thead tr { border-bottom: 0.5px solid var(--cm-card-border); }
 .cm-table th {

@@ -17,8 +17,18 @@ class VendorController extends Controller
     public function index(Request $request): View
     {
         $search  = $request->input('search');
-        $vendors = $this->service->search($search, 15);
-        return view('masters.vendors.index', compact('vendors', 'search'));
+        $routeFilter = $request->input('route');
+        
+        $query = Vendor::search($search);
+        
+        if ($routeFilter) {
+            $query->where('route', $routeFilter);
+        }
+        
+        $vendors = $query->orderBy('firm_name')->paginate(15);
+        $routes = \App\Models\Vendor::select('route')->distinct()->whereNotNull('route')->where('route', '!=', '')->pluck('route');
+        
+        return view('masters.vendors.index', compact('vendors', 'search', 'routeFilter', 'routes'));
     }
 
     public function create(): View

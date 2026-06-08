@@ -169,9 +169,9 @@
                                     </svg>
                                 </a>
                                 <form action="{{ route('inventory.items.destroy', $item) }}" method="POST"
-                                    onsubmit="return confirm('Archive {{ $item->name }}?')" style="display:inline;">
+                                    onsubmit="return confirm('Delete {{ $item->name }}?')">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="cm-action-btn cm-action-btn--danger" title="Archive Item">
+                                    <button type="submit" class="cm-action-btn cm-action-btn--danger" title="Delete Item">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15"
                                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                             stroke-linecap="round" stroke-linejoin="round">
@@ -436,7 +436,7 @@
 }
 
 /* ── Table ── */
-.cm-table-wrap { overflow-x: auto; }
+
 .cm-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
 .cm-table thead tr { border-bottom: 0.5px solid var(--cm-card-border); }
 .cm-table th {

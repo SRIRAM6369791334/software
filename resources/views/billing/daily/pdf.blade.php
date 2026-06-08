@@ -137,7 +137,7 @@
         <table>
             <tr>
                 <td class="company-header">
-                    <h1>Flockwise BizTrack</h1>
+                    <h1>Poultry Management</h1>
                     <p>Poultry Management Solutions</p>
                     <div style="margin-top: 15px; color: #666;">
                         <strong>Poultry Farm Unit #1</strong><br>
@@ -239,7 +239,7 @@
             <div class="auth">
                 NO SIGNATURE REQUIRED &bull; COMPUTER GENERATED &bull; AUTH VERIFIED
             </div>
-            <p style="font-weight: bold; color: #333;">Thank you for choosing Flockwise BizTrack!</p>
+            <p style="font-weight: bold; color: #333;">Thank you for choosing Poultry Management!</p>
             <p style="font-size: 10px;">Please settle the payment according to the agreed credit terms.</p>
         </div>
     </div>

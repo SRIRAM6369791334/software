@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
-  title: Flockwise BizTrack API
+  title: Poultry Management API
   description: |
-    Production-grade API-First Engine for the Flockwise BizTrack Poultry Management System.
+    Production-grade API-First Engine for the Poultry Management Poultry Management System.
     
     ### Key Features:
     * **Bearer Token Auth**: Powered by Laravel Sanctum.

@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Customer Directory - Flockwise BizTrack</title>
+    <title>Customer Directory - Poultry Management</title>
     <style>
         body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10px; color: #333; margin: 0; padding: 0; }
         .header-accent { height: 8px; background: #059669; }
@@ -45,7 +45,7 @@
     <div class="header-accent"></div>
     <div class="container">
         <div class="company-header">
-            <h1 class="company-name">Flockwise BizTrack</h1>
+            <h1 class="company-name">Poultry Management</h1>
             <div class="report-title">Customer Directory</div>
             <div style="font-size: 8px; color: #999; margin-top: 5px;">
                 Generated on: {{ now()->format('d M Y, h:i A') }}
@@ -109,7 +109,7 @@
         </table>
 
         <div class="footer">
-            FLOCKWISE BIZTRACK ERP &bull; CUSTOMER DIRECTORY &bull; COMPUTER GENERATED REPORT
+            Poultry Management ERP &bull; CUSTOMER DIRECTORY &bull; COMPUTER GENERATED REPORT
         </div>
     </div>
 </body>

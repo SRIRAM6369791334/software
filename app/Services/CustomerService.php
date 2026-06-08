@@ -46,7 +46,7 @@ class CustomerService
      */
     public function getDetails(Customer $customer): array
     {
-        $customer->loadCount(['weeklyBills', 'dailyBills', 'payments'])
+        $customer->loadCount(['weeklyBills', 'dailyBills', 'payments', 'emis'])
                  ->loadSum('payments', 'amount');
 
         $latestWeeklyBill = $customer->weeklyBills()->latest()->first();
@@ -75,6 +75,9 @@ class CustomerService
             ->limit(5)
             ->get();
 
+        $upcomingEmis = $customer->emis()->where('status', 'Upcoming')->whereDate('due_date', '<=', now()->addDays(7))->orderBy('due_date')->get();
+        $overdueEmis = $customer->emis()->where('status', 'Upcoming')->whereDate('due_date', '<', today())->orderBy('due_date')->get();
+
         return [
             'stats' => [
                 'payments_sum_amount' => (float) $customer->payments_sum_amount,
@@ -88,7 +91,17 @@ class CustomerService
             'latest_payment'          => $customer->payments()->latest()->first(),
             'top_retail_products'     => $topRetailProducts,
             'top_wholesale_products'  => $topWholesaleProducts,
+            'upcoming_emis'           => $upcomingEmis,
+            'overdue_emis'            => $overdueEmis,
         ];
+    }
+
+    /**
+     * Get paginated EMI history for a customer.
+     */
+    public function getEmiHistory(Customer $customer, int $perPage = 15): LengthAwarePaginator
+    {
+        return $customer->emis()->orderBy('due_date', 'desc')->paginate($perPage);
     }
 
     /**

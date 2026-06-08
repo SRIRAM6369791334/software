@@ -117,7 +117,7 @@
             <span class="text-emerald-500">Computer Generated</span>
             <span>Auth Verified</span>
         </div>
-        <p class="text-sm text-slate-950 font-black mb-1">Thank you for choosing Flockwise BizTrack!</p>
+        <p class="text-sm text-slate-950 font-black mb-1">Thank you for choosing Poultry Management!</p>
         <p class="text-xs text-slate-400 font-medium">Please settle the payment according to the agreed credit terms.</p>
         
         <div class="mt-10 flex justify-center gap-4 no-print">

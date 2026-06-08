@@ -33,11 +33,11 @@
                 <span class="material-symbols-rounded" style="font-size: 16px;">edit</span>
                 Edit Profile
             </a>
-            <form action="{{ route('masters.vendors.destroy', $vendor) }}" method="POST" onsubmit="return confirm('Archive {{ $vendor->firm_name }}? This will keep their transaction history intact.')" style="display: inline-block;">
+            <form action="{{ route('masters.vendors.destroy', $vendor) }}" method="POST" onsubmit="return confirm('Delete {{ $vendor->firm_name }}? This will keep their transaction history intact.')">
                 @csrf @method('DELETE')
                 <button type="submit" class="cm-btn-danger">
-                    <span class="material-symbols-rounded" style="font-size: 16px;">archive</span>
-                    Archive
+                    <span class="material-symbols-rounded" style="font-size: 16px;">delete</span>
+                    Delete
                 </button>
             </form>
         </div>
@@ -571,7 +571,7 @@
 }
 
 /* ── Table Inside Tabs ── */
-.cm-table-wrap { overflow-x: auto; }
+
 .cm-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
 .cm-table thead tr { border-bottom: 0.5px solid var(--cm-card-border); }
 .cm-table th {

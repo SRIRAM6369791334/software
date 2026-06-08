@@ -56,6 +56,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('masters/customers/{customer}/ledger-pdf', [CustomerController::class, 'downloadLedgerPdf'])->name('masters.customers.ledger-pdf');
         Route::get('masters/customers/{customer}/billing-history', [CustomerController::class, 'billingHistory'])->name('masters.customers.billing-history');
         Route::get('masters/customers/{customer}/payment-history', [CustomerController::class, 'paymentHistory'])->name('masters.customers.payment-history');
+        Route::get('masters/customers/{customer}/emi-history', [CustomerController::class, 'emiHistory'])->name('masters.customers.emi-history');
 
         Route::get('masters/dealers/{dealer}/ledger-pdf', [DealerController::class, 'downloadLedgerPdf'])->name('masters.dealers.ledger-pdf');
         Route::get('masters/dealers/{dealer}/purchase-history', [DealerController::class, 'purchaseHistory'])->name('masters.dealers.purchase-history');

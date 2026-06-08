@@ -18,8 +18,18 @@ class DealerController extends Controller
     public function index(Request $request): View
     {
         $search  = $request->input('search');
-        $dealers = Dealer::with('routeRelation')->search($search)->orderBy('firm_name')->paginate(15);
-        return view('masters.dealers.index', compact('dealers', 'search'));
+        $balanceFilter = $request->input('balance');
+        
+        $query = Dealer::with('routeRelation')->search($search);
+        
+        if ($balanceFilter === 'pending') {
+            $query->where('balance', '>', 0);
+        } elseif ($balanceFilter === 'cleared') {
+            $query->where('balance', '<=', 0);
+        }
+
+        $dealers = $query->orderBy('firm_name')->paginate(15);
+        return view('masters.dealers.index', compact('dealers', 'search', 'balanceFilter'));
     }
 
     public function create(): View

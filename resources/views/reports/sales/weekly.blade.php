@@ -12,10 +12,15 @@
         <button onclick="window.print()" class="px-6 py-3 bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 text-slate-500 hover:text-slate-950 text-sm font-black rounded-xl transition-all shadow-sm active:scale-95 flex items-center gap-2 uppercase tracking-widest">
              Print View
         </button>
-        <a href="{{ route('reports.sales.export-pdf', ['start' => $startDate, 'end' => $endDate]) }}" 
-           class="px-6 py-3 bg-gradient-to-r from-emerald-600 to-sky-500 text-white text-sm font-black rounded-xl hover:bg-emerald-700 transition-all shadow-md shadow-emerald-600/20 active:scale-95 flex items-center gap-2 uppercase tracking-widest">
-             Export PDF
-        </a>
+        <a href="{{ route('reports.sales.export-pdf', ['start' => $startDate, 'end' => $endDate]) }}" class="cm-export-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+        Export PDF
+    </a>
     </div>
 </div>
 

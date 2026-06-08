@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Masters;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreDealerRequest extends FormRequest
 {
@@ -10,9 +11,17 @@ class StoreDealerRequest extends FormRequest
 
     public function rules(): array
     {
+        $dealerId = $this->route('dealer') ? $this->route('dealer')->id : null;
+
         return [
             'firm_name'      => 'required|string|max:255',
-            'phone'          => 'required|string|min:10|max:15',
+            'phone'          => [
+                'required',
+                'string',
+                'min:10',
+                'max:15',
+                Rule::unique('dealers', 'phone')->ignore($dealerId),
+            ],
             'contact_person' => 'nullable|string|max:255',
             'gst_number'     => 'nullable|string|max:20',
             'location'       => 'nullable|string|max:255',

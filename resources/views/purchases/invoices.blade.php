@@ -15,10 +15,15 @@
                 <span class="material-symbols-rounded" style="font-size: 18px;">arrow_back</span>
                 Purchase Entry
             </a>
-            <a href="{{ route('purchases.export') }}" class="cm-btn-ghost flex items-center gap-1.5">
-                <span class="material-symbols-rounded" style="font-size: 18px;">download</span>
-                Export CSV
-            </a>
+            <a href="{{ route('purchases.export') }}" class="cm-export-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+        Export
+    </a>
         </div>
     </div>
 
@@ -341,7 +346,7 @@
 .cm-search-input:focus { border-color: var(--cm-text-muted); }
 
 /* ── Table ── */
-.cm-table-wrap { overflow-x: auto; }
+
 .cm-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
 .cm-table th {
     padding: 10px 14px;

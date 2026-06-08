@@ -33,7 +33,7 @@
     <div class="header-accent"></div>
     <div class="container">
         <div class="company-header">
-            <h1 class="company-name">Flockwise BizTrack</h1>
+            <h1 class="company-name">Poultry Management</h1>
             <div class="report-title">Profit & Loss Performance Statement</div>
             <div style="font-size: 8px; color: #999; margin-top: 5px;">
                 Period: {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
@@ -116,7 +116,7 @@
         </div>
 
         <div class="footer">
-            FLOCKWISE BIZTRACK ERP &bull; EXECUTIVE FINANCIAL SUMMARY &bull; CONFIDENTIAL
+            Poultry Management ERP &bull; EXECUTIVE FINANCIAL SUMMARY &bull; CONFIDENTIAL
         </div>
     </div>
 </body>
