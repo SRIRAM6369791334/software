@@ -8,8 +8,14 @@
             <h1 class="cm-page-title">Weekly Dealer Billing</h1>
             <p class="cm-page-sub">Create wholesale billing settlements, bulk route invoices, and manage ledger transactions</p>
         </div>
+        
         <div class="flex gap-2">
+            <button onclick="openCreateDealerBill()" class="cm-btn-primary" type="button">
+                <span class="material-symbols-rounded text-[18px]">add_circle</span>
+                Record Dealer Bill
+            </button>
             <a href="{{ route('billing.weekly.export') }}" class="cm-export-btn">
+
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
         stroke-linejoin="round">
@@ -21,66 +27,36 @@
         </div>
     </div>
 
-    {{-- Bento Actor Portal Grid --}}
-    <div class="cm-actor-grid mb-8">
-        {{-- Card 1: Customer --}}
-        <div class="cm-actor-card cm-actor-card--customer" onclick="window.location.href='{{ route('billing.daily.index') }}'">
-            <div class="cm-actor-badge">
-                <span class="material-symbols-rounded">person</span>
-                <span>Customer</span>
-            </div>
-            <div class="cm-actor-content">
-                <h3 class="cm-actor-title">Retail Customer</h3>
-                <p class="cm-actor-desc">Manage retail billing, cash register sales, and daily customer accounts.</p>
-            </div>
-            <div class="cm-actor-actions">
-                <a href="{{ route('billing.daily.index') }}" class="cm-actor-btn-primary" onclick="event.stopPropagation();">
-                    <span class="material-symbols-rounded">arrow_forward</span>
-                    Daily Billing
-                </a>
-            </div>
-        </div>
-
-        {{-- Card 2: Dealer --}}
-        <div id="dealer-toggle-card" class="cm-actor-card cm-actor-card--dealer cm-active" onclick="toggleDealerPortal(event)">
-            <div class="cm-actor-badge">
-                <span class="material-symbols-rounded">group</span>
-                <span>Dealer</span>
-                <span class="cm-active-dot"></span>
-            </div>
-            <div class="cm-actor-content">
-                <h3 class="cm-actor-title">Wholesale Dealer</h3>
-                <p class="cm-actor-desc">Manage wholesale distribution ledger accounts, bulk orders, and weekly billing.</p>
-            </div>
-            <div class="cm-actor-actions">
-                <span class="cm-actor-btn-primary">
-                    <span class="material-symbols-rounded" id="dealer-icon-toggle">expand_less</span>
-                    <span id="dealer-btn-text">Collapse Entry Portal</span>
-                </span>
-            </div>
-        </div>
-
-        {{-- Card 3: Vendor --}}
-        <div class="cm-actor-card cm-actor-card--vendor" onclick="window.location.href='{{ route('purchases.entry') }}'">
-            <div class="cm-actor-badge">
-                <span class="material-symbols-rounded">local_shipping</span>
-                <span>Vendor</span>
-            </div>
-            <div class="cm-actor-content">
-                <h3 class="cm-actor-title">Vendor (Procurement)</h3>
-                <p class="cm-actor-desc">Record purchases of feed, medicine, and farm supplies. Track credit accounts and ledger dues.</p>
-            </div>
-            <div class="cm-actor-actions">
-                <a href="{{ route('purchases.entry') }}" class="cm-actor-btn-primary" onclick="event.stopPropagation();">
-                    <span class="material-symbols-rounded">arrow_forward</span>
-                    Vendor Billing
-                </a>
-            </div>
-        </div>
-    </div>
-
     {{-- Entry Form Block --}}
-    <div id="dealer-form-container" class="cm-form-container-full mb-8">
+    
+{{-- ================================================ --}}
+{{-- ADD DEALER BILL SLIDE-OVER                       --}}
+{{-- ================================================ --}}
+@push('modals')
+<div id="create-dealer-bill-modal" style="display: none;" class="relative z-[100]" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity opacity-0" id="create-dealer-bill-backdrop" onclick="closeCreateDealerBill()"></div>
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute inset-0 overflow-hidden">
+            <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+                <div id="create-dealer-bill-panel" class="pointer-events-auto w-screen max-w-5xl bg-white shadow-2xl flex flex-col h-full border-l border-slate-200 translate-x-full transition-transform duration-500 ease-in-out">
+                     
+                    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+                                <span class="material-symbols-rounded text-[20px]">groups</span>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900 leading-tight">Record Dealer Bill</h2>
+                                <p class="text-[11px] font-medium text-slate-500">Single or bulk wholesale settlement</p>
+                            </div>
+                        </div>
+                        <button onclick="closeCreateDealerBill()" type="button" class="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+                            <span class="material-symbols-rounded text-xl">close</span>
+                        </button>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
+<div id="dealer-form-container">
         <div class="cm-card-form-large">
             <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-6">
                 <div class="flex gap-4">
@@ -260,6 +236,14 @@
         </div>
     </div>
 
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endpush
+
     {{-- Performance Stats Header --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-gradient-to-br from-white via-indigo-50/10 to-sky-50/10 dark:from-slate-900 dark:to-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-6 group">
@@ -410,8 +394,42 @@
 </div>
 @endsection
 
+@push('styles')
+@include('partials.cm-style')
+@endpush
+
 @push('scripts')
 <script>
+
+function openCreateDealerBill() {
+    const modal = document.getElementById('create-dealer-bill-modal');
+    const backdrop = document.getElementById('create-dealer-bill-backdrop');
+    const panel = document.getElementById('create-dealer-bill-panel');
+    
+    modal.style.display = 'block';
+    setTimeout(() => {
+        backdrop.classList.remove('opacity-0');
+        backdrop.classList.add('opacity-100');
+        panel.classList.remove('translate-x-full');
+        panel.classList.add('translate-x-0');
+    }, 10);
+}
+
+function closeCreateDealerBill() {
+    const modal = document.getElementById('create-dealer-bill-modal');
+    const backdrop = document.getElementById('create-dealer-bill-backdrop');
+    const panel = document.getElementById('create-dealer-bill-panel');
+    
+    backdrop.classList.remove('opacity-100');
+    backdrop.classList.add('opacity-0');
+    panel.classList.remove('translate-x-0');
+    panel.classList.add('translate-x-full');
+    
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 500);
+}
+
 let weeklyRowCount = 1;
 const activeItems = @json($items);
 
@@ -489,23 +507,6 @@ function switchDealerTab(mode) {
     }
 }
 
-function toggleDealerPortal(event) {
-    const card = document.getElementById('dealer-toggle-card');
-    const container = document.getElementById('dealer-form-container');
-    const icon = document.getElementById('dealer-icon-toggle');
-    const btnText = document.getElementById('dealer-btn-text');
-
-    if (container.classList.contains('cm-hidden')) {
-        container.classList.remove('cm-hidden');
-        card.classList.add('cm-active');
-        icon.textContent = 'expand_less';
-        btnText.textContent = 'Collapse Entry Portal';
-    } else {
-        container.classList.add('cm-hidden');
-        card.classList.remove('cm-active');
-        icon.textContent = 'expand_more';
-        btnText.textContent = 'Expand Entry Portal';
-    }
 }
 
 // Auto-run on load
