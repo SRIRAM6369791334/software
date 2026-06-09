@@ -1,95 +1,66 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Profit & Loss Overview')
 
 @section('content')
-<div class="mb-6 flex justify-between items-end">
-    <div>
-        <h1 class="text-2xl font-bold text-slate-950">Profit & Loss Dashboard</h1>
-        <p class="text-sm text-slate-500 mt-0.5">Real-time financial performance overview</p>
-    </div>
+<x-page-header 
+    title="Profit & Loss Dashboard" 
+    subtitle="Real-time financial performance overview">
     <div class="flex gap-3">
-        <a href="{{ route('profit.monthly') }}" class="px-4 py-2 bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-emerald-50 shadow-sm transition-all">Monthly Breakdown</a>
-        <a href="{{ route('profit.expense-vs-income') }}" class="px-4 py-2 bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 text-white rounded-lg text-sm font-bold hover:bg-emerald-50 shadow-sm transition-all">Expense vs Income</a>
+        <x-button variant="secondary" href="{{ route('profit.monthly') }}">Monthly Breakdown</x-button>
+        <x-button variant="primary" href="{{ route('profit.expense-vs-income') }}">Expense vs Income</x-button>
     </div>
-</div>
+</x-page-header>
 
-<div class="mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-emerald-50/80 to-sky-50/80 p-4 rounded-2xl border border-slate-200">
-    <form method="GET" class="flex items-center gap-2">
-        <input type="date" name="start_date" value="{{ $startDate }}" class="px-3 py-2 text-xs bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-bold">
-        <span class="text-slate-400 font-black">-></span>
-        <input type="date" name="end_date" value="{{ $endDate }}" class="px-3 py-2 text-xs bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all font-bold">
-        <button type="submit" class="ml-2 px-4 py-2 bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-50 transition-all active:scale-95 shadow-lg">Filter</button>
-    </form>
-    <div class="flex items-center gap-2">
-        <a href="{{ route('profit.export', ['start_date' => $startDate, 'end_date' => $endDate]) }}" class="cm-export-btn">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-    </svg>
-        Export
-    </a>
-        <a href="{{ route('profit.export-pdf', ['start_date' => $startDate, 'end_date' => $endDate]) }}" 
-           class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-sky-500 text-white rounded-xl text-xs font-black hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all active:scale-95 flex items-center gap-2 uppercase tracking-widest">
-             Download PDF
-        </a>
+<x-card class="mb-4">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <form method="GET" class="flex items-center gap-2">
+            <x-form.input type="date" name="start_date" :value="$startDate" />
+            <span class="text-zinc-400 font-black">-></span>
+            <x-form.input type="date" name="end_date" :value="$endDate" />
+            <x-button type="submit" variant="secondary" class="ml-2">Filter</x-button>
+        </form>
+        <div class="flex items-center gap-2">
+            <x-button variant="outline" href="{{ route('profit.export', ['start_date' => $startDate, 'end_date' => $endDate]) }}">
+                Export
+            </x-button>
+            <x-button variant="primary" href="{{ route('profit.export-pdf', ['start_date' => $startDate, 'end_date' => $endDate]) }}">
+                Download PDF
+            </x-button>
+        </div>
     </div>
-</div>
+</x-card>
 
 <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-    <div class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Billed</p>
-        <h3 class="text-xl font-black text-blue-600">Rs {{ number_format($breakdown['total_billed'], 2) }}</h3>
-    </div>
-    <div class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Collected</p>
-        <h3 class="text-xl font-black text-emerald-600">Rs {{ number_format($breakdown['total_collected'], 2) }}</h3>
-    </div>
-    <div class="bg-amber-50 p-6 rounded-2xl border border-amber-100 shadow-sm">
-        <p class="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">Billed Profit</p>
-        <h3 class="text-xl font-black text-amber-700">Rs {{ number_format($breakdown['billed_profit'], 2) }}</h3>
-    </div>
-    <div class="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 shadow-sm">
-        <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Collected Profit</p>
-        <h3 class="text-xl font-black text-emerald-700">Rs {{ number_format($breakdown['collected_profit'], 2) }}</h3>
-    </div>
-    <div class="{{ $breakdown['pending_collection'] > 0 ? 'bg-rose-50 border-rose-100' : 'bg-emerald-50 border-slate-200' }} p-6 rounded-2xl border shadow-sm">
-        <p class="text-[10px] font-bold {{ $breakdown['pending_collection'] > 0 ? 'text-rose-600' : 'text-slate-500' }} uppercase tracking-widest mb-1">Pending Collection</p>
-        <h3 class="text-xl font-black {{ $breakdown['pending_collection'] > 0 ? 'text-rose-700' : 'text-slate-700' }}">Rs {{ number_format($breakdown['pending_collection'], 2) }}</h3>
-    </div>
+    <x-stat-card title="Total Billed" value="Rs {{ number_format($breakdown['total_billed'], 2) }}" icon="ph-receipt" color="sky" />
+    <x-stat-card title="Total Collected" value="Rs {{ number_format($breakdown['total_collected'], 2) }}" icon="ph-wallet" color="emerald" />
+    <x-stat-card title="Billed Profit" value="Rs {{ number_format($breakdown['billed_profit'], 2) }}" icon="ph-chart-line-up" color="amber" />
+    <x-stat-card title="Collected Profit" value="Rs {{ number_format($breakdown['collected_profit'], 2) }}" icon="ph-chart-pie-slice" color="emerald" />
+    <x-stat-card title="Pending Collection" value="Rs {{ number_format($breakdown['pending_collection'], 2) }}" icon="ph-warning-circle" color="{{ $breakdown['pending_collection'] > 0 ? 'rose' : 'emerald' }}" />
 </div>
 
 {{-- Weekly Breakdown Table --}}
-<div class="bg-gradient-to-br from-white via-emerald-50/40 to-sky-50/40 rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
-    <div class="px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-emerald-50/80 to-sky-50/80">
-        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Recent Weekly Performance</h3>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="text-left border-b border-slate-200 bg-slate-50/20">
-                    <th class="px-5 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Week</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Revenue</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Purchases</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Expenses</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Net Profit</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-                @foreach($weeklyData as $row)
-                <tr class="hover:bg-gradient-to-r from-emerald-50/70 to-sky-50/70">
-                    <td class="px-5 py-4 font-bold text-slate-950">{{ $row['week'] }}</td>
-                    <td class="px-5 py-4 text-right text-emerald-600 font-mono">Rs {{ number_format($row['revenue'], 2) }}</td>
-                    <td class="px-5 py-4 text-right text-amber-600 font-mono">Rs {{ number_format($row['purchase'], 2) }}</td>
-                    <td class="px-5 py-4 text-right text-rose-600 font-mono">Rs {{ number_format($row['expenses'], 2) }}</td>
-                    <td class="px-5 py-4 text-right font-black {{ $row['profit'] >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
-                        Rs {{ number_format($row['profit'], 2) }}
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-</div>
+<x-card title="Recent Weekly Performance" class="mb-8">
+    <x-data-table>
+        <x-slot name="head">
+            <tr>
+                <th>Week</th>
+                <th class="text-right">Revenue</th>
+                <th class="text-right">Purchases</th>
+                <th class="text-right">Expenses</th>
+                <th class="text-right">Net Profit</th>
+            </tr>
+        </x-slot>
+        @foreach($weeklyData as $row)
+        <tr>
+            <td class="font-bold text-zinc-950">{{ $row['week'] }}</td>
+            <td class="text-right font-mono text-emerald-600"><x-currency :amount="$row['revenue']" /></td>
+            <td class="text-right font-mono text-amber-600"><x-currency :amount="$row['purchase']" /></td>
+            <td class="text-right font-mono text-rose-600"><x-currency :amount="$row['expenses']" /></td>
+            <td class="text-right font-black {{ $row['profit'] >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
+                <x-currency :amount="$row['profit']" />
+            </td>
+        </tr>
+        @endforeach
+    </x-data-table>
+</x-card>
 @endsection

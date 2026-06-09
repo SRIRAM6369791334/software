@@ -2,269 +2,86 @@
 @section('title', 'Add Dealer')
 
 @section('content')
-<div class="cm-page">
-
-    {{-- Back Link --}}
-    <a href="{{ route('masters.dealers.index') }}" class="cm-back-btn">
-        <span class="material-symbols-rounded" style="font-size: 16px;">arrow_back</span>
-        Back to Directory
-    </a>
-
-    {{-- Top Bar --}}
-    <div class="cm-topbar">
-        <div>
-            <h1 class="cm-page-title">Add New Dealer</h1>
-            <p class="cm-page-sub">Expand your procurement network with a new supplier profile</p>
-        </div>
+<div class="max-w-3xl mx-auto space-y-6">
+    <div class="mb-4">
+        <a href="{{ route('masters.dealers.index') }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-colors">
+            <span class="material-symbols-rounded text-[20px]">arrow_back</span>
+            Back to Directory
+        </a>
     </div>
 
-    {{-- Form Card --}}
-    <div class="cm-form-card">
-        <form action="{{ route('masters.dealers.store') }}" method="POST" class="cm-form-body">
+    <x-page-header 
+        title="Add New Dealer" 
+        subtitle="Expand your procurement network with a new supplier profile"
+    />
+
+    <x-card>
+        <form action="{{ route('masters.dealers.store') }}" method="POST" class="space-y-6">
             @csrf
             
-            <div class="cm-form-grid">
-                <div class="cm-form-group">
-                    <label class="cm-form-label">Firm Name <span class="cm-required">*</span></label>
-                    <input type="text" name="firm_name" required placeholder="e.g. Superior Feed Mills"
-                        class="cm-form-input" value="{{ old('firm_name') }}">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="md:col-span-2">
+                    <x-form.input 
+                        name="firm_name" 
+                        label="Firm Identity" 
+                        icon="store" 
+                        placeholder="e.g. Superior Feed Mills" 
+                        required 
+                    />
                 </div>
-                <div class="cm-form-group">
-                    <label class="cm-form-label">GST Number</label>
-                    <input type="text" name="gst_number" placeholder="Valid GSTIN"
-                        class="cm-form-input cm-uppercase" value="{{ old('gst_number') }}">
-                </div>
+
+                <x-form.input 
+                    name="contact_person" 
+                    label="Contact Person" 
+                    icon="person" 
+                    placeholder="e.g. Sales Manager" 
+                />
+
+                <x-form.input 
+                    name="phone" 
+                    label="Phone Number" 
+                    icon="call" 
+                    placeholder="+91 00000 00000" 
+                    required 
+                />
+
+                <x-form.input 
+                    name="gst_number" 
+                    label="GSTIN" 
+                    icon="badge" 
+                    placeholder="Optional GSTIN" 
+                    class="uppercase"
+                />
+
+                <x-form.input 
+                    name="location" 
+                    label="Location / City" 
+                    icon="location_on" 
+                    placeholder="e.g. Industrial Estate" 
+                />
+
+                <x-form.input 
+                    name="route" 
+                    label="Route" 
+                    icon="alt_route" 
+                    placeholder="Supply route..." 
+                />
+
+                <x-form.input 
+                    type="number" 
+                    name="pending_amount" 
+                    label="Opening Outstanding (Rs)" 
+                    icon="account_balance_wallet" 
+                    value="0.00" 
+                    step="0.01" 
+                />
             </div>
 
-            <div class="cm-form-grid">
-                <div class="cm-form-group">
-                    <label class="cm-form-label">Contact Person</label>
-                    <input type="text" name="contact_person" placeholder="e.g. Sales Manager"
-                        class="cm-form-input" value="{{ old('contact_person') }}">
-                </div>
-                <div class="cm-form-group">
-                    <label class="cm-form-label">Phone Number <span class="cm-required">*</span></label>
-                    <input type="text" name="phone" required placeholder="+91 00000 00000"
-                        class="cm-form-input" value="{{ old('phone') }}">
-                </div>
-            </div>
-
-            <div class="cm-form-group">
-                <label class="cm-form-label">Location / City</label>
-                <input type="text" name="location" placeholder="Main Street, City"
-                    class="cm-form-input" value="{{ old('location') }}">
-            </div>
-
-            <div class="cm-form-grid">
-                <div class="cm-form-group">
-                    <label class="cm-form-label">Route</label>
-                    <input type="text" name="route" placeholder="Delivery Route"
-                        class="cm-form-input" value="{{ old('route') }}">
-                </div>
-                <div class="cm-form-group">
-                    <label class="cm-form-label">Opening Outstanding (Rs)</label>
-                    <input type="number" name="pending_amount" step="0.01" value="0.00"
-                        class="cm-form-input">
-                </div>
-            </div>
-
-            <div class="cm-form-footer">
-                <button type="reset" class="cm-btn-ghost">Reset</button>
-                <button type="submit" class="cm-btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                        stroke-linejoin="round" style="margin-right: 4px;">
-                        <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                    Register Dealer
-                </button>
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                <x-button type="reset" variant="ghost">Reset</x-button>
+                <x-button type="submit" variant="primary" icon="check_circle">Register Dealer</x-button>
             </div>
         </form>
-    </div>
-
+    </x-card>
 </div>
 @endsection
-
-@push('styles')
-<style>
-/* ── Reset / Custom CSS Variables (Sleek Theme Matrix) ── */
-:root {
-    --cm-bg: #f8fafc;
-    --cm-card-bg: #ffffff;
-    --cm-card-border: #e2e8f0;
-    --cm-text-primary: #0f172a;
-    --cm-text-secondary: #475569;
-    --cm-text-muted: #94a3b8;
-    --cm-accent-emerald: #10b981;
-    --cm-accent-emerald-hover: #059669;
-    --cm-accent-emerald-light: #e6fbf2;
-    --cm-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --cm-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-    --cm-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
-}
-
-[data-theme='dark'] {
-    --cm-bg: #090d16;
-    --cm-card-bg: #111827;
-    --cm-card-border: #1f2937;
-    --cm-text-primary: #f3f4f6;
-    --cm-text-secondary: #9ca3af;
-    --cm-text-muted: #6b7280;
-    --cm-accent-emerald-light: rgba(16, 185, 129, 0.1);
-    --cm-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
-    --cm-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
-    --cm-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
-}
-
-/* ── Layout ── */
-.cm-page { padding: 1rem 0 3rem; }
-.cm-hidden { display: none !important; }
-
-/* ── Back Link ── */
-.cm-back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--cm-accent-emerald);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    text-decoration: none;
-    margin-bottom: 1.25rem;
-    transition: transform 0.2s ease, color 0.2s ease;
-}
-.cm-back-btn:hover {
-    color: var(--cm-accent-emerald-hover);
-    transform: translateX(-4px);
-}
-
-/* ── Top Bar ── */
-.cm-topbar {
-    margin-bottom: 2rem;
-}
-.cm-page-title {
-    font-size: 1.375rem;
-    font-weight: 600;
-    color: var(--cm-text-primary);
-    letter-spacing: -0.02em;
-}
-.cm-page-sub {
-    font-size: 0.8125rem;
-    color: var(--cm-text-muted);
-    margin-top: 2px;
-}
-
-/* ── Form Card ── */
-.cm-form-card {
-    background: var(--cm-card-bg);
-    border: 0.5px solid var(--cm-card-border);
-    border-radius: 16px;
-    max-width: 640px;
-    box-shadow: var(--cm-shadow-sm);
-    overflow: hidden;
-}
-
-.cm-form-body {
-    padding: 2rem;
-}
-
-.cm-form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-}
-@media (max-width: 580px) {
-    .cm-form-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-}
-
-.cm-form-group {
-    margin-bottom: 1.5rem;
-}
-.cm-form-group:last-of-type {
-    margin-bottom: 0;
-}
-
-.cm-form-label {
-    display: block;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    color: var(--cm-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    margin-bottom: 6px;
-}
-.cm-required {
-    color: #dc2626;
-}
-
-.cm-form-input {
-    display: block;
-    width: 100%;
-    padding: 10px 14px;
-    border: 0.5px solid var(--cm-card-border);
-    border-radius: 8px;
-    font-size: 0.8125rem;
-    background: var(--cm-bg);
-    color: var(--cm-text-primary);
-    outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
-    font-family: inherit;
-}
-.cm-form-input:focus {
-    border-color: var(--cm-text-secondary);
-    box-shadow: 0 0 0 3px rgba(148,163,184,0.15);
-    background: var(--cm-card-bg);
-}
-.cm-uppercase {
-    text-transform: uppercase;
-}
-
-/* ── Buttons ── */
-.cm-btn-primary {
-    display: inline-flex;
-    align-items: center;
-    padding: 10px 18px;
-    background: #0f172a;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: opacity 0.15s;
-    text-decoration: none;
-}
-.cm-btn-primary:hover { opacity: 0.85; }
-
-.cm-btn-ghost {
-    display: inline-flex;
-    align-items: center;
-    padding: 10px 18px;
-    background: transparent;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.8125rem;
-    color: var(--cm-text-secondary);
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-}
-.cm-btn-ghost:hover { background: var(--cm-bg); color: var(--cm-text-primary); }
-
-/* ── Form Footer ── */
-.cm-form-footer {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 12px;
-    padding-top: 1.5rem;
-    margin-top: 1.5rem;
-    border-top: 0.5px solid var(--cm-card-border);
-}
-</style>
-@endpush

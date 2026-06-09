@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Purchase Invoice #' . $purchase->id)
 
 @section('content')
@@ -69,7 +69,7 @@
             </div>
 
             {{-- 3. Itemized List Table --}}
-            <div class="cm-table-wrap border border-slate-200 dark:border-gray-800 rounded-xl overflow-hidden mb-8">
+            <div class="cm-table-wrap border border-zinc-200 dark:border-gray-800 rounded-xl overflow-hidden mb-8">
                 <table class="cm-table">
                     <thead>
                         <tr>
@@ -91,18 +91,18 @@
                                     <div class="flex items-start gap-2.5">
                                         <div class="cm-table-indicator"></div>
                                         <div>
-                                            <span class="font-semibold text-slate-900 dark:text-slate-100 block">{{ $item->item_name }}</span>
-                                            <span class="text-xs text-slate-400">Stock procurement & placement in {{ $item->warehouse->name ?? 'Default Warehouse' }}</span>
+                                            <span class="font-semibold text-zinc-900 dark:text-zinc-100 block">{{ $item->item_name }}</span>
+                                            <span class="text-xs text-zinc-400">Stock procurement & placement in {{ $item->warehouse->name ?? 'Default Warehouse' }}</span>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="cm-td text-right font-mono text-slate-800 dark:text-slate-200">
+                                <td class="cm-td text-right font-mono text-zinc-800 dark:text-zinc-200">
                                     {{ number_format($item->quantity, 2) }} {{ $item->unit }}
                                 </td>
-                                <td class="cm-td text-right text-slate-600 dark:text-slate-400">
+                                <td class="cm-td text-right text-zinc-600 dark:text-zinc-400">
                                     ₹{{ number_format($item->rate, 2) }}
                                 </td>
-                                <td class="cm-td text-right font-semibold text-slate-900 dark:text-slate-100">
+                                <td class="cm-td text-right font-semibold text-zinc-900 dark:text-zinc-100">
                                     ₹{{ number_format($rowTotal, 2) }}
                                 </td>
                             </tr>

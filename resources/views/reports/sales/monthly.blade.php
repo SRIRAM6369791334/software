@@ -1,116 +1,78 @@
-@extends('layouts.app')
-
+﻿@extends('layouts.app')
 @section('title', 'Monthly Financial Audit')
 
 @section('content')
-<div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
-    <div>
-        <h1 class="text-3xl font-black text-slate-950 tracking-tight">Monthly Financial Audit</h1>
-        <p class="text-slate-500 font-medium italic">High-level executive summary of monthly revenue streams</p>
-    </div>
+<x-page-header 
+    title="Monthly Financial Audit" 
+    subtitle="High-level executive summary of monthly revenue streams">
     <div class="flex items-center gap-3">
-        <button onclick="window.print()" class="px-6 py-3 bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 text-slate-500 hover:text-slate-950 text-sm font-black rounded-xl transition-all shadow-sm active:scale-95 flex items-center gap-2 uppercase tracking-widest">
-             Print View
-        </button>
-        <a href="{{ route('reports.sales.export-pdf', ['month' => $month, 'year' => $year]) }}" class="cm-export-btn">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-    </svg>
-        Export PDF
-    </a>
+        <x-button variant="outline" onclick="window.print()" icon="ph-printer">Print View</x-button>
+        <x-button variant="primary" href="{{ route('reports.sales.export-pdf', ['month' => $month, 'year' => $year]) }}" icon="ph-download">Export PDF</x-button>
     </div>
-</div>
+</x-page-header>
 
-{{-- Filter Hub --}}
-<div class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 p-8 rounded-2xl border border-slate-200 shadow-md shadow-slate-200/60 mb-10">
+<x-card class="mb-6">
     <form action="{{ route('reports.sales.monthly') }}" method="GET" class="flex flex-col md:flex-row items-end gap-6">
-        <div class="space-y-2 flex-1">
-            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Month</label>
-            <select name="month" class="w-full px-5 py-4 bg-emerald-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-black text-slate-950 appearance-none">
+        <div class="flex-1">
+            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Target Month</label>
+            <x-form.select name="month">
                 @foreach(range(1, 12) as $m)
                     <option value="{{ $m }}" {{ $month == $m ? 'selected' : '' }}>{{ date('F', mktime(0, 0, 0, $m, 1)) }}</option>
                 @endforeach
-            </select>
+            </x-form.select>
         </div>
-        <div class="space-y-2 flex-1">
-            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Year</label>
-            <select name="year" class="w-full px-5 py-4 bg-emerald-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-black text-slate-950 appearance-none">
+        <div class="flex-1">
+            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Target Year</label>
+            <x-form.select name="year">
                 @foreach(range(now()->year - 5, now()->year) as $y)
                     <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
                 @endforeach
-            </select>
+            </x-form.select>
         </div>
-        <button type="submit" class="w-full md:w-auto px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl transition-all shadow-lg active:scale-95 uppercase tracking-widest text-sm">
-            Refresh Report
-        </button>
+        <x-button type="submit" variant="primary">Refresh Report</x-button>
     </form>
+</x-card>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <x-stat-card title="Gross Monthly Sale" value="Rs {{ number_format($totalSale, 2) }}" icon="ph-currency-inr" color="sky" />
+    <x-stat-card title="Accrued GST" value="Rs {{ number_format($bills->sum('gst_amount'), 2) }}" icon="ph-percent" color="emerald" />
+    <x-stat-card title="Liquid Collections" value="Rs {{ number_format($bills->where('status', 'paid')->sum('net_amount'), 2) }}" icon="ph-money" color="indigo" />
 </div>
 
-{{-- Strategic Insights --}}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-    <div class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 p-8 rounded-2xl border border-slate-200 shadow-md shadow-slate-200/60 group hover:border-emerald-200 transition-all border-l-8 border-l-blue-500">
-        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Gross Monthly Sale</h3>
-        <p class="text-3xl font-black text-slate-950">Rs {{ number_format($totalSale, 2) }}</p>
-    </div>
-    <div class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 p-8 rounded-2xl border border-slate-200 shadow-md shadow-slate-200/60 group hover:border-emerald-200 transition-all border-l-8 border-l-emerald-500">
-        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Accrued GST</h3>
-        <p class="text-3xl font-black text-emerald-600">Rs {{ number_format($bills->sum('gst_amount'), 2) }}</p>
-    </div>
-    <div class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 p-8 rounded-2xl border border-slate-200 shadow-md shadow-slate-200/60 group hover:border-emerald-200 transition-all border-l-8 border-l-indigo-500">
-        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Liquid Collections</h3>
-        <p class="text-3xl font-black text-blue-600">Rs {{ number_format($bills->where('status', 'paid')->sum('net_amount'), 2) }}</p>
-    </div>
-</div>
-
-{{-- Data Hub --}}
-<div class="bg-gradient-to-br from-white via-emerald-50/40 to-sky-50/40 rounded-3xl border border-slate-200 shadow-lg overflow-hidden mb-12">
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left">
-            <thead>
-                <tr class="bg-slate-50 border-b border-slate-200 text-slate-400 font-bold uppercase text-[10px] tracking-widest border-b border-slate-200">
-                    <th class="px-10 py-6">Customer Portfolio</th>
-                    <th class="px-10 py-6 text-right">Aggregate Sales</th>
-                    <th class="px-10 py-6 text-right">Tax Contribution</th>
-                    <th class="px-10 py-6 text-right">Unrealized Due</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @php $grouped = $bills->groupBy('customer_id'); @endphp
-                @forelse($grouped as $customerId => $customerBills)
-                    <tr class="hover:bg-emerald-50/30 transition-all group">
-                        <td class="px-10 py-6">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-2xl bg-sky-50 flex items-center justify-center font-black text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-all shadow-inner">
-                                    {{ substr($customerBills->first()->customer->name ?? '?', 0, 1) }}
-                                </div>
-                                <div class="flex flex-col">
-                                    <span class="font-black text-slate-950 tracking-tight text-lg">{{ $customerBills->first()->customer->name ?? 'WALK-IN' }}</span>
-                                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{{ $customerBills->count() }} Transactions</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-10 py-6 text-right font-black text-slate-950 text-lg italic">Rs {{ number_format($customerBills->sum('net_amount'), 2) }}</td>
-                        <td class="px-10 py-6 text-right font-bold text-emerald-600">Rs {{ number_format($customerBills->sum('gst_amount'), 2) }}</td>
-                        <td class="px-10 py-6 text-right font-black text-red-600 text-lg">
-                            Rs {{ number_format($customerBills->where('status', 'unpaid')->sum('net_amount'), 2) }}
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="4" class="px-10 py-32 text-center">
-                            <div class="flex flex-col items-center opacity-30">
-                                <span class="text-8xl mb-6"></span>
-                                <h3 class="text-2xl font-black text-slate-950 uppercase tracking-widest">No Data Available</h3>
-                                <p class="text-slate-500 font-medium">Monthly revenue stream is empty for this period</p>
-                            </div>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
+<x-card>
+    <x-data-table>
+        <x-slot name="head">
+            <tr>
+                <th>Customer Portfolio</th>
+                <th class="text-right">Aggregate Sales</th>
+                <th class="text-right">Tax Contribution</th>
+                <th class="text-right">Unrealized Due</th>
+            </tr>
+        </x-slot>
+        @php $grouped = $bills->groupBy('customer_id'); @endphp
+        @forelse($grouped as $customerId => $customerBills)
+            <tr>
+                <td>
+                    <div class="flex items-center gap-4">
+                        <div class="flex flex-col">
+                            <span class="font-black text-zinc-950 tracking-tight text-lg">{{ $customerBills->first()->customer->name ?? 'WALK-IN' }}</span>
+                            <span class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{{ $customerBills->count() }} Transactions</span>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-right font-black text-zinc-950 text-lg italic"><x-currency :amount="$customerBills->sum('net_amount')" /></td>
+                <td class="text-right font-bold text-emerald-600"><x-currency :amount="$customerBills->sum('gst_amount')" /></td>
+                <td class="text-right font-black text-red-600 text-lg">
+                    <x-currency :amount="$customerBills->where('status', 'unpaid')->sum('net_amount')" />
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="4" class="px-10 py-24 text-center text-zinc-500 font-medium">
+                    No Data Available. Monthly revenue stream is empty for this period.
+                </td>
+            </tr>
+        @endforelse
+    </x-data-table>
+</x-card>
 @endsection

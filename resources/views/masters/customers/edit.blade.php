@@ -2,57 +2,86 @@
 @section('title', 'Edit Customer')
 
 @section('content')
-<div class="mb-6">
-    <a href="{{ route('masters.customers.index') }}" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 uppercase tracking-wider mb-2 inline-block">← Back to List</a>
-    <h1 class="text-2xl font-bold text-slate-950">Edit Customer: {{ $customer->name }}</h1>
-</div>
+<div class="max-w-3xl mx-auto space-y-6">
+    <div class="mb-4">
+        <a href="{{ route('masters.customers.index') }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-colors">
+            <span class="material-symbols-rounded text-[20px]">arrow_back</span>
+            Back to Customers
+        </a>
+    </div>
 
-<div class="max-w-3xl">
-    <div class="bg-gradient-to-br from-white via-emerald-50/40 to-sky-50/40 rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <form action="{{ route('masters.customers.update', $customer) }}" method="POST" class="p-6 space-y-4">
+    <x-page-header 
+        title="Edit Customer" 
+        subtitle="Update details for {{ $customer->name }}"
+    />
+
+    <x-card>
+        <form action="{{ route('masters.customers.update', $customer) }}" method="POST" class="space-y-6">
             @csrf
             @method('PUT')
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-slate-700 uppercase tracking-tight">Full Name <span class="text-red-500">*</span></label>
-                    <input type="text" name="name" value="{{ old('name', $customer->name) }}" required class="w-full px-4 py-2 bg-emerald-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-slate-700 uppercase tracking-tight">Phone Number <span class="text-red-500">*</span></label>
-                    <input type="text" name="phone" value="{{ old('phone', $customer->phone) }}" required class="w-full px-4 py-2 bg-emerald-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all">
-                </div>
-                <div class="md:col-span-2 space-y-1.5">
-                    <label class="text-xs font-bold text-slate-700 uppercase tracking-tight">Address</label>
-                    <textarea name="address" rows="2" class="w-full px-4 py-2 bg-emerald-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all">{{ old('address', $customer->address) }}</textarea>
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-slate-700 uppercase tracking-tight">GST Number</label>
-                    <input type="text" name="gst_number" value="{{ old('gst_number', $customer->gst_number) }}" class="w-full px-4 py-2 bg-emerald-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-slate-700 uppercase tracking-tight">Route / Area</label>
-                    <input type="text" name="route" value="{{ old('route', $customer->route) }}" class="w-full px-4 py-2 bg-emerald-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-slate-700 uppercase tracking-tight">Customer Type</label>
-                    <select name="type" class="w-full px-4 py-2 bg-emerald-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all">
-                        <option value="Retail" {{ $customer->type === 'Retail' ? 'selected' : '' }}>Retail</option>
-                        <option value="Wholesale" {{ $customer->type === 'Wholesale' ? 'selected' : '' }}>Wholesale</option>
-                    </select>
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-slate-700 uppercase tracking-tight">Current Balance (Rs )</label>
-                    <input type="number" name="balance" step="0.01" value="{{ old('balance', $customer->balance) }}" class="w-full px-4 py-2 bg-emerald-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all">
-                </div>
-            </div>
             
-            <div class="pt-4 flex justify-end gap-3">
-                <a href="{{ route('masters.customers.index') }}" class="px-5 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors">Cancel</a>
-                <button type="submit" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg shadow-sm transition-all">
-                    Update Customer 
-                </button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <x-form.input 
+                    name="name" 
+                    label="Full Name" 
+                    icon="person" 
+                    :value="$customer->name" 
+                    required 
+                />
+
+                <x-form.input 
+                    name="phone" 
+                    label="Phone Number" 
+                    icon="call" 
+                    :value="$customer->phone" 
+                    required 
+                />
+
+                <div class="md:col-span-2">
+                    <x-form.textarea 
+                        name="address" 
+                        label="Store Address" 
+                        :value="$customer->address" 
+                        rows="2"
+                    />
+                </div>
+
+                <x-form.input 
+                    name="gst_number" 
+                    label="GST Number" 
+                    icon="badge" 
+                    :value="$customer->gst_number" 
+                />
+
+                <x-form.input 
+                    name="route" 
+                    label="Route / Area" 
+                    icon="alt_route" 
+                    :value="$customer->route" 
+                />
+
+                <x-form.select 
+                    name="type" 
+                    label="Customer Type" 
+                    :options="['Retail' => 'Retail', 'Wholesale' => 'Wholesale']" 
+                    :selected="$customer->type"
+                />
+
+                <x-form.input 
+                    type="number" 
+                    name="balance" 
+                    label="Current Balance (Rs)" 
+                    icon="account_balance_wallet" 
+                    :value="$customer->balance" 
+                    step="0.01" 
+                />
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                <x-button href="{{ route('masters.customers.index') }}" variant="ghost">Cancel</x-button>
+                <x-button type="submit" variant="primary">Update Customer</x-button>
             </div>
         </form>
-    </div>
+    </x-card>
 </div>
 @endsection

@@ -1,5 +1,6 @@
 <style>
 /* ── Reset / Custom CSS Variables (Sleek Theme Matrix) ── */
+/* Note: These variables are deprecated. Use Tailwind classes and app.css variables instead. */
 :root {
     --cm-bg: #f8fafc;
     --cm-card-bg: #ffffff;
@@ -15,7 +16,7 @@
     --cm-shadow-lg: 0 24px 40px -8px rgba(15, 23, 42, 0.12), 0 12px 16px -6px rgba(15, 23, 42, 0.06);
 }
 
-[data-theme='dark'] {
+[data-theme='dark'], .dark {
     --cm-bg: #090d16;
     --cm-card-bg: #111827;
     --cm-card-border: #1f2937;

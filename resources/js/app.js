@@ -1,7 +1,13 @@
 import './bootstrap';
 
 const applyTheme = (theme) => {
-    document.documentElement.dataset.theme = theme;
+    if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.documentElement.dataset.theme = 'dark'; // Keep data-theme for backward compatibility if needed
+    } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.dataset.theme = 'light';
+    }
     localStorage.setItem('poultrypro-theme', theme);
 
     const icon = document.querySelector('#theme-toggle .material-symbols-rounded');
@@ -15,7 +21,7 @@ applyTheme(initialTheme);
 
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('theme-toggle')?.addEventListener('click', () => {
-        const current = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+        const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
         applyTheme(current === 'dark' ? 'light' : 'dark');
     });
 });
@@ -46,8 +52,8 @@ document.addEventListener('submit', (event) => {
             cancelButtonColor: '#ef4444',  // red-500
             confirmButtonText: 'Yes, proceed',
             cancelButtonText: 'Cancel',
-            background: document.documentElement.dataset.theme === 'dark' ? '#1e293b' : '#ffffff',
-            color: document.documentElement.dataset.theme === 'dark' ? '#f8fafc' : '#0f172a',
+            background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff',
+            color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#0f172a',
         }).then((result) => {
             if (result.isConfirmed) {
                 // Temporarily strip the attribute to avoid re-triggering and submit form

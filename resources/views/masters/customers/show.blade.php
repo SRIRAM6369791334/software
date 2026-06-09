@@ -3,293 +3,245 @@
 
 @section('content')
 @if(!request()->ajax())
-<div class="cm-page">
+<div class="space-y-6">
+    <div class="mb-4">
+        <a href="{{ route('masters.customers.index') }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-colors">
+            <span class="material-symbols-rounded text-[20px]">arrow_back</span>
+            Back to Directory
+        </a>
+    </div>
 
-    {{-- Back Link --}}
-    <a href="{{ route('masters.customers.index') }}" class="cm-back-btn">
-        <span class="material-symbols-rounded" style="font-size: 16px;">arrow_back</span>
-        Back to directory
-    </a>
-
-    {{-- Top Bar --}}
-    <div class="cm-topbar">
-        <div class="cm-profile-header">
-            <div class="cm-avatar-lg cm-avatar-lg--{{ strtolower(substr($customer->name, 0, 1)) }}">
-                {{ strtoupper(substr($customer->name, 0, 2)) }}
-            </div>
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <x-avatar name="{{ $customer->name }}" size="lg" />
             <div>
-                <h1 class="cm-page-title">{{ $customer->name }}</h1>
-                <div class="cm-page-sub">
+                <h1 class="text-2xl font-bold font-cabinet text-zinc-900 dark:text-zinc-100 tracking-tight">{{ $customer->name }}</h1>
+                <div class="flex items-center gap-2 mt-1">
                     @if($customer->type === 'Wholesale')
-                        <span class="cm-badge cm-badge--wholesale">Wholesale Partner</span>
+                        <x-badge color="blue">Wholesale Partner</x-badge>
                     @else
-                        <span class="cm-badge cm-badge--retail">Retail Buyer</span>
+                        <x-badge color="rose">Retail Buyer</x-badge>
                     @endif
-                    <span class="cm-badge cm-badge--route">
-                        <span class="material-symbols-rounded" style="font-size: 12px; margin-right: 2px;">alt_route</span>
+                    <x-badge color="zinc">
+                        <span class="material-symbols-rounded text-[14px] mr-1">alt_route</span>
                         {{ $customer->route ?: 'General Sector' }}
-                    </span>
+                    </x-badge>
                 </div>
             </div>
         </div>
 
-        <div class="cm-actions-group">
-            <a href="{{ route('masters.customers.edit', $customer) }}" class="cm-btn-outline">
-                <span class="material-symbols-rounded" style="font-size: 16px;">edit</span>
-                Edit Profile
-            </a>
+        <div class="flex items-center gap-3">
+            <x-button href="{{ route('masters.customers.edit', $customer) }}" variant="secondary" icon="edit">Edit Profile</x-button>
             <form action="{{ route('masters.customers.destroy', $customer) }}" method="POST" onsubmit="return confirm('Delete {{ $customer->name }}? This will keep their transaction history intact.')">
                 @csrf @method('DELETE')
-                <button type="submit" class="cm-btn-danger">
-                    <span class="material-symbols-rounded" style="font-size: 16px;">delete</span>
-                    Delete
-                </button>
+                <x-button type="submit" variant="danger" icon="delete">Delete</x-button>
             </form>
         </div>
     </div>
 
-    {{-- Layout Grid --}}
-    <div class="cm-detail-layout">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {{-- Side Column: Profile & Balance --}}
-        <div class="cm-side-col">
+        <div class="lg:col-span-1 space-y-6">
+            <div class="rounded-3xl p-6 bg-rose-500/40 dark:bg-rose-900/40 backdrop-blur-2xl text-rose-900 dark:text-rose-100 shadow-[0_8px_32px_rgba(225,29,72,0.15)] border border-rose-300/50 dark:border-rose-700/50 relative overflow-hidden transition-all duration-300 hover:shadow-[0_8px_32px_rgba(225,29,72,0.25)] hover:-translate-y-1">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/20 dark:bg-rose-400/10 rounded-full blur-2xl"></div>
+                <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-rose-400/20 dark:bg-rose-600/20 rounded-full blur-2xl"></div>
+                <div class="relative z-10 text-center">
+                    <div class="text-xs font-bold uppercase tracking-widest text-rose-800/80 dark:text-rose-200 mb-2">Total Outstanding</div>
+                    <div class="text-3xl font-extrabold tracking-tight font-jetbrains mb-6 text-rose-950 dark:text-white drop-shadow-sm">
+                        Rs {{ number_format($customer->balance, 2) }}
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <x-button href="{{ route('payments.customers.create', ['customer_id' => $customer->id]) }}" variant="secondary" icon="payments" class="w-full justify-center !text-rose-700 !bg-white/80 hover:!bg-white !border-white backdrop-blur-md shadow-sm">
+                            Record Payment
+                        </x-button>
+                        <x-button href="{{ route('masters.customers.ledger-pdf', $customer) }}" variant="secondary" icon="download" class="w-full justify-center !bg-rose-600/20 !text-rose-900 dark:!text-rose-100 !border-rose-400/30 hover:!bg-rose-600/30 backdrop-blur-md">
+                            Download Statement
+                        </x-button>
+                    </div>
+                </div>
+            </div>
+
+            <x-card title="Profile Credentials" icon="contact_page">
+                <div class="space-y-4">
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-rounded text-zinc-400">call</span>
+                        <div>
+                            <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Contact Phone</div>
+                            <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $customer->phone }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-rounded text-zinc-400">location_on</span>
+                        <div>
+                            <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Store Address</div>
+                            <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $customer->address ?: 'Not provided' }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-rounded text-zinc-400">badge</span>
+                        <div>
+                            <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">GSTIN / Registration</div>
+                            <div class="font-mono text-sm text-zinc-900 dark:text-zinc-100">{{ $customer->gst_number ?: 'Unregistered' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </x-card>
+        </div>
+
+        <div class="lg:col-span-2 space-y-6">
             
-            {{-- Outstanding Balance Card --}}
-            <div class="cm-balance-card">
-                <div class="cm-balance-label">Total Outstanding</div>
-                <div class="cm-balance-amount">Rs {{ number_format($customer->balance, 2) }}</div>
-                
-                <div class="cm-balance-actions">
-                    <a href="{{ route('payments.customers.create', ['customer_id' => $customer->id]) }}" class="cm-balance-btn-pay">
-                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">payments</span>
-                        Record Payment
-                    </a>
-                    <a href="{{ route('masters.customers.ledger-pdf', $customer) }}" class="cm-balance-btn-dl">
-                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">download</span>
-                        Download Statement
-                    </a>
-                </div>
-            </div>
-
-            {{-- Profile Card --}}
-            <div class="cm-card">
-                <h3 class="cm-card-title">
-                    <span class="material-symbols-rounded" style="font-size: 16px;">contact_page</span>
-                    Profile Credentials
-                </h3>
-                <div class="cm-info-list">
-                    <div class="cm-info-item">
-                        <span class="material-symbols-rounded cm-info-icon" style="font-size: 18px;">call</span>
-                        <div>
-                            <div class="cm-info-label">Contact Phone</div>
-                            <div class="cm-info-val">{{ $customer->phone }}</div>
+            @if($overdueEmis->count() > 0 || $upcomingEmis->count() > 0)
+                <div class="space-y-4">
+                    @if($overdueEmis->count() > 0)
+                    <div class="flex items-center gap-4 p-4 rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-900/20">
+                        <span class="material-symbols-rounded text-rose-600 dark:text-rose-400 text-3xl">error</span>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-bold text-rose-800 dark:text-rose-300">Overdue EMI Alert!</h4>
+                            <p class="text-sm text-rose-700 dark:text-rose-400 mt-0.5">
+                                Customer has {{ $overdueEmis->count() }} overdue EMI(s) totaling <strong>Rs {{ number_format($overdueEmis->sum('emi_amount'), 2) }}</strong>.
+                            </p>
                         </div>
+                        <x-button href="{{ route('masters.customers.emi-history', $customer) }}" variant="danger" size="sm">View Details</x-button>
                     </div>
-                    <div class="cm-info-item">
-                        <span class="material-symbols-rounded cm-info-icon" style="font-size: 18px;">location_on</span>
-                        <div>
-                            <div class="cm-info-label">Store Address</div>
-                            <div class="cm-info-val">{{ $customer->address ?: 'Not provided' }}</div>
-                        </div>
-                    </div>
-                    <div class="cm-info-item">
-                        <span class="material-symbols-rounded cm-info-icon" style="font-size: 18px;">badge</span>
-                        <div>
-                            <div class="cm-info-label">GSTIN / Registration</div>
-                            <div class="cm-info-val cm-info-val--mono">{{ $customer->gst_number ?: 'Unregistered (No GST)' }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                    @endif
 
-        </div>
-
-        {{-- EMI Alerts --}}
-        @if($overdueEmis->count() > 0 || $upcomingEmis->count() > 0)
-        <div style="grid-column: 1 / -1; margin-bottom: -1rem;">
-            @if($overdueEmis->count() > 0)
-            <div style="background: rgba(220, 38, 38, 0.05); border: 1px solid rgba(220, 38, 38, 0.2); border-left: 4px solid #dc2626; border-radius: 8px; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;">
-                <span class="material-symbols-rounded" style="color: #dc2626; font-size: 24px;">error</span>
-                <div>
-                    <h4 style="margin: 0; color: #b91c1c; font-size: 0.875rem; font-weight: 700;">Overdue EMI Alert!</h4>
-                    <p style="margin: 4px 0 0; color: #7f1d1d; font-size: 0.8125rem;">Customer has {{ $overdueEmis->count() }} overdue EMI(s) totaling <strong>Rs {{ number_format($overdueEmis->sum('emi_amount'), 2) }}</strong>.</p>
+                    @if($upcomingEmis->count() > 0)
+                    <div class="flex items-center gap-4 p-4 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-900/20">
+                        <span class="material-symbols-rounded text-amber-600 dark:text-amber-400 text-3xl">warning</span>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-bold text-amber-800 dark:text-amber-300">Upcoming EMI</h4>
+                            <p class="text-sm text-amber-700 dark:text-amber-400 mt-0.5">
+                                Customer has {{ $upcomingEmis->count() }} EMI(s) due in the next 7 days.
+                            </p>
+                        </div>
+                        <x-button href="{{ route('masters.customers.emi-history', $customer) }}" variant="secondary" class="!bg-amber-600 !text-white !border-amber-600 hover:!bg-amber-700" size="sm">View Details</x-button>
+                    </div>
+                    @endif
                 </div>
-                <a href="{{ route('masters.customers.emi-history', $customer) }}" style="margin-left: auto; background: #dc2626; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.75rem; font-weight: 600;">View Details</a>
-            </div>
             @endif
 
-            @if($upcomingEmis->count() > 0)
-            <div style="background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); border-left: 4px solid #f59e0b; border-radius: 8px; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;">
-                <span class="material-symbols-rounded" style="color: #f59e0b; font-size: 24px;">warning</span>
-                <div>
-                    <h4 style="margin: 0; color: #d97706; font-size: 0.875rem; font-weight: 700;">Upcoming EMI</h4>
-                    <p style="margin: 4px 0 0; color: #92400e; font-size: 0.8125rem;">Customer has {{ $upcomingEmis->count() }} EMI(s) due in the next 7 days.</p>
-                </div>
-                <a href="{{ route('masters.customers.emi-history', $customer) }}" style="margin-left: auto; background: #f59e0b; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.75rem; font-weight: 600;">View Details</a>
-            </div>
-            @endif
-        </div>
-        @endif
-
-        {{-- Main Column: Tabs --}}
-        <div class="cm-main-col">
 @endif
-            
-            <div class="cm-tabs-card" id="cm-tabs-container" x-data="ajaxTabs" @click="handleTabClick" @mouseover="prefetchTab" @popstate.window="window.location.reload()">
-                {{-- Tabs Navigation --}}
-                <div class="cm-tabs-header">
-                    <a href="{{ route('masters.customers.show', $customer) }}" class="cm-tab-link cm-tab-link--active">
+            <div id="cm-tabs-container" x-data="ajaxTabs" @click="handleTabClick" @mouseover="prefetchTab" @popstate.window="window.location.reload()" class="bg-white/30 dark:bg-zinc-900/40 backdrop-blur-2xl border border-white/60 dark:border-zinc-800/80 rounded-[2rem] overflow-hidden shadow-[0_8px_32px_rgba(31,38,135,0.07)] z-10 relative">
+                
+                <div class="flex flex-wrap p-2 m-4 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-white/50 dark:border-zinc-700/50 gap-2">
+                    <a href="{{ route('masters.customers.show', $customer) }}" class="flex-1 text-center py-3 text-sm font-bold text-emerald-700 dark:text-emerald-400 bg-white/70 dark:bg-zinc-800/80 shadow-sm rounded-xl transition-all duration-300">
                         Quick Overview
                     </a>
-                    <a href="{{ route('masters.customers.billing-history', $customer) }}" class="cm-tab-link">
+                    <a href="{{ route('masters.customers.billing-history', $customer) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
                         Billing History
                     </a>
-                    <a href="{{ route('masters.customers.payment-history', $customer) }}" class="cm-tab-link">
+                    <a href="{{ route('masters.customers.payment-history', $customer) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
                         Payment History
                     </a>
-                    <a href="{{ route('masters.customers.emi-history', $customer) }}" class="cm-tab-link">
+                    <a href="{{ route('masters.customers.emi-history', $customer) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
                         EMI Schedule
                     </a>
                 </div>
 
-                {{-- Tab Content Pane --}}
-                <div class="cm-tab-content">
-                    <h4 class="cm-tab-title">Recent Activity Insights</h4>
+                <div class="p-6">
+                    <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider mb-6">Recent Activity Insights</h4>
 
-                    <div class="cm-overview-grid">
-                        <div class="cm-stat-card cm-stat-card--blue">
-                            <div class="cm-stat-icon">
-                                <span class="material-symbols-rounded">calendar_today</span>
-                            </div>
-                            <div>
-                                <div class="cm-stat-label">Last Bill Date</div>
-                                <div class="cm-stat-value">
-                                    @if($latestBill)
-                                        {{ $latestBill instanceof \App\Models\WeeklyBill ? $latestBill->period_end->format('d M Y') : $latestBill->date->format('d M Y') }}
-                                    @else
-                                        No bills yet
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="cm-stat-card cm-stat-card--emerald">
-                            <div class="cm-stat-icon">
-                                <span class="material-symbols-rounded">payments</span>
-                            </div>
-                            <div>
-                                <div class="cm-stat-label">Last Payment</div>
-                                <div class="cm-stat-value">
-                                    @if($latestPayment)
-                                        Rs {{ number_format($latestPayment->amount, 0) }}
-                                        <span class="cm-stat-sub">({{ $latestPayment->date->format('d M') }})</span>
-                                    @else
-                                        N/A
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <x-stat-card title="Last Bill Date" color="blue" icon="calendar_today" value="{{ $latestBill ? ($latestBill instanceof \App\Models\WeeklyBill ? $latestBill->period_end->format('d M Y') : $latestBill->date->format('d M Y')) : 'No bills yet' }}" />
+                        <x-stat-card title="Last Payment" color="emerald" icon="payments" value="{{ $latestPayment ? 'Rs ' . number_format($latestPayment->amount, 0) : 'N/A' }}" subtitle="{{ $latestPayment ? $latestPayment->date->format('d M') : '' }}" />
                     </div>
 
-                    <div class="cm-overview-stats">
-                        <div class="cm-stat-card cm-stat-card--blue">
-                            <div class="cm-stat-icon">
-                                <span class="material-symbols-rounded">receipt</span>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <div class="p-4 rounded-2xl border border-white/60 dark:border-zinc-700 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl flex items-center gap-4 transition-all duration-300 hover:bg-white/60">
+                            <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                <span class="material-symbols-rounded text-xl">receipt</span>
                             </div>
                             <div>
-                                <div class="cm-stat-label">Total Bills</div>
-                                <div class="cm-stat-value">
+                                <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Total Bills</div>
+                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                                     {{ $customer->weekly_bills_count + $customer->daily_bills_count }}
-                                    <span class="cm-stat-sub" style="font-size: 0.65rem; display: block; font-weight: 500;">
-                                        ({{ $customer->weekly_bills_count }} Whs / {{ $customer->daily_bills_count }} Ret)
-                                    </span>
+                                </div>
+                                <div class="text-xs font-medium text-zinc-500 mt-0.5">({{ $customer->weekly_bills_count }} Whs / {{ $customer->daily_bills_count }} Ret)</div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-2xl border border-white/60 dark:border-zinc-700 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl flex items-center gap-4 transition-all duration-300 hover:bg-white/60">
+                            <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                                <span class="material-symbols-rounded text-xl">done_all</span>
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Total Payments</div>
+                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                                    {{ $customer->payments_count }}
                                 </div>
                             </div>
                         </div>
 
-                        <div class="cm-stat-card cm-stat-card--purple">
-                            <div class="cm-stat-icon">
-                                <span class="material-symbols-rounded">done_all</span>
+                        <div class="p-4 rounded-2xl border border-white/60 dark:border-zinc-700 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl flex items-center gap-4 transition-all duration-300 hover:bg-white/60">
+                            <div class="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                <span class="material-symbols-rounded text-xl">account_balance_wallet</span>
                             </div>
                             <div>
-                                <div class="cm-stat-label">Total Payments</div>
-                                <div class="cm-stat-value">{{ $customer->payments_count }}</div>
-                            </div>
-                        </div>
-
-                        <div class="cm-stat-card cm-stat-card--emerald">
-                            <div class="cm-stat-icon">
-                                <span class="material-symbols-rounded">account_balance_wallet</span>
-                            </div>
-                            <div>
-                                <div class="cm-stat-label">Total Paid</div>
-                                <div class="cm-stat-value">Rs {{ number_format($customer->payments_sum_amount ?? 0, 0) }}</div>
+                                <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Total Paid</div>
+                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">
+                                    Rs {{ number_format($customer->payments_sum_amount ?? 0, 0) }}
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Purchased Products Profile --}}
-                    <div style="margin-top: 2.5rem; border-top: 1px solid var(--cm-card-border); padding-top: 2rem;">
-                        <h4 class="cm-tab-title" style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 8px;">
-                            <span class="material-symbols-rounded" style="color: var(--cm-accent-emerald); font-size: 20px;">shopping_bag</span>
+                    <div class="pt-8 border-t border-zinc-200 dark:border-zinc-800">
+                        <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider flex items-center gap-2 mb-6">
+                            <span class="material-symbols-rounded text-emerald-600">shopping_bag</span>
                             Purchased Products Profile
                         </h4>
 
-                        <div class="cm-overview-grid" style="gap: 1.5rem; margin-bottom: 0;">
-                            {{-- Wholesale Purchases --}}
-                            <div class="cm-card" style="padding: 1.25rem; background: rgba(59, 130, 246, 0.02); border-color: rgba(59, 130, 246, 0.1); margin: 0; box-shadow: none;">
-                                <h5 style="font-size: 0.75rem; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0; margin-bottom: 1rem; display: flex; align-items: center; gap: 6px;">
-                                    <span class="material-symbols-rounded" style="font-size: 16px;">warehouse</span>
-                                    Wholesale Products (Weekly Bills)
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            <div class="p-5 rounded-2xl border border-blue-200/60 dark:border-blue-800/30 bg-blue-50/30 dark:bg-blue-900/20 backdrop-blur-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
+                                <h5 class="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center gap-2 mb-4">
+                                    <span class="material-symbols-rounded text-base">warehouse</span>
+                                    Wholesale Products
                                 </h5>
-                                @forelse($topWholesaleProducts as $prod)
-                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed var(--cm-card-border);">
-                                        <div style="font-weight: 600; color: var(--cm-text-primary); font-size: 0.8125rem;">{{ $prod['item_name'] }}</div>
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            <span class="cm-status-pill cm-status-pill--paid" style="background: rgba(59, 130, 246, 0.08); color: #2563eb; font-size: 0.65rem; padding: 1px 6px;">{{ $prod['times_bought'] }}x</span>
-                                            <span style="font-weight: 700; color: var(--cm-text-primary); font-size: 0.8125rem;">{{ number_format($prod['total_qty'], 1) }} kg</span>
+                                <div class="space-y-3">
+                                    @forelse($topWholesaleProducts as $prod)
+                                        <div class="flex items-center justify-between py-2 border-b border-blue-100 dark:border-blue-900/50 last:border-0">
+                                            <div class="font-medium text-sm text-zinc-900 dark:text-zinc-100">{{ $prod['item_name'] }}</div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">{{ $prod['times_bought'] }}x</span>
+                                                <span class="font-bold text-sm text-zinc-900 dark:text-zinc-100 font-jetbrains">{{ number_format($prod['total_qty'], 1) }} kg</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                @empty
-                                    <div style="font-size: 0.75rem; color: var(--cm-text-muted); text-align: center; padding: 1.5rem 0;">
-                                        No wholesale product purchases recorded.
-                                    </div>
-                                @endforelse
+                                    @empty
+                                        <div class="text-xs text-center text-zinc-500 py-4">No wholesale product purchases recorded.</div>
+                                    @endforelse
+                                </div>
                             </div>
 
-                            {{-- Retail Purchases --}}
-                            <div class="cm-card" style="padding: 1.25rem; background: rgba(16, 185, 129, 0.02); border-color: rgba(16, 185, 129, 0.1); margin: 0; box-shadow: none;">
-                                <h5 style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0; margin-bottom: 1rem; display: flex; align-items: center; gap: 6px;">
-                                    <span class="material-symbols-rounded" style="font-size: 16px;">storefront</span>
-                                    Retail Products (Daily Invoices)
+                            <div class="p-5 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/30 bg-emerald-50/30 dark:bg-emerald-900/20 backdrop-blur-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
+                                <h5 class="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-2 mb-4">
+                                    <span class="material-symbols-rounded text-base">storefront</span>
+                                    Retail Products
                                 </h5>
-                                @forelse($topRetailProducts as $prod)
-                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed var(--cm-card-border);">
-                                        <div style="font-weight: 600; color: var(--cm-text-primary); font-size: 0.8125rem;">{{ $prod->item_name }}</div>
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            <span class="cm-status-pill cm-status-pill--paid" style="background: rgba(16, 185, 129, 0.08); color: #059669; font-size: 0.65rem; padding: 1px 6px;">{{ $prod->times_bought }}x</span>
-                                            <span style="font-weight: 700; color: var(--cm-text-primary); font-size: 0.8125rem;">{{ number_format($prod->total_qty, 1) }} kg</span>
+                                <div class="space-y-3">
+                                    @forelse($topRetailProducts as $prod)
+                                        <div class="flex items-center justify-between py-2 border-b border-emerald-100 dark:border-emerald-900/50 last:border-0">
+                                            <div class="font-medium text-sm text-zinc-900 dark:text-zinc-100">{{ $prod->item_name }}</div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">{{ $prod->times_bought }}x</span>
+                                                <span class="font-bold text-sm text-zinc-900 dark:text-zinc-100 font-jetbrains">{{ number_format($prod->total_qty, 1) }} kg</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                @empty
-                                    <div style="font-size: 0.75rem; color: var(--cm-text-muted); text-align: center; padding: 1.5rem 0;">
-                                        No retail product purchases recorded.
-                                    </div>
-                                @endforelse
+                                    @empty
+                                        <div class="text-xs text-center text-zinc-500 py-4">No retail product purchases recorded.</div>
+                                    @endforelse
+                                </div>
                             </div>
+
                         </div>
                     </div>
-@if(!request()->ajax())
+
+                </div>
             </div>
 
+@if(!request()->ajax())
         </div>
-
     </div>
-
 </div>
 @endif
 @endsection
-
-@push('styles')
-    @include('masters.customers.partials.profile-style')
-@endpush

@@ -1,402 +1,297 @@
 @extends('layouts.app')
-@section('title', 'Weekly Dealer Billing')@section('content')
-<div class="cm-page">
+@section('title', 'Weekly Dealer Billing')
 
-    {{-- Top Bar Header --}}
-    <div class="cm-topbar">
-        <div>
-            <h1 class="cm-page-title">Weekly Dealer Billing</h1>
-            <p class="cm-page-sub">Create wholesale billing settlements, bulk route invoices, and manage ledger transactions</p>
-        </div>
-        
-        <div class="flex gap-2">
-            
-            <a href="{{ route('billing.weekly.export') }}" class="cm-export-btn">
+@section('content')
+<div class="animate-fade-in">
+    <x-page-header title="Weekly Dealer Billing" subtitle="Create wholesale billing settlements, bulk route invoices, and manage ledger transactions">
+        <x-slot:actions>
+            <x-button variant="outline" href="{{ route('billing.weekly.export') }}" icon="download">
+                Export
+            </x-button>
+            <x-button variant="primary" x-data x-on:click="$dispatch('open-modal', 'record-bill')" icon="add">
+                Record Bill
+            </x-button>
+        </x-slot:actions>
+    </x-page-header>
 
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-    </svg>
-        Export
-    </a>
-        </div>
-    </div>
-
-    {{-- Entry Form Block --}}
-    
-
-
-    
-    {{-- Inline Form Block --}}
-    <div class="mb-8 relative overflow-hidden rounded-[24px] bg-white border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all duration-300" :class="showForm ? 'ring-4 ring-indigo-50 border-indigo-100' : 'hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]'" x-data="{ showForm: false }">
-        <div class="flex justify-between items-center px-6 py-5 cursor-pointer transition-colors bg-gradient-to-r from-slate-50/50 to-white hover:from-slate-50 hover:to-slate-50/80" @click="showForm = !showForm">
-            <div class="flex items-center gap-4">
-                <div class="flex h-12 w-12 items-center justify-center rounded-[14px] bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/20">
-                    <span class="material-symbols-rounded text-[22px]">add_circle</span>
-                </div>
-                <div>
-                    <h2 class="text-[1.1rem] font-extrabold text-slate-800 tracking-tight">Record Dealer Bill</h2>
-                    <p class="text-[0.75rem] font-semibold text-slate-400 mt-0.5 tracking-wide uppercase">Click to expand and fill details</p>
-                </div>
-            </div>
-            <button type="button" class="flex items-center justify-center h-10 px-4 gap-2 rounded-xl bg-slate-100 text-slate-600 font-bold text-sm transition-all duration-300 pointer-events-none" :class="showForm ? 'bg-slate-800 text-white' : 'hover:bg-slate-200'">
-                <span class="material-symbols-rounded" x-text="showForm ? 'expand_less' : 'add'"></span>
-                <span x-text="showForm ? 'Close Panel' : 'New Entry'"></span>
-            </button>
-        </div>
-        
-        <div x-show="showForm" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-4" class="p-8 border-t border-slate-100 bg-white/50 cm-premium-form-inner">
-<div id="dealer-form-container">
-        <div class="cm-card-form-large">
-            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-6">
-                <div class="flex gap-4">
-                    <button id="tab-single-btn" onclick="switchDealerTab('single')" class="px-4 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 focus:outline-none dark:border-indigo-400 dark:text-indigo-400">
-                        Single Invoice
-                    </button>
-                    <button id="tab-bulk-btn" onclick="switchDealerTab('bulk')" class="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white focus:outline-none">
-                        Bulk Route Generation
-                    </button>
-                </div>
-            </div>
-
-            {{-- Single Invoice Form --}}
-            <form id="form-single" action="{{ route('billing.weekly.store') }}" method="POST">
-                @csrf
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6 pb-6 border-b border-slate-200 dark:border-slate-800">
-                    <div class="cm-form-group">
-                        <label class="cm-form-label">1. Select Dealer <span class="cm-required">*</span></label>
-                        <select name="customer_id" required class="cm-form-input cm-select">
-                            <option value="">Select customer...</option>
-                            @foreach($customers as $c)
-                                <option value="{{ $c->id }}" {{ old('customer_id') == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->route }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="cm-form-group">
-                        <label class="cm-form-label">2. Period Start <span class="cm-required">*</span></label>
-                        <input type="date" name="period_start" required value="{{ old('period_start') }}" class="cm-form-input">
-                    </div>
-                    <div class="cm-form-group">
-                        <label class="cm-form-label">3. Period End <span class="cm-required">*</span></label>
-                        <input type="date" name="period_end" required value="{{ old('period_end') }}" class="cm-form-input">
-                    </div>
-                    <div class="cm-form-group">
-                        <label class="cm-form-label">4. Initial Status <span class="cm-required">*</span></label>
-                        <select name="status" required class="cm-form-input cm-select">
-                            <option value="Generated" {{ old('status') === 'Generated' ? 'selected' : '' }}>Generated</option>
-                            <option value="Pending" {{ old('status') === 'Pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="Paid" {{ old('status') === 'Paid' ? 'selected' : '' }}>Paid</option>
-                        </select>
-                    </div>
-                </div>
-
-                {{-- 2. Dynamic Items Grid Table --}}
-                <div class="mb-8">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="cm-table-header-sub">
-                            <span class="material-symbols-rounded text-indigo-600">list_alt</span>
-                            <span>Billing Items & Birds</span>
-                        </div>
-                        <button type="button" onclick="addWeeklyRow()" class="cm-btn-secondary">
-                            <span class="material-symbols-rounded">add</span> Add Item
-                        </button>
-                    </div>
-
-                    <div class="cm-table-card">
-                        <div class="cm-table-wrap">
-                            <table class="cm-table" id="weekly-items-table">
-                                <thead>
-                                    <tr>
-                                        <th class="p-3">Item / Description</th>
-                                        <th class="p-3 w-32 text-center">Qty / kg</th>
-                                        <th class="p-3 w-40 text-right">Rate / kg</th>
-                                        <th class="p-3 w-40 text-right">Subtotal</th>
-                                        <th class="p-3 w-12 text-center"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="weekly-items-body">
-                                    <tr class="item-row group">
-                                        <td class="p-3">
-                                            <select name="items[0][name]" required class="cm-table-select cm-select">
-                                                @foreach($items as $item)
-                                                    <option value="{{ $item->name }}" {{ $item->name === 'Live Broiler Birds' ? 'selected' : '' }}>
-                                                        {{ $item->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </td>
-                                        <td class="p-3">
-                                            <input type="number" name="items[0][qty]" step="0.01" required placeholder="0.00" class="cm-table-input text-center row-qty" oninput="recalcWeekly()">
-                                        </td>
-                                        <td class="p-3">
-                                            <input type="number" name="items[0][rate]" step="0.01" required placeholder="0.00" class="cm-table-input text-right row-rate" oninput="recalcWeekly()">
-                                        </td>
-                                        <td class="p-3 text-right font-semibold text-slate-900 dark:text-slate-100 row-total">
-                                            ₹0.00
-                                        </td>
-                                        <td class="p-3 text-center"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- 3. Billing Summary Section --}}
-                <div class="cm-billing-summary-grid">
-                    <div class="cm-summary-info-box flex flex-col justify-center">
-                        <label class="cm-small-label">Tax Settings (GST)</label>
-                        <div class="cm-tax-fields">
-                            <input type="number" name="gst_percentage" id="gst-percentage" value="18" readonly class="cm-form-input cm-tax-percentage-input cm-readonly">
-                            <span class="text-xs text-slate-500 font-bold">% GST</span>
-                            <span class="text-xs text-slate-400 font-medium ml-auto">Calculated GST: <span id="display-tax" class="font-mono text-slate-900 dark:text-slate-100 font-bold">₹0.00</span></span>
-                        </div>
-                    </div>
-
-                    <div class="cm-glowing-grand-total" style="background: linear-gradient(135deg, #4f46e5, #6366f1); box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.25);">
-                        <div class="cm-total-details">
-                            <span class="cm-total-label">Grand Total Payable</span>
-                            <span id="display-total" class="cm-total-value">₹0.00</span>
-                            <input type="hidden" name="amount" id="total-hidden">
-                        </div>
-                        <button type="submit" class="cm-submit-total-btn" style="color: #4f46e5;">
-                            <span class="material-symbols-rounded">receipt_long</span>
-                            <span>Generate Invoice</span>
-                        </button>
-                    </div>
-                </div>
-            </form>
-
-            {{-- Bulk Generation Form --}}
-            <form id="form-bulk" action="{{ route('billing.weekly.bulkStore') }}" method="POST" class="cm-hidden">
-                @csrf
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-                    <div class="space-y-3">
-                        <label class="cm-form-label">1. Select Dealers</label>
-                        <div class="h-[250px] overflow-y-auto pr-2 border border-slate-200 dark:border-slate-800 rounded-xl p-3 space-y-2 bg-slate-50 dark:bg-slate-900 custom-scrollbar">
-                            @foreach($customers as $c)
-                                <label class="flex items-center gap-3 p-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/60 rounded-lg hover:bg-indigo-50/50 hover:border-indigo-100 transition-all cursor-pointer">
-                                    <input type="checkbox" name="customer_ids[]" value="{{ $c->id }}" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
-                                    <div class="flex flex-col">
-                                        <span class="text-xs font-bold text-slate-700 dark:text-slate-200">{{ $c->name }}</span>
-                                        <span class="text-[9px] font-bold text-slate-400 uppercase">{{ $c->route }}</span>
-                                    </div>
-                                </label>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <div class="space-y-4">
-                        <label class="cm-form-label">2. Global Billing Settings</label>
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="cm-form-group">
-                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-1">From Date</label>
-                                <input type="date" name="period_start" required class="cm-form-input">
-                            </div>
-                            <div class="cm-form-group">
-                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-1">To Date</label>
-                                <input type="date" name="period_end" required class="cm-form-input">
-                            </div>
-                        </div>
-
-                        <div class="cm-form-group">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Standard Flat Amount (Rs)</label>
-                            <input type="number" name="amount" required step="0.01" placeholder="0.00" class="cm-form-input font-bold text-indigo-600 dark:text-indigo-400">
-                        </div>
-
-                        <div class="cm-form-group">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Initial Status</label>
-                            <select name="status" class="cm-form-input cm-select">
-                                <option value="Generated">Generated</option>
-                                <option value="Pending">Pending</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex justify-end border-t border-slate-200 dark:border-slate-800 pt-4">
-                    <button type="submit" class="cm-submit-total-btn" style="background: linear-gradient(135deg, #4f46e5, #6366f1); color: #ffffff; box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.25);">
-                        <span class="material-symbols-rounded">layers</span>
-                        <span>Generate Bulk Bills</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-
-        </div>
-    </div>
-        
     {{-- Performance Stats Header --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-gradient-to-br from-white via-indigo-50/10 to-sky-50/10 dark:from-slate-900 dark:to-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-6 group">
-            <div class="w-14 h-14 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-105 transition-transform">📋</div>
+        <x-stat-card 
+            label="Generated Invoices" 
+            value="{{ $bills->total() }}" 
+            icon="receipt_long" 
+            color="indigo" />
+        <x-stat-card 
+            label="Outstanding Dues" 
+            value="Rs {{ number_format($bills->where('status', 'Pending')->sum(fn($b) => $b->net_amount ?? $b->amount), 0) }}" 
+            icon="pending_actions" 
+            color="amber" />
+        <div class="rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 dark:from-indigo-600 dark:to-indigo-800 p-6 shadow-sm text-white flex items-center justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/20">
             <div>
-                <h3 class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Generated</h3>
-                <p class="text-2xl font-black text-slate-950 dark:text-white">{{ $bills->total() }} <span class="text-xs text-slate-400 font-bold ml-1">Invoices</span></p>
+                <p class="font-outfit text-sm font-medium text-indigo-100">Total Revenue</p>
+                <p class="font-jetbrains mt-2 text-3xl font-bold tracking-tight">Rs {{ number_format($bills->where('status', 'Paid')->sum(fn($b) => $b->net_amount ?? $b->amount), 0) }}</p>
             </div>
-        </div>
-        <div class="bg-gradient-to-br from-white via-amber-50/10 to-sky-50/10 dark:from-slate-900 dark:to-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-6 group">
-            <div class="w-14 h-14 bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-105 transition-transform">⏳</div>
-            <div>
-                <h3 class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Outstanding Dues</h3>
-                <p class="text-2xl font-black text-slate-950 dark:text-white">Rs {{ number_format($bills->where('status', 'Pending')->sum(fn($b) => $b->net_amount ?? $b->amount), 0) }}</p>
-            </div>
-        </div>
-        <div class="bg-gradient-to-br from-indigo-600 to-indigo-700 p-6 rounded-2xl shadow-sm text-white flex items-center gap-6 group">
-            <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-105 transition-transform">💰</div>
-            <div>
-                <h3 class="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-1">Total Revenue</h3>
-                <p class="text-2xl font-black">Rs {{ number_format($bills->where('status', 'Paid')->sum(fn($b) => $b->net_amount ?? $b->amount), 0) }}</p>
+            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                <span class="material-symbols-rounded text-2xl">account_balance_wallet</span>
             </div>
         </div>
     </div>
 
     {{-- Main List Section --}}
-    <div class="cm-table-card mb-8">
-        <div class="cm-table-toolbar">
-            <span class="cm-toolbar-title">Weekly Invoice Log</span>
-            <form method="GET" class="cm-search-wrap">
-                <span class="material-symbols-rounded cm-search-icon">search</span>
-                <input type="text" name="search" value="{{ $search }}" placeholder="Search customer or invoice..." class="cm-search-input">
+    <x-card>
+        <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">Weekly Invoice Log</h2>
+            <form method="GET" class="relative max-w-sm w-full sm:w-auto">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-zinc-400">
+                    <span class="material-symbols-rounded text-xl">search</span>
+                </div>
+                <input type="text" name="search" value="{{ $search }}" class="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-xl focus:ring-emerald-500 focus:border-emerald-500 block w-full pl-10 p-2.5 transition-colors font-outfit" placeholder="Search customer or invoice...">
             </form>
         </div>
 
-        <div class="cm-table-wrap">
-            <table class="cm-table">
-                <thead>
-                    <tr>
-                        <th>Inv No</th>
-                        <th>Customer</th>
-                        <th>Period</th>
-                        <th>Product Breakdown</th>
-                        <th class="text-right">Quantity</th>
-                        <th class="text-right">Net Amount</th>
-                        <th class="text-center">Status</th>
-                        <th class="text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($bills as $bill)
-                        <tr class="cm-tr">
-                            <td class="cm-td">
-                                <span class="font-mono text-xs font-bold text-slate-500">
-                                    #{{ $bill->invoice_no ?? $bill->invoice_number }}
-                                </span>
-                            </td>
-                            <td class="cm-td">
-                                <div class="cm-identity">
-                                    <div class="cm-avatar cm-avatar--{{ strtolower(substr($bill->customer->name ?? 'a', 0, 1)) }}">
-                                        {{ substr($bill->customer->name ?? '?', 0, 1) }}
-                                    </div>
-                                    <div class="flex flex-col">
-                                        <span class="cm-cust-name">{{ $bill->customer->name ?? '-' }}</span>
-                                        <span class="cm-cust-meta">{{ $bill->customer->route ?? 'General Route' }}</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="cm-td">
-                                <div class="flex flex-col">
-                                    <span class="font-semibold text-slate-800 dark:text-slate-200">{{ $bill->period_start->format('d M') }} - {{ $bill->period_end->format('d M') }}</span>
-                                    <span class="text-[10px] text-slate-400 font-medium uppercase">{{ $bill->period_end->format('Y') }}</span>
-                                </div>
-                            </td>
-                            <td class="cm-td">
-                                <div class="cm-item-chips-flex" style="max-width: 250px;">
-                                    @if($bill->items_description)
-                                        @foreach(explode(',', $bill->items_description) as $item)
-                                            @if(trim($item))
-                                                <span class="cm-item-chip">{{ trim($item) }}</span>
-                                            @endif
-                                        @endforeach
-                                    @else
-                                        <span style="color: var(--cm-text-muted); font-size: 0.75rem;">—</span>
+        <x-data-table :headers="['Inv No', 'Customer', 'Period', 'Product Breakdown', 'Quantity', 'Net Amount', 'Status', 'Actions']">
+            @forelse($bills as $bill)
+                <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors group">
+                    <td class="px-6 py-4">
+                        <span class="font-jetbrains text-xs font-bold text-zinc-500">
+                            #{{ $bill->invoice_no ?? $bill->invoice_number }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <x-avatar :name="$bill->customer->name ?? 'a'" size="sm" />
+                            <div>
+                                <p class="font-cabinet font-bold text-zinc-900 dark:text-zinc-100">{{ $bill->customer->name ?? '-' }}</p>
+                                <p class="font-outfit text-xs text-zinc-500">{{ $bill->customer->route ?? 'General Route' }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="font-medium text-zinc-900 dark:text-zinc-100">{{ $bill->period_start->format('d M') }} - {{ $bill->period_end->format('d M') }}</p>
+                        <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">{{ $bill->period_end->format('Y') }}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-wrap items-center gap-2 max-w-[200px]">
+                            @if($bill->items_description)
+                                @foreach(explode(',', $bill->items_description) as $item)
+                                    @if(trim($item))
+                                        <x-badge variant="zinc">{{ trim($item) }}</x-badge>
                                     @endif
-                                </div>
-                            </td>
-                            <td class="cm-td text-right">
-                                <span class="font-bold text-slate-900 dark:text-slate-100">{{ number_format($bill->quantity_kg, 2) }}</span>
-                                <span class="text-[10px] text-slate-400 font-medium uppercase ml-0.5">kg</span>
-                            </td>
-                            <td class="cm-td text-right">
-                                <div class="flex flex-col items-end">
-                                    <span class="font-bold text-slate-900 dark:text-slate-100 text-sm">Rs {{ number_format($bill->net_amount ?? $bill->amount, 0) }}</span>
-                                    <span class="text-[9px] text-indigo-600 font-extrabold uppercase tracking-tighter">Incl. GST</span>
-                                </div>
-                            </td>
-                            <td class="cm-td text-center">
-                                @php
-                                    $statusMap = [
-                                        'Generated' => ['bg' => 'rgba(37, 99, 235, 0.1)', 'text' => '#2563eb', 'label' => 'GENERATED'],
-                                        'Pending'   => ['bg' => 'rgba(245, 158, 11, 0.1)', 'text' => '#d97706', 'label' => 'PENDING'],
-                                        'Paid'      => ['bg' => 'rgba(16, 185, 129, 0.1)', 'text' => '#10b981', 'label' => 'PAID'],
-                                    ];
-                                    $st = $statusMap[$bill->status] ?? $statusMap['Pending'];
-                                @endphp
-                                <span class="inline-block px-2.5 py-1 text-[9px] font-black rounded-md tracking-wider" style="background: {{ $st['bg'] }}; color: {{ $st['text'] }}">
-                                    {{ $st['label'] }}
-                                </span>
-                            </td>
-                            <td class="cm-td text-right">
-                                <div class="cm-actions">
-                                    <a href="{{ route('billing.weekly.show', $bill) }}" target="_blank" class="cm-action-btn" title="Print Invoice">
-                                        <span class="material-symbols-rounded" style="font-size: 16px;">print</span>
-                                    </a>
-                                    <a href="{{ route('billing.weekly.pdf', $bill) }}" class="cm-action-btn" title="Download PDF">
-                                        <span class="material-symbols-rounded" style="font-size: 16px;">picture_as_pdf</span>
-                                    </a>
-                                    <a href="{{ route('billing.weekly.whatsapp', $bill) }}" target="_blank" class="cm-action-btn" title="WhatsApp Message" style="color: #10b981; border-color: rgba(16, 185, 129, 0.15)">
-                                        <span class="material-symbols-rounded" style="font-size: 16px;">chat</span>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8">
-                                <div class="cm-empty">
-                                    <div class="cm-empty-icon">
-                                        <span class="material-symbols-rounded">receipt_long</span>
-                                    </div>
-                                    <h3 class="cm-empty-title">No Bills Found</h3>
-                                    <p class="cm-empty-sub">Start generating invoices for your dealers.</p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                                @endforeach
+                            @else
+                                <span class="text-zinc-400 text-xs">—</span>
+                            @endif
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-100">{{ number_format($bill->quantity_kg, 2) }}</span>
+                        <span class="text-[10px] text-zinc-500 font-medium uppercase ml-0.5">kg</span>
+                    </td>
+                    <td class="px-6 py-4 font-jetbrains font-medium text-indigo-600 dark:text-indigo-400 text-center">
+                        <div class="flex flex-col items-end">
+                            <span class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 text-sm">Rs {{ number_format($bill->net_amount ?? $bill->amount, 0) }}</span>
+                            <span class="text-[9px] text-indigo-600 font-bold uppercase tracking-tighter">Incl. GST</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        @php
+                            $statusMap = [
+                                'Generated' => 'info',
+                                'Pending'   => 'warning',
+                                'Paid'      => 'success',
+                            ];
+                            $st = $statusMap[$bill->status] ?? 'warning';
+                        @endphp
+                        <x-badge :variant="$st">{{ strtoupper($bill->status) }}</x-badge>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            <a href="{{ route('billing.weekly.show', $bill) }}" target="_blank" class="text-zinc-400 hover:text-indigo-600 transition-colors" title="Print Invoice">
+                                <span class="material-symbols-rounded text-lg">print</span>
+                            </a>
+                            <a href="{{ route('billing.weekly.pdf', $bill) }}" class="text-zinc-400 hover:text-rose-600 transition-colors" title="Download PDF">
+                                <span class="material-symbols-rounded text-lg">picture_as_pdf</span>
+                            </a>
+                            <a href="{{ route('billing.weekly.whatsapp', $bill) }}" target="_blank" class="text-emerald-500 hover:text-emerald-600 transition-colors" title="WhatsApp Message">
+                                <span class="material-symbols-rounded text-lg">chat</span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            @empty
+                <x-slot:empty>
+                    <x-empty-state 
+                        icon="receipt_long" 
+                        title="No Bills Found" 
+                        description="Start generating invoices for your dealers." />
+                </x-slot:empty>
+            @endforelse
+
+            @if($bills->hasPages())
+                <x-slot:pagination>
+                    {{ $bills->withQueryString()->links() }}
+                </x-slot:pagination>
+            @endif
+        </x-data-table>
+    </x-card>
+</div>
+
+{{-- Record Bill Modal --}}
+<x-modal name="record-bill" title="Record Dealer Bill" subtitle="Single Invoice or Bulk Generation" icon="receipt_long" iconColor="indigo" maxWidth="3xl">
+    
+    <div class="border-b border-zinc-200 dark:border-zinc-800 mb-6 flex gap-4">
+        <button id="tab-single-btn" onclick="switchDealerTab('single')" class="px-4 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 focus:outline-none dark:border-indigo-400 dark:text-indigo-400 transition-colors">
+            Single Invoice
+        </button>
+        <button id="tab-bulk-btn" onclick="switchDealerTab('bulk')" class="px-4 py-2 text-sm font-semibold text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white focus:outline-none transition-colors">
+            Bulk Route Generation
+        </button>
+    </div>
+
+    {{-- Single Invoice Form --}}
+    <form id="form-single" action="{{ route('billing.weekly.store') }}" method="POST">
+        @csrf
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <x-form.select name="customer_id" label="Customer" required>
+                <option value="">Select customer...</option>
+                @foreach($customers as $c)
+                    <option value="{{ $c->id }}" {{ old('customer_id') == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->route }})</option>
+                @endforeach
+            </x-form.select>
+            <x-form.input type="date" name="period_start" label="Period Start" required value="{{ old('period_start') }}" />
+            <x-form.input type="date" name="period_end" label="Period End" required value="{{ old('period_end') }}" />
+            <x-form.select name="status" label="Initial Status" required>
+                <option value="Generated" {{ old('status') === 'Generated' ? 'selected' : '' }}>Generated</option>
+                <option value="Pending" {{ old('status') === 'Pending' ? 'selected' : '' }}>Pending</option>
+                <option value="Paid" {{ old('status') === 'Paid' ? 'selected' : '' }}>Paid</option>
+            </x-form.select>
         </div>
 
-        @if($bills->hasPages())
-            <div class="cm-pagination-footer">
-                {{ $bills->withQueryString()->links() }}
+        <div class="mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit">Billing Items & Birds</label>
+                <x-button type="button" variant="outline" size="sm" icon="add" onclick="addWeeklyRow()">Add Item</x-button>
             </div>
-        @endif
-    </div>
-</div>
-@endsection
+            
+            <div class="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+                <table class="w-full text-sm text-left text-zinc-600 dark:text-zinc-400 font-outfit" id="weekly-items-table">
+                    <thead class="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-100/50 dark:bg-zinc-800 font-cabinet">
+                        <tr>
+                            <th class="px-4 py-3 font-semibold">Item / Description</th>
+                            <th class="px-4 py-3 font-semibold text-center w-24">Qty/kg</th>
+                            <th class="px-4 py-3 font-semibold text-right w-32">Rate/kg</th>
+                            <th class="px-4 py-3 font-semibold text-right w-32">Subtotal</th>
+                            <th class="px-4 py-3 text-center w-12"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="weekly-items-body" class="divide-y divide-zinc-200 dark:divide-zinc-700">
+                        <tr class="item-row">
+                            <td class="p-2">
+                                <select name="items[0][name]" required class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 transition-colors">
+                                    @foreach($items as $item)
+                                        <option value="{{ $item->name }}" {{ $item->name === 'Live Broiler Birds' ? 'selected' : '' }}>
+                                            {{ $item->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="items[0][qty]" step="0.01" required placeholder="0.0" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 text-center row-qty" oninput="recalcWeekly()">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="items[0][rate]" step="0.01" required placeholder="0.0" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 text-right row-rate" oninput="recalcWeekly()">
+                            </td>
+                            <td class="p-2 text-right font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 row-total">
+                                ₹0.00
+                            </td>
+                            <td class="p-2 text-center"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-@push('styles')
-@include('partials.cm-style')
-@endpush
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700">
+            <div>
+                <label class="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2 font-outfit">Tax Settings (GST)</label>
+                <div class="flex items-center gap-3">
+                    <input type="number" name="gst_percentage" id="gst-percentage" value="18" readonly class="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 text-sm rounded-lg block w-20 p-2 text-center font-jetbrains font-bold cursor-not-allowed">
+                    <span class="text-sm text-zinc-500 font-bold">% GST</span>
+                </div>
+                <p class="text-xs text-zinc-500 mt-2 font-medium">Calculated GST: <span id="display-tax" class="font-jetbrains text-zinc-900 dark:text-zinc-100 font-bold">₹0.00</span></p>
+            </div>
+            
+            <div class="flex flex-col justify-end items-end">
+                <span class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1 font-outfit">Grand Total</span>
+                <span id="display-total" class="font-jetbrains text-3xl font-bold text-indigo-600 dark:text-indigo-400">₹0.00</span>
+                <input type="hidden" name="amount" id="total-hidden">
+            </div>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-3">
+            <x-button type="button" variant="outline" x-on:click="show = false">Cancel</x-button>
+            <x-button type="submit" variant="primary" icon="receipt_long">Generate Invoice</x-button>
+        </div>
+    </form>
+
+    {{-- Bulk Generation Form --}}
+    <form id="form-bulk" action="{{ route('billing.weekly.bulkStore') }}" method="POST" class="hidden">
+        @csrf
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-2">1. Select Dealers</label>
+                <div class="h-64 overflow-y-auto pr-2 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2 space-y-1 bg-zinc-50 dark:bg-zinc-800/50">
+                    <div class="flex justify-between items-center px-2 py-1 mb-2">
+                        <span class="text-xs text-zinc-500">Select customers for bulk billing</span>
+                        <button type="button" onclick="toggleAllDealers(this)" class="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 uppercase">Select All</button>
+                    </div>
+                    @foreach($customers as $c)
+                        <label class="flex items-center gap-3 p-2 bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-lg hover:border-indigo-200 transition-all cursor-pointer">
+                            <input type="checkbox" name="customer_ids[]" value="{{ $c->id }}" class="bulk-dealer-cb w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-zinc-300">
+                            <div class="flex flex-col">
+                                <span class="text-xs font-bold text-zinc-700 dark:text-zinc-200">{{ $c->name }}</span>
+                                <span class="text-[9px] font-bold text-zinc-400 uppercase">{{ $c->route }}</span>
+                            </div>
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit">2. Global Billing Settings</label>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <x-form.input type="date" name="period_start" label="From Date" required />
+                    <x-form.input type="date" name="period_end" label="To Date" required />
+                </div>
+
+                <x-form.input type="number" name="amount" label="Standard Flat Amount (Rs)" required step="0.01" placeholder="0.00" class="font-bold text-indigo-600 dark:text-indigo-400" />
+
+                <x-form.select name="status" label="Initial Status" required>
+                    <option value="Generated">Generated</option>
+                    <option value="Pending">Pending</option>
+                </x-form.select>
+            </div>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-3 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+            <x-button type="button" variant="outline" x-on:click="show = false">Cancel</x-button>
+            <x-button type="submit" variant="primary" icon="layers">Generate Bulk Bills</x-button>
+        </div>
+    </form>
+</x-modal>
+@endsection
 
 @push('scripts')
 <script>
-
-
 let weeklyRowCount = 1;
 const activeItems = @json($items);
 
 function addWeeklyRow() {
     const body = document.getElementById('weekly-items-body');
     const newRow = document.createElement('tr');
-    newRow.className = 'item-row border-t border-slate-100 dark:border-slate-800 transition-colors';
+    newRow.className = 'item-row border-t border-zinc-200 dark:border-zinc-700';
     
     let optionsHtml = activeItems.map(i => `
         <option value="${i.name}" ${i.name === 'Live Broiler Birds' ? 'selected' : ''}>
@@ -405,23 +300,23 @@ function addWeeklyRow() {
     `).join('');
 
     newRow.innerHTML = `
-        <td class="p-3">
-            <select name="items[${weeklyRowCount}][name]" required class="cm-table-select cm-select">
+        <td class="p-2">
+            <select name="items[${weeklyRowCount}][name]" required class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 transition-colors">
                 ${optionsHtml}
             </select>
         </td>
-        <td class="p-3">
-            <input type="number" name="items[${weeklyRowCount}][qty]" step="0.01" required placeholder="0.00" class="cm-table-input text-center row-qty" oninput="recalcWeekly()">
+        <td class="p-2">
+            <input type="number" name="items[${weeklyRowCount}][qty]" step="0.01" required placeholder="0.00" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 text-center row-qty" oninput="recalcWeekly()">
         </td>
-        <td class="p-3">
-            <input type="number" name="items[${weeklyRowCount}][rate]" step="0.01" required placeholder="0.00" class="cm-table-input text-right row-rate" oninput="recalcWeekly()">
+        <td class="p-2">
+            <input type="number" name="items[${weeklyRowCount}][rate]" step="0.01" required placeholder="0.00" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 text-right row-rate" oninput="recalcWeekly()">
         </td>
-        <td class="p-3 text-right font-semibold text-slate-900 dark:text-slate-100 row-total">
+        <td class="p-2 text-right font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 row-total">
             ₹0.00
         </td>
-        <td class="p-3 text-center">
-            <button type="button" onclick="this.closest('tr').remove(); recalcWeekly();" class="text-slate-400 hover:text-red-500 transition-colors">
-                <span class="material-symbols-rounded" style="font-size: 18px;">close</span>
+        <td class="p-2 text-center">
+            <button type="button" onclick="this.closest('tr').remove(); recalcWeekly();" class="text-zinc-400 hover:text-rose-500 transition-colors p-1">
+                <span class="material-symbols-rounded text-lg block">close</span>
             </button>
         </td>
     `;
@@ -454,19 +349,28 @@ function switchDealerTab(mode) {
     const formSingle = document.getElementById('form-single');
     const formBulk = document.getElementById('form-bulk');
 
+    const activeClasses = "px-4 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 focus:outline-none dark:border-indigo-400 dark:text-indigo-400 transition-colors";
+    const inactiveClasses = "px-4 py-2 text-sm font-semibold text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white focus:outline-none transition-colors border-b-2 border-transparent";
+
     if (mode === 'single') {
-        tabSingleBtn.className = "px-4 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 focus:outline-none dark:border-indigo-400 dark:text-indigo-400";
-        tabBulkBtn.className = "px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white focus:outline-none";
-        formSingle.classList.remove('cm-hidden');
-        formBulk.classList.add('cm-hidden');
+        tabSingleBtn.className = activeClasses;
+        tabBulkBtn.className = inactiveClasses;
+        formSingle.classList.remove('hidden');
+        formBulk.classList.add('hidden');
     } else {
-        tabBulkBtn.className = "px-4 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 focus:outline-none dark:border-indigo-400 dark:text-indigo-400";
-        tabSingleBtn.className = "px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white focus:outline-none";
-        formBulk.classList.remove('cm-hidden');
-        formSingle.classList.add('cm-hidden');
+        tabBulkBtn.className = activeClasses;
+        tabSingleBtn.className = inactiveClasses;
+        formBulk.classList.remove('hidden');
+        formSingle.classList.add('hidden');
     }
 }
 
+function toggleAllDealers(btn) {
+    const checkboxes = document.querySelectorAll('.bulk-dealer-cb');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    btn.textContent = allChecked ? 'Select All' : 'Deselect All';
+}
 
 // Auto-run on load
 window.addEventListener('DOMContentLoaded', () => {

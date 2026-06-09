@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Stock Dashboard')
 
 @section('content')
@@ -125,7 +125,7 @@
                                     'Healthy' => 'bg-emerald-100 text-emerald-700 border border-emerald-200',
                                     'Low Stock' => 'bg-amber-100 text-amber-700 border border-amber-200',
                                     'Out of Stock' => 'bg-red-100 text-red-700 border border-red-200',
-                                    default => 'bg-slate-100 text-slate-700 border border-slate-200'
+                                    default => 'bg-zinc-100 text-zinc-700 border border-zinc-200'
                                 };
                             @endphp
                             <div class="flex flex-col gap-1 items-start">

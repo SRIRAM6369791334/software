@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Purchase Invoices')
 
 @section('content')
@@ -41,7 +41,7 @@
             <div>
                 <div class="cm-stat-label">Archived Invoices</div>
                 <div class="cm-stat-value">{{ number_format($totalInvoices) }}</div>
-                <div class="text-xs text-slate-400 mt-0.5">Cumulative recorded purchases</div>
+                <div class="text-xs text-zinc-400 mt-0.5">Cumulative recorded purchases</div>
             </div>
         </div>
 
@@ -52,7 +52,7 @@
             <div>
                 <div class="cm-stat-label">Total Expenditure</div>
                 <div class="cm-stat-value">₹{{ number_format($totalExpenditure, 2) }}</div>
-                <div class="text-xs text-slate-400 mt-0.5">Net grand total of procurement</div>
+                <div class="text-xs text-zinc-400 mt-0.5">Net grand total of procurement</div>
             </div>
         </div>
 
@@ -63,7 +63,7 @@
             <div>
                 <div class="cm-stat-label">Tax Contribution (GST)</div>
                 <div class="cm-stat-value">₹{{ number_format($totalTaxPaid, 2) }}</div>
-                <div class="text-xs text-slate-400 mt-0.5">Consolidated calculated tax</div>
+                <div class="text-xs text-zinc-400 mt-0.5">Consolidated calculated tax</div>
             </div>
         </div>
     </div>
@@ -116,7 +116,7 @@
                                             <b class="ml-1">({{ number_format($firstItem->quantity) }} {{ $firstItem->unit }})</b>
                                         </span>
                                     @else
-                                        <span class="text-slate-400 italic">No products recorded</span>
+                                        <span class="text-zinc-400 italic">No products recorded</span>
                                     @endif
                                     
                                     @if($othersCount > 0)
@@ -126,13 +126,13 @@
                                     @endif
                                 </div>
                             </td>
-                            <td class="cm-td text-slate-500 font-medium">
+                            <td class="cm-td text-zinc-500 font-medium">
                                 {{ $p->date->format('d M Y') }}
                             </td>
-                            <td class="cm-td text-right font-mono text-slate-500">
+                            <td class="cm-td text-right font-mono text-zinc-500">
                                 ₹{{ number_format($p->gst_amount, 2) }}
                             </td>
-                            <td class="cm-td text-right font-bold text-slate-900 dark:text-slate-100">
+                            <td class="cm-td text-right font-bold text-zinc-900 dark:text-zinc-100">
                                 ₹{{ number_format($p->total_amount, 2) }}
                             </td>
                             <td class="cm-td">

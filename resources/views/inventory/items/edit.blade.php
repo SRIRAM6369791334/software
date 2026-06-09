@@ -1,109 +1,94 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Edit Item')
 
 @section('content')
 
-<div class="cm-page">
+<div class="space-y-6">
 
-    {{-- Top Bar --}}
-    <div class="cm-topbar">
-        <div>
-            <a href="{{ route('inventory.items.index') }}" class="cm-route" style="display:inline-block; margin-bottom: 5px;">← Back to Items</a>
-            <h1 class="cm-page-title">Edit Item Details</h1>
-            <p class="cm-page-sub">Update specifications for {{ $item->name }}</p>
-        </div>
-    </div>
+    <x-page-header title="Edit Item Details" subtitle="Update specifications for {{ $item->name }}">
+        <x-button variant="ghost" href="{{ route('inventory.items.index') }}" icon="arrow_back">
+            Back to Items
+        </x-button>
+    </x-page-header>
 
-    <div class="cm-table-card" style="max-width: 800px;">
-        <form action="{{ route('inventory.items.update', $item->id) }}" method="POST" style="padding: 1.5rem;">
+    <x-card class="max-w-4xl mx-auto">
+        <form action="{{ route('inventory.items.update', $item->id) }}" method="POST">
             @csrf
             @method('PUT')
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {{-- Basic Info --}}
-                <div>
-                    <h3 style="font-size: 0.75rem; font-weight: 700; color: var(--cm-text-muted); text-transform: uppercase; border-bottom: 0.5px solid var(--cm-card-border); padding-bottom: 0.5rem; margin-bottom: 1rem;">1. Item Information</h3>
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold text-zinc-500 uppercase border-b border-zinc-200 dark:border-zinc-700 pb-2 mb-4">1. Item Information</h3>
                     
-                    <div class="cm-form-group">
-                        <label class="cm-form-label">Item Name <span class="cm-required">*</span></label>
-                        <input type="text" name="name" required value="{{ old('name', $item->name) }}"
-                               class="cm-form-input">
-                        @error('name') <p style="color: #dc2626; font-size: 0.75rem; margin-top: 4px;">{{ $message }}</p> @enderror
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Item Name <span class="text-rose-500">*</span></label>
+                        <x-form.input type="text" name="name" required value="{{ old('name', $item->name) }}" />
+                        @error('name') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
                     </div>
 
-                    <div class="cm-form-group">
-                        <label class="cm-form-label">Item Code (Optional)</label>
-                        <input type="text" name="code" value="{{ old('code', $item->code) }}"
-                               class="cm-form-input" style="font-family: monospace;">
-                        @error('code') <p style="color: #dc2626; font-size: 0.75rem; margin-top: 4px;">{{ $message }}</p> @enderror
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Item Code (Optional)</label>
+                        <x-form.input type="text" name="code" value="{{ old('code', $item->code) }}" class="font-mono" />
+                        @error('code') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
                     </div>
 
-                    <div class="cm-form-grid">
-                        <div class="cm-form-group">
-                            <label class="cm-form-label">Type <span class="cm-required">*</span></label>
-                            <select name="type" id="item-type" required class="cm-form-input">
-                                @foreach(['Feed', 'Chick', 'Medicine', 'Vaccine', 'Equipment', 'Other'] as $type)
-                                    <option value="{{ $type }}" {{ old('type', $item->type) == $type ? 'selected' : '' }}>{{ $type }}</option>
-                                @endforeach
-                            </select>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Type <span class="text-rose-500">*</span></label>
+                            <x-form.select name="type" id="item-type" required :options="['Feed' => 'Feed', 'Chick' => 'Chick', 'Medicine' => 'Medicine', 'Vaccine' => 'Vaccine', 'Equipment' => 'Equipment', 'Other' => 'Other']" value="{{ old('type', $item->type) }}" />
                         </div>
-                        <div class="cm-form-group">
-                            <label class="cm-form-label">Category</label>
-                            <input type="text" name="category" value="{{ old('category', $item->category) }}" id="category-input" list="category-options"
-                                   class="cm-form-input">
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Category</label>
+                            <x-form.input type="text" name="category" value="{{ old('category', $item->category) }}" id="category-input" list="category-options" />
                         </div>
                     </div>
 
-                    <div class="cm-form-group">
-                        <label class="cm-form-label">Brand Name</label>
-                        <input type="text" name="brand" value="{{ old('brand', $item->brand) }}"
-                               class="cm-form-input">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Brand Name</label>
+                        <x-form.input type="text" name="brand" value="{{ old('brand', $item->brand) }}" />
                     </div>
 
-                    <div id="chick-breed-container" class="cm-form-group {{ $item->type === 'Chick' ? '' : 'cm-hidden' }}">
-                        <label class="cm-form-label">Breed Name</label>
-                        <input type="text" name="breed" value="{{ old('breed', $item->breed) }}"
-                               class="cm-form-input">
+                    <div id="chick-breed-container" class="{{ $item->type === 'Chick' ? '' : 'hidden' }}">
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Breed Name</label>
+                        <x-form.input type="text" name="breed" value="{{ old('breed', $item->breed) }}" />
                     </div>
                 </div>
 
                 {{-- Unit Info --}}
-                <div>
-                    <h3 style="font-size: 0.75rem; font-weight: 700; color: var(--cm-text-muted); text-transform: uppercase; border-bottom: 0.5px solid var(--cm-card-border); padding-bottom: 0.5rem; margin-bottom: 1rem;">2. Unit Logic</h3>
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold text-zinc-500 uppercase border-b border-zinc-200 dark:border-zinc-700 pb-2 mb-4">2. Unit Logic</h3>
 
-                    <div class="cm-form-group">
-                        <label class="cm-form-label">Base Unit <span class="cm-required">*</span></label>
-                        <select name="base_unit" id="base-unit" required class="cm-form-input">
-                            @foreach(['kg' => 'Kilograms (kg)', 'nos' => 'Numbers (nos)', 'ml' => 'Milliliters (ml)', 'ltr' => 'Liters (ltr)', 'vial' => 'Vial'] as $val => $label)
-                                <option value="{{ $val }}" {{ old('base_unit', $item->base_unit) == $val ? 'selected' : '' }}>{{ $label }}</option>
-                            @endforeach
-                        </select>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Base Unit <span class="text-rose-500">*</span></label>
+                        <x-form.select name="base_unit" id="base-unit" required :options="['kg' => 'Kilograms (kg)', 'nos' => 'Numbers (nos)', 'ml' => 'Milliliters (ml)', 'ltr' => 'Liters (ltr)', 'vial' => 'Vial']" value="{{ old('base_unit', $item->base_unit) }}" />
                     </div>
 
-                    <div class="cm-form-group">
-                        <label class="cm-form-label">Conversion Factor</label>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <input type="number" name="conversion_rate" id="conversion-rate" step="0.01" value="{{ old('conversion_rate', $item->conversion_rate) }}"
-                                   class="cm-form-input" style="flex: 1;">
-                            <span style="font-size: 0.75rem; font-weight: 600; color: var(--cm-text-muted);" id="conversion-label">per Bag</span>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Conversion Factor</label>
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1">
+                                <x-form.input type="number" name="conversion_rate" id="conversion-rate" step="0.01" value="{{ old('conversion_rate', $item->conversion_rate) }}" />
+                            </div>
+                            <span class="text-xs font-bold text-zinc-500" id="conversion-label">per Bag</span>
                         </div>
                     </div>
 
-                    <div style="margin-top: 1.5rem; padding: 1rem; background: var(--cm-bg); border-radius: 8px; border: 0.5px dashed var(--cm-card-border);">
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <span style="font-size: 0.8125rem; font-weight: 600; color: var(--cm-text-primary);">Is Item Active?</span>
-                            <input type="checkbox" name="is_active" value="1" {{ $item->is_active ? 'checked' : '' }} style="width: 18px; height: 18px;">
+                    <div class="mt-6 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-dashed border-zinc-200 dark:border-zinc-700">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-bold text-zinc-900 dark:text-white">Is Item Active?</span>
+                            <input type="checkbox" name="is_active" value="1" {{ $item->is_active ? 'checked' : '' }} class="w-5 h-5 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 2rem; padding-top: 1rem; border-top: 0.5px solid var(--cm-card-border);">
-                <a href="{{ route('inventory.items.index') }}" class="cm-btn-ghost">Cancel</a>
-                <button type="submit" class="cm-btn-primary cm-btn-primary--blue">Save Changes</button>
+            <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                <x-button variant="ghost" href="{{ route('inventory.items.index') }}">Cancel</x-button>
+                <x-button type="submit" icon="save">Save Changes</x-button>
             </div>
         </form>
-    </div>
+    </x-card>
 </div>
 
 <datalist id="category-options">
@@ -115,81 +100,6 @@
 
 @endsection
 
-@push('styles')
-<style>
-/* ── Theme Variables & Dark Mode Matrix ── */
-:root {
-    --cm-bg: #f8fafc;
-    --cm-card-bg: #ffffff;
-    --cm-card-border: #e2e8f0;
-    --cm-text-primary: #0f172a;
-    --cm-text-secondary: #475569;
-    --cm-text-muted: #94a3b8;
-    --cm-accent-teal: #0d9488;
-    --cm-accent-blue: #2563eb;
-    --cm-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-[data-theme='dark'] {
-    --cm-bg: #090d16;
-    --cm-card-bg: #111827;
-    --cm-card-border: #1f2937;
-    --cm-text-primary: #f3f4f6;
-    --cm-text-secondary: #9ca3af;
-    --cm-text-muted: #6b7280;
-}
-
-*, *::before, *::after { box-sizing: border-box; }
-
-.cm-page { padding: 2rem 0 3rem; }
-.cm-hidden { display: none !important; }
-
-.cm-topbar { margin-bottom: 1.5rem; }
-.cm-page-title { font-size: 1.375rem; font-weight: 700; color: var(--cm-text-primary); letter-spacing: -0.02em; }
-.cm-page-sub { font-size: 0.8125rem; color: var(--cm-text-secondary); margin-top: 2px; }
-.cm-route { font-size: 0.75rem; color: var(--cm-accent-blue); text-decoration: none; font-weight: 600; text-transform: uppercase; }
-
-.cm-table-card {
-    background: var(--cm-card-bg);
-    border: 0.5px solid var(--cm-card-border);
-    border-radius: 12px;
-    box-shadow: var(--cm-shadow-sm);
-}
-
-.cm-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-@media (max-width: 480px) { .cm-form-grid { grid-template-columns: 1fr; } }
-.cm-form-group { margin-bottom: 12px; }
-.cm-form-label {
-    display: block; font-size: 0.6875rem; font-weight: 600; color: var(--cm-text-secondary);
-    text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px;
-}
-.cm-required { color: #dc2626; }
-.cm-form-input {
-    width: 100%; padding: 8px 10px; border: 0.5px solid var(--cm-card-border);
-    border-radius: 8px; font-size: 0.8125rem; background: var(--cm-bg); color: var(--cm-text-primary);
-    outline: none; transition: border-color 0.15s; font-family: inherit;
-}
-.cm-form-input:focus { border-color: var(--cm-text-muted); }
-
-.cm-btn-primary {
-    display: inline-flex; align-items: center; padding: 8px 16px; background: var(--cm-text-primary);
-    color: var(--cm-card-bg); border: none; border-radius: 8px; font-size: 0.8125rem; font-weight: 600;
-    cursor: pointer; transition: opacity 0.15s; text-decoration: none;
-}
-.cm-btn-primary:hover { opacity: 0.85; }
-.cm-btn-primary--blue { background: var(--cm-accent-blue); }
-.cm-btn-ghost {
-    padding: 8px 14px; background: transparent; border: none; border-radius: 8px; font-size: 0.8125rem;
-    color: var(--cm-text-secondary); cursor: pointer; text-decoration: none;
-}
-.cm-btn-ghost:hover { background: var(--cm-bg); color: var(--cm-text-primary); }
-
-@media (max-width: 768px) {
-    div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
-}
-</style>
-@endpush
-
 @push('scripts')
 <script>
 document.getElementById('item-type').addEventListener('change', function() {
@@ -199,10 +109,10 @@ document.getElementById('item-type').addEventListener('change', function() {
     const baseUnit = document.getElementById('base-unit');
     
     if (type === 'Chick') {
-        breedContainer.classList.remove('cm-hidden');
+        breedContainer.classList.remove('hidden');
         baseUnit.value = 'nos';
     } else {
-        breedContainer.classList.add('cm-hidden');
+        breedContainer.classList.add('hidden');
     }
 
     if (type === 'Feed') {
@@ -216,5 +126,8 @@ document.getElementById('base-unit').addEventListener('change', function() {
     const unit = this.value;
     document.getElementById('conversion-label').textContent = `per Bag (in ${unit})`;
 });
+
+// Trigger change event to set initial state
+document.getElementById('item-type').dispatchEvent(new Event('change'));
 </script>
 @endpush

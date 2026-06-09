@@ -2,34 +2,47 @@
 @section('title', 'Expense Categories')
 
 @section('content')
-<div class="mb-6">
-    <a href="{{ route('expenses.index') }}" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 uppercase tracking-wider mb-2 inline-block">← Back to Expenses</a>
-    <h1 class="text-2xl font-bold text-slate-950">Expense Analysis by Category</h1>
-    <p class="text-sm text-slate-500 mt-0.5">Classification of business expenditures</p>
+<div class="mb-8 animate-fade-in">
+    <a href="{{ route('expenses.index') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 uppercase tracking-wider mb-2">
+        <span class="material-symbols-rounded text-sm">arrow_back</span>
+        Back to Expenses
+    </a>
+    <h1 class="font-cabinet text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Expense Analysis by Category</h1>
+    <p class="mt-1 font-outfit text-sm text-zinc-500 dark:text-zinc-400">Classification of business expenditures</p>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
     @forelse($categories as $cat)
-        <div class="bg-gradient-to-br from-white via-emerald-50/40 to-sky-50/40 rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-shadow group">
-            <div class="flex justify-between items-start mb-4">
-                <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center font-black group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                    {{ substr($cat->category, 0, 1) }}
+        <x-card class="group hover:border-emerald-500/30 transition-all duration-300 hover:-translate-y-1">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center justify-center w-12 h-12 bg-emerald-100/80 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl font-cabinet font-bold text-xl group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                        {{ strtoupper(substr($cat->category, 0, 1)) }}
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest font-outfit">Total Spent</p>
+                        <p class="text-xl font-bold font-jetbrains text-zinc-900 dark:text-white">
+                            <x-currency :amount="$cat->total" />
+                        </p>
+                    </div>
                 </div>
-                <div class="text-right">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Spent</p>
-                    <p class="text-lg font-black text-slate-950">Rs {{ number_format($cat->total, 2) }}</p>
+                <h3 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-white mb-1 capitalize">{{ $cat->category }}</h3>
+                <p class="font-outfit text-sm text-zinc-500 dark:text-zinc-400 mb-6">{{ $cat->count }} transactions recorded</p>
+                
+                <div class="flex gap-2">
+                    <a href="{{ route('expenses.index', ['category' => $cat->category]) }}" class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest hover:underline">
+                        View Logs
+                        <span class="material-symbols-rounded text-sm">arrow_forward</span>
+                    </a>
                 </div>
             </div>
-            <h3 class="text-base font-bold text-slate-800 mb-1 capitalize">{{ $cat->category }}</h3>
-            <p class="text-xs text-slate-500 mb-6">{{ $cat->count }} transactions recorded</p>
-            
-            <div class="flex gap-2">
-                <a href="{{ route('expenses.index', ['category' => $cat->category]) }}" class="text-[10px] font-bold text-emerald-600 uppercase tracking-tight hover:underline">View Logs -></a>
-            </div>
-        </div>
+        </x-card>
     @empty
-        <div class="col-span-full py-20 text-center bg-emerald-50 rounded-3xl border-2 border-dashed border-slate-200">
-            <p class="text-slate-400 italic">No expense categories detected yet.</p>
+        <div class="col-span-full">
+            <x-empty-state 
+                icon="category" 
+                title="No categories" 
+                description="No expense categories detected yet." />
         </div>
     @endforelse
 </div>

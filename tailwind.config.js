@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-    darkMode: ["class"],
+    darkMode: 'class',
     content: [
         "./resources/**/*.blade.php",
         "./resources/**/*.js",
@@ -65,7 +65,19 @@ export default {
                 sm: "calc(var(--radius) - 4px)",
             },
             fontFamily: {
-                sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+                sans: ['Outfit', 'ui-sans-serif', 'system-ui'],
+                heading: ['Cabinet Grotesk', 'Outfit', 'sans-serif'],
+                mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+            },
+            boxShadow: {
+                'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
+                'glass-sm': '0 2px 10px rgba(0, 0, 0, 0.05)',
+                'float': '0 10px 40px -10px rgba(0,0,0,0.08)',
+                'glow': '0 0 20px rgba(16, 185, 129, 0.2)',
+            },
+            transitionTimingFunction: {
+                'out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',
+                'custom-spring': 'cubic-bezier(0.32, 0.72, 0, 1)',
             },
             keyframes: {
                 "accordion-down": {
@@ -76,10 +88,25 @@ export default {
                     from: { height: "var(--radix-accordion-content-height)" },
                     to: { height: "0" },
                 },
+                "float-in": {
+                    "0%": { opacity: "0", transform: "translateY(20px)" },
+                    "100%": { opacity: "1", transform: "translateY(0)" },
+                },
+                "slide-up": {
+                    "0%": { opacity: "0", transform: "translateY(10px)" },
+                    "100%": { opacity: "1", transform: "translateY(0)" },
+                },
+                "pulse-glow": {
+                    "0%, 100%": { opacity: "1" },
+                    "50%": { opacity: "0.5" },
+                }
             },
             animation: {
                 "accordion-down": "accordion-down 0.2s ease-out",
                 "accordion-up": "accordion-up 0.2s ease-out",
+                "float-in": "float-in 0.6s cubic-bezier(0.32, 0.72, 0, 1) forwards",
+                "slide-up": "slide-up 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards",
+                "pulse-glow": "pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
             },
         },
     },

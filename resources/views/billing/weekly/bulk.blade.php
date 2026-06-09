@@ -2,77 +2,71 @@
 @section('title', 'Bulk Weekly Billing')
 
 @section('content')
-<div class="mb-6">
-    <a href="{{ route('billing.weekly.index') }}" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 uppercase tracking-wider mb-2 inline-block">← Back to Weekly Billing</a>
-    <h1 class="text-2xl font-bold text-slate-950">Bulk Billing Generation</h1>
-    <p class="text-sm text-slate-500 mt-0.5">Select multiple customers to generate weekly bills in one click</p>
+<div class="mb-6 animate-fade-in">
+    <a href="{{ route('billing.weekly.index') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 uppercase tracking-wider mb-2">
+        <span class="material-symbols-rounded text-sm">arrow_back</span>
+        Back to Weekly Billing
+    </a>
+    <h1 class="font-cabinet text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Bulk Billing Generation</h1>
+    <p class="mt-1 font-outfit text-sm text-zinc-500 dark:text-zinc-400">Select multiple customers to generate weekly bills in one click</p>
 </div>
 
-<div class="max-w-4xl">
-    <div class="bg-gradient-to-br from-white via-emerald-50/40 to-sky-50/40 rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <form action="{{ route('billing.weekly.bulkStore') }}" method="POST" class="p-6">
-            @csrf
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div class="space-y-4">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-200 pb-2">1. Billing Period</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-bold text-slate-700 uppercase">Start Date</label>
-                            <input type="date" name="period_start" required class="w-full px-4 py-2 bg-emerald-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all">
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-bold text-slate-700 uppercase">End Date</label>
-                            <input type="date" name="period_end" required class="w-full px-4 py-2 bg-emerald-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all">
+<div class="max-w-4xl animate-fade-in">
+    <x-card>
+        <div class="p-6">
+            <form action="{{ route('billing.weekly.bulkStore') }}" method="POST">
+                @csrf
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="space-y-4">
+                        <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-200 dark:border-zinc-800 pb-2 font-outfit">1. Billing Period</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <x-form.input type="date" name="period_start" label="Start Date" required />
+                            <x-form.input type="date" name="period_end" label="End Date" required />
                         </div>
                     </div>
-                </div>
 
-                <div class="space-y-4">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-200 pb-2">2. Default Values</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-bold text-slate-700 uppercase">Flat Amount (Rs )</label>
-                            <input type="number" name="amount" step="0.01" required class="w-full px-4 py-2 bg-emerald-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all" placeholder="0.00">
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-bold text-slate-700 uppercase">Initial Status</label>
-                            <select name="status" class="w-full px-4 py-2 bg-emerald-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all">
+                    <div class="space-y-4">
+                        <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-200 dark:border-zinc-800 pb-2 font-outfit">2. Default Values</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <x-form.input type="number" name="amount" label="Flat Amount (Rs)" step="0.01" required placeholder="0.00" class="text-indigo-600 font-bold" />
+                            <x-form.select name="status" label="Initial Status" required>
                                 <option value="Generated">Generated</option>
                                 <option value="Pending">Pending</option>
-                            </select>
+                            </x-form.select>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="space-y-4">
-                <div class="flex justify-between items-center border-b border-slate-200 pb-2">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">3. Select Customers</h3>
-                    <button type="button" onclick="toggleAll(this)" class="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 uppercase">Select All</button>
+                <div class="space-y-4 mb-8">
+                    <div class="flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800 pb-2">
+                        <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-widest font-outfit">3. Select Customers</h3>
+                        <button type="button" onclick="toggleAll(this)" class="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 uppercase transition-colors">Select All</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-1 font-outfit custom-scrollbar">
+                        @foreach($customers as $customer)
+                        <label class="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 hover:border-indigo-200 dark:hover:border-indigo-500/50 rounded-lg cursor-pointer transition-all group">
+                            <input type="checkbox" name="customer_ids[]" value="{{ $customer->id }}" class="customer-checkbox w-4 h-4 text-indigo-600 rounded border-zinc-300 focus:ring-indigo-500 transition-all bg-white dark:bg-zinc-900">
+                            <div>
+                                <p class="text-sm font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-900 dark:group-hover:text-indigo-300 transition-colors">{{ $customer->name }}</p>
+                                <p class="text-[10px] text-zinc-500">{{ $customer->route ?: 'No Route' }}</p>
+                            </div>
+                        </label>
+                        @endforeach
+                    </div>
                 </div>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-1">
-                    @foreach($customers as $customer)
-                    <label class="flex items-center gap-3 p-3 bg-emerald-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 rounded-lg cursor-pointer transition-all group">
-                        <input type="checkbox" name="customer_ids[]" value="{{ $customer->id }}" class="customer-checkbox w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 transition-all">
-                        <div>
-                            <p class="text-sm font-bold text-slate-950 group-hover:text-emerald-900">{{ $customer->name }}</p>
-                            <p class="text-[10px] text-slate-500">{{ $customer->route ?: 'No Route' }}</p>
-                        </div>
-                    </label>
-                    @endforeach
-                </div>
-            </div>
 
-            <div class="mt-8 pt-6 border-t border-slate-200 flex justify-end gap-3">
-                <button type="submit" class="w-full sm:w-auto px-10 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
-                    Run Bulk Generation ⚡
-                </button>
-            </div>
-        </form>
-    </div>
+                <div class="pt-6 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-3">
+                    <x-button type="submit" variant="primary" icon="layers" class="w-full sm:w-auto">
+                        Run Bulk Generation ⚡
+                    </x-button>
+                </div>
+            </form>
+        </div>
+    </x-card>
 </div>
 
+@push('scripts')
 <script>
     function toggleAll(btn) {
         const checkboxes = document.querySelectorAll('.customer-checkbox');
@@ -81,4 +75,5 @@
         btn.textContent = allChecked ? 'Select All' : 'Deselect All';
     }
 </script>
+@endpush
 @endsection

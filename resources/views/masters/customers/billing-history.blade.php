@@ -3,379 +3,225 @@
 
 @section('content')
 @if(!request()->ajax())
-<div class="cm-page">
+<div class="space-y-6">
+    <div class="mb-4">
+        <a href="{{ route('masters.customers.index') }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-colors">
+            <span class="material-symbols-rounded text-[20px]">arrow_back</span>
+            Back to Directory
+        </a>
+    </div>
 
-    {{-- Back Link --}}
-    <a href="{{ route('masters.customers.show', $customer) }}" class="cm-back-btn">
-        <span class="material-symbols-rounded" style="font-size: 16px;">arrow_back</span>
-        Back to details
-    </a>
-
-    {{-- Top Bar --}}
-    <div class="cm-topbar">
-        <div class="cm-profile-header">
-            <div class="cm-avatar-lg cm-avatar-lg--{{ strtolower(substr($customer->name, 0, 1)) }}">
-                {{ strtoupper(substr($customer->name, 0, 2)) }}
-            </div>
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <x-avatar name="{{ $customer->name }}" size="lg" />
             <div>
-                <h1 class="cm-page-title">{{ $customer->name }}</h1>
-                <div class="cm-page-sub">
+                <h1 class="text-2xl font-bold font-cabinet text-zinc-900 dark:text-zinc-100 tracking-tight">{{ $customer->name }}</h1>
+                <div class="flex items-center gap-2 mt-1">
                     @if($customer->type === 'Wholesale')
-                        <span class="cm-badge cm-badge--wholesale">Wholesale Partner</span>
+                        <x-badge color="blue">Wholesale Partner</x-badge>
                     @else
-                        <span class="cm-badge cm-badge--retail">Retail Buyer</span>
+                        <x-badge color="rose">Retail Buyer</x-badge>
                     @endif
-                    <span class="cm-badge cm-badge--route">
-                        <span class="material-symbols-rounded" style="font-size: 12px; margin-right: 2px;">alt_route</span>
+                    <x-badge color="zinc">
+                        <span class="material-symbols-rounded text-[14px] mr-1">alt_route</span>
                         {{ $customer->route ?: 'General Sector' }}
-                    </span>
+                    </x-badge>
                 </div>
             </div>
         </div>
 
-        <div class="cm-actions-group">
-            <a href="{{ route('masters.customers.edit', $customer) }}" class="cm-btn-outline">
-                <span class="material-symbols-rounded" style="font-size: 16px;">edit</span>
-                Edit Profile
-            </a>
+        <div class="flex items-center gap-3">
+            <x-button href="{{ route('masters.customers.edit', $customer) }}" variant="secondary" icon="edit">Edit Profile</x-button>
             <form action="{{ route('masters.customers.destroy', $customer) }}" method="POST" onsubmit="return confirm('Delete {{ $customer->name }}? This will keep their transaction history intact.')">
                 @csrf @method('DELETE')
-                <button type="submit" class="cm-btn-danger">
-                    <span class="material-symbols-rounded" style="font-size: 16px;">delete</span>
-                    Delete
-                </button>
+                <x-button type="submit" variant="danger" icon="delete">Delete</x-button>
             </form>
         </div>
     </div>
 
-    {{-- Layout Grid --}}
-    <div class="cm-detail-layout">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {{-- Side Column: Profile & Balance --}}
-        <div class="cm-side-col">
-            
-            {{-- Outstanding Balance Card --}}
-            <div class="cm-balance-card">
-                <div class="cm-balance-label">Total Outstanding</div>
-                <div class="cm-balance-amount">Rs {{ number_format($customer->balance, 2) }}</div>
-                
-                <div class="cm-balance-actions">
-                    <a href="{{ route('payments.customers.create', ['customer_id' => $customer->id]) }}" class="cm-balance-btn-pay">
-                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">payments</span>
-                        Record Payment
-                    </a>
-                    <a href="{{ route('masters.customers.ledger-pdf', $customer) }}" class="cm-balance-btn-dl">
-                        <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">download</span>
-                        Download Statement
-                    </a>
-                </div>
-            </div>
-
-            {{-- Profile Card --}}
-            <div class="cm-card">
-                <h3 class="cm-card-title">
-                    <span class="material-symbols-rounded" style="font-size: 16px;">contact_page</span>
-                    Profile Credentials
-                </h3>
-                <div class="cm-info-list">
-                    <div class="cm-info-item">
-                        <span class="material-symbols-rounded cm-info-icon" style="font-size: 18px;">call</span>
-                        <div>
-                            <div class="cm-info-label">Contact Phone</div>
-                            <div class="cm-info-val">{{ $customer->phone }}</div>
-                        </div>
+        <div class="lg:col-span-1 space-y-6">
+            <div class="rounded-3xl p-6 bg-rose-500/40 dark:bg-rose-900/40 backdrop-blur-2xl text-rose-900 dark:text-rose-100 shadow-[0_8px_32px_rgba(225,29,72,0.15)] border border-rose-300/50 dark:border-rose-700/50 relative overflow-hidden transition-all duration-300 hover:shadow-[0_8px_32px_rgba(225,29,72,0.25)] hover:-translate-y-1">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/20 dark:bg-rose-400/10 rounded-full blur-2xl"></div>
+                <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-rose-400/20 dark:bg-rose-600/20 rounded-full blur-2xl"></div>
+                <div class="relative z-10 text-center">
+                    <div class="text-xs font-bold uppercase tracking-widest text-rose-800/80 dark:text-rose-200 mb-2">Total Outstanding</div>
+                    <div class="text-3xl font-extrabold tracking-tight font-jetbrains mb-6 text-rose-950 dark:text-white drop-shadow-sm">
+                        Rs {{ number_format($customer->balance, 2) }}
                     </div>
-                    <div class="cm-info-item">
-                        <span class="material-symbols-rounded cm-info-icon" style="font-size: 18px;">location_on</span>
-                        <div>
-                            <div class="cm-info-label">Store Address</div>
-                            <div class="cm-info-val">{{ $customer->address ?: 'Not provided' }}</div>
-                        </div>
-                    </div>
-                    <div class="cm-info-item">
-                        <span class="material-symbols-rounded cm-info-icon" style="font-size: 18px;">badge</span>
-                        <div>
-                            <div class="cm-info-label">GSTIN / Registration</div>
-                            <div class="cm-info-val cm-info-val--mono">{{ $customer->gst_number ?: 'Unregistered (No GST)' }}</div>
-                        </div>
+                    <div class="flex flex-col gap-3">
+                        <x-button href="{{ route('payments.customers.create', ['customer_id' => $customer->id]) }}" variant="secondary" icon="payments" class="w-full justify-center !text-rose-700 !bg-white/80 hover:!bg-white !border-white backdrop-blur-md shadow-sm">
+                            Record Payment
+                        </x-button>
+                        <x-button href="{{ route('masters.customers.ledger-pdf', $customer) }}" variant="secondary" icon="download" class="w-full justify-center !bg-rose-600/20 !text-rose-900 dark:!text-rose-100 !border-rose-400/30 hover:!bg-rose-600/30 backdrop-blur-md">
+                            Download Statement
+                        </x-button>
                     </div>
                 </div>
             </div>
 
+            <x-card title="Profile Credentials" icon="contact_page">
+                <div class="space-y-4">
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-rounded text-zinc-400">call</span>
+                        <div>
+                            <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Contact Phone</div>
+                            <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $customer->phone }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-rounded text-zinc-400">location_on</span>
+                        <div>
+                            <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Store Address</div>
+                            <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $customer->address ?: 'Not provided' }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-rounded text-zinc-400">badge</span>
+                        <div>
+                            <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">GSTIN / Registration</div>
+                            <div class="font-mono text-sm text-zinc-900 dark:text-zinc-100">{{ $customer->gst_number ?: 'Unregistered' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </x-card>
         </div>
 
-        {{-- Main Column: Tabs --}}
-        <div class="cm-main-col">
+        <div class="lg:col-span-2 space-y-6">
 @endif
-            
-            <div class="cm-tabs-card" id="cm-tabs-container" x-data="ajaxTabs" @click="handleTabClick" @mouseover="prefetchTab" @popstate.window="window.location.reload()">
-                {{-- Tabs Navigation --}}
-                <div class="cm-tabs-header">
-                    <a href="{{ route('masters.customers.show', $customer) }}" class="cm-tab-link">
+            <div id="cm-tabs-container" x-data="ajaxTabs" @click="handleTabClick" @mouseover="prefetchTab" @popstate.window="window.location.reload()" class="bg-white/30 dark:bg-zinc-900/40 backdrop-blur-2xl border border-white/60 dark:border-zinc-800/80 rounded-[2rem] overflow-hidden shadow-[0_8px_32px_rgba(31,38,135,0.07)] z-10 relative">
+                
+                <div class="flex flex-wrap p-2 m-4 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-white/50 dark:border-zinc-700/50 gap-2">
+                    <a href="{{ route('masters.customers.show', $customer) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
                         Quick Overview
                     </a>
-                    <a href="{{ route('masters.customers.billing-history', $customer) }}" class="cm-tab-link cm-tab-link--active">
+                    <a href="{{ route('masters.customers.billing-history', $customer) }}" class="flex-1 text-center py-3 text-sm font-bold text-emerald-700 dark:text-emerald-400 bg-white/70 dark:bg-zinc-800/80 shadow-sm rounded-xl transition-all duration-300">
                         Billing History
                     </a>
-                    <a href="{{ route('masters.customers.payment-history', $customer) }}" class="cm-tab-link">
+                    <a href="{{ route('masters.customers.payment-history', $customer) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
                         Payment History
                     </a>
-                    <a href="{{ route('masters.customers.emi-history', $customer) }}" class="cm-tab-link">
+                    <a href="{{ route('masters.customers.emi-history', $customer) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
                         EMI Schedule
                     </a>
                 </div>
 
-                {{-- Tab Content Pane --}}
-                <div class="cm-tab-content">
+                <div class="p-0">
                     @php
                         $activeSubTab = request()->has('daily_page') ? 'retail' : 'wholesale';
                     @endphp
                     
-                    {{-- Title Row inside Content Pane --}}
-                    <div class="cm-tab-title-row">
-                        <h4 class="cm-tab-title">Complete Billing Ledger</h4>
-                        <a href="{{ route('billing.weekly.export', ['customer_id' => $customer->id]) }}" class="cm-export-btn">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-    </svg>
-        Export
-    </a>
-                    </div>
+                    <div class="p-6 border-b border-zinc-200 dark:border-zinc-800">
+                        <div class="flex items-center justify-between mb-6">
+                            <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Complete Billing Ledger</h4>
+                            <x-button href="{{ route('billing.weekly.export', ['customer_id' => $customer->id]) }}" variant="secondary" size="sm" icon="download">Export</x-button>
+                        </div>
 
-                    {{-- Billing Summary Mini Cards --}}
-                    <div class="cm-billing-summary-grid">
-                        <div class="cm-mini-stat-card">
-                            <div class="cm-mini-stat-label">Total Bills</div>
-                            <div class="cm-mini-stat-val">{{ $weeklyBills->total() + $dailyBills->total() }}</div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <x-stat-card title="Total Bills" value="{{ $weeklyBills->total() + $dailyBills->total() }}" color="zinc" />
+                            <x-stat-card title="Total Billed" value="{{ number_format($totalBilled, 0) }}" prefix="Rs " color="blue" />
+                            <x-stat-card title="Avg. Bill Value" value="{{ number_format(($weeklyBills->total() + $dailyBills->total()) > 0 ? $totalBilled / ($weeklyBills->total() + $dailyBills->total()) : 0, 0) }}" prefix="Rs " color="emerald" />
+                            <x-stat-card title="Current Due" value="{{ number_format($customer->balance, 0) }}" prefix="Rs " color="rose" />
                         </div>
-                        <div class="cm-mini-stat-card">
-                            <div class="cm-mini-stat-label">Total Billed</div>
-                            <div class="cm-mini-stat-val">Rs {{ number_format($totalBilled, 0) }}</div>
-                        </div>
-                        <div class="cm-mini-stat-card">
-                            <div class="cm-mini-stat-label">Avg. Bill Value</div>
-                            <div class="cm-mini-stat-val cm-mini-stat-val--green">
-                                Rs {{ number_format(($weeklyBills->total() + $dailyBills->total()) > 0 ? $totalBilled / ($weeklyBills->total() + $dailyBills->total()) : 0, 0) }}
+
+                        <div x-data="{ activeSubTab: '{{ $activeSubTab }}' }">
+                            <div class="flex gap-2 p-1 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md rounded-xl border border-white/50 dark:border-zinc-700/50 mb-6 inline-flex">
+                                <button @click="activeSubTab = 'wholesale'" :class="{'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm font-bold': activeSubTab === 'wholesale', 'text-zinc-500 hover:text-zinc-700': activeSubTab !== 'wholesale'}" class="px-4 py-2 text-sm rounded-lg transition-all duration-300">
+                                    Wholesale Weekly ({{ $weeklyBills->total() }})
+                                </button>
+                                <button @click="activeSubTab = 'retail'" :class="{'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm font-bold': activeSubTab === 'retail', 'text-zinc-500 hover:text-zinc-700': activeSubTab !== 'retail'}" class="px-4 py-2 text-sm rounded-lg transition-all duration-300">
+                                    Retail Counter ({{ $dailyBills->total() }})
+                                </button>
                             </div>
-                        </div>
-                        <div class="cm-mini-stat-card">
-                            <div class="cm-mini-stat-label">Current Due</div>
-                            <div class="cm-mini-stat-val cm-mini-stat-val--red">Rs {{ number_format($customer->balance, 0) }}</div>
-                        </div>
-                    </div>
 
-                    {{-- Sub Tabs Navigation --}}
-                    <div class="cm-sub-tabs" style="display: flex; gap: 8px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--cm-card-border); padding-bottom: 0.75rem;">
-                        <button class="cm-sub-tab @if($activeSubTab === 'wholesale') active @endif" onclick="switchSubTab('wholesale')" style="background: none; border: none; padding: 8px 16px; font-size: 0.8125rem; font-weight: 700; cursor: pointer; color: var(--cm-text-secondary); border-radius: 8px; transition: all 0.2s;">
-                            Wholesale Weekly Invoices ({{ $weeklyBills->total() }})
-                        </button>
-                        <button class="cm-sub-tab @if($activeSubTab === 'retail') active @endif" onclick="switchSubTab('retail')" style="background: none; border: none; padding: 8px 16px; font-size: 0.8125rem; font-weight: 700; cursor: pointer; color: var(--cm-text-secondary); border-radius: 8px; transition: all 0.2s;">
-                            Retail Counter Invoices ({{ $dailyBills->total() }})
-                        </button>
-                    </div>
-
-                    {{-- Wholesale Tab Panel --}}
-                    <div id="wholesale-panel" class="cm-sub-tab-panel @if($activeSubTab !== 'wholesale') cm-hidden @endif">
-                        <div class="cm-table-wrap">
-                            <table class="cm-table">
-                                <thead>
-                                    <tr>
-                                        <th>Bill ID</th>
-                                        <th>Period End</th>
-                                        <th>Purchased Products</th>
-                                        <th class="cm-th-right">Qty (kg)</th>
-                                        <th class="cm-th-right">Amount</th>
-                                        <th class="cm-th-center">Status</th>
-                                        <th class="cm-th-center">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                            <div class="w-full" x-show="activeSubTab === 'wholesale'" style="display: none;">
+                                <x-data-table :headers="['Bill ID', 'Period End', 'Products', ['label' => 'Qty', 'align' => 'right'], ['label' => 'Amount', 'align' => 'right'], ['label' => 'Status', 'align' => 'center'], ['label' => 'Actions', 'align' => 'center']]">
                                     @forelse($weeklyBills as $bill)
-                                    <tr class="cm-tr">
-                                        <td class="cm-td">
-                                            <span class="cm-mono-val">#WB-{{ str_pad($bill->id, 5, '0', STR_PAD_LEFT) }}</span>
-                                        </td>
-                                        <td class="cm-td">
-                                            <div class="cm-bold-val">{{ $bill->period_end->format('d M Y') }}</div>
-                                            <div class="cm-meta-sub">{{ $bill->period_start->format('d M') }} - {{ $bill->period_end->format('d M') }}</div>
-                                        </td>
-                                        <td class="cm-td">
-                                            <div style="display: flex; flex-wrap: wrap; gap: 4px; max-width: 250px;">
+                                        <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
+                                            <td class="px-6 py-4 font-mono text-sm">#WB-{{ str_pad($bill->id, 5, '0', STR_PAD_LEFT) }}</td>
+                                            <td class="px-6 py-4">
+                                                <div class="font-bold text-sm">{{ $bill->period_end->format('d M Y') }}</div>
+                                                <div class="text-xs text-zinc-500">{{ $bill->period_start->format('d M') }} - {{ $bill->period_end->format('d M') }}</div>
+                                            </td>
+                                            <td class="px-6 py-4 text-sm">
                                                 @if($bill->items_description)
-                                                    @foreach(explode(',', $bill->items_description) as $item)
-                                                        @if(trim($item))
-                                                            <span class="cm-item-chip">{{ trim($item) }}</span>
-                                                        @endif
-                                                    @endforeach
+                                                    {{ Str::limit($bill->items_description, 50) }}
                                                 @else
-                                                    <span style="color: var(--cm-text-muted); font-size: 0.75rem;">—</span>
+                                                    -
                                                 @endif
-                                            </div>
-                                        </td>
-                                        <td class="cm-td cm-td-right">
-                                            <span class="cm-mono-val cm-bold-val">{{ number_format($bill->quantity_kg, 1) }}</span>
-                                        </td>
-                                        <td class="cm-td cm-td-right">
-                                            <span class="cm-bold-val" style="color: var(--cm-text-primary);">Rs {{ number_format($bill->amount, 0) }}</span>
-                                        </td>
-                                        <td class="cm-td cm-td-center">
-                                            @if($bill->status === 'Paid')
-                                                <span class="cm-status-pill cm-status-pill--paid">Paid</span>
-                                            @elseif($bill->status === 'Pending')
-                                                <span class="cm-status-pill cm-status-pill--pending">Pending</span>
-                                            @else
-                                                <span class="cm-status-pill cm-status-pill--generated">Generated</span>
-                                            @endif
-                                        </td>
-                                        <td class="cm-td cm-td-center">
-                                            <a href="{{ route('billing.weekly.show', $bill) }}" class="cm-table-action-btn" title="View details">
-                                                <span class="material-symbols-rounded" style="font-size: 16px;">visibility</span>
-                                            </a>
-                                        </td>
-                                    </tr>
+                                            </td>
+                                            <td class="px-6 py-4 text-right font-mono text-sm">{{ number_format($bill->quantity_kg, 1) }}</td>
+                                            <td class="px-6 py-4 text-right font-bold text-sm font-jetbrains">Rs {{ number_format($bill->amount, 0) }}</td>
+                                            <td class="px-6 py-4 text-center">
+                                                @if($bill->status === 'Paid')
+                                                    <x-badge color="emerald">Paid</x-badge>
+                                                @elseif($bill->status === 'Pending')
+                                                    <x-badge color="rose">Pending</x-badge>
+                                                @else
+                                                    <x-badge color="blue">Generated</x-badge>
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <x-button href="{{ route('billing.weekly.show', $bill) }}" variant="ghost" size="sm" icon="visibility" />
+                                            </td>
+                                        </tr>
                                     @empty
-                                    <tr>
-                                        <td colspan="7" class="cm-empty-cell">
-                                            <div class="cm-empty-icon-sub">
-                                                <span class="material-symbols-rounded">receipt_long</span>
-                                            </div>
-                                            <p class="cm-empty-text">No wholesale billing records found.</p>
-                                        </td>
-                                    </tr>
+                                        <tr><td colspan="7" class="text-center py-8 text-zinc-500">No wholesale billing records found.</td></tr>
                                     @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {{-- Pagination --}}
-                        @if($weeklyBills->hasPages())
-                        <div class="cm-pagination">
-                            <span class="cm-pg-info">
-                                Showing {{ $weeklyBills->firstItem() }}–{{ $weeklyBills->lastItem() }} of {{ $weeklyBills->total() }} statements
-                            </span>
-                            <div class="cm-pg-links">
-                                {!! $weeklyBills->appends(request()->except('weekly_page'))->links() !!}
+                                    @if($weeklyBills->hasPages())
+                                        <x-slot:pagination>
+                                            {!! $weeklyBills->appends(request()->except('weekly_page'))->links() !!}
+                                        </x-slot:pagination>
+                                    @endif
+                                </x-data-table>
                             </div>
-                        </div>
-                        @endif
-                    </div>
 
-                    {{-- Retail Tab Panel --}}
-                    <div id="retail-panel" class="cm-sub-tab-panel @if($activeSubTab !== 'retail') cm-hidden @endif">
-                        <div class="cm-table-wrap">
-                            <table class="cm-table">
-                                <thead>
-                                    <tr>
-                                        <th>Invoice ID</th>
-                                        <th>Date</th>
-                                        <th>Purchased Products</th>
-                                        <th class="cm-th-right">Qty (kg)</th>
-                                        <th class="cm-th-right">Amount</th>
-                                        <th class="cm-th-center">Status</th>
-                                        <th class="cm-th-center">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                            <div class="w-full mt-4" x-show="activeSubTab === 'retail'" style="display: none;">
+                                <x-data-table :headers="['Invoice ID', 'Date', 'Products', ['label' => 'Qty', 'align' => 'right'], ['label' => 'Amount', 'align' => 'right'], ['label' => 'Status', 'align' => 'center'], ['label' => 'Actions', 'align' => 'center']]">
                                     @forelse($dailyBills as $bill)
-                                    <tr class="cm-tr">
-                                        <td class="cm-td">
-                                            <span class="cm-mono-val">#DB-{{ str_pad($bill->id, 5, '0', STR_PAD_LEFT) }}</span>
-                                        </td>
-                                        <td class="cm-td">
-                                            <div class="cm-bold-val">{{ $bill->date->format('d M Y') }}</div>
-                                        </td>
-                                        <td class="cm-td">
-                                            <div style="display: flex; flex-wrap: wrap; gap: 4px; max-width: 250px;">
+                                        <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
+                                            <td class="px-6 py-4 font-mono text-sm">#DB-{{ str_pad($bill->id, 5, '0', STR_PAD_LEFT) }}</td>
+                                            <td class="px-6 py-4 font-bold text-sm">{{ $bill->date->format('d M Y') }}</td>
+                                            <td class="px-6 py-4 text-sm">
                                                 @forelse($bill->items as $item)
-                                                    <span class="cm-item-chip" style="background: rgba(59, 130, 246, 0.08); color: #2563eb; border-color: rgba(59, 130, 246, 0.05);">
-                                                        {{ $item->item_name }} ({{ number_format($item->quantity_kg, 1) }} kg)
-                                                    </span>
+                                                    {{ $item->item_name }} ({{ number_format($item->quantity_kg, 1) }}kg){{ !$loop->last ? ', ' : '' }}
                                                 @empty
-                                                    <span style="color: var(--cm-text-muted); font-size: 0.75rem;">—</span>
+                                                    -
                                                 @endforelse
-                                            </div>
-                                        </td>
-                                        <td class="cm-td cm-td-right">
-                                            <span class="cm-mono-val cm-bold-val">{{ number_format($bill->items->sum('quantity_kg'), 1) }}</span>
-                                        </td>
-                                        <td class="cm-td cm-td-right">
-                                            <span class="cm-bold-val" style="color: var(--cm-text-primary);">Rs {{ number_format($bill->amount, 0) }}</span>
-                                        </td>
-                                        <td class="cm-td cm-td-center">
-                                            @if($bill->status === 'Paid')
-                                                <span class="cm-status-pill cm-status-pill--paid">Paid</span>
-                                            @elseif($bill->status === 'Pending')
-                                                <span class="cm-status-pill cm-status-pill--pending">Pending</span>
-                                            @else
-                                                <span class="cm-status-pill cm-status-pill--generated">Generated</span>
-                                            @endif
-                                        </td>
-                                        <td class="cm-td cm-td-center">
-                                            <a href="{{ route('billing.daily.invoice', $bill) }}" target="_blank" class="cm-table-action-btn" title="Print Invoice">
-                                                <span class="material-symbols-rounded" style="font-size: 16px;">print</span>
-                                            </a>
-                                        </td>
-                                    </tr>
+                                            </td>
+                                            <td class="px-6 py-4 text-right font-mono text-sm">{{ number_format($bill->items->sum('quantity_kg'), 1) }}</td>
+                                            <td class="px-6 py-4 text-right font-bold text-sm font-jetbrains">Rs {{ number_format($bill->amount, 0) }}</td>
+                                            <td class="px-6 py-4 text-center">
+                                                @if($bill->status === 'Paid')
+                                                    <x-badge color="emerald">Paid</x-badge>
+                                                @elseif($bill->status === 'Pending')
+                                                    <x-badge color="rose">Pending</x-badge>
+                                                @else
+                                                    <x-badge color="blue">Generated</x-badge>
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <x-button href="{{ route('billing.daily.invoice', $bill) }}" target="_blank" variant="ghost" size="sm" icon="print" />
+                                            </td>
+                                        </tr>
                                     @empty
-                                    <tr>
-                                        <td colspan="7" class="cm-empty-cell">
-                                            <div class="cm-empty-icon-sub">
-                                                <span class="material-symbols-rounded">receipt_long</span>
-                                            </div>
-                                            <p class="cm-empty-text">No retail counter billing records found.</p>
-                                        </td>
-                                    </tr>
+                                        <tr><td colspan="7" class="text-center py-8 text-zinc-500">No retail counter billing records found.</td></tr>
                                     @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {{-- Pagination --}}
-                        @if($dailyBills->hasPages())
-                        <div class="cm-pagination">
-                            <span class="cm-pg-info">
-                                Showing {{ $dailyBills->firstItem() }}–{{ $dailyBills->lastItem() }} of {{ $dailyBills->total() }} statements
-                            </span>
-                            <div class="cm-pg-links">
-                                {!! $dailyBills->appends(request()->except('daily_page'))->links() !!}
+                                    @if($dailyBills->hasPages())
+                                        <x-slot:pagination>
+                                            {!! $dailyBills->appends(request()->except('daily_page'))->links() !!}
+                                        </x-slot:pagination>
+                                    @endif
+                                </x-data-table>
                             </div>
                         </div>
-                        @endif
                     </div>
-
-                    {{-- Tab Switcher JS Script --}}
-                    <script>
-                        function switchSubTab(tab) {
-                            document.querySelectorAll('.cm-sub-tab').forEach(btn => {
-                                btn.classList.remove('active');
-                            });
-                            document.querySelectorAll('.cm-sub-tab-panel').forEach(panel => {
-                                panel.classList.add('cm-hidden');
-                            });
-
-                            if (tab === 'wholesale') {
-                                document.querySelector("button[onclick=\"switchSubTab('wholesale')\"]").classList.add('active');
-                                document.getElementById('wholesale-panel').classList.remove('cm-hidden');
-                            } else {
-                                document.querySelector("button[onclick=\"switchSubTab('retail')\"]").classList.add('active');
-                                document.getElementById('retail-panel').classList.remove('cm-hidden');
-                            }
-                        }
-                    </script>
-@if(!request()->ajax())
+                </div>
             </div>
-
+@if(!request()->ajax())
         </div>
-
     </div>
-
 </div>
 @endif
 @endsection
-
-@push('styles')
-    @include('masters.customers.partials.profile-style')
-@endpush

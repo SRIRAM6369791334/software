@@ -1,149 +1,144 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Stock Inventory')
 
 @section('content')
-<div class="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-    <div>
-        <h1 class="text-3xl font-black text-slate-950 tracking-tight">Stock Inventory</h1>
-        <p class="text-slate-500 font-medium">Track stock levels and inventory transactions.</p>
-    </div>
-    <div class="flex flex-wrap gap-2">
-        <button type="button" onclick="openModal('adjustModal')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-sky-500 text-white text-sm font-semibold hover:bg-emerald-700">
+<div class="space-y-6">
+
+    <x-page-header title="Stock Inventory" subtitle="Track stock levels and inventory transactions.">
+        <x-button onclick="openModal('adjustModal')" icon="edit_square">
             Quick Adjust
-        </button>
-        <a href="{{ route('stock.batches.index') }}" class="px-4 py-2 rounded-xl bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 text-sm font-semibold hover:bg-slate-50">
+        </x-button>
+        <x-button href="{{ route('stock.batches.index') }}" variant="secondary" icon="inventory_2">
             Batch Management
-        </a>
-    </div>
-</div>
+        </x-button>
+    </x-page-header>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-    @forelse($summaries as $item)
-        <div class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border {{ $item->current_stock < $item->reorder_level ? 'border-red-200' : 'border-slate-200' }} rounded-2xl p-5 shadow-sm">
-            <div class="flex items-start justify-between gap-4">
-                <div>
-                    <p class="text-xs text-slate-400 uppercase font-bold">{{ $item->category }}</p>
-                    <h3 class="font-bold text-slate-950 mt-1">{{ $item->item_name }}</h3>
-                </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        @forelse($summaries as $item)
+            <x-stat-card 
+                title="{{ $item->category }}" 
+                value="{{ number_format($item->current_stock, 1) }} {{ $item->unit }}" 
+                icon="inventory_2"
+                :color="$item->current_stock < $item->reorder_level ? 'rose' : 'emerald'"
+            >
+                <div class="mt-2 font-bold text-zinc-900 dark:text-white">{{ $item->item_name }}</div>
+                <p class="text-xs text-zinc-500 mt-1">Reorder level: {{ number_format($item->reorder_level, 1) }}</p>
                 @if($item->current_stock < $item->reorder_level)
-                    <span class="text-[10px] px-2 py-1 rounded-full bg-red-50 text-red-600 font-bold uppercase">Low</span>
+                    <div class="mt-2">
+                        <x-badge color="rose">Low Stock</x-badge>
+                    </div>
                 @endif
+            </x-stat-card>
+        @empty
+            <div class="col-span-full">
+                <x-empty-state icon="inventory_2" title="No stock items found" description="There are currently no items in stock." />
             </div>
-            <div class="mt-6 flex items-baseline gap-2">
-                <span class="text-3xl font-black {{ $item->current_stock < $item->reorder_level ? 'text-red-600' : 'text-slate-950' }}">
-                    {{ number_format($item->current_stock, 1) }}
-                </span>
-                <span class="text-xs text-slate-500 uppercase font-bold">{{ $item->unit }}</span>
-            </div>
-            <p class="mt-2 text-xs text-slate-400">Reorder level: {{ number_format($item->reorder_level, 1) }}</p>
-        </div>
-    @empty
-        <div class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 rounded-2xl p-8 text-center text-slate-500 md:col-span-2 lg:col-span-4">
-            No stock items found.
-        </div>
-    @endforelse
-</div>
-
-<div class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-    <div class="p-5 border-b border-slate-200 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-            <h2 class="font-black text-slate-950">Transaction History</h2>
-            <p class="text-sm text-slate-500">Movements from {{ $from }} to {{ $to }}.</p>
-        </div>
-        <form method="GET" class="flex flex-wrap gap-3">
-            <input type="date" name="from" value="{{ $from }}" class="px-3 py-2 rounded-lg border border-slate-200 text-sm">
-            <input type="date" name="to" value="{{ $to }}" class="px-3 py-2 rounded-lg border border-slate-200 text-sm">
-            <button type="submit" class="px-4 py-2 rounded-lg bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-slate-200 text-white text-sm font-bold">Filter</button>
-        </form>
+        @endforelse
     </div>
 
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-emerald-50 text-xs uppercase text-slate-500">
+    <x-card>
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+            <div>
+                <h2 class="font-black text-zinc-950 dark:text-white">Transaction History</h2>
+                <p class="text-sm text-zinc-500">Movements from {{ $from }} to {{ $to }}.</p>
+            </div>
+            <form method="GET" class="flex flex-wrap gap-3">
+                <div class="w-40">
+                    <x-form.input type="date" name="from" value="{{ $from }}" />
+                </div>
+                <div class="w-40">
+                    <x-form.input type="date" name="to" value="{{ $to }}" />
+                </div>
+                <x-button type="submit" icon="filter_list">Filter</x-button>
+            </form>
+        </div>
+
+        <x-data-table>
+            <x-slot name="header">
                 <tr>
-                    <th class="px-5 py-3 text-left">Date</th>
-                    <th class="px-5 py-3 text-left">Item</th>
-                    <th class="px-5 py-3 text-left">Type</th>
-                    <th class="px-5 py-3 text-right">Quantity</th>
-                    <th class="px-5 py-3 text-left">Notes</th>
+                    <th>Date</th>
+                    <th>Item</th>
+                    <th>Type</th>
+                    <th class="text-right">Quantity</th>
+                    <th>Notes</th>
                 </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($movements as $txn)
-                    <tr>
-                        <td class="px-5 py-4 whitespace-nowrap">{{ optional($txn->date)->format('Y-m-d') }}</td>
-                        <td class="px-5 py-4 font-semibold">{{ $txn->item_name }}</td>
-                        <td class="px-5 py-4">
-                            <span class="px-2 py-1 rounded-full text-xs font-bold {{ $txn->txn_type === 'OUT' ? 'bg-red-50 text-red-600' : ($txn->txn_type === 'IN' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600') }}">
-                                {{ $txn->txn_type ?? $txn->type }}
-                            </span>
-                        </td>
-                        <td class="px-5 py-4 text-right font-bold">
-                            {{ $txn->txn_type === 'OUT' ? '-' : '+' }}{{ number_format($txn->quantity, 1) }} {{ $txn->unit }}
-                        </td>
-                        <td class="px-5 py-4 text-slate-500">{{ $txn->notes }}</td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" class="px-5 py-12 text-center text-slate-500">No transactions found for this period.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+            </x-slot>
+            
+            @forelse($movements as $txn)
+                <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+                    <td class="px-4 py-3 whitespace-nowrap">{{ optional($txn->date)->format('Y-m-d') }}</td>
+                    <td class="px-4 py-3 font-semibold text-zinc-900 dark:text-white">{{ $txn->item_name }}</td>
+                    <td class="px-4 py-3">
+                        @php
+                            $badgeColor = match($txn->txn_type) {
+                                'OUT' => 'rose',
+                                'IN' => 'emerald',
+                                default => 'amber',
+                            };
+                        @endphp
+                        <x-badge :color="$badgeColor">{{ $txn->txn_type ?? $txn->type }}</x-badge>
+                    </td>
+                    <td class="px-4 py-3 text-right font-bold {{ $txn->txn_type === 'OUT' ? 'text-rose-600' : 'text-emerald-600' }}">
+                        {{ $txn->txn_type === 'OUT' ? '-' : '+' }}{{ number_format($txn->quantity, 1) }} {{ $txn->unit }}
+                    </td>
+                    <td class="px-4 py-3 text-zinc-500">{{ $txn->notes }}</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5" class="px-4 py-12 text-center text-zinc-500">No transactions found for this period.</td>
+                </tr>
+            @endforelse
+        </x-data-table>
 
-    <div class="p-5 border-t border-slate-200">
-        {{ $movements->appends(['from' => $from, 'to' => $to])->links() }}
-    </div>
-</div>
-
-<div id="adjustModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4">
-    <div class="w-full max-w-lg rounded-2xl bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 p-6 shadow-md">
-        <div class="flex items-center justify-between mb-5">
-            <h3 class="text-lg font-black">Adjust Stock</h3>
-            <button type="button" onclick="closeModal('adjustModal')" class="text-slate-500 hover:text-slate-950">Close</button>
+        <div class="mt-4">
+            {{ $movements->appends(['from' => $from, 'to' => $to])->links() }}
         </div>
-        <form method="POST" action="{{ route('stock.adjust') }}" class="space-y-4">
-            @csrf
-            <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Item</label>
-                <select name="item_name" required class="w-full rounded-lg border border-slate-200 px-3 py-2">
-                    @foreach($summaries as $item)
-                        <option value="{{ $item->item_name }}">{{ $item->item_name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Quantity Change</label>
-                    <input type="number" step="0.001" name="quantity" required class="w-full rounded-lg border border-slate-200 px-3 py-2">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date</label>
-                    <input type="date" name="date" value="{{ now()->toDateString() }}" required class="w-full rounded-lg border border-slate-200 px-3 py-2">
-                </div>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Reason</label>
-                <input type="text" name="reason" required class="w-full rounded-lg border border-slate-200 px-3 py-2">
-            </div>
-            <button type="submit" class="w-full rounded-lg bg-emerald-600 px-4 py-2 font-bold text-white hover:bg-emerald-700">Save Adjustment</button>
-        </form>
-    </div>
+    </x-card>
+
 </div>
+
+<x-modal id="adjustModal" title="Adjust Stock">
+    <form method="POST" action="{{ route('stock.adjust') }}" class="space-y-4">
+        @csrf
+        <div>
+            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Item</label>
+            <x-form.select name="item_name" required>
+                @foreach($summaries as $item)
+                    <option value="{{ $item->item_name }}">{{ $item->item_name }}</option>
+                @endforeach
+            </x-form.select>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Quantity Change</label>
+                <x-form.input type="number" step="0.001" name="quantity" required />
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Date</label>
+                <x-form.input type="date" name="date" value="{{ now()->toDateString() }}" required />
+            </div>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reason</label>
+            <x-form.input type="text" name="reason" required />
+        </div>
+        <div class="mt-6 flex justify-end">
+            <x-button type="submit" icon="save">Save Adjustment</x-button>
+        </div>
+    </form>
+</x-modal>
+
 @endsection
 
 @push('scripts')
 <script>
     function openModal(id) {
-        document.getElementById(id)?.classList.remove('hidden');
-        document.getElementById(id)?.classList.add('flex');
+        window.dispatchEvent(new CustomEvent('open-modal', { detail: id }));
     }
 
     function closeModal(id) {
-        document.getElementById(id)?.classList.add('hidden');
-        document.getElementById(id)?.classList.remove('flex');
+        window.dispatchEvent(new CustomEvent('close-modal', { detail: id }));
     }
 </script>
 @endpush
