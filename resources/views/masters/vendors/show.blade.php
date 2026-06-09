@@ -35,8 +35,25 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
         <div class="lg:col-span-1 space-y-6">
+            <div class="rounded-3xl p-6 bg-teal-500/40 dark:bg-teal-900/40 backdrop-blur-2xl text-teal-900 dark:text-teal-100 shadow-[0_8px_32px_rgba(20,184,166,0.15)] border border-teal-300/50 dark:border-teal-700/50 relative overflow-hidden transition-all duration-300 hover:shadow-[0_8px_32px_rgba(20,184,166,0.25)] hover:-translate-y-1">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/20 dark:bg-teal-400/10 rounded-full blur-2xl"></div>
+                <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-teal-400/20 dark:bg-teal-600/20 rounded-full blur-2xl"></div>
+                <div class="relative z-10 text-center">
+                    <div class="text-xs font-bold uppercase tracking-widest text-teal-800/80 dark:text-teal-200 mb-2">Total Business Volume</div>
+                    <div class="text-3xl font-extrabold tracking-tight font-jetbrains mb-6 text-teal-950 dark:text-white drop-shadow-sm">
+                        Rs {{ number_format($vendor->purchases()->sum('total_amount'), 2) }}
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <x-button href="{{ route('purchases.create', ['vendor_name' => $vendor->firm_name]) }}" variant="secondary" icon="add_shopping_cart" class="w-full justify-center !text-teal-700 !bg-white/80 hover:!bg-white !border-white backdrop-blur-md shadow-sm">
+                            New Purchase Entry
+                        </x-button>
+                        <x-button href="{{ route('masters.vendors.purchase-history', $vendor) }}" variant="secondary" icon="history" class="w-full justify-center !bg-teal-600/20 !text-teal-900 dark:!text-teal-100 !border-teal-400/30 hover:!bg-teal-600/30 backdrop-blur-md">
+                            View Full History
+                        </x-button>
+                    </div>
+                </div>
+            </div>
             <x-card title="Profile Credentials" icon="contact_page">
                 <div class="space-y-4">
                     <div class="flex items-start gap-3">
@@ -80,27 +97,68 @@
         </div>
 
         <div class="lg:col-span-2">
-            <x-card padding="p-0" class="overflow-hidden">
-                <div class="flex flex-wrap border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-                    <a href="{{ route('masters.vendors.show', $vendor) }}" class="flex-1 text-center py-4 text-sm font-bold text-teal-600 border-b-2 border-teal-600 bg-white dark:bg-zinc-900 transition-colors">
+            <div id="cm-tabs-container" class="bg-white/30 dark:bg-zinc-900/40 backdrop-blur-2xl border border-white/60 dark:border-zinc-800/80 rounded-[2rem] overflow-hidden shadow-[0_8px_32px_rgba(31,38,135,0.07)] z-10 relative">
+                <div class="flex flex-wrap p-2 m-4 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-white/50 dark:border-zinc-700/50 gap-2">
+                    <a href="{{ route('masters.vendors.show', $vendor) }}" class="flex-1 text-center py-3 text-sm font-bold text-teal-700 dark:text-teal-400 bg-white/70 dark:bg-zinc-800/80 shadow-sm rounded-xl transition-all duration-300">
                         Quick Look
                     </a>
-                    <a href="{{ route('masters.vendors.purchase-history', $vendor) }}" class="flex-1 text-center py-4 text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                    <a href="{{ route('masters.vendors.purchase-history', $vendor) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
                         Full Purchase History
                     </a>
                 </div>
 
                 <div class="p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Recent Supply Activity</h4>
-                        <x-button href="{{ route('purchases.create', ['vendor_name' => $vendor->firm_name]) }}" variant="primary" size="sm" icon="add">
-                            Record Entry
-                        </x-button>
+                    <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider mb-6">Recent Activity Insights</h4>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <div class="p-4 rounded-2xl border border-white/60 dark:border-zinc-700 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl flex items-center gap-4 transition-all duration-300 hover:bg-white/60">
+                            <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                <span class="material-symbols-rounded text-xl">shopping_cart</span>
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Total Purchases</div>
+                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                                    {{ $vendor->purchases()->count() }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-2xl border border-white/60 dark:border-zinc-700 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl flex items-center gap-4 transition-all duration-300 hover:bg-white/60">
+                            <div class="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                <span class="material-symbols-rounded text-xl">payments</span>
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Total Volume</div>
+                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">
+                                    Rs {{ number_format($vendor->purchases()->sum('total_amount'), 0) }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-2xl border border-white/60 dark:border-zinc-700 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl flex items-center gap-4 transition-all duration-300 hover:bg-white/60">
+                            <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                                <span class="material-symbols-rounded text-xl">calendar_today</span>
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Last Purchase</div>
+                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                                    {{ $vendor->purchases()->latest('date')->first()?->date->format('d M y') ?? 'N/A' }}
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
+                    <div class="pt-8 border-t border-zinc-200 dark:border-zinc-800">
+                        <div class="flex items-center justify-between mb-6">
+                            <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Recent Supply Activity</h4>
+                            <x-button href="{{ route('purchases.create', ['vendor_name' => $vendor->firm_name]) }}" variant="primary" size="sm" icon="add">
+                                Record Entry
+                            </x-button>
+                        </div>
 
                     <x-data-table :headers="['Date', 'Item Details', ['label' => 'Quantity', 'align' => 'right'], ['label' => 'Total Bill', 'align' => 'right']]">
                         @forelse($vendor->purchases()->with('items')->latest()->take(5)->get() as $purchase)
-                            <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
+                            <tr class="hover:bg-white/80 dark:hover:bg-zinc-800/50 transition-all duration-300">
                                 <td class="px-6 py-4 font-semibold text-sm text-zinc-700 dark:text-zinc-300">
                                     {{ $purchase->date->format('d M Y') }}
                                 </td>
@@ -134,8 +192,9 @@
                             </tr>
                         @endforelse
                     </x-data-table>
+                    </div>
                 </div>
-            </x-card>
+            </div>
         </div>
     </div>
 </div>

@@ -20,12 +20,14 @@ class StoreDealerRequest extends FormRequest
                 'string',
                 'min:10',
                 'max:15',
-                Rule::unique('dealers', 'phone')->ignore($dealerId),
+                Rule::unique('dealers', 'phone')->ignore($dealerId)->whereNull('deleted_at'),
             ],
             'contact_person' => 'nullable|string|max:255',
             'gst_number'     => 'nullable|string|max:20',
             'location'       => 'nullable|string|max:255',
+            'route'          => 'nullable|string|max:255',
             'route_id'       => 'nullable|exists:routes,id',
+            'pending_amount' => 'nullable|numeric|min:0',
         ];
     }
 }

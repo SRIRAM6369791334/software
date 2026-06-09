@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Purchase Entry')
 
 @section('content')
@@ -145,7 +145,7 @@
                             </div>
                             <div class="flex-1">
                                 <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">Computed GST Value</label>
-                                <x-form.input type="text" id="display-tax" readonly value="₹0.00" class="bg-zinc-100 dark:bg-zinc-800 font-mono" tabindex="-1" />
+                                <x-form.input type="text" name="display_tax" id="display-tax" readonly value="₹0.00" class="bg-zinc-100 dark:bg-zinc-800 font-mono" tabindex="-1" />
                             </div>
                         </div>
                     </div>

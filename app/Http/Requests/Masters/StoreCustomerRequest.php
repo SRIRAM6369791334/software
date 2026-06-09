@@ -20,12 +20,14 @@ class StoreCustomerRequest extends FormRequest
                 'string',
                 'min:10',
                 'max:15',
-                Rule::unique('customers', 'phone')->ignore($customerId),
+                Rule::unique('customers', 'phone')->ignore($customerId)->whereNull('deleted_at'),
             ],
             'address'    => 'nullable|string|max:500',
             'gst_number' => 'nullable|string|max:20',
+            'route'      => 'nullable|string|max:255',
             'route_id'   => 'nullable|exists:routes,id',
             'type'       => 'required|in:Retail,Wholesale',
+            'balance'    => 'nullable|numeric|min:0',
         ];
     }
 }

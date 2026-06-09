@@ -21,7 +21,7 @@
     </div>
 
     <x-card padding="p-0">
-        <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex flex-wrap gap-4 items-center justify-between bg-zinc-50/50 dark:bg-zinc-800/50">
+        <div class="p-5 flex flex-wrap gap-4 items-center justify-between relative z-10 border-b border-white/40">
             <form action="{{ route('masters.dealers.index') }}" method="GET" class="flex flex-wrap gap-4 items-center w-full md:w-auto">
                 <div class="w-full md:w-64">
                     <x-search name="search" value="{{ request('search') }}" placeholder="Search firm, contact..." />
@@ -44,7 +44,7 @@
 
         <x-data-table :headers="['Firm & Location', 'Point of Contact', 'Operational Area', 'Pending Balance', 'Actions']">
             @forelse($dealers as $dealer)
-                <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors group">
+                <tr class="hover:bg-white/80 dark:hover:bg-zinc-800/50 transition-all duration-300 group">
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
                             <x-avatar name="{{ $dealer->firm_name }}" size="sm" />
@@ -65,13 +65,13 @@
                     </td>
                     <td class="px-6 py-4 font-jetbrains">
                         @if($dealer->pending_amount > 0)
-                            <span class="text-rose-600 dark:text-rose-400 font-medium"><x-currency :amount="$dealer->pending_amount" /></span>
+                            <span class="inline-flex items-center px-2 py-1 rounded-lg bg-rose-50 text-rose-500 dark:bg-rose-500/10 dark:text-rose-400 font-medium border border-rose-100 dark:border-rose-500/20"><x-currency :amount="$dealer->pending_amount" /></span>
                         @else
                             <span class="text-emerald-600 dark:text-emerald-400"><x-currency :amount="0" /></span>
                         @endif
                     </td>
                     <td class="px-6 py-4">
-                        <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div class="flex items-center gap-2">
                             <x-button href="{{ route('masters.dealers.ledger-pdf', $dealer) }}" variant="ghost" size="sm" icon="receipt_long" title="Download Ledger" />
                             <x-button href="{{ route('masters.dealers.edit', $dealer) }}" variant="ghost" size="sm" icon="edit" title="Edit" />
                             <form action="{{ route('masters.dealers.destroy', $dealer) }}" method="POST" class="inline" onsubmit="return confirm('Delete {{ $dealer->firm_name }}?');">
@@ -93,11 +93,9 @@
                 </tr>
             @endforelse
 
-            @if($dealers->hasPages())
-                <x-slot:pagination>
-                    {{ $dealers->withQueryString()->links() }}
-                </x-slot:pagination>
-            @endif
+            <x-slot:pagination>
+                {{ $dealers->withQueryString()->links() }}
+            </x-slot:pagination>
         </x-data-table>
     </x-card>
 </div>

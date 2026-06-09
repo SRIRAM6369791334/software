@@ -14,15 +14,17 @@
         </x-slot:actions>
     </x-page-header>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <x-stat-card title="Total Suppliers" value="{{ $vendors->total() }}" icon="local_shipping" color="teal" />
-        <x-stat-card title="Route Reach" value="{{ $vendors->pluck('route')->filter()->unique()->count() }}" icon="route" color="blue" subtitle="Routes" />
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <x-stat-card title="Total Suppliers" value="{{ \App\Models\Vendor::count() }}" icon="local_shipping" color="teal" />
+        <x-stat-card title="Active Routes" value="{{ \App\Models\Vendor::distinct('route')->count('route') }}" icon="route" color="blue" />
+        <x-stat-card title="GST Registered" value="{{ \App\Models\Vendor::whereNotNull('gst_number')->count() }}" icon="verified" color="emerald" />
+        <x-stat-card title="Unregistered" value="{{ \App\Models\Vendor::whereNull('gst_number')->count() }}" icon="warning" color="amber" />
     </div>
 
     <x-card padding="p-0">
-        <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex flex-wrap gap-4 items-center justify-between bg-zinc-50/50 dark:bg-zinc-800/50">
-            <form action="{{ route('masters.vendors.index') }}" method="GET" class="flex flex-wrap gap-4 items-center w-full md:w-auto">
-                <div class="w-full md:w-64">
+        <div class="p-5 flex flex-wrap gap-4 items-center justify-between relative z-10 border-b border-white/40">
+            <form action="{{ route('masters.vendors.index') }}" method="GET" class="flex flex-wrap gap-4 items-center w-full lg:w-auto">
+                <div class="w-full sm:w-64">
                     <x-search name="search" value="{{ request('search') }}" placeholder="Search firm, contact..." />
                 </div>
                 
@@ -43,7 +45,7 @@
 
         <x-data-table :headers="['Firm & Location', 'Point of Contact', 'Route', 'GSTIN', 'Actions']">
             @forelse($vendors as $vendor)
-                <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors group">
+                <tr class="hover:bg-white/80 dark:hover:bg-zinc-800/50 transition-all duration-300 group">
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
                             <x-avatar name="{{ $vendor->firm_name }}" size="sm" />
@@ -63,10 +65,15 @@
                         <span class="text-sm text-zinc-600 dark:text-zinc-400">{{ $vendor->route ?: 'General Sector' }}</span>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="text-sm font-jetbrains text-zinc-600 dark:text-zinc-400">{{ $vendor->gst_number ?: 'UNREGISTERED' }}</span>
+                        @if($vendor->gst_number)
+                            <x-badge variant="success" class="font-jetbrains">{{ $vendor->gst_number }}</x-badge>
+                        @else
+                            <x-badge variant="secondary">UNREGISTERED</x-badge>
+                        @endif
                     </td>
                     <td class="px-6 py-4">
-                        <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div class="flex items-center gap-2">
+                            <x-button href="{{ route('masters.vendors.history-pdf', $vendor) }}" variant="ghost" size="sm" icon="picture_as_pdf" title="Download History" class="text-rose-600 hover:text-rose-700 dark:text-rose-500 dark:hover:text-rose-400" />
                             <x-button href="{{ route('masters.vendors.edit', $vendor) }}" variant="ghost" size="sm" icon="edit" title="Edit" />
                             <form action="{{ route('masters.vendors.destroy', $vendor) }}" method="POST" class="inline" onsubmit="return confirm('Delete {{ $vendor->firm_name }}?');">
                                 @csrf @method('DELETE')
@@ -87,11 +94,9 @@
                 </tr>
             @endforelse
 
-            @if($vendors->hasPages())
-                <x-slot:pagination>
-                    {{ $vendors->withQueryString()->links() }}
-                </x-slot:pagination>
-            @endif
+            <x-slot:pagination>
+                {{ $vendors->withQueryString()->links() }}
+            </x-slot:pagination>
         </x-data-table>
     </x-card>
 </div>

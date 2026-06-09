@@ -1,85 +1,151 @@
-﻿@extends('layouts.app')
-@section('title', 'Dealer Ledger - ' . $dealer->firm_name)
+@extends('layouts.app')
+@section('title', 'Payment Ledger - ' . $dealer->firm_name)
 
 @section('content')
-<div class="flex items-center justify-between mb-6">
-    <div class="flex items-center gap-3">
-        <a href="{{ route('payments.dealers.index') }}" class="p-2 hover:bg-sky-50 rounded-lg text-zinc-400">←</a>
-        <div>
-            <h1 class="text-2xl font-bold text-zinc-950">{{ $dealer->firm_name }}</h1>
-            <p class="text-sm text-zinc-500 mt-0.5">Account Statement & Ledger</p>
+<div class="space-y-6">
+    <div class="mb-4">
+        <a href="{{ route('masters.dealers.index') }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-colors">
+            <span class="material-symbols-rounded text-[20px]">arrow_back</span>
+            Back to Directory
+        </a>
+    </div>
+
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <x-avatar name="{{ $dealer->firm_name }}" size="lg" />
+            <div>
+                <h1 class="text-2xl font-bold font-cabinet text-zinc-900 dark:text-zinc-100 tracking-tight">{{ $dealer->firm_name }}</h1>
+                <div class="flex items-center gap-2 mt-1">
+                    <x-badge color="blue">Supplier / Partner</x-badge>
+                    <x-badge color="zinc">
+                        <span class="material-symbols-rounded text-[14px] mr-1">alt_route</span>
+                        {{ $dealer->route ?: 'General Area' }}
+                    </x-badge>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <x-button href="{{ route('masters.dealers.edit', $dealer) }}" variant="secondary" icon="edit">Edit Profile</x-button>
+            <form action="{{ route('masters.dealers.destroy', $dealer) }}" method="POST" onsubmit="return confirm('Delete {{ $dealer->firm_name }}? This will keep their transaction history intact.')">
+                @csrf @method('DELETE')
+                <x-button type="submit" variant="danger" icon="delete">Delete</x-button>
+            </form>
         </div>
     </div>
-    <div class="bg-red-50 px-4 py-2 rounded-lg border border-red-100">
-        <p class="text-[10px] text-red-600 font-bold uppercase tracking-widest">Pending Amount</p>
-        <p class="text-xl font-black text-red-700">Rs {{ number_format($dealer->pending_amount, 2) }}</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="lg:col-span-1 space-y-6">
+            <div class="rounded-3xl p-6 bg-amber-500/40 dark:bg-amber-900/40 backdrop-blur-2xl text-amber-900 dark:text-amber-100 shadow-[0_8px_32px_rgba(245,158,11,0.15)] border border-amber-300/50 dark:border-amber-700/50 relative overflow-hidden transition-all duration-300 hover:shadow-[0_8px_32px_rgba(245,158,11,0.25)] hover:-translate-y-1">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/20 dark:bg-amber-400/10 rounded-full blur-2xl"></div>
+                <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-amber-400/20 dark:bg-amber-600/20 rounded-full blur-2xl"></div>
+                <div class="relative z-10 text-center">
+                    <div class="text-xs font-bold uppercase tracking-widest text-amber-800/80 dark:text-amber-200 mb-2">Total Payable</div>
+                    <div class="text-3xl font-extrabold tracking-tight font-jetbrains mb-6 text-amber-950 dark:text-white drop-shadow-sm">
+                        Rs {{ number_format($dealer->pending_amount, 2) }}
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <x-button href="{{ route('payments.dealers.create', ['dealer_id' => $dealer->id]) }}" variant="secondary" icon="payments" class="w-full justify-center !text-amber-700 !bg-white/80 hover:!bg-white !border-white backdrop-blur-md shadow-sm">
+                            Record Payment
+                        </x-button>
+                        <x-button href="{{ route('masters.dealers.ledger-pdf', $dealer) }}" variant="secondary" icon="download" class="w-full justify-center !bg-amber-600/20 !text-amber-900 dark:!text-amber-100 !border-amber-400/30 hover:!bg-amber-600/30 backdrop-blur-md">
+                            Download Ledger
+                        </x-button>
+                    </div>
+                </div>
+            </div>
+
+            <x-card title="Firm Credentials" icon="contact_page">
+                <div class="space-y-4">
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-rounded text-zinc-400">person</span>
+                        <div>
+                            <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Contact Person</div>
+                            <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $dealer->contact_person ?: '-' }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-rounded text-zinc-400">call</span>
+                        <div>
+                            <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Contact Phone</div>
+                            <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $dealer->phone }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-rounded text-zinc-400">location_on</span>
+                        <div>
+                            <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Store Location</div>
+                            <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $dealer->location ?: 'Not provided' }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-rounded text-zinc-400">badge</span>
+                        <div>
+                            <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">GSTIN / Registration</div>
+                            <div class="font-mono text-sm text-zinc-900 dark:text-zinc-100">{{ $dealer->gst_number ?: 'Unregistered' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </x-card>
+        </div>
+
+        <div class="lg:col-span-2">
+            <div id="cm-tabs-container" class="bg-white/30 dark:bg-zinc-900/40 backdrop-blur-2xl border border-white/60 dark:border-zinc-800/80 rounded-[2rem] overflow-hidden shadow-[0_8px_32px_rgba(31,38,135,0.07)] z-10 relative">
+                <div class="flex flex-wrap p-2 m-4 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-white/50 dark:border-zinc-700/50 gap-2">
+                    <a href="{{ route('masters.dealers.show', $dealer) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
+                        Quick Overview
+                    </a>
+                    <a href="{{ route('masters.dealers.purchase-history', $dealer) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
+                        Purchase Orders
+                    </a>
+                    <a href="{{ route('payments.dealers.ledger', $dealer) }}" class="flex-1 text-center py-3 text-sm font-bold text-emerald-700 dark:text-emerald-400 bg-white/70 dark:bg-zinc-800/80 shadow-sm rounded-xl transition-all duration-300">
+                        Payment Ledger
+                    </a>
+                    <a href="{{ route('masters.dealers.outstanding-report', $dealer) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
+                        Outstanding Report
+                    </a>
+                </div>
+
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Payment Transaction History</h4>
+                        <button onclick="window.print()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1">
+                            <span class="material-symbols-rounded text-[16px]">print</span> Print
+                        </button>
+                    </div>
+
+                    <x-data-table :headers="['Date', 'Transaction Details', 'Ref #', ['label' => 'Credit (Payment)', 'align' => 'right']]">
+                        @forelse($payments as $p)
+                            <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
+                                <td class="px-6 py-4 font-bold text-sm">{{ $p->date->format('d M Y') }}</td>
+                                <td class="px-6 py-4">
+                                    <div class="font-medium text-zinc-900 dark:text-zinc-100">Payment Received</div>
+                                    @if($p->notes)
+                                        <div class="text-xs text-zinc-500 mt-0.5">{{ $p->notes }}</div>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-center font-mono text-xs text-zinc-500">PAY-{{ str_pad($p->id, 4, '0', STR_PAD_LEFT) }}</td>
+                                <td class="px-6 py-4 text-right font-bold text-emerald-600 dark:text-emerald-400 font-jetbrains">Rs {{ number_format($p->amount, 2) }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="4" class="text-center py-8 text-zinc-500">No transactions found.</td></tr>
+                        @endforelse
+                        
+                        <x-slot:pagination>
+                            {{ $payments->links() }}
+                        </x-slot:pagination>
+                    </x-data-table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-
-{{-- Dealer Info Card --}}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-    <div class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 p-4 rounded-xl border border-zinc-200 shadow-sm">
-        <p class="text-[10px] text-zinc-400 font-bold uppercase mb-1">Contact Details</p>
-        <p class="text-sm font-semibold text-zinc-950">{{ $dealer->contact_person ?: '-' }}</p>
-        <p class="text-sm text-zinc-600"> {{ $dealer->phone }}</p>
-    </div>
-    <div class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 p-4 rounded-xl border border-zinc-200 shadow-sm">
-        <p class="text-[10px] text-zinc-400 font-bold uppercase mb-1">Location & Route</p>
-        <p class="text-sm font-semibold text-zinc-950">{{ $dealer->location ?: '-' }}</p>
-        <p class="text-sm text-zinc-600 italic">Route: {{ $dealer->route ?: 'Unknown' }}</p>
-    </div>
-    <div class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 p-4 rounded-xl border border-zinc-200 shadow-sm">
-        <p class="text-[10px] text-zinc-400 font-bold uppercase mb-1">Tax Identification</p>
-        <p class="text-sm font-semibold text-zinc-950">{{ $dealer->gst_number ?: 'Not GST Registered' }}</p>
-        <p class="text-xs text-zinc-400 mt-1 italic">Soft ID: #DLR-{{ str_pad($dealer->id, 4, '0', STR_PAD_LEFT) }}</p>
-    </div>
-</div>
-
-{{-- Ledger Table --}}
-<div class="bg-gradient-to-br from-white via-emerald-50/40 to-sky-50/40 rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
-    <div class="px-5 py-4 border-b border-zinc-200 flex items-center justify-between bg-gradient-to-r from-emerald-50/80 to-sky-50/80">
-        <h2 class="text-base font-bold text-zinc-950">Transaction History</h2>
-        <button onclick="window.print()" class="text-xs font-semibold text-primary hover:text-indigo-700"> Print Statement</button>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="bg-white text-[10px] font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-200">
-                    <th class="px-5 py-4 text-left">Date</th>
-                    <th class="px-5 py-4 text-left">Transaction Details</th>
-                    <th class="px-5 py-4 text-center">Ref #</th>
-                    <th class="px-5 py-4 text-right">Debit (Purchase)</th>
-                    <th class="px-5 py-4 text-right">Credit (Payment)</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-zinc-100">
-                @forelse($payments as $p)
-                    <tr class="hover:bg-gradient-to-r from-emerald-50/70 to-sky-50/70 transition-colors">
-                        <td class="px-5 py-4 text-zinc-500 font-mono">{{ $p->date->format('d M Y') }}</td>
-                        <td class="px-5 py-4">
-                            <p class="font-medium text-zinc-950">Payment Received</p>
-                            @if($p->notes)
-                                <p class="text-xs text-zinc-400 mt-1 italic">{{ $p->notes }}</p>
-                            @endif
-                        </td>
-                        <td class="px-5 py-4 text-center font-mono text-[10px] text-zinc-400">PAY-{{ str_pad($p->id, 4, '0', STR_PAD_LEFT) }}</td>
-                        <td class="px-5 py-4 text-right">-</td>
-                        <td class="px-5 py-4 text-right font-mono font-bold text-emerald-600">Rs {{ number_format($p->amount, 2) }}</td>
-                    </tr>
-                @empty
-                    <tr><td colspan="5" class="px-5 py-12 text-center text-zinc-400 italic">No transactions recorded for this dealer.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-    <div class="px-5 py-3 border-t border-zinc-200">{{ $payments->links() }}</div>
-</div>
-
 <style>
 @media print {
     body { background: white !important; }
-    nav, aside, header, .no-print, .pagination { display: none !important; }
-    .shadow-sm, .border-zinc-200 { border: none !important; box-shadow: none !important; }
+    nav, aside, header, .no-print, .pagination, #cm-tabs-container .flex-wrap { display: none !important; }
+    .shadow-sm, .border-zinc-200, .shadow-\[0_8px_32px_rgba\(31\,38\,135\,0\.07\)\] { border: none !important; box-shadow: none !important; }
 }
 </style>
 @endsection

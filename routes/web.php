@@ -62,6 +62,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('masters/dealers/{dealer}/purchase-history', [DealerController::class, 'purchaseHistory'])->name('masters.dealers.purchase-history');
         Route::get('masters/dealers/{dealer}/outstanding-report', [DealerController::class, 'outstandingReport'])->name('masters.dealers.outstanding-report');
         Route::get('masters/vendors/{vendor}/purchase-history', [VendorController::class, 'purchaseHistory'])->name('masters.vendors.purchase-history');
+        Route::get('masters/vendors/{vendor}/history-pdf', [VendorController::class, 'downloadHistoryPdf'])->name('masters.vendors.history-pdf');
 
 
         Route::resource('masters/customers', CustomerController::class)->names('masters.customers');

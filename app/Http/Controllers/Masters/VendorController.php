@@ -69,4 +69,11 @@ class VendorController extends Controller
         $purchases = $vendor->purchases()->with('items')->latest()->paginate(15);
         return view('masters.vendors.purchase-history', compact('vendor', 'purchases'));
     }
+
+    public function downloadHistoryPdf(Vendor $vendor)
+    {
+        $purchases = $vendor->purchases()->with('items')->latest()->get();
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('masters.vendors.history_pdf', compact('vendor', 'purchases'));
+        return $pdf->download("vendor-history-{$vendor->firm_name}.pdf");
+    }
 }

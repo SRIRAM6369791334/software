@@ -82,12 +82,12 @@
         </div>
 
         <div class="lg:col-span-2">
-            <x-card padding="p-0" class="overflow-hidden">
-                <div class="flex flex-wrap border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-                    <a href="{{ route('masters.vendors.show', $vendor) }}" class="flex-1 text-center py-4 text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+            <div id="cm-tabs-container" class="bg-white/30 dark:bg-zinc-900/40 backdrop-blur-2xl border border-white/60 dark:border-zinc-800/80 rounded-[2rem] overflow-hidden shadow-[0_8px_32px_rgba(31,38,135,0.07)] z-10 relative">
+                <div class="flex flex-wrap p-2 m-4 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-white/50 dark:border-zinc-700/50 gap-2">
+                    <a href="{{ route('masters.vendors.show', $vendor) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
                         Quick Look
                     </a>
-                    <a href="{{ route('masters.vendors.purchase-history', $vendor) }}" class="flex-1 text-center py-4 text-sm font-bold text-teal-600 border-b-2 border-teal-600 bg-white dark:bg-zinc-900 transition-colors">
+                    <a href="{{ route('masters.vendors.purchase-history', $vendor) }}" class="flex-1 text-center py-3 text-sm font-bold text-teal-700 dark:text-teal-400 bg-white/70 dark:bg-zinc-800/80 shadow-sm rounded-xl transition-all duration-300">
                         Full Purchase History
                     </a>
                 </div>
@@ -100,7 +100,7 @@
 
                     <x-data-table :headers="['Date', 'Item Details', ['label' => 'Quantity', 'align' => 'right'], ['label' => 'Rate', 'align' => 'right'], ['label' => 'GST Amount', 'align' => 'right'], ['label' => 'Total Bill', 'align' => 'right'], ['label' => 'Mode', 'align' => 'center']]">
                         @forelse($purchases as $purchase)
-                            <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
+                            <tr class="hover:bg-white/80 dark:hover:bg-zinc-800/50 transition-all duration-300">
                                 <td class="px-4 py-4 font-bold text-sm">{{ $purchase->date->format('d M Y') }}</td>
                                 <td class="px-4 py-4">
                                     <div class="flex flex-wrap gap-1 mb-1">
@@ -152,7 +152,7 @@
                         @endif
                     </x-data-table>
                 </div>
-            </x-card>
+            </div>
         </div>
     </div>
 </div>
