@@ -81,7 +81,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const income = weeklyData.map(d => d.revenue).reverse();
     const expense = weeklyData.map(d => d.expenses + d.purchase).reverse();
 
-    new Chart(document.getElementById('trendChart'), {
+    const ctxTrend = document.getElementById('trendChart').getContext('2d');
+
+    const incGrad = ctxTrend.createLinearGradient(0, 0, 0, 400);
+    incGrad.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+    incGrad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+    const expGrad = ctxTrend.createLinearGradient(0, 0, 0, 400);
+    expGrad.addColorStop(0, 'rgba(244, 63, 94, 0.4)');
+    expGrad.addColorStop(1, 'rgba(244, 63, 94, 0)');
+
+    new Chart(ctxTrend, {
         type: 'line',
         data: {
             labels: labels,
@@ -90,19 +100,29 @@ document.addEventListener('DOMContentLoaded', function () {
                     label: 'Income (Revenue)',
                     data: income,
                     borderColor: 'rgba(16, 185, 129, 1)', // Emerald
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    backgroundColor: incGrad,
                     borderWidth: 3,
                     fill: true,
-                    tension: 0.4
+                    tension: 0.4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: 'rgba(16, 185, 129, 1)',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 },
                 {
                     label: 'Outflow (Purchases + Expenses)',
                     data: expense,
                     borderColor: 'rgba(244, 63, 94, 1)', // Rose
-                    backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                    backgroundColor: expGrad,
                     borderWidth: 3,
                     fill: true,
-                    tension: 0.4
+                    tension: 0.4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: 'rgba(244, 63, 94, 1)',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 }
             ]
         },
@@ -114,10 +134,32 @@ document.addEventListener('DOMContentLoaded', function () {
                 intersect: false,
             },
             plugins: {
-                legend: { position: 'bottom' }
+                legend: { 
+                    position: 'bottom',
+                    labels: { usePointStyle: true, padding: 20, font: { family: "'Outfit', sans-serif" } }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(24, 24, 27, 0.9)',
+                    titleFont: { family: "'Cabinet Grotesk', sans-serif", size: 14 },
+                    bodyFont: { family: "'Outfit', sans-serif", size: 13 },
+                    padding: 12,
+                    cornerRadius: 12,
+                    displayColors: true,
+                    usePointStyle: true
+                }
             },
             scales: {
-                y: { beginAtZero: true }
+                x: { 
+                    grid: { display: false }, 
+                    border: { display: false },
+                    ticks: { font: { family: "'Outfit', sans-serif" } }
+                },
+                y: { 
+                    beginAtZero: true,
+                    grid: { color: 'rgba(161, 161, 170, 0.1)', borderDash: [5, 5] },
+                    border: { display: false },
+                    ticks: { font: { family: "'Outfit', sans-serif" } }
+                }
             }
         }
     });

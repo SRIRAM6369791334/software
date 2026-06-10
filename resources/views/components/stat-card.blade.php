@@ -21,21 +21,26 @@
     $iconClass = $iconColors[$color] ?? $iconColors['emerald'];
 @endphp
 
-<div class="group relative rounded-[2.5rem] border border-white/80 dark:border-zinc-700/50 bg-gradient-to-br from-white/60 to-white/30 dark:from-zinc-800/60 dark:to-zinc-900/40 backdrop-blur-3xl p-6 shadow-xl shadow-zinc-200/40 dark:shadow-none hover:shadow-2xl hover:shadow-zinc-300/50 dark:hover:shadow-[0_0_40px_-10px_rgba(16,185,129,0.15)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-2 overflow-hidden">
+<div class="group relative rounded-[2rem] border border-white/80 dark:border-zinc-700/50 bg-gradient-to-br from-white/60 to-white/30 dark:from-zinc-800/60 dark:to-zinc-900/40 backdrop-blur-3xl p-5 shadow-xl shadow-zinc-200/40 dark:shadow-none hover:shadow-2xl hover:shadow-zinc-300/50 dark:hover:shadow-[0_0_40px_-10px_rgba(16,185,129,0.15)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-2 overflow-hidden">
     <!-- Subtle hover glow background -->
     <div class="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
     
-    <div class="relative z-10 flex items-center justify-between">
-        <div>
-            <p class="font-outfit text-sm font-medium text-zinc-500 dark:text-zinc-400">{{ $label ?? $title }}</p>
-            <p class="font-cabinet mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 drop-shadow-sm">{{ $prefix }}{{ $value }}</p>
+    <div class="relative z-10 flex items-start justify-between gap-2">
+        <div class="min-w-0 flex-1">
+            <p class="font-outfit text-xs sm:text-sm font-medium text-zinc-500 dark:text-zinc-400 truncate">{{ $label ?? $title }}</p>
+            <p class="font-outfit mt-1.5 text-base sm:text-lg lg:text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 drop-shadow-sm flex items-center gap-1">
+                @if($prefix)
+                    <span class="text-[10px] sm:text-xs font-semibold text-zinc-500 dark:text-zinc-400">{{ $prefix }}</span>
+                @endif
+                <span class="truncate">{{ $value }}</span>
+            </p>
         </div>
         @if($icon)
-            <div class="flex h-14 w-14 items-center justify-center rounded-2xl {{ $iconClass }} transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
+            <div class="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl {{ $iconClass }} transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
                 @if(Str::startsWith($icon, 'ph-'))
-                    <i class="ph {{ $icon }} text-3xl"></i>
+                    <i class="ph {{ $icon }} text-xl sm:text-2xl"></i>
                 @else
-                    <span class="material-symbols-rounded text-3xl">{{ $icon }}</span>
+                    <span class="material-symbols-rounded text-xl sm:text-2xl">{{ $icon }}</span>
                 @endif
             </div>
         @endif

@@ -32,12 +32,12 @@
     </div>
 </x-card>
 
-<div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-    <x-stat-card title="Total Billed" value="Rs {{ number_format($breakdown['total_billed'], 2) }}" icon="ph-receipt" color="sky" />
-    <x-stat-card title="Total Collected" value="Rs {{ number_format($breakdown['total_collected'], 2) }}" icon="ph-wallet" color="emerald" />
-    <x-stat-card title="Billed Profit" value="Rs {{ number_format($breakdown['billed_profit'], 2) }}" icon="ph-chart-line-up" color="amber" />
-    <x-stat-card title="Collected Profit" value="Rs {{ number_format($breakdown['collected_profit'], 2) }}" icon="ph-chart-pie-slice" color="emerald" />
-    <x-stat-card title="Pending Collection" value="Rs {{ number_format($breakdown['pending_collection'], 2) }}" icon="ph-warning-circle" color="{{ $breakdown['pending_collection'] > 0 ? 'rose' : 'emerald' }}" />
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+    <x-stat-card title="Total Billed" prefix="Rs" value="{{ number_format($breakdown['total_billed'], 2) }}" icon="ph-receipt" color="sky" />
+    <x-stat-card title="Total Collected" prefix="Rs" value="{{ number_format($breakdown['total_collected'], 2) }}" icon="ph-wallet" color="emerald" />
+    <x-stat-card title="Billed Profit" prefix="Rs" value="{{ number_format($breakdown['billed_profit'], 2) }}" icon="ph-chart-line-up" color="amber" />
+    <x-stat-card title="Collected Profit" prefix="Rs" value="{{ number_format($breakdown['collected_profit'], 2) }}" icon="ph-chart-pie-slice" color="emerald" />
+    <x-stat-card title="Pending Collection" prefix="Rs" value="{{ number_format($breakdown['pending_collection'], 2) }}" icon="ph-warning-circle" color="{{ $breakdown['pending_collection'] > 0 ? 'rose' : 'emerald' }}" />
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -62,12 +62,12 @@
             </tr>
         </x-slot>
         @foreach($weeklyData as $row)
-        <tr>
-            <td class="px-6 py-4 font-bold text-zinc-950">{{ $row['week'] }}</td>
-            <td class="px-6 py-4 text-right font-mono text-emerald-600"><x-currency :amount="$row['revenue']" /></td>
-            <td class="px-6 py-4 text-right font-mono text-amber-600"><x-currency :amount="$row['purchase']" /></td>
-            <td class="px-6 py-4 text-right font-mono text-rose-600"><x-currency :amount="$row['expenses']" /></td>
-            <td class="px-6 py-4 text-right font-black {{ $row['profit'] >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
+        <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors group">
+            <td class="px-6 py-4 font-bold text-zinc-950 dark:text-zinc-50">{{ $row['week'] }}</td>
+            <td class="px-6 py-4 text-right font-mono text-emerald-600 dark:text-emerald-400 group-hover:scale-[1.02] transition-transform"><x-currency :amount="$row['revenue']" /></td>
+            <td class="px-6 py-4 text-right font-mono text-amber-600 dark:text-amber-400 group-hover:scale-[1.02] transition-transform"><x-currency :amount="$row['purchase']" /></td>
+            <td class="px-6 py-4 text-right font-mono text-rose-600 dark:text-rose-400 group-hover:scale-[1.02] transition-transform"><x-currency :amount="$row['expenses']" /></td>
+            <td class="px-6 py-4 text-right font-black {{ $row['profit'] >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300' }} group-hover:scale-[1.05] transition-transform">
                 <x-currency :amount="$row['profit']" />
             </td>
         </tr>
@@ -81,13 +81,26 @@
 document.addEventListener('DOMContentLoaded', function () {
     const weeklyData = @json($weeklyData);
     
-    // Reverse data to show oldest to newest left to right if it's not already
     const labels = weeklyData.map(d => d.week).reverse();
     const revenue = weeklyData.map(d => d.revenue).reverse();
     const expenses = weeklyData.map(d => d.expenses + d.purchase).reverse();
     const profit = weeklyData.map(d => d.profit).reverse();
 
-    new Chart(document.getElementById('weeklyChart'), {
+    const ctxWeekly = document.getElementById('weeklyChart').getContext('2d');
+    
+    const revGrad = ctxWeekly.createLinearGradient(0, 0, 0, 300);
+    revGrad.addColorStop(0, 'rgba(16, 185, 129, 1)'); // Emerald 500
+    revGrad.addColorStop(1, 'rgba(16, 185, 129, 0.1)');
+
+    const expGrad = ctxWeekly.createLinearGradient(0, 0, 0, 300);
+    expGrad.addColorStop(0, 'rgba(244, 63, 94, 1)'); // Rose 500
+    expGrad.addColorStop(1, 'rgba(244, 63, 94, 0.1)');
+
+    const profitGrad = ctxWeekly.createLinearGradient(0, 0, 0, 300);
+    profitGrad.addColorStop(0, 'rgba(59, 130, 246, 0.5)'); // Blue 500
+    profitGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+    new Chart(ctxWeekly, {
         type: 'bar',
         data: {
             labels: labels,
@@ -95,24 +108,35 @@ document.addEventListener('DOMContentLoaded', function () {
                 {
                     label: 'Revenue',
                     data: revenue,
-                    backgroundColor: 'rgba(16, 185, 129, 0.8)', // Emerald
-                    borderRadius: 4
+                    backgroundColor: revGrad,
+                    borderRadius: 6,
+                    borderSkipped: 'bottom',
+                    barPercentage: 0.6,
+                    maxBarThickness: 48,
                 },
                 {
-                    label: 'Total Expenses (Incl. Purchases)',
+                    label: 'Total Expenses',
                     data: expenses,
-                    backgroundColor: 'rgba(244, 63, 94, 0.8)', // Rose
-                    borderRadius: 4
+                    backgroundColor: expGrad,
+                    borderRadius: 6,
+                    borderSkipped: 'bottom',
+                    barPercentage: 0.6,
+                    maxBarThickness: 48,
                 },
                 {
                     label: 'Net Profit',
                     data: profit,
                     type: 'line',
-                    borderColor: 'rgba(59, 130, 246, 1)', // Blue
-                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                    borderWidth: 2,
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    backgroundColor: profitGrad,
+                    borderWidth: 3,
                     fill: true,
-                    tension: 0.4
+                    tension: 0.4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: 'rgba(59, 130, 246, 1)',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 }
             ]
         },
@@ -124,10 +148,32 @@ document.addEventListener('DOMContentLoaded', function () {
                 intersect: false,
             },
             plugins: {
-                legend: { position: 'bottom' }
+                legend: { 
+                    position: 'bottom',
+                    labels: { usePointStyle: true, padding: 20, font: { family: "'Outfit', sans-serif" } }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(24, 24, 27, 0.9)',
+                    titleFont: { family: "'Cabinet Grotesk', sans-serif", size: 14 },
+                    bodyFont: { family: "'Outfit', sans-serif", size: 13 },
+                    padding: 12,
+                    cornerRadius: 12,
+                    displayColors: true,
+                    usePointStyle: true
+                }
             },
             scales: {
-                y: { beginAtZero: true }
+                x: { 
+                    grid: { display: false }, 
+                    border: { display: false },
+                    ticks: { font: { family: "'Outfit', sans-serif" } }
+                },
+                y: { 
+                    beginAtZero: true,
+                    grid: { color: 'rgba(161, 161, 170, 0.1)', borderDash: [5, 5] },
+                    border: { display: false },
+                    ticks: { font: { family: "'Outfit', sans-serif" } }
+                }
             }
         }
     });
@@ -135,17 +181,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const breakdown = @json($breakdown);
     const hasData = breakdown.total_collected > 0 || breakdown.pending_collection > 0;
 
-    new Chart(document.getElementById('collectionChart'), {
+    const ctxColl = document.getElementById('collectionChart').getContext('2d');
+    const collGrad = ctxColl.createLinearGradient(0, 0, 0, 300);
+    collGrad.addColorStop(0, '#10b981');
+    collGrad.addColorStop(1, '#047857');
+
+    const pendGrad = ctxColl.createLinearGradient(0, 0, 0, 300);
+    pendGrad.addColorStop(0, '#f59e0b');
+    pendGrad.addColorStop(1, '#b45309');
+
+    new Chart(ctxColl, {
         type: 'doughnut',
         data: {
             labels: hasData ? ['Collected', 'Pending Collection'] : ['No Data'],
             datasets: [{
                 data: hasData ? [breakdown.total_collected, breakdown.pending_collection] : [1],
-                backgroundColor: hasData ? [
-                    'rgba(16, 185, 129, 0.8)', // Emerald
-                    'rgba(245, 158, 11, 0.8)'  // Amber
-                ] : ['#e5e7eb'], // Gray for empty state
-                borderWidth: 0
+                backgroundColor: hasData ? [collGrad, pendGrad] : ['#e5e7eb'],
+                borderWidth: 0,
+                hoverOffset: 4
             }]
         },
         options: {
@@ -154,13 +207,21 @@ document.addEventListener('DOMContentLoaded', function () {
             plugins: {
                 legend: { 
                     position: 'bottom',
-                    display: hasData 
+                    display: hasData,
+                    labels: { usePointStyle: true, padding: 20, font: { family: "'Outfit', sans-serif" } }
                 },
                 tooltip: {
-                    enabled: hasData
+                    enabled: hasData,
+                    backgroundColor: 'rgba(24, 24, 27, 0.9)',
+                    titleFont: { family: "'Cabinet Grotesk', sans-serif" },
+                    bodyFont: { family: "'Outfit', sans-serif" },
+                    padding: 12,
+                    cornerRadius: 12,
+                    usePointStyle: true
                 }
             },
-            cutout: '70%'
+            cutout: '75%',
+            layout: { padding: 10 }
         }
     });
 });
