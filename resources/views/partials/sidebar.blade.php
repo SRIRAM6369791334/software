@@ -48,6 +48,8 @@
 
         ['header' => 'Administration', 'min' => 'admin'],
         ['label' => 'User Management', 'icon' => 'manage_accounts', 'route' => 'admin.users.index', 'min' => 'admin'],
+        ['label' => 'Role Management', 'icon' => 'admin_panel_settings', 'route' => 'admin.roles.index', 'min' => 'admin'],
+        ['label' => 'Permissions', 'icon' => 'vpn_key', 'route' => 'admin.permissions.index', 'min' => 'admin'],
     ];
 
     $isActive = fn(string $routeName) => request()->routeIs($routeName);

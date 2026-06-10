@@ -14,6 +14,8 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ProfitController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Masters\RouteController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\BirdBatchController;
@@ -191,5 +193,11 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('users', UserManagementController::class);
         Route::post('users/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('users.toggle-status');
         Route::get('activity-logs', [UserManagementController::class, 'activityLogs'])->name('activity-logs');
+        
+        // Roles & Permissions
+        Route::get('roles/{role}/assign-permissions', [RoleController::class, 'assignPermissionPage'])->name('roles.assignPermissionPage');
+        Route::post('roles/assign-permissions', [RoleController::class, 'assignPermission'])->name('roles.assignPermission');
+        Route::resource('roles', RoleController::class);
+        Route::resource('permissions', PermissionController::class);
     });
 });

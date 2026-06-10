@@ -15,26 +15,28 @@ class RolesAndPermissionsSeeder extends Seeder
         // Reset cached roles and permissions
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create Permissions
-        $permissions = [
-            'view customers', 'create customers', 'edit customers', 'delete customers',
-            'view dealers', 'create dealers', 'edit dealers', 'delete dealers',
-            'view vendors', 'create vendors', 'edit vendors', 'delete vendors',
-            'view bills', 'create bills', 'edit bills', 'delete bills',
-            'view purchases', 'create purchases', 'edit purchases', 'delete purchases',
-            'view payments', 'create payments', 'edit payments', 'delete payments',
-            'view expenses', 'create expenses', 'edit expenses', 'delete expenses',
-            'view emis', 'create emis', 'edit emis', 'delete emis',
-            'view reports', 'view profit dashboard',
-            'manage users', 'manage roles',
-            'view stock', 'create stock', 'edit stock', 'delete stock',
-            'view routes', 'create routes', 'edit routes', 'delete routes',
-            'view batches', 'create batches', 'edit batches', 'delete batches',
-            'mark delivery status'
+        // Create Permission Groups and Permissions
+        $permissionGroups = [
+            'Customers' => ['view customers', 'create customers', 'edit customers', 'delete customers'],
+            'Dealers' => ['view dealers', 'create dealers', 'edit dealers', 'delete dealers'],
+            'Vendors' => ['view vendors', 'create vendors', 'edit vendors', 'delete vendors'],
+            'Bills' => ['view bills', 'create bills', 'edit bills', 'delete bills'],
+            'Purchases' => ['view purchases', 'create purchases', 'edit purchases', 'delete purchases'],
+            'Payments' => ['view payments', 'create payments', 'edit payments', 'delete payments'],
+            'Expenses' => ['view expenses', 'create expenses', 'edit expenses', 'delete expenses'],
+            'EMIs' => ['view emis', 'create emis', 'edit emis', 'delete emis'],
+            'Reports & Dashboards' => ['view reports', 'view profit dashboard'],
+            'User Management' => ['manage users', 'manage roles'],
+            'Inventory & Stock' => ['view stock', 'create stock', 'edit stock', 'delete stock', 'view batches', 'create batches', 'edit batches', 'delete batches'],
+            'Routes & Delivery' => ['view routes', 'create routes', 'edit routes', 'delete routes', 'mark delivery status'],
         ];
 
-        foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+        foreach ($permissionGroups as $groupName => $permissions) {
+            $group = \App\Models\PermissionGroup::firstOrCreate(['name' => $groupName]);
+            foreach ($permissions as $permission) {
+                $perm = Permission::firstOrCreate(['name' => $permission]);
+                $perm->update(['permission_group_id' => $group->id]);
+            }
         }
 
         // ROLE 1 - Admin: Full access
