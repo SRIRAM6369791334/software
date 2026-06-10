@@ -8,9 +8,11 @@
         subtitle="Identity orchestration and system-wide security audit"
     >
         <x-slot:actions>
-            <x-button onclick="openModal('userModal')" variant="primary" icon="person_add">
-                Deploy Agent
-            </x-button>
+            @can('manage users')
+                <x-button onclick="openModal('userModal')" variant="primary" icon="person_add">
+                    Deploy Agent
+                </x-button>
+            @endcan
         </x-slot:actions>
     </x-page-header>
 
@@ -45,23 +47,31 @@
                         </x-badge>
                     </td>
                     <td class="px-6 py-4">
-                        <form action="{{ route('admin.users.toggle-status', $user) }}" method="POST">
-                            @csrf
-                            <button type="submit" 
-                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 {{ $user->is_active ? 'bg-emerald-500' : 'bg-zinc-200 dark:bg-zinc-700' }}">
-                                <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $user->is_active ? 'translate-x-5' : 'translate-x-0' }}"></span>
-                            </button>
-                        </form>
+                        @can('manage users')
+                            <form action="{{ route('admin.users.toggle-status', $user) }}" method="POST">
+                                @csrf
+                                <button type="submit" 
+                                        class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 {{ $user->is_active ? 'bg-emerald-500' : 'bg-zinc-200 dark:bg-zinc-700' }}">
+                                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $user->is_active ? 'translate-x-5' : 'translate-x-0' }}"></span>
+                                </button>
+                            </form>
+                        @else
+                            <span class="inline-flex h-6 w-11 shrink-0 items-center rounded-full {{ $user->is_active ? 'bg-emerald-500' : 'bg-zinc-200 dark:bg-zinc-700' }} opacity-50 cursor-not-allowed">
+                                <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow {{ $user->is_active ? 'translate-x-5' : 'translate-x-0' }}"></span>
+                            </span>
+                        @endcan
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-2">
-                            <x-button onclick="editUser({{ $user }})" variant="ghost" size="sm" icon="settings" title="Settings" />
-                            @if(auth()->id() !== $user->id)
-                                <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline" onsubmit="return confirm('Delete this agent profile?');">
-                                    @csrf @method('DELETE')
-                                    <x-button type="submit" variant="ghost" size="sm" icon="delete" class="text-rose-500 hover:text-rose-600" title="Delete" />
-                                </form>
-                            @endif
+                            @can('manage users')
+                                <x-button onclick="editUser({{ $user }})" variant="ghost" size="sm" icon="settings" title="Settings" />
+                                @if(auth()->id() !== $user->id)
+                                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline" onsubmit="return confirm('Delete this agent profile?');">
+                                        @csrf @method('DELETE')
+                                        <x-button type="submit" variant="ghost" size="sm" icon="delete" class="text-rose-500 hover:text-rose-600" title="Delete" />
+                                    </form>
+                                @endif
+                            @endcan
                         </div>
                     </td>
                 </tr>

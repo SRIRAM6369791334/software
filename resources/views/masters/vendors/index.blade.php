@@ -8,9 +8,11 @@
         subtitle="Directory of logistics and pharmaceutical suppliers"
     >
         <x-slot:actions>
-            <x-button href="{{ route('masters.vendors.create') }}" variant="primary" icon="add">
-                Register Vendor
-            </x-button>
+            @can('create vendors')
+                <x-button href="{{ route('masters.vendors.create') }}" variant="primary" icon="add">
+                    Register Vendor
+                </x-button>
+            @endcan
         </x-slot:actions>
     </x-page-header>
 
@@ -74,11 +76,15 @@
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-2">
                             <x-button href="{{ route('masters.vendors.history-pdf', $vendor) }}" variant="ghost" size="sm" icon="picture_as_pdf" title="Download History" class="text-rose-600 hover:text-rose-700 dark:text-rose-500 dark:hover:text-rose-400" />
-                            <x-button href="{{ route('masters.vendors.edit', $vendor) }}" variant="ghost" size="sm" icon="edit" title="Edit" />
-                            <form action="{{ route('masters.vendors.destroy', $vendor) }}" method="POST" class="inline" onsubmit="return confirm('Delete {{ $vendor->firm_name }}?');">
-                                @csrf @method('DELETE')
-                                <x-button type="submit" variant="ghost" size="sm" icon="delete" class="text-rose-500 hover:text-rose-600" title="Delete" />
-                            </form>
+                            @can('edit vendors')
+                                <x-button href="{{ route('masters.vendors.edit', $vendor) }}" variant="ghost" size="sm" icon="edit" title="Edit" />
+                            @endcan
+                            @can('delete vendors')
+                                <form action="{{ route('masters.vendors.destroy', $vendor) }}" method="POST" class="inline" onsubmit="return confirm('Delete {{ $vendor->firm_name }}?');">
+                                    @csrf @method('DELETE')
+                                    <x-button type="submit" variant="ghost" size="sm" icon="delete" class="text-rose-500 hover:text-rose-600" title="Delete" />
+                                </form>
+                            @endcan
                         </div>
                     </td>
                 </tr>

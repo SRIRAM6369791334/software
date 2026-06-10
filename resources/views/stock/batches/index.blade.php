@@ -1,13 +1,15 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Biological Asset Management')
 
 @section('content')
 <div class="space-y-6">
 
     <x-page-header title="Batch Evolution" subtitle="Monitoring lifecycle dynamics and biological stability">
+        @can('create batches')
         <x-button onclick="openModal('batchModal')" icon="add">
             New Batch
         </x-button>
+        @endcan
     </x-page-header>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -43,9 +45,11 @@
             </div>
 
             <div class="flex gap-2">
+                @can('edit batches')
                 <x-button onclick="openMortalityModal({{ $batch->id }}, '{{ $batch->batch_name }}')" variant="danger" class="flex-1 justify-center py-2" size="sm">
                     Record Mortality
                 </x-button>
+                @endcan
                 <x-button variant="secondary" class="py-2" size="sm">
                     Details
                 </x-button>

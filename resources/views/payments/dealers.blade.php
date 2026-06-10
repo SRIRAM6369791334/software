@@ -9,9 +9,11 @@
             <x-button variant="outline" href="{{ route('payments.dealers.export') }}" icon="download">
                 Export
             </x-button>
+            @can('create payments')
             <x-button variant="primary" x-data x-on:click="$dispatch('open-modal', 'add-payment')" icon="add">
                 Record Payout
             </x-button>
+            @endcan
         </x-slot:actions>
     </x-page-header>
 

@@ -8,9 +8,11 @@
         subtitle="Manage relationships with feed, chick, and medicine suppliers"
     >
         <x-slot:actions>
-            <x-button href="{{ route('masters.dealers.create') }}" variant="primary" icon="add">
-                Register Dealer
-            </x-button>
+            @can('create dealers')
+                <x-button href="{{ route('masters.dealers.create') }}" variant="primary" icon="add">
+                    Register Dealer
+                </x-button>
+            @endcan
         </x-slot:actions>
     </x-page-header>
 
@@ -73,11 +75,15 @@
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-2">
                             <x-button href="{{ route('masters.dealers.ledger-pdf', $dealer) }}" variant="ghost" size="sm" icon="receipt_long" title="Download Ledger" />
-                            <x-button href="{{ route('masters.dealers.edit', $dealer) }}" variant="ghost" size="sm" icon="edit" title="Edit" />
-                            <form action="{{ route('masters.dealers.destroy', $dealer) }}" method="POST" class="inline" onsubmit="return confirm('Delete {{ $dealer->firm_name }}?');">
-                                @csrf @method('DELETE')
-                                <x-button type="submit" variant="ghost" size="sm" icon="delete" class="text-rose-500 hover:text-rose-600" title="Delete" />
-                            </form>
+                            @can('edit dealers')
+                                <x-button href="{{ route('masters.dealers.edit', $dealer) }}" variant="ghost" size="sm" icon="edit" title="Edit" />
+                            @endcan
+                            @can('delete dealers')
+                                <form action="{{ route('masters.dealers.destroy', $dealer) }}" method="POST" class="inline" onsubmit="return confirm('Delete {{ $dealer->firm_name }}?');">
+                                    @csrf @method('DELETE')
+                                    <x-button type="submit" variant="ghost" size="sm" icon="delete" class="text-rose-500 hover:text-rose-600" title="Delete" />
+                                </form>
+                            @endcan
                         </div>
                     </td>
                 </tr>

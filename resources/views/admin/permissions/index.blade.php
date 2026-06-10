@@ -8,9 +8,11 @@
         subtitle="Manage granular access permissions for the application"
     >
         <x-slot:actions>
-            <x-button href="{{ route('admin.permissions.create') }}" variant="primary" icon="add">
-                Add Permission
-            </x-button>
+            @can('manage permissions')
+                <x-button href="{{ route('admin.permissions.create') }}" variant="primary" icon="add">
+                    Add Permission
+                </x-button>
+            @endcan
         </x-slot:actions>
     </x-page-header>
 
@@ -43,11 +45,13 @@
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-2">
-                            <x-button href="{{ route('admin.permissions.edit', $permission->id) }}" variant="ghost" size="sm" icon="edit" title="Edit" />
-                            <form action="{{ route('admin.permissions.destroy', $permission->id) }}" method="POST" class="inline" onsubmit="return confirm('Delete permission {{ $permission->name }}?');">
-                                @csrf @method('DELETE')
-                                <x-button type="submit" variant="ghost" size="sm" icon="delete" class="text-rose-500 hover:text-rose-600" title="Delete" />
-                            </form>
+                            @can('manage permissions')
+                                <x-button href="{{ route('admin.permissions.edit', $permission->id) }}" variant="ghost" size="sm" icon="edit" title="Edit" />
+                                <form action="{{ route('admin.permissions.destroy', $permission->id) }}" method="POST" class="inline" onsubmit="return confirm('Delete permission {{ $permission->name }}?');">
+                                    @csrf @method('DELETE')
+                                    <x-button type="submit" variant="ghost" size="sm" icon="delete" class="text-rose-500 hover:text-rose-600" title="Delete" />
+                                </form>
+                            @endcan
                         </div>
                     </td>
                 </tr>

@@ -31,11 +31,15 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <x-button href="{{ route('masters.customers.edit', $customer) }}" variant="secondary" icon="edit">Edit Profile</x-button>
-            <form action="{{ route('masters.customers.destroy', $customer) }}" method="POST" onsubmit="return confirm('Delete {{ $customer->name }}? This will keep their transaction history intact.')">
-                @csrf @method('DELETE')
-                <x-button type="submit" variant="danger" icon="delete">Delete</x-button>
-            </form>
+            @can('edit customers')
+                <x-button href="{{ route('masters.customers.edit', $customer) }}" variant="secondary" icon="edit">Edit Profile</x-button>
+            @endcan
+            @can('delete customers')
+                <form action="{{ route('masters.customers.destroy', $customer) }}" method="POST" onsubmit="return confirm('Delete {{ $customer->name }}? This will keep their transaction history intact.')">
+                    @csrf @method('DELETE')
+                    <x-button type="submit" variant="danger" icon="delete">Delete</x-button>
+                </form>
+            @endcan
         </div>
     </div>
 
@@ -51,9 +55,11 @@
                         Rs {{ number_format($customer->balance, 2) }}
                     </div>
                     <div class="flex flex-col gap-3">
-                        <x-button href="{{ route('payments.customers.create', ['customer_id' => $customer->id]) }}" variant="secondary" icon="payments" class="w-full justify-center !text-rose-700 !bg-white/80 hover:!bg-white !border-white backdrop-blur-md shadow-sm">
-                            Record Payment
-                        </x-button>
+                        @can('create payments')
+                            <x-button href="{{ route('payments.customers.create', ['customer_id' => $customer->id]) }}" variant="secondary" icon="payments" class="w-full justify-center !text-rose-700 !bg-white/80 hover:!bg-white !border-white backdrop-blur-md shadow-sm">
+                                Record Payment
+                            </x-button>
+                        @endcan
                         <x-button href="{{ route('masters.customers.ledger-pdf', $customer) }}" variant="secondary" icon="download" class="w-full justify-center !bg-rose-600/20 !text-rose-900 dark:!text-rose-100 !border-rose-400/30 hover:!bg-rose-600/30 backdrop-blur-md">
                             Download Statement
                         </x-button>
@@ -127,15 +133,21 @@
                     <a href="{{ route('masters.customers.show', $customer) }}" class="flex-1 text-center py-3 text-sm font-bold text-emerald-700 dark:text-emerald-400 bg-white/70 dark:bg-zinc-800/80 shadow-sm rounded-xl transition-all duration-300">
                         Quick Overview
                     </a>
+                    @can('view customer bills')
                     <a href="{{ route('masters.customers.billing-history', $customer) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
                         Billing History
                     </a>
+                    @endcan
+                    @can('view customer payments')
                     <a href="{{ route('masters.customers.payment-history', $customer) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
                         Payment History
                     </a>
+                    @endcan
+                    @can('view customer emis')
                     <a href="{{ route('masters.customers.emi-history', $customer) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
                         EMI Schedule
                     </a>
+                    @endcan
                 </div>
 
                 <div class="p-6">

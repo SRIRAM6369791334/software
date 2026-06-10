@@ -1,58 +1,81 @@
 @php
     $user = auth()->user();
-    $userLevel = $user?->getRoleLevel() ?? 0;
-    $roleHierarchy = [
-        'viewer' => 1,
-        'staff' => 2,
-        'delivery_staff' => 2,
-        'data_entry' => 2,
-        'accountant' => 3,
-        'manager' => 3,
-        'admin' => 4,
-    ];
-    $canAccess = fn(string $minRole) => isset($roleHierarchy[$minRole]) && $userLevel >= $roleHierarchy[$minRole];
+    $canAccess = function(array $item) use ($user) {
+        if (!isset($item['permission'])) {
+            return true;
+        }
+        if ($user && $user->hasRole('admin')) {
+            return true;
+        }
+        return $user && $user->can($item['permission']);
+    };
     $routeExists = fn(string $routeName) => \Illuminate\Support\Facades\Route::has($routeName);
 
     $navItems = [
-        ['label' => 'Dashboard', 'icon' => 'dashboard', 'route' => 'dashboard', 'min' => 'viewer'],
+        ['label' => 'Dashboard', 'icon' => 'dashboard', 'route' => 'dashboard'],
 
         ['header' => 'Master Records'],
-        ['label' => 'Customers', 'icon' => 'group', 'route' => 'masters.customers.index', 'min' => 'staff'],
-        ['label' => 'Dealers', 'icon' => 'local_shipping', 'route' => 'masters.dealers.index', 'min' => 'staff'],
-        ['label' => 'Vendors', 'icon' => 'inventory_2', 'route' => 'masters.vendors.index', 'min' => 'staff'],
+        ['label' => 'Customers', 'icon' => 'group', 'route' => 'masters.customers.index', 'permission' => 'view customers'],
+        ['label' => 'Dealers', 'icon' => 'local_shipping', 'route' => 'masters.dealers.index', 'permission' => 'view dealers'],
+        ['label' => 'Vendors', 'icon' => 'inventory_2', 'route' => 'masters.vendors.index', 'permission' => 'view vendors'],
+        
         ['header' => 'Operations'],
-        ['label' => 'Purchase List', 'icon' => 'shopping_cart', 'route' => 'purchases.entry', 'min' => 'staff'],
-        ['label' => 'Purchase Invoices', 'icon' => 'receipt_long', 'route' => 'purchases.invoices', 'min' => 'staff'],
-        ['label' => 'Dealer billing', 'icon' => 'description', 'route' => 'billing.weekly.index', 'min' => 'manager'],
-        ['label' => 'Customer Billing', 'icon' => 'event_note', 'route' => 'billing.daily.index', 'min' => 'manager'],
+        ['label' => 'Purchase List', 'icon' => 'shopping_cart', 'route' => 'purchases.entry', 'permission' => 'view purchases'],
+        ['label' => 'Purchase Invoices', 'icon' => 'receipt_long', 'route' => 'purchases.invoices', 'permission' => 'view purchases'],
+        ['label' => 'Dealer billing', 'icon' => 'description', 'route' => 'billing.weekly.index', 'permission' => 'view bills'],
+        ['label' => 'Customer Billing', 'icon' => 'event_note', 'route' => 'billing.daily.index', 'permission' => 'view bills'],
 
         ['header' => 'Finance & Payments'],
-        ['label' => 'Customer Payments', 'icon' => 'credit_card', 'route' => 'payments.customers.index', 'min' => 'manager'],
-        ['label' => 'Dealer Payments', 'icon' => 'account_balance', 'route' => 'payments.dealers.index', 'min' => 'manager'],
-        ['label' => 'Expenses', 'icon' => 'account_balance_wallet', 'route' => 'expenses.index', 'min' => 'manager'],
-        ['label' => 'EMI Records', 'icon' => 'notifications_active', 'route' => 'expenses.emis.index', 'min' => 'manager'],
+        ['label' => 'Customer Payments', 'icon' => 'credit_card', 'route' => 'payments.customers.index', 'permission' => 'view payments'],
+        ['label' => 'Dealer Payments', 'icon' => 'account_balance', 'route' => 'payments.dealers.index', 'permission' => 'view payments'],
+        ['label' => 'Expenses', 'icon' => 'account_balance_wallet', 'route' => 'expenses.index', 'permission' => 'view expenses'],
+        ['label' => 'EMI Records', 'icon' => 'notifications_active', 'route' => 'expenses.emis.index', 'permission' => 'view emis'],
 
         ['header' => 'Sales Reports'],
-        ['label' => 'Reports Home', 'icon' => 'assessment', 'route' => 'reports.index', 'min' => 'viewer'],
-        ['label' => 'Daily Sales', 'icon' => 'calendar_today', 'route' => 'reports.sales.daily', 'min' => 'viewer'],
-        ['label' => 'Weekly Sales', 'icon' => 'date_range', 'route' => 'reports.sales.weekly', 'min' => 'viewer'],
-        ['label' => 'Monthly Sales', 'icon' => 'bar_chart', 'route' => 'reports.sales.monthly', 'min' => 'viewer'],
+        ['label' => 'Reports Home', 'icon' => 'assessment', 'route' => 'reports.index', 'permission' => 'view reports'],
+        ['label' => 'Daily Sales', 'icon' => 'calendar_today', 'route' => 'reports.sales.daily', 'permission' => 'view reports'],
+        ['label' => 'Weekly Sales', 'icon' => 'date_range', 'route' => 'reports.sales.weekly', 'permission' => 'view reports'],
+        ['label' => 'Monthly Sales', 'icon' => 'bar_chart', 'route' => 'reports.sales.monthly', 'permission' => 'view reports'],
 
         ['header' => 'Purchase Reports'],
-        ['label' => 'Daily Purchase', 'icon' => 'calendar_today', 'route' => 'reports.purchases.daily', 'min' => 'viewer'],
-        ['label' => 'Weekly Purchase', 'icon' => 'date_range', 'route' => 'reports.purchases.weekly', 'min' => 'viewer'],
-        ['label' => 'Monthly Purchase', 'icon' => 'bar_chart', 'route' => 'reports.purchases.monthly', 'min' => 'viewer'],
+        ['label' => 'Daily Purchase', 'icon' => 'calendar_today', 'route' => 'reports.purchases.daily', 'permission' => 'view reports'],
+        ['label' => 'Weekly Purchase', 'icon' => 'date_range', 'route' => 'reports.purchases.weekly', 'permission' => 'view reports'],
+        ['label' => 'Monthly Purchase', 'icon' => 'bar_chart', 'route' => 'reports.purchases.monthly', 'permission' => 'view reports'],
         
         ['header' => 'Performance'],
-        ['label' => 'Profit & Loss', 'icon' => 'show_chart', 'route' => 'profit.index', 'min' => 'manager'],
+        ['label' => 'Profit & Loss', 'icon' => 'show_chart', 'route' => 'profit.index', 'permission' => 'view profit dashboard'],
 
-        ['header' => 'Administration', 'min' => 'admin'],
-        ['label' => 'User Management', 'icon' => 'manage_accounts', 'route' => 'admin.users.index', 'min' => 'admin'],
-        ['label' => 'Role Management', 'icon' => 'admin_panel_settings', 'route' => 'admin.roles.index', 'min' => 'admin'],
-        ['label' => 'Permissions', 'icon' => 'vpn_key', 'route' => 'admin.permissions.index', 'min' => 'admin'],
+        ['header' => 'Administration', 'permission' => 'manage users'],
+        ['label' => 'User Management', 'icon' => 'manage_accounts', 'route' => 'admin.users.index', 'permission' => 'manage users'],
+        ['label' => 'Role Management', 'icon' => 'admin_panel_settings', 'route' => 'admin.roles.index', 'permission' => 'manage roles'],
+        ['label' => 'Permissions', 'icon' => 'vpn_key', 'route' => 'admin.permissions.index', 'permission' => 'manage roles'],
     ];
 
     $isActive = fn(string $routeName) => request()->routeIs($routeName);
+
+    $visibleItems = [];
+    $currentHeader = null;
+    $hasLinksUnderHeader = false;
+
+    foreach ($navItems as $item) {
+        if (isset($item['header'])) {
+            // Check if header itself has explicit permission restrictions
+            if (isset($item['permission']) && !$canAccess($item)) {
+                $currentHeader = null;
+                continue;
+            }
+            $currentHeader = $item;
+            $hasLinksUnderHeader = false;
+        } else {
+            if ($canAccess($item) && $routeExists($item['route'])) {
+                if ($currentHeader && !$hasLinksUnderHeader) {
+                    $visibleItems[] = $currentHeader;
+                    $hasLinksUnderHeader = true;
+                }
+                $visibleItems[] = $item;
+            }
+        }
+    }
 @endphp
 
 <aside id="sidebar" 
@@ -77,15 +100,12 @@
 
     {{-- Navigation Links --}}
     <nav class="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-4 py-6 font-outfit">
-        @foreach($navItems as $item)
+        @foreach($visibleItems as $item)
             @if(isset($item['header']))
-                @php $headerVisible = !isset($item['min']) || $canAccess($item['min']); @endphp
-                @if($headerVisible)
-                    <h3 class="mb-2 mt-6 px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-500 first:mt-0 font-cabinet">
-                        {{ $item['header'] }}
-                    </h3>
-                @endif
-            @elseif($canAccess($item['min']) && $routeExists($item['route']))
+                <h3 class="mb-2 mt-6 px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-500 first:mt-0 font-cabinet">
+                    {{ $item['header'] }}
+                </h3>
+            @else
                 <a href="{{ route($item['route']) }}"
                    class="group relative flex items-center gap-3 rounded-xl px-3 py-2.5 min-h-[44px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] {{ $isActive($item['route']) ? 'bg-white dark:bg-zinc-900 shadow-[0_4px_12px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.2)] border border-zinc-100 dark:border-zinc-800 text-zinc-900 dark:text-white translate-x-1' : 'text-zinc-500 dark:text-zinc-400 border border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900/50 hover:text-zinc-900 dark:hover:text-white hover:translate-x-1' }} focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
                     <span class="material-symbols-rounded text-[20px] transition-colors duration-300 {{ $isActive($item['route']) ? 'text-emerald-500' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-emerald-500' }}">

@@ -8,9 +8,11 @@
             <x-button variant="outline" href="{{ route('expenses.export') }}" icon="download">
                 Export
             </x-button>
+            @can('create expenses')
             <x-button variant="primary" x-data x-on:click="$dispatch('open-modal', 'add-expense')" icon="add">
                 Record Expense
             </x-button>
+            @endcan
         </x-slot:actions>
     </x-page-header>
 
@@ -58,12 +60,14 @@
                                 <x-currency :amount="$e->amount" />
                             </td>
                             <td class="px-6 py-4">
+                                @can('delete expenses')
                                 <form action="{{ route('expenses.destroy', $e) }}" method="POST" onsubmit="return confirm('Delete this expense entry?')">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="text-zinc-400 hover:text-rose-600 transition-colors" title="Delete">
                                         <span class="material-symbols-rounded text-lg">delete</span>
                                     </button>
                                 </form>
+                                @endcan
                             </td>
                         </tr>
                     @empty

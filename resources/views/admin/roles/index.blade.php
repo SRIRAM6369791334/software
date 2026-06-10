@@ -8,9 +8,11 @@
         subtitle="Manage system roles and their associated permissions"
     >
         <x-slot:actions>
-            <x-button href="{{ route('admin.roles.create') }}" variant="primary" icon="add">
-                Add Role
-            </x-button>
+            @can('manage roles')
+                <x-button href="{{ route('admin.roles.create') }}" variant="primary" icon="add">
+                    Add Role
+                </x-button>
+            @endcan
         </x-slot:actions>
     </x-page-header>
 
@@ -40,14 +42,16 @@
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-2">
-                            <x-button href="{{ route('admin.roles.assignPermissionPage', $role->id) }}" variant="secondary" size="sm" icon="vpn_key" title="Permissions" />
-                            <x-button href="{{ route('admin.roles.edit', $role->id) }}" variant="ghost" size="sm" icon="edit" title="Edit" />
-                            @if($role->name !== 'admin' && $role->name !== 'Super Admin')
-                                <form action="{{ route('admin.roles.destroy', $role->id) }}" method="POST" class="inline" onsubmit="return confirm('Delete {{ $role->name }} role?');">
-                                    @csrf @method('DELETE')
-                                    <x-button type="submit" variant="ghost" size="sm" icon="delete" class="text-rose-500 hover:text-rose-600" title="Delete" />
-                                </form>
-                            @endif
+                            @can('manage roles')
+                                <x-button href="{{ route('admin.roles.assignPermissionPage', $role->id) }}" variant="secondary" size="sm" icon="vpn_key" title="Permissions" />
+                                <x-button href="{{ route('admin.roles.edit', $role->id) }}" variant="ghost" size="sm" icon="edit" title="Edit" />
+                                @if($role->name !== 'admin' && $role->name !== 'Super Admin')
+                                    <form action="{{ route('admin.roles.destroy', $role->id) }}" method="POST" class="inline" onsubmit="return confirm('Delete {{ $role->name }} role?');">
+                                        @csrf @method('DELETE')
+                                        <x-button type="submit" variant="ghost" size="sm" icon="delete" class="text-rose-500 hover:text-rose-600" title="Delete" />
+                                    </form>
+                                @endif
+                            @endcan
                         </div>
                     </td>
                 </tr>

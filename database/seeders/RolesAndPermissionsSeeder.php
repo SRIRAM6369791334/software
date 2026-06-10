@@ -17,18 +17,30 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Create Permission Groups and Permissions
         $permissionGroups = [
-            'Customers' => ['view customers', 'create customers', 'edit customers', 'delete customers'],
-            'Dealers' => ['view dealers', 'create dealers', 'edit dealers', 'delete dealers'],
-            'Vendors' => ['view vendors', 'create vendors', 'edit vendors', 'delete vendors'],
+            'Customers' => ['view customers', 'create customers', 'edit customers', 'delete customers', 'view customer bills', 'view customer payments', 'view customer emis'],
+            'Dealers' => ['view dealers', 'create dealers', 'edit dealers', 'delete dealers', 'view dealer purchases', 'view dealer ledger'],
+            'Vendors' => ['view vendors', 'create vendors', 'edit vendors', 'delete vendors', 'view vendor purchases'],
             'Bills' => ['view bills', 'create bills', 'edit bills', 'delete bills'],
             'Purchases' => ['view purchases', 'create purchases', 'edit purchases', 'delete purchases'],
             'Payments' => ['view payments', 'create payments', 'edit payments', 'delete payments'],
             'Expenses' => ['view expenses', 'create expenses', 'edit expenses', 'delete expenses'],
             'EMIs' => ['view emis', 'create emis', 'edit emis', 'delete emis'],
             'Reports & Dashboards' => ['view reports', 'view profit dashboard'],
-            'User Management' => ['manage users', 'manage roles'],
-            'Inventory & Stock' => ['view stock', 'create stock', 'edit stock', 'delete stock', 'view batches', 'create batches', 'edit batches', 'delete batches'],
-            'Routes & Delivery' => ['view routes', 'create routes', 'edit routes', 'delete routes', 'mark delivery status'],
+            'User Management' => ['manage users', 'manage roles', 'manage permissions', 'view activity logs'],
+            'Inventory & Stock' => [
+                'view stock', 'create stock', 'edit stock', 'delete stock', 
+                'view batches', 'create batches', 'edit batches', 'delete batches',
+                'view warehouses', 'create warehouses', 'edit warehouses', 'delete warehouses',
+                'view items', 'create items', 'edit items', 'delete items',
+                'view consumptions', 'create consumptions', 'delete consumptions',
+                'view mortalities', 'create mortalities', 'delete mortalities',
+                'view analytics'
+            ],
+            'Routes & Delivery' => [
+                'view routes', 'create routes', 'edit routes', 'delete routes', 'mark delivery status',
+                'view vehicles', 'create vehicles', 'edit vehicles', 'delete vehicles',
+                'view drivers', 'create drivers', 'edit drivers', 'delete drivers'
+            ],
         ];
 
         foreach ($permissionGroups as $groupName => $permissions) {

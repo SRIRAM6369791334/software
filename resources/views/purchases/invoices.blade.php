@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Purchase Invoices')
 
 @section('content')
@@ -140,9 +140,12 @@
                                     <a href="{{ route('purchases.show', $p->id) }}" class="cm-action-btn cm-action-btn--edit text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40" title="View Details">
                                         <span class="material-symbols-rounded">visibility</span>
                                     </a>
+                                    @can('edit purchases')
                                     <a href="{{ route('purchases.edit', $p->id) }}" class="cm-action-btn cm-action-btn--edit text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-950/40" title="Edit Purchase">
                                         <span class="material-symbols-rounded">edit</span>
                                     </a>
+                                    @endcan
+                                    @can('delete purchases')
                                     <form action="{{ route('purchases.destroy', $p->id) }}" method="POST" class="delete-form inline">
                                         @csrf
                                         @method('DELETE')
@@ -150,6 +153,7 @@
                                             <span class="material-symbols-rounded">delete</span>
                                         </button>
                                     </form>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>

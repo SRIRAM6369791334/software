@@ -26,11 +26,15 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <x-button href="{{ route('masters.vendors.edit', $vendor) }}" variant="secondary" icon="edit">Edit Profile</x-button>
-            <form action="{{ route('masters.vendors.destroy', $vendor) }}" method="POST" onsubmit="return confirm('Delete {{ $vendor->firm_name }}? This will keep their transaction history intact.')">
-                @csrf @method('DELETE')
-                <x-button type="submit" variant="danger" icon="delete">Delete</x-button>
-            </form>
+            @can('edit vendors')
+                <x-button href="{{ route('masters.vendors.edit', $vendor) }}" variant="secondary" icon="edit">Edit Profile</x-button>
+            @endcan
+            @can('delete vendors')
+                <form action="{{ route('masters.vendors.destroy', $vendor) }}" method="POST" onsubmit="return confirm('Delete {{ $vendor->firm_name }}? This will keep their transaction history intact.')">
+                    @csrf @method('DELETE')
+                    <x-button type="submit" variant="danger" icon="delete">Delete</x-button>
+                </form>
+            @endcan
         </div>
     </div>
 
@@ -45,9 +49,11 @@
                         Rs {{ number_format($vendor->purchases()->sum('total_amount'), 2) }}
                     </div>
                     <div class="flex flex-col gap-3">
-                        <x-button href="{{ route('purchases.create', ['vendor_name' => $vendor->firm_name]) }}" variant="secondary" icon="add_shopping_cart" class="w-full justify-center !text-teal-700 !bg-white/80 hover:!bg-white !border-white backdrop-blur-md shadow-sm">
-                            New Purchase Entry
-                        </x-button>
+                        @can('create purchases')
+                            <x-button href="{{ route('purchases.create', ['vendor_name' => $vendor->firm_name]) }}" variant="secondary" icon="add_shopping_cart" class="w-full justify-center !text-teal-700 !bg-white/80 hover:!bg-white !border-white backdrop-blur-md shadow-sm">
+                                New Purchase Entry
+                            </x-button>
+                        @endcan
                         <x-button href="{{ route('masters.vendors.purchase-history', $vendor) }}" variant="secondary" icon="history" class="w-full justify-center !bg-teal-600/20 !text-teal-900 dark:!text-teal-100 !border-teal-400/30 hover:!bg-teal-600/30 backdrop-blur-md">
                             View Full History
                         </x-button>
@@ -102,9 +108,11 @@
                     <a href="{{ route('masters.vendors.show', $vendor) }}" class="flex-1 text-center py-3 text-sm font-bold text-teal-700 dark:text-teal-400 bg-white/70 dark:bg-zinc-800/80 shadow-sm rounded-xl transition-all duration-300">
                         Quick Look
                     </a>
+                    @can('view vendor purchases')
                     <a href="{{ route('masters.vendors.purchase-history', $vendor) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
                         Full Purchase History
                     </a>
+                    @endcan
                 </div>
 
                 <div class="p-6">
@@ -151,9 +159,11 @@
                     <div class="pt-8 border-t border-zinc-200 dark:border-zinc-800">
                         <div class="flex items-center justify-between mb-6">
                             <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Recent Supply Activity</h4>
-                            <x-button href="{{ route('purchases.create', ['vendor_name' => $vendor->firm_name]) }}" variant="primary" size="sm" icon="add">
-                                Record Entry
-                            </x-button>
+                            @can('create purchases')
+                                <x-button href="{{ route('purchases.create', ['vendor_name' => $vendor->firm_name]) }}" variant="primary" size="sm" icon="add">
+                                    Record Entry
+                                </x-button>
+                            @endcan
                         </div>
 
                     <x-data-table :headers="['Date', 'Item Details', ['label' => 'Quantity', 'align' => 'right'], ['label' => 'Total Bill', 'align' => 'right']]">

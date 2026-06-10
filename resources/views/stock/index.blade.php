@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Stock Inventory')
 
@@ -6,9 +6,11 @@
 <div class="space-y-6">
 
     <x-page-header title="Stock Inventory" subtitle="Track stock levels and inventory transactions.">
+        @can('edit stock')
         <x-button onclick="openModal('adjustModal')" icon="edit_square">
             Quick Adjust
         </x-button>
+        @endcan
         <x-button href="{{ route('stock.batches.index') }}" variant="secondary" icon="inventory_2">
             Batch Management
         </x-button>

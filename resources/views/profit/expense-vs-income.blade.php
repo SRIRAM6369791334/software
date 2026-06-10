@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Expense vs Income')
 
 @section('content')
@@ -59,11 +59,68 @@
     </x-card>
 </div>
 
-<x-card class="mt-8 !bg-emerald-50 !border-emerald-100">
+<x-card class="mt-8 !bg-emerald-50 !border-emerald-100 mb-8">
     <p class="text-emerald-800 text-sm text-center">
         <strong>Efficiency Ratio:</strong> Your business is currently retaining 
         <span class="font-black text-lg text-emerald-900">{{ number_format($summary['profit'] / ($summary['revenue'] ?: 1) * 100, 1) }}%</span> 
         of every Rupee generated after all procurement and operational expenses.
     </p>
 </x-card>
+
+<x-card title="Income vs Expense Trend">
+    <canvas id="trendChart" class="w-full h-80"></canvas>
+</x-card>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const weeklyData = @json($weeklyData);
+    
+    const labels = weeklyData.map(d => d.week).reverse();
+    const income = weeklyData.map(d => d.revenue).reverse();
+    const expense = weeklyData.map(d => d.expenses + d.purchase).reverse();
+
+    new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Income (Revenue)',
+                    data: income,
+                    borderColor: 'rgba(16, 185, 129, 1)', // Emerald
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Outflow (Purchases + Expenses)',
+                    data: expense,
+                    borderColor: 'rgba(244, 63, 94, 1)', // Rose
+                    backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: { position: 'bottom' }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+});
+</script>
+@endpush

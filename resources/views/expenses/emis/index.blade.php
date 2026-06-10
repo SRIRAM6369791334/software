@@ -8,9 +8,11 @@
             <x-button variant="outline" href="{{ route('expenses.emis.alerts') }}" icon="notifications_active" class="!text-amber-600 !border-amber-200 hover:!bg-amber-50">
                 Upcoming Alerts
             </x-button>
+            @can('create emis')
             <x-button variant="primary" href="{{ route('expenses.emis.create') }}" icon="add">
                 Setup New EMI
             </x-button>
+            @endcan
         </x-slot:actions>
     </x-page-header>
 
@@ -45,12 +47,14 @@
                     </td>
                     <td class="px-6 py-4 text-center">
                         <div class="flex justify-center gap-2">
+                            @can('delete emis')
                             <form action="{{ route('expenses.emis.destroy', $emi) }}" method="POST" onsubmit="return confirm('Delete this EMI record?')">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="text-zinc-400 hover:text-rose-600 transition-colors" title="Delete">
                                     <span class="material-symbols-rounded text-lg">delete</span>
                                 </button>
                             </form>
+                            @endcan
                         </div>
                     </td>
                 </tr>

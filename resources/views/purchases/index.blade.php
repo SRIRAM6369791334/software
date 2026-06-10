@@ -13,6 +13,7 @@
         </x-button>
     </x-page-header>
 
+    @can('create purchases')
     {{-- Inline Form Block --}}
     <x-card class="transition-all duration-300" x-data="{ showForm: false }" x-bind:class="showForm ? 'ring-4 ring-emerald-50 dark:ring-emerald-900/30 border-emerald-100 dark:border-emerald-800' : 'hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]'">
         <div class="flex justify-between items-center cursor-pointer" @click="showForm = !showForm">
@@ -164,6 +165,7 @@
             </form>
         </div>
     </x-card>
+    @endcan
         
     {{-- 4. Recent Purchase Logs Directory --}}
     <x-card>
@@ -241,7 +243,9 @@
                     <td class="px-4 py-3 text-center">
                         <div class="flex items-center justify-center gap-1.5">
                             <x-button variant="ghost" size="sm" href="{{ route('purchases.show', $p->id) }}" icon="visibility" class="text-sky-600" />
-                            <x-button variant="ghost" size="sm" href="{{ route('purchases.edit', $p->id) }}" icon="edit" class="text-amber-600" />
+                            @can('edit purchases')
+                                <x-button variant="ghost" size="sm" href="{{ route('purchases.edit', $p->id) }}" icon="edit" class="text-amber-600" />
+                            @endcan
                         </div>
                     </td>
                 </tr>

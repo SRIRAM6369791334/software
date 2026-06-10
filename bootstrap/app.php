@@ -13,8 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role'       => \App\Http\Middleware\RoleMiddleware::class,
-            'api.limit'  => \App\Http\Middleware\ApiRateLimitMiddleware::class,
+            'role'               => \App\Http\Middleware\RoleMiddleware::class,
+            'permission'         => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'api.limit'          => \App\Http\Middleware\ApiRateLimitMiddleware::class,
         ]);
 
         // ✅ Security Headers applied globally to all API responses

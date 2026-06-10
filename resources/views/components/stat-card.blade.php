@@ -21,18 +21,21 @@
     $iconClass = $iconColors[$color] ?? $iconColors['emerald'];
 @endphp
 
-<div class="group rounded-3xl border border-white/60 dark:border-zinc-800/80 bg-gradient-to-br from-white/80 to-white/40 dark:from-zinc-900/80 dark:to-zinc-900/40 backdrop-blur-2xl p-6 shadow-xl shadow-zinc-200/50 dark:shadow-none hover:shadow-2xl hover:shadow-zinc-300/60 dark:hover:shadow-[0_8px_30px_rgba(16,185,129,0.15)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-2">
-    <div class="flex items-center justify-between">
+<div class="group relative rounded-[2.5rem] border border-white/80 dark:border-zinc-700/50 bg-gradient-to-br from-white/60 to-white/30 dark:from-zinc-800/60 dark:to-zinc-900/40 backdrop-blur-3xl p-6 shadow-xl shadow-zinc-200/40 dark:shadow-none hover:shadow-2xl hover:shadow-zinc-300/50 dark:hover:shadow-[0_0_40px_-10px_rgba(16,185,129,0.15)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-2 overflow-hidden">
+    <!-- Subtle hover glow background -->
+    <div class="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+    
+    <div class="relative z-10 flex items-center justify-between">
         <div>
             <p class="font-outfit text-sm font-medium text-zinc-500 dark:text-zinc-400">{{ $label ?? $title }}</p>
-            <p class="font-cabinet mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">{{ $prefix }}{{ $value }}</p>
+            <p class="font-cabinet mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 drop-shadow-sm">{{ $prefix }}{{ $value }}</p>
         </div>
         @if($icon)
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl {{ $iconClass }}">
+            <div class="flex h-14 w-14 items-center justify-center rounded-2xl {{ $iconClass }} transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
                 @if(Str::startsWith($icon, 'ph-'))
-                    <i class="ph {{ $icon }} text-2xl"></i>
+                    <i class="ph {{ $icon }} text-3xl"></i>
                 @else
-                    <span class="material-symbols-rounded text-[22px]">{{ $icon }}</span>
+                    <span class="material-symbols-rounded text-3xl">{{ $icon }}</span>
                 @endif
             </div>
         @endif

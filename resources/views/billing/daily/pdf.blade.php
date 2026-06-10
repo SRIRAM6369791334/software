@@ -1,247 +1,100 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Invoice #{{ $bill->invoice_no }}</title>
-    <style>
-        body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            font-size: 12px;
-            color: #333;
-            margin: 0;
-            padding: 0;
-        }
-        .header-bar {
-            height: 10px;
-            background-color: #059669; /* emerald-600 */
-        }
-        .container {
-            padding: 40px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .company-header h1 {
-            font-size: 28px;
-            margin: 0;
-            color: #059669;
-            letter-spacing: -1px;
-        }
-        .company-header p {
-            margin: 5px 0;
-            color: #999;
-            text-transform: uppercase;
-            font-weight: bold;
-            font-size: 10px;
-        }
-        .invoice-title {
-            text-align: right;
-        }
-        .invoice-title h2 {
-            font-size: 20px;
-            margin: 0;
-            text-transform: uppercase;
-            color: #111;
-        }
-        .invoice-title p {
-            margin: 5px 0;
-            color: #666;
-        }
-        .details-table {
-            margin-top: 40px;
-            margin-bottom: 40px;
-        }
-        .details-table td {
-            vertical-align: top;
-            width: 50%;
-        }
-        .section-label {
-            font-size: 10px;
-            font-weight: bold;
-            color: #059669;
-            text-transform: uppercase;
-            border-bottom: 1px solid #ecfdf5;
-            display: inline-block;
-            margin-bottom: 10px;
-        }
-        .items-table {
-            margin-top: 20px;
-        }
-        .items-table th {
-            background-color: #111;
-            color: #fff;
-            padding: 12px 15px;
-            text-align: left;
-            font-size: 10px;
-            text-transform: uppercase;
-        }
-        .items-table td {
-            padding: 15px;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        .total-box {
-            float: right;
-            width: 250px;
-            background-color: #111;
-            color: #fff;
-            padding: 25px;
-            border-radius: 15px;
-            margin-top: 40px;
-        }
-        .total-row {
-            margin-bottom: 10px;
-            font-size: 10px;
-            text-transform: uppercase;
-            opacity: 0.7;
-        }
-        .total-row span {
-            float: right;
-        }
-        .grand-total {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            font-size: 18px;
-            font-weight: bold;
-            color: #34d399; /* emerald-400 */
-        }
-        .grand-total span {
-            float: right;
-        }
-        .footer {
-            margin-top: 100px;
-            text-align: center;
-            border-top: 1px solid #f3f4f6;
-            padding-top: 30px;
-        }
-        .footer p {
-            margin: 5px 0;
-            color: #999;
-        }
-        .footer .auth {
-            font-size: 10px;
-            font-weight: bold;
-            color: #ccc;
-            text-transform: uppercase;
-            margin-bottom: 15px;
-        }
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-        .font-bold { font-weight: bold; }
-    </style>
-</head>
-<body>
-    <div class="header-bar"></div>
-    <div class="container">
-        <table>
-            <tr>
-                <td class="company-header">
-                    <h1>Poultry Management</h1>
-                    <p>Poultry Management Solutions</p>
-                    <div style="margin-top: 15px; color: #666;">
-                        <strong>Poultry Farm Unit #1</strong><br>
-                        Tamil Nadu, India<br>
-                        Phone: +91 98765 43210
-                    </div>
-                </td>
-                <td class="invoice-title">
-                    <div style="background-color: #ecfdf5; padding: 10px 20px; display: inline-block; border-radius: 5px;">
-                        <h2 style="color: #065f46;">TAX INVOICE</h2>
-                    </div>
-                    <p style="margin-top: 15px;">
-                        <span style="font-size: 10px; color: #999; text-transform: uppercase;">Invoice No:</span><br>
-                        <span style="font-size: 14px; font-weight: bold;">{{ $bill->invoice_no }}</span>
-                    </p>
-                    <p>
-                        <span style="font-size: 10px; color: #999; text-transform: uppercase;">Date:</span><br>
-                        <span style="font-weight: bold;">{{ $bill->date->format('d M, Y') }}</span>
-                    </p>
-                </td>
-            </tr>
-        </table>
+@extends('layouts.pdf')
+@section('title', 'TAX INVOICE')
+@section('meta', "Invoice No: {$bill->invoice_no}")
 
-        <table class="details-table">
-            <tr>
-                <td>
-                    <div class="section-label">Bill To Customer</div>
-                    <div style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">{{ $bill->customer->name ?? 'N/A' }}</div>
-                    <div style="color: #666; line-height: 1.4;">
-                        {{ $bill->customer->address ?? 'No address provided' }}<br>
-                        <strong>Phone: {{ $bill->customer->phone ?? 'N/A' }}</strong>
-                        @if($bill->customer->gst_number)
-                            <br><span style="font-size: 10px; color: #999;">GSTIN: {{ $bill->customer->gst_number }}</span>
-                        @endif
-                    </div>
-                </td>
-                <td style="padding-left: 50px;">
-                    <div class="section-label">Payment Summary</div>
-                    <table style="font-size: 11px;">
-                        <tr>
-                            <td style="color: #666; padding: 3px 0;">Status:</td>
-                            <td class="text-right font-bold">{{ strtoupper($bill->status) }}</td>
-                        </tr>
-                        <tr>
-                            <td style="color: #666; padding: 3px 0;">Billing Type:</td>
-                            <td class="text-right font-bold">Daily Retail Sale</td>
-                        </tr>
-                        <tr>
-                            <td style="color: #666; padding: 3px 0;">Currency:</td>
-                            <td class="text-right font-bold italic">INR</td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
+@push('styles')
+<style>
+    .invoice-details { width: 100%; margin-bottom: 30px; }
+    .invoice-details td { vertical-align: top; width: 50%; }
+    .section-label { font-size: 10px; font-weight: bold; color: #10b981; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-bottom: 10px; }
+    .total-box { float: right; width: 200px; background-color: #111827; color: #fff; padding: 20px; border-radius: 8px; margin-top: 20px; }
+    .total-row { margin-bottom: 8px; font-size: 10px; text-transform: uppercase; opacity: 0.8; }
+    .total-row span { float: right; }
+    .grand-total { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 16px; font-weight: bold; color: #34d399; }
+    .grand-total span { float: right; }
+</style>
+@endpush
 
-        <table class="items-table">
-            <thead>
+@section('content')
+
+<table class="invoice-details">
+    <tr>
+        <td>
+            <div class="section-label">Bill To Customer</div>
+            <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #111827;">{{ $bill->customer->name ?? 'N/A' }}</div>
+            <div style="color: #4b5563; line-height: 1.4;">
+                {{ $bill->customer->address ?? 'No address provided' }}<br>
+                <strong>Phone: {{ $bill->customer->phone ?? 'N/A' }}</strong>
+                @if($bill->customer->gst_number)
+                    <br><span style="font-size: 10px; color: #9ca3af;">GSTIN: {{ $bill->customer->gst_number }}</span>
+                @endif
+            </div>
+        </td>
+        <td style="padding-left: 40px;">
+            <div class="section-label">Payment Summary</div>
+            <table style="font-size: 10px; width: 100%;">
                 <tr>
-                    <th>Item Description</th>
-                    <th class="text-center">Quantity</th>
-                    <th class="text-right">Unit Price</th>
-                    <th class="text-right">Taxable Amt</th>
+                    <td style="color: #6b7280; padding: 4px 0; border: none;">Status:</td>
+                    <td class="text-right font-bold" style="border: none;">{{ strtoupper($bill->status) }}</td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach($bill->items as $item)
                 <tr>
-                    <td>
-                        <div style="font-weight: bold;">{{ $item->item_name }}</div>
-                        <div style="font-size: 9px; color: #999; margin-top: 3px;">POULTRY PRODUCT</div>
-                    </td>
-                    <td class="text-center">{{ number_format($item->quantity_kg, 2) }} {{ $item->unit }}</td>
-                    <td class="text-right">Rs {{ number_format($item->rate_per_kg, 2) }}</td>
-                    <td class="text-right font-bold">Rs {{ number_format($item->quantity_kg * $item->rate_per_kg, 2) }}</td>
+                    <td style="color: #6b7280; padding: 4px 0; border: none;">Billing Type:</td>
+                    <td class="text-right font-bold" style="border: none;">Daily Retail Sale</td>
                 </tr>
-                @endforeach
-            </tbody>
-        </table>
+                <tr>
+                    <td style="color: #6b7280; padding: 4px 0; border: none;">Currency:</td>
+                    <td class="text-right font-bold" style="border: none;">INR</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
 
-        <div class="total-box">
-            <div class="total-row">
-                Subtotal
-                <span>Rs {{ number_format($bill->amount, 2) }}</span>
-            </div>
-            <div class="total-row" style="margin-bottom: 20px;">
-                GST ({{ $bill->gst_percentage }}%)
-                <span>Rs {{ number_format($bill->gst_amount, 2) }}</span>
-            </div>
-            <div class="grand-total">
-                Total Net
-                <span>Rs {{ number_format($bill->net_amount, 2) }}</span>
-            </div>
-        </div>
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Item Description</th>
+            <th class="text-center">Quantity</th>
+            <th class="text-right">Unit Price</th>
+            <th class="text-right">Taxable Amt</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($bill->items as $item)
+        <tr>
+            <td>
+                <div class="font-bold text-zinc-900">{{ $item->item_name }}</div>
+                <div style="font-size: 8px; color: #9ca3af; margin-top: 3px;">POULTRY PRODUCT</div>
+            </td>
+            <td class="text-center">{{ number_format($item->quantity_kg, 2) }} {{ $item->unit }}</td>
+            <td class="text-right">Rs {{ number_format($item->rate_per_kg, 2) }}</td>
+            <td class="text-right font-bold text-emerald">Rs {{ number_format($item->quantity_kg * $item->rate_per_kg, 2) }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+</table>
 
-        <div style="clear: both;"></div>
-
-        <div class="footer">
-            <div class="auth">
-                NO SIGNATURE REQUIRED &bull; COMPUTER GENERATED &bull; AUTH VERIFIED
-            </div>
-            <p style="font-weight: bold; color: #333;">Thank you for choosing Poultry Management!</p>
-            <p style="font-size: 10px;">Please settle the payment according to the agreed credit terms.</p>
-        </div>
+<div class="total-box">
+    <div class="total-row">
+        Subtotal
+        <span>Rs {{ number_format($bill->amount, 2) }}</span>
     </div>
-</body>
-</html>
+    <div class="total-row" style="margin-bottom: 15px;">
+        GST ({{ $bill->gst_percentage }}%)
+        <span>Rs {{ number_format($bill->gst_amount, 2) }}</span>
+    </div>
+    <div class="grand-total">
+        Total Net
+        <span>Rs {{ number_format($bill->net_amount, 2) }}</span>
+    </div>
+</div>
+
+<div style="clear: both; margin-top: 80px; text-align: center;">
+    <div style="font-size: 9px; font-weight: bold; color: #9ca3af; text-transform: uppercase; margin-bottom: 10px;">
+        NO SIGNATURE REQUIRED &bull; COMPUTER GENERATED &bull; AUTH VERIFIED
+    </div>
+    <p style="font-weight: bold; color: #374151; margin: 5px 0;">Thank you for choosing {{ config('app.name', 'Flockwise BizTrack') }}!</p>
+    <p style="font-size: 10px; color: #6b7280; margin: 0;">Please settle the payment according to the agreed credit terms.</p>
+</div>
+
+@endsection

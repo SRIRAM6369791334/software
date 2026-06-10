@@ -8,9 +8,11 @@
             <x-button variant="outline" href="{{ route('billing.weekly.export') }}" icon="download">
                 Export
             </x-button>
+            @can('create bills')
             <x-button variant="primary" x-data x-on:click="$dispatch('open-modal', 'record-bill')" icon="add">
                 Record Bill
             </x-button>
+            @endcan
         </x-slot:actions>
     </x-page-header>
 

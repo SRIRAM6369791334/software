@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Route Management')
 
@@ -14,6 +14,7 @@
             <p class="text-zinc-500 font-medium">Real-time route monitoring and fleet orchestration</p>
         </div>
         <div class="flex items-center gap-3">
+            @can('create routes')
             <button onclick="openModal('vehicleModal')" 
                     class="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-xl bg-white border border-zinc-200 px-6 py-4 text-sm font-black text-zinc-950 shadow-sm transition-all hover:border-emerald-200 active:scale-95">
                 <span class="material-symbols-rounded text-xl text-emerald-600">local_shipping</span>
@@ -27,6 +28,7 @@
                     New Route
                 </span>
             </button>
+            @endcan
         </div>
     </div>
 

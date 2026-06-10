@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Purchase Invoice #' . $purchase->id)
 
 @section('content')
@@ -19,10 +19,12 @@
                 <span class="material-symbols-rounded" style="font-size: 18px;">print</span>
                 Print Invoice
             </a>
+            @can('edit purchases')
             <a href="{{ route('purchases.edit', $purchase->id) }}" class="cm-btn-ghost flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/40 dark:hover:bg-teal-900/60 text-teal-600 dark:text-teal-400">
                 <span class="material-symbols-rounded" style="font-size: 18px;">edit</span>
                 Edit Entry
             </a>
+            @endcan
         </div>
     </div>
 

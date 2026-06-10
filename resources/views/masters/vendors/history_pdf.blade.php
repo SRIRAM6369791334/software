@@ -1,92 +1,80 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Purchase History - {{ $vendor->firm_name }}</title>
-    <style>
-        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 12px; color: #333; }
-        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #0d9488; padding-bottom: 15px; }
-        .header h1 { margin: 0; color: #0d9488; font-size: 24px; }
-        .header p { margin: 5px 0 0; color: #666; font-size: 14px; }
-        .details { margin-bottom: 30px; width: 100%; border-collapse: collapse; }
-        .details td { padding: 5px; vertical-align: top; }
-        table.data-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        table.data-table th, table.data-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        table.data-table th { background-color: #f8fafc; font-weight: bold; color: #0f172a; }
-        table.data-table td.right { text-align: right; }
-        table.data-table th.right { text-align: right; }
-        .total-row { font-weight: bold; background-color: #f1f5f9; }
-        .footer { margin-top: 40px; text-align: center; font-size: 10px; color: #94a3b8; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>{{ $vendor->firm_name }}</h1>
-        <p>Purchase History Statement</p>
-    </div>
+@extends('layouts.pdf')
+@section('title', 'Purchase History Statement')
+@section('meta', 'Generated: ' . now()->format('d M Y, h:i A'))
 
-    <table class="details">
+@section('content')
+
+<table class="summary-grid">
+    <tr>
+        <td style="width: 50%; padding-right: 10px;">
+            <div class="summary-card">
+                <div class="summary-label">Vendor Details</div>
+                <div class="summary-value" style="margin-bottom: 5px;">{{ $vendor->firm_name }}</div>
+                <div style="font-size: 10px; color: #4b5563; line-height: 1.4;">
+                    <strong>Contact Person:</strong> {{ $vendor->contact_person ?: 'N/A' }}<br>
+                    <strong>Phone:</strong> {{ $vendor->phone }}<br>
+                    <strong>Location:</strong> {{ $vendor->location ?: 'N/A' }}
+                </div>
+            </div>
+        </td>
+        <td style="width: 50%; padding-left: 10px;">
+            <div class="summary-card" style="border-left: 3px solid #10b981;">
+                <div class="summary-label">Account Info</div>
+                <div style="font-size: 10px; color: #4b5563; line-height: 1.4; margin-top: 5px;">
+                    <strong>GSTIN:</strong> {{ $vendor->gst_number ?: 'UNREGISTERED' }}<br>
+                    <strong>Route:</strong> {{ $vendor->route ?: 'General' }}
+                </div>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<h2>Purchase History</h2>
+<table class="data-table">
+    <thead>
         <tr>
-            <td width="50%">
-                <strong>Contact Person:</strong> {{ $vendor->contact_person ?: 'N/A' }}<br>
-                <strong>Phone:</strong> {{ $vendor->phone }}<br>
-                <strong>Location:</strong> {{ $vendor->location ?: 'N/A' }}
-            </td>
-            <td width="50%" style="text-align: right;">
-                <strong>GSTIN:</strong> {{ $vendor->gst_number ?: 'UNREGISTERED' }}<br>
-                <strong>Route:</strong> {{ $vendor->route ?: 'General' }}<br>
-                <strong>Generated On:</strong> {{ now()->format('d M Y, h:i A') }}
-            </td>
+            <th>Date</th>
+            <th>Item Details</th>
+            <th class="text-right">Quantity</th>
+            <th class="text-right">Total Amount (Rs)</th>
         </tr>
-    </table>
-
-    <table class="data-table">
-        <thead>
+    </thead>
+    <tbody>
+        @php $totalAmount = 0; @endphp
+        @forelse($purchases as $purchase)
+            @php $totalAmount += $purchase->total_amount; @endphp
             <tr>
-                <th>Date</th>
-                <th>Item Details</th>
-                <th class="right">Quantity</th>
-                <th class="right">Total Amount (Rs)</th>
+                <td>{{ $purchase->date->format('d M Y') }}</td>
+                <td>
+                    @if($purchase->items->isNotEmpty())
+                        {{ $purchase->items->pluck('item_name')->join(', ') }}
+                    @else
+                        {{ $purchase->item }}
+                    @endif
+                </td>
+                <td class="text-right">
+                    @if($purchase->items->isNotEmpty())
+                        {{ number_format($purchase->items->sum('quantity'), 2) }} {{ $purchase->items->first()->unit }}
+                    @else
+                        {{ number_format($purchase->quantity, 2) }} {{ $purchase->unit }}
+                    @endif
+                </td>
+                <td class="text-right font-bold">Rs {{ number_format($purchase->total_amount, 2) }}</td>
             </tr>
-        </thead>
-        <tbody>
-            @php $totalAmount = 0; @endphp
-            @forelse($purchases as $purchase)
-                @php $totalAmount += $purchase->total_amount; @endphp
-                <tr>
-                    <td>{{ $purchase->date->format('d M Y') }}</td>
-                    <td>
-                        @if($purchase->items->isNotEmpty())
-                            {{ $purchase->items->pluck('item_name')->join(', ') }}
-                        @else
-                            {{ $purchase->item }}
-                        @endif
-                    </td>
-                    <td class="right">
-                        @if($purchase->items->isNotEmpty())
-                            {{ number_format($purchase->items->sum('quantity'), 2) }} {{ $purchase->items->first()->unit }}
-                        @else
-                            {{ number_format($purchase->quantity, 2) }} {{ $purchase->unit }}
-                        @endif
-                    </td>
-                    <td class="right">{{ number_format($purchase->total_amount, 2) }}</td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="4" style="text-align: center; padding: 20px;">No purchases found.</td>
-                </tr>
-            @endforelse
-            @if($purchases->count() > 0)
-                <tr class="total-row">
-                    <td colspan="3" class="right">Total Business Volume:</td>
-                    <td class="right">Rs {{ number_format($totalAmount, 2) }}</td>
-                </tr>
-            @endif
-        </tbody>
-    </table>
+        @empty
+            <tr>
+                <td colspan="4" class="text-center" style="padding: 20px;">No purchases found.</td>
+            </tr>
+        @endforelse
+        @if($purchases->count() > 0)
+            <tr>
+                <td colspan="3" class="text-right font-bold" style="padding: 12px; background-color: #f9fafb;">Total Business Volume</td>
+                <td class="text-right font-bold text-emerald" style="padding: 12px; background-color: #f9fafb;">
+                    Rs {{ number_format($totalAmount, 2) }}
+                </td>
+            </tr>
+        @endif
+    </tbody>
+</table>
 
-    <div class="footer">
-        Generated by Flockwise BizTrack &bull; Page 1 of 1
-    </div>
-</body>
-</html>
+@endsection
