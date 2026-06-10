@@ -29,7 +29,7 @@ class UserManagementController extends Controller
             'username' => 'required|string|unique:users,username',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
-            'role' => 'required|exists:roles,name',
+            'role' => 'required|string|max:255',
         ]);
 
         $user = User::create([
@@ -40,7 +40,8 @@ class UserManagementController extends Controller
             'is_active' => true,
         ]);
 
-        $user->assignRole($request->role);
+        $role = Role::firstOrCreate(['name' => $request->role, 'guard_name' => 'web']);
+        $user->assignRole($role);
 
         ActivityLogger::log('Created User', 'UserManagement', $user->id);
 
@@ -52,7 +53,7 @@ class UserManagementController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => 'required|exists:roles,name',
+            'role' => 'required|string|max:255',
         ]);
 
         $user->update($request->only('name', 'email', 'is_active'));
@@ -61,7 +62,8 @@ class UserManagementController extends Controller
             $user->update(['password' => Hash::make($request->password)]);
         }
 
-        $user->syncRoles([$request->role]);
+        $role = Role::firstOrCreate(['name' => $request->role, 'guard_name' => 'web']);
+        $user->syncRoles([$role]);
 
         ActivityLogger::log('Updated User', 'UserManagement', $user->id);
 

@@ -1,53 +1,47 @@
 @extends('layouts.app')
-
 @section('title', 'Assign Permissions')
 
 @section('content')
-<div class="container-fluid py-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="card my-4">
-                <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                    <div class="bg-gradient-primary shadow-primary border-radius-lg pt-4 pb-3">
-                        <h6 class="text-white text-capitalize ps-3 mb-0">Assign Permissions to {{ $role->name }}</h6>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <form action="{{ route('admin.roles.assignPermission') }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="role_id" value="{{ $role->id }}">
-                        
-                        <div class="row">
-                            @foreach($permissionGroups as $group)
-                            <div class="col-md-4 mb-4">
-                                <div class="card bg-gray-100 border h-100">
-                                    <div class="card-header pb-0 bg-transparent">
-                                        <h6 class="mb-0 text-primary">{{ $group->name }}</h6>
-                                    </div>
-                                    <div class="card-body pt-2">
-                                        @foreach($group->permissions as $permission)
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->id }}" id="perm_{{ $permission->id }}" 
-                                                {{ $role->hasPermissionTo($permission->name) ? 'checked' : '' }}>
-                                            <label class="form-check-label custom-control-label" for="perm_{{ $permission->id }}">
-                                                {{ $permission->name }}
-                                            </label>
-                                        </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
+<div class="space-y-6">
+    <x-page-header 
+        title="Assign Permissions" 
+        subtitle="Configure access rights for the {{ $role->name }} role"
+        backRoute="admin.roles.index"
+    />
 
-                        <div class="mt-4">
-                            <button type="submit" class="btn btn-primary">Save Permissions</button>
-                            <a href="{{ route('admin.roles.index') }}" class="btn btn-secondary">Cancel</a>
-                        </div>
-                    </form>
+    <form action="{{ route('admin.roles.assignPermission') }}" method="POST">
+        @csrf
+        <input type="hidden" name="role_id" value="{{ $role->id }}">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach($permissionGroups as $group)
+            <x-card padding="p-0" class="overflow-hidden h-full">
+                <div class="bg-zinc-50 dark:bg-zinc-900/50 px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
+                    <h3 class="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                        <span class="material-symbols-rounded text-emerald-500 text-[18px]">folder_open</span>
+                        {{ $group->name }}
+                    </h3>
                 </div>
-            </div>
+                <div class="p-6 space-y-4">
+                    @foreach($group->permissions as $permission)
+                    <label class="flex items-center gap-3 cursor-pointer group">
+                        <input type="checkbox" name="permissions[]" value="{{ $permission->id }}" 
+                            class="w-5 h-5 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-900 dark:checked:bg-emerald-500 transition-all cursor-pointer"
+                            {{ $role->hasPermissionTo($permission->name) ? 'checked' : '' }}>
+                        <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
+                            {{ $permission->name }}
+                        </span>
+                    </label>
+                    @endforeach
+                </div>
+            </x-card>
+            @endforeach
         </div>
-    </div>
+
+        <div class="mt-8 flex justify-end gap-3">
+            <x-button href="{{ route('admin.roles.index') }}" variant="secondary">Cancel</x-button>
+            <x-button type="submit" variant="primary" icon="save">Save Permissions</x-button>
+        </div>
+    </form>
 </div>
 @endsection
