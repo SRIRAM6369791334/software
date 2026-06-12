@@ -18,9 +18,17 @@ class Vendor extends Model
         return $this->hasMany(Purchase::class);
     }
 
+    public function vendorPayments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(VendorPayment::class);
+    }
+
     public function getOutstandingBalanceAttribute(): float
     {
-        return (float) $this->purchases()->where('payment_mode', 'Credit')->sum('total_amount');
+        $totalCreditPurchases = (float) $this->purchases()->where('payment_mode', 'Credit')->sum('total_amount');
+        $totalPaymentsPaid = (float) $this->vendorPayments()->sum('amount');
+        
+        return $totalCreditPurchases - $totalPaymentsPaid;
     }
 
     public function scopeSearch($query, ?string $term)

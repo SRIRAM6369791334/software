@@ -38,9 +38,13 @@ class PurchaseController extends Controller
         $dailyBills  = DailyBill::with(['customer', 'items'])->latest()->take(10)->get();
         $weeklyBills = WeeklyBill::with('customer')->latest()->take(10)->get();
         
+        $latestPurchase = \App\Models\Purchase::latest('id')->first();
+        $nextId = $latestPurchase ? $latestPurchase->id + 1 : 1;
+        $autoInvoiceNo = 'INV-' . date('Y') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+        
         return view('purchases.index', compact(
             'purchases', 'search', 'vendors', 'items', 'batches', 'warehouses',
-            'customers', 'dailyBills', 'weeklyBills'
+            'customers', 'dailyBills', 'weeklyBills', 'autoInvoiceNo'
         ));
     }
 
@@ -51,8 +55,12 @@ class PurchaseController extends Controller
         $items       = Item::active()->get();
         $batches     = Batch::where('status', 'Active')->get();
         $warehouses  = Warehouse::active()->get();
+        
+        $latestPurchase = \App\Models\Purchase::latest('id')->first();
+        $nextId = $latestPurchase ? $latestPurchase->id + 1 : 1;
+        $autoInvoiceNo = 'INV-' . date('Y') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
 
-        return view('purchases.create', compact('vendor_name', 'vendors', 'items', 'batches', 'warehouses'));
+        return view('purchases.create', compact('vendor_name', 'vendors', 'items', 'batches', 'warehouses', 'autoInvoiceNo'));
     }
 
     public function store(StorePurchaseRequest $request): RedirectResponse
@@ -82,7 +90,9 @@ class PurchaseController extends Controller
         $batches    = Batch::where('status', 'Active')->get();
         $warehouses = Warehouse::active()->get();
 
-        return view('purchases.edit', compact('purchase', 'vendors', 'items', 'batches', 'warehouses'));
+        $autoInvoiceNo = $purchase->invoice_no ?: 'INV-' . date('Y') . '-' . str_pad($purchase->id, 4, '0', STR_PAD_LEFT);
+
+        return view('purchases.edit', compact('purchase', 'vendors', 'items', 'batches', 'warehouses', 'autoInvoiceNo'));
     }
 
     public function update(StorePurchaseRequest $request, $id): RedirectResponse

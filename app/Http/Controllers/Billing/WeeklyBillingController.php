@@ -41,6 +41,7 @@ class WeeklyBillingController extends Controller
             'period_start' => 'required|date',
             'period_end'   => 'required|date|after_or_equal:period_start',
             'status'       => 'required|in:Generated,Pending,Paid',
+            'payment_mode' => 'required|in:Cash,Credit,UPI,NEFT,Cheque',
             'items'        => 'required|array|min:1',
             'items.*.name' => 'required|string|max:255',
             'items.*.qty'  => 'required|numeric|min:0.01',
@@ -50,6 +51,8 @@ class WeeklyBillingController extends Controller
         try {
             \Illuminate\Support\Facades\DB::transaction(function () use ($request, $invoiceService) {
                 $itemsData = $request->input('items');
+                $paymentMode = $request->input('payment_mode');
+                $status = $request->input('status');
                 
                 $subtotal = 0;
                 foreach ($itemsData as $item) {
@@ -67,9 +70,16 @@ class WeeklyBillingController extends Controller
                     'gst_percentage' => 18,
                     'gst_amount'     => $gstData['total_gst'],
                     'net_amount'     => $gstData['net_amount'],
-                    'status'         => $request->input('status'),
-                    'payment_mode'   => 'Cash', // Default
+                    'status'         => $status,
+                    'payment_mode'   => $paymentMode,
                 ]);
+
+                if ($paymentMode === 'Credit' || $status === 'Pending') {
+                    $customer = Customer::find($request->input('customer_id'));
+                    if ($customer) {
+                        $customer->increment('balance', $gstData['net_amount']);
+                    }
+                }
 
                 foreach ($itemsData as $item) {
                     $base = $item['qty'] * $item['rate'];
@@ -110,11 +120,15 @@ class WeeklyBillingController extends Controller
             'period_start'   => 'required|date',
             'period_end'     => 'required|date|after_or_equal:period_start',
             'amount'         => 'required|numeric|min:0.01',
-            'status'         => 'required|in:Generated,Pending',
+            'status'         => 'required|in:Generated,Pending,Paid',
+            'payment_mode'   => 'required|in:Cash,Credit,UPI,NEFT,Cheque',
         ]);
 
         try {
             \Illuminate\Support\Facades\DB::transaction(function () use ($request, $invoiceService) {
+                $paymentMode = $request->input('payment_mode');
+                $status = $request->input('status');
+
                 foreach ($request->customer_ids as $cid) {
                     $gstData = \App\Services\Tax\GSTCalculator::calculate($request->amount, 18);
 
@@ -127,8 +141,16 @@ class WeeklyBillingController extends Controller
                         'gst_percentage' => 18,
                         'gst_amount'   => $gstData['total_gst'],
                         'net_amount'   => $gstData['net_amount'],
-                        'status'       => $request->status,
+                        'status'       => $status,
+                        'payment_mode' => $paymentMode,
                     ]);
+
+                    if ($paymentMode === 'Credit' || $status === 'Pending') {
+                        $customer = Customer::find($cid);
+                        if ($customer) {
+                            $customer->increment('balance', $gstData['net_amount']);
+                        }
+                    }
 
                     $bill->items()->create([
                         'item_name'    => 'Weekly Poultry Settlement',

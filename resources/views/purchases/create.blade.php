@@ -44,8 +44,8 @@
                             </x-form.select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Invoice / Bill Number</label>
-                            <x-form.input type="text" name="invoice_no" placeholder="e.g. INV-{{ date('Y') }}-001" />
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Invoice / Bill Number <span class="text-xs text-zinc-400 font-normal">(Auto)</span></label>
+                            <x-form.input type="text" name="invoice_no" value="{{ $autoInvoiceNo }}" readonly class="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 cursor-not-allowed font-mono" />
                         </div>
                     </div>
 

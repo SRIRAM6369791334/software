@@ -33,9 +33,8 @@
             id="{{ $name }}" 
             value="{{ old($name, $value) }}"
             {{ $required ? 'required' : '' }}
-            class="block w-full bg-white/30 dark:bg-zinc-900/30 backdrop-blur-2xl border border-zinc-200 dark:border-zinc-700 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] text-zinc-900 dark:text-zinc-100 text-sm rounded-xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 {{ $icon ? 'pl-11' : 'pl-4' }} p-3 transition-all duration-300 {{ $errors->has($name) || $error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'hover:border-zinc-300 dark:hover:border-zinc-600' }}" 
+            {{ $attributes->merge(['class' => 'block w-full bg-white/30 dark:bg-zinc-900/30 backdrop-blur-2xl border border-zinc-200 dark:border-zinc-700 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] text-zinc-900 dark:text-zinc-100 text-sm rounded-xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 ' . ($icon ? 'pl-11' : 'pl-4') . ' p-3 transition-all duration-300 ' . ($errors->has($name) || $error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'hover:border-zinc-300 dark:hover:border-zinc-600')]) }}
             placeholder="{{ $placeholder }}"
-            {{ $attributes }}
         >
     </div>
 

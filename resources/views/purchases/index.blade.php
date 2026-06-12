@@ -56,8 +56,8 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">2. Invoice Number / Bill ID</label>
-                        <x-form.input type="text" name="invoice_no" value="{{ old('invoice_no') }}" placeholder="e.g. INV-2026-99" />
+                        <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">2. Invoice Number / Bill ID <span class="text-xs text-zinc-400 font-normal">(Auto)</span></label>
+                        <x-form.input type="text" name="invoice_no" value="{{ old('invoice_no', $autoInvoiceNo) }}" readonly class="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 cursor-not-allowed font-mono" />
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">3. Billing Date <span class="text-rose-500">*</span></label>
@@ -107,20 +107,18 @@
                             <tbody id="items-body" class="divide-y divide-zinc-100 dark:divide-zinc-800">
                                 <tr class="item-row hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors">
                                     <td class="p-3">
-                                        <x-form.select name="items[0][item_id]" required onchange="updateUnit(this)" class="item-selector">
-                                            <option value="">Select Product...</option>
+                                        <input list="items-list" name="items[0][name]" required onchange="updateUnit(this)" class="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-900 item-selector focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" placeholder="Select or type product...">
+                                        <datalist id="items-list">
                                             @foreach($items as $item)
-                                                <option value="{{ $item->id }}" data-unit="{{ $item->base_unit }}" {{ request('item_id') == $item->id ? 'selected' : '' }}>
-                                                    {{ $item->name }} ({{ $item->code }})
-                                                </option>
+                                                <option value="{{ $item->name }}" data-unit="{{ $item->base_unit }}"></option>
                                             @endforeach
-                                        </x-form.select>
+                                        </datalist>
                                     </td>
                                     <td class="p-3">
                                         <x-form.input type="number" name="items[0][qty]" step="0.01" required placeholder="0.00" class="row-qty" oninput="recalculate()" />
                                     </td>
                                     <td class="p-3">
-                                        <x-form.input type="text" name="items[0][unit]" value="kg" class="row-unit bg-zinc-50 dark:bg-zinc-800/50" readonly tabindex="-1" />
+                                        <x-form.input type="text" name="items[0][unit]" value="kg" class="row-unit" />
                                     </td>
                                     <td class="p-3">
                                         <x-form.input type="number" name="items[0][rate]" step="0.01" required placeholder="0.00" class="row-rate" oninput="recalculate()" />
@@ -273,7 +271,7 @@
 
 let rowCount = 1;
 
-const ITEM_OPTIONS = `@foreach($items as $item)<option value="{{ $item->id }}" data-unit="{{ $item->base_unit }}">{{ $item->name }} ({{ $item->code }})</option>@endforeach`;
+const ITEM_OPTIONS = `@foreach($items as $item)<option value="{{ $item->name }}" data-unit="{{ $item->base_unit }}"></option>@endforeach`;
 
 function addRow() {
     const body = document.getElementById('items-body');
@@ -281,16 +279,13 @@ function addRow() {
     newRow.className = 'item-row hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors border-t border-zinc-100 dark:border-zinc-800';
     newRow.innerHTML = `
         <td class="p-3">
-            <select name="items[${rowCount}][item_id]" required onchange="updateUnit(this)" class="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-900 item-selector focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow">
-                <option value="">Select Product...</option>
-                ${ITEM_OPTIONS}
-            </select>
+            <input list="items-list" name="items[${rowCount}][name]" required onchange="updateUnit(this)" class="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-900 item-selector focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" placeholder="Select or type product...">
         </td>
         <td class="p-3">
             <input type="number" name="items[${rowCount}][qty]" step="0.01" required placeholder="0.00" class="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-900 row-qty focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" oninput="recalculate()">
         </td>
         <td class="p-3">
-            <input type="text" name="items[${rowCount}][unit]" value="kg" class="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm bg-zinc-50 dark:bg-zinc-800/50 row-unit" readonly tabindex="-1">
+            <input type="text" name="items[${rowCount}][unit]" value="kg" class="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-900 row-unit focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow">
         </td>
         <td class="p-3">
             <input type="number" name="items[${rowCount}][rate]" step="0.01" required placeholder="0.00" class="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm bg-white dark:bg-zinc-900 row-rate focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" oninput="recalculate()">
@@ -308,11 +303,19 @@ function addRow() {
     rowCount++;
 }
 
-function updateUnit(select) {
-    const unit = select.options[select.selectedIndex].getAttribute('data-unit');
-    const row = select.closest('tr');
-    if (unit) {
-        row.querySelector('.row-unit').value = unit;
+function updateUnit(input) {
+    const list = document.getElementById('items-list');
+    if (!list) return;
+    const options = list.options;
+    for (let i = 0; i < options.length; i++) {
+        if (options[i].value === input.value) {
+            const unit = options[i].getAttribute('data-unit');
+            const row = input.closest('tr');
+            if (unit && row) {
+                row.querySelector('.row-unit').value = unit;
+            }
+            return;
+        }
     }
 }
 
@@ -329,12 +332,20 @@ function recalculate() {
         subtotal += total;
     });
     
-    const gstPercentage = parseFloat(document.getElementById('gst-percentage').value) || 0;
+    const gstInput = document.getElementById('gst_percentage') || document.getElementById('gst-percentage');
+    const gstPercentage = parseFloat(gstInput ? gstInput.value : 0) || 0;
     const gstAmt = subtotal * gstPercentage / 100;
     const finalTotal = subtotal + gstAmt;
     
-    document.getElementById('display-tax').value = '₹' + gstAmt.toFixed(2);
-    document.getElementById('display-total').textContent = '₹' + finalTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    const displayTax = document.getElementById('display_tax') || document.getElementById('display-tax');
+    if (displayTax) {
+        displayTax.value = '₹' + gstAmt.toFixed(2);
+    }
+    
+    const displayTotal = document.getElementById('display-total');
+    if (displayTotal) {
+        displayTotal.textContent = '₹' + finalTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    }
 }
 
 function toggleDueDateField() {

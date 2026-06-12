@@ -75,6 +75,7 @@
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-2">
+                            <x-button href="{{ route('payments.vendors.ledger', $vendor) }}" variant="ghost" size="sm" icon="account_balance_wallet" title="Ledger & Payments" class="text-emerald-600 hover:text-emerald-700 dark:text-emerald-500 dark:hover:text-emerald-400" />
                             <x-button href="{{ route('masters.vendors.history-pdf', $vendor) }}" variant="ghost" size="sm" icon="picture_as_pdf" title="Download History" class="text-rose-600 hover:text-rose-700 dark:text-rose-500 dark:hover:text-rose-400" />
                             @can('edit vendors')
                                 <x-button href="{{ route('masters.vendors.edit', $vendor) }}" variant="ghost" size="sm" icon="edit" title="Edit" />

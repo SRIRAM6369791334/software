@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @include('partials.cm-style')
     @stack('styles')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Chart.js for Dashboards -->
@@ -82,6 +81,38 @@
 
 <x-toast />
 @stack('scripts')
+<script>
+    // Global Double-Submit Prevention for all forms
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('form').forEach(form => {
+            // Only apply to POST/PUT/DELETE forms, skip GET (search/filter forms)
+            const method = (form.getAttribute('method') || 'GET').toUpperCase();
+            if (method === 'GET') return;
+            
+            form.addEventListener('submit', function(e) {
+                if (!form.checkValidity()) return; // Let browser HTML5 validation happen
+                
+                const submitBtns = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+                submitBtns.forEach(btn => {
+                    if (btn.disabled) return;
+                    
+                    // Use setTimeout so the form data is collected before disabling
+                    setTimeout(() => {
+                        btn.disabled = true;
+                        btn.classList.add('opacity-75', 'cursor-not-allowed');
+                        
+                        // If it's a button, add spinner text
+                        if (btn.tagName === 'BUTTON' && !btn.hasAttribute('data-custom-loading')) {
+                            const originalContent = btn.innerHTML;
+                            btn.setAttribute('data-original-content', originalContent);
+                            btn.innerHTML = '<span class="material-symbols-rounded animate-spin text-[18px]">sync</span> Processing...';
+                        }
+                    }, 10);
+                });
+            });
+        });
+    });
+</script>
 @stack('modals')
 </body>
 </html>

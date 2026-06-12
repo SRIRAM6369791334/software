@@ -40,6 +40,7 @@ class DailyBillingController extends Controller
             'customer_id'    => 'required|exists:customers,id',
             'date'           => 'required|date|before_or_equal:today',
             'status'         => 'required|in:Generated,Pending,Paid',
+            'payment_mode'   => 'required|in:Cash,Credit,UPI,NEFT,Cheque',
             'gst_percentage' => 'required|numeric|min:0|max:28',
             'items'          => 'required|array|min:1',
             'items.*.name'   => 'required|string|max:255',
@@ -52,6 +53,8 @@ class DailyBillingController extends Controller
             DB::transaction(function () use ($request, $invoiceService) {
                 $itemsData = $request->input('items');
                 $gstPercent = $request->input('gst_percentage');
+                $paymentMode = $request->input('payment_mode');
+                $status = $request->input('status');
                 
                 $subtotal = 0;
                 foreach ($itemsData as $item) {
@@ -68,9 +71,17 @@ class DailyBillingController extends Controller
                     'gst_percentage' => $gstPercent,
                     'gst_amount'     => $gstData['total_gst'],
                     'net_amount'     => $gstData['net_amount'],
-                    'status'         => $request->input('status'),
-                    'payment_mode'   => 'Cash', // Default
+                    'status'         => $status,
+                    'payment_mode'   => $paymentMode,
                 ]);
+
+                // Update Customer Balance if Credit or Pending
+                if ($paymentMode === 'Credit' || $status === 'Pending') {
+                    $customer = Customer::find($request->input('customer_id'));
+                    if ($customer) {
+                        $customer->increment('balance', $gstData['net_amount']);
+                    }
+                }
 
                 foreach ($itemsData as $item) {
                     $base = $item['qty'] * $item['rate'];

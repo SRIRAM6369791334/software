@@ -1,0 +1,70 @@
+<?php
+
+namespace App\Http\Controllers\Payments;
+
+use App\Http\Controllers\Controller;
+use App\Models\Vendor;
+use App\Models\VendorPayment;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+
+class VendorPaymentController extends Controller
+{
+    public function ledger(Vendor $vendor): View
+    {
+        $purchases = $vendor->purchases()->orderBy('date', 'desc')->get();
+        $payments = $vendor->vendorPayments()->orderBy('date', 'desc')->get();
+        
+        // Merge and sort by date descending
+        $transactions = collect();
+        
+        foreach ($purchases as $p) {
+            $transactions->push((object)[
+                'type' => 'Purchase',
+                'date' => $p->date,
+                'reference' => 'Invoice: ' . $p->id,
+                'amount' => $p->total_amount,
+                'mode' => $p->payment_mode,
+                'is_credit' => $p->payment_mode === 'Credit',
+            ]);
+        }
+        
+        foreach ($payments as $p) {
+            $transactions->push((object)[
+                'type' => 'Payment',
+                'date' => $p->date,
+                'reference' => 'Paid via ' . $p->payment_mode,
+                'amount' => $p->amount,
+                'mode' => $p->payment_mode,
+                'is_credit' => false,
+                'id' => $p->id
+            ]);
+        }
+        
+        $transactions = $transactions->sortByDesc('date');
+        
+        return view('masters.vendors.ledger', compact('vendor', 'transactions'));
+    }
+
+    public function store(Request $request, Vendor $vendor): RedirectResponse
+    {
+        $validated = $request->validate([
+            'date' => 'required|date',
+            'amount' => 'required|numeric|min:1',
+            'payment_mode' => 'required|in:Cash,UPI,NEFT,Cheque',
+            'notes' => 'nullable|string'
+        ]);
+        
+        $vendor->vendorPayments()->create($validated);
+        
+        return back()->with('success', 'Payment recorded successfully.');
+    }
+
+    public function destroy(Vendor $vendor, VendorPayment $payment): RedirectResponse
+    {
+        $payment->delete();
+        
+        return back()->with('success', 'Payment deleted successfully.');
+    }
+}

@@ -7,68 +7,85 @@ use App\Models\DailyBill;
 use App\Models\Purchase;
 use App\Models\Expense;
 use App\Models\Emi;
+use App\Models\CustomerPayment;
+use App\Models\VendorPayment;
+use App\Models\DealerPayment;
 use Illuminate\Support\Facades\DB;
 
 class ProfitService
 {
+    private function getFormat($col) {
+        return DB::connection()->getDriverName() === 'sqlite' 
+            ? "strftime('%Y-%W', " . $col . ")" 
+            : "DATE_FORMAT(" . $col . ", '%Y-%u')";
+    }
+
+    private function getMonthFormat($col) {
+        return DB::connection()->getDriverName() === 'sqlite' 
+            ? "strftime('%Y-%m', " . $col . ")" 
+            : "DATE_FORMAT(" . $col . ", '%Y-%m')";
+    }
+
     public function getWeeklyBreakdown(): array
     {
         $startDate = now()->subWeeks(4)->startOfWeek();
-        $isSqlite = DB::connection()->getDriverName() === 'sqlite';
-        $weekFormat = $isSqlite ? "strftime('%%Y-%%W', %s)" : "DATE_FORMAT(%s, '%%Y-%%u')";
+        $weekFormat = $this->getFormat('period_end');
+        $weekFormatDate = $this->getFormat('date');
+        $weekFormatEmi = $this->getFormat('due_date');
 
-        $weeklyBills = WeeklyBill::selectRaw(sprintf("$weekFormat as week_key, SUM(net_amount) as revenue", 'period_end'))
+        $wBills = WeeklyBill::selectRaw($weekFormat . " as week_key, SUM(net_amount) as amount")
+            ->whereNotIn('payment_mode', ['Credit', 'Pending'])
             ->whereDate('period_end', '>=', $startDate)
-            ->groupByRaw(sprintf($weekFormat, 'period_end'))
-            ->get()
-            ->keyBy('week_key');
+            ->groupByRaw($weekFormat)->get()->keyBy('week_key');
 
-        $dailyBills = DailyBill::selectRaw(sprintf("$weekFormat as week_key, SUM(net_amount) as revenue", 'date'))
+        $dBills = DailyBill::selectRaw($weekFormatDate . " as week_key, SUM(net_amount) as amount")
+            ->whereNotIn('payment_mode', ['Credit', 'Pending'])
             ->whereDate('date', '>=', $startDate)
-            ->groupByRaw(sprintf($weekFormat, 'date'))
-            ->get()
-            ->keyBy('week_key');
+            ->groupByRaw($weekFormatDate)->get()->keyBy('week_key');
 
-        $purchaseTotals = Purchase::selectRaw(sprintf("$weekFormat as week_key, SUM(total_amount) as total_purchase", 'date'))
+        $cPayments = CustomerPayment::selectRaw($weekFormatDate . " as week_key, SUM(amount) as amount")
             ->whereDate('date', '>=', $startDate)
-            ->groupByRaw(sprintf($weekFormat, 'date'))
-            ->get()
-            ->keyBy('week_key');
+            ->groupByRaw($weekFormatDate)->get()->keyBy('week_key');
 
-        $expenseTotals = Expense::selectRaw(sprintf("$weekFormat as week_key, SUM(amount) as total_expense", 'date'))
+        $purchases = Purchase::selectRaw($weekFormatDate . " as week_key, SUM(total_amount) as amount")
+            ->whereNotIn('payment_mode', ['Credit', 'Pending'])
             ->whereDate('date', '>=', $startDate)
-            ->groupByRaw(sprintf($weekFormat, 'date'))
-            ->get()
-            ->keyBy('week_key');
+            ->groupByRaw($weekFormatDate)->get()->keyBy('week_key');
 
-        $emiTotals = Emi::selectRaw(sprintf("$weekFormat as week_key, SUM(amount) as total_emi", 'due_date'))
-            ->where('status', '!=', 'Upcoming')
+        $vPayments = VendorPayment::selectRaw($weekFormatDate . " as week_key, SUM(amount) as amount")
+            ->whereDate('date', '>=', $startDate)
+            ->groupByRaw($weekFormatDate)->get()->keyBy('week_key');
+
+        $dPayments = DealerPayment::selectRaw($weekFormatDate . " as week_key, SUM(amount) as amount")
+            ->whereDate('date', '>=', $startDate)
+            ->groupByRaw($weekFormatDate)->get()->keyBy('week_key');
+
+        $expenses = Expense::selectRaw($weekFormatDate . " as week_key, SUM(amount) as amount")
+            ->whereDate('date', '>=', $startDate)
+            ->groupByRaw($weekFormatDate)->get()->keyBy('week_key');
+
+        $emis = Emi::selectRaw($weekFormatEmi . " as week_key, SUM(amount) as amount")
+            ->whereIn('status', ['Paid', 'Overdue'])
             ->whereDate('due_date', '>=', $startDate)
-            ->groupByRaw(sprintf($weekFormat, 'due_date'))
-            ->get()
-            ->keyBy('week_key');
+            ->groupByRaw($weekFormatEmi)->get()->keyBy('week_key');
 
-        // Merge all keys to ensure we cover all weeks
         $allKeys = collect([])
-            ->merge($weeklyBills->keys())
-            ->merge($dailyBills->keys())
-            ->merge($purchaseTotals->keys())
-            ->merge($expenseTotals->keys())
-            ->merge($emiTotals->keys())
-            ->unique()
-            ->sort();
+            ->merge($wBills->keys())->merge($dBills->keys())->merge($cPayments->keys())
+            ->merge($purchases->keys())->merge($vPayments->keys())->merge($dPayments->keys())
+            ->merge($expenses->keys())->merge($emis->keys())
+            ->unique()->sort();
 
-        return $allKeys->map(function ($weekKey) use ($weeklyBills, $dailyBills, $purchaseTotals, $expenseTotals, $emiTotals) {
-            $revenue  = (float) ($weeklyBills[$weekKey]->revenue ?? 0) + (float) ($dailyBills[$weekKey]->revenue ?? 0);
-            $purchase = (float) ($purchaseTotals[$weekKey]->total_purchase ?? 0);
-            $expense  = (float) ($expenseTotals[$weekKey]->total_expense ?? 0) + (float) ($emiTotals[$weekKey]->total_emi ?? 0);
+        return $allKeys->map(function ($wk) use ($wBills, $dBills, $cPayments, $purchases, $vPayments, $dPayments, $expenses, $emis) {
+            $inflow = (float)($wBills[$wk]->amount ?? 0) + (float)($dBills[$wk]->amount ?? 0) + (float)($cPayments[$wk]->amount ?? 0);
+            $outflow = (float)($purchases[$wk]->amount ?? 0) + (float)($vPayments[$wk]->amount ?? 0) + (float)($dPayments[$wk]->amount ?? 0)
+                      + (float)($expenses[$wk]->amount ?? 0) + (float)($emis[$wk]->amount ?? 0);
             
             return [
-                'week'     => 'Week ' . substr($weekKey, -2),
-                'revenue'  => $revenue,
-                'purchase' => $purchase,
-                'expenses' => $expense,
-                'profit'   => $revenue - $purchase - $expense,
+                'week'     => 'Week ' . substr($wk, -2),
+                'revenue'  => $inflow,
+                'purchase' => (float)($purchases[$wk]->amount ?? 0) + (float)($vPayments[$wk]->amount ?? 0) + (float)($dPayments[$wk]->amount ?? 0),
+                'expenses' => (float)($expenses[$wk]->amount ?? 0) + (float)($emis[$wk]->amount ?? 0),
+                'profit'   => $inflow - $outflow,
             ];
         })->values()->toArray();
     }
@@ -76,48 +93,55 @@ class ProfitService
     public function getMonthlyTrend(int $months = 6): array
     {
         $startDate = now()->subMonths($months)->startOfMonth();
-        $isSqlite = DB::connection()->getDriverName() === 'sqlite';
-        $monthFormat = $isSqlite ? "strftime('%%Y-%%m', %s)" : "DATE_FORMAT(%s, '%%Y-%%m')";
+        $monthFormat = $this->getMonthFormat('period_end');
+        $monthFormatDate = $this->getMonthFormat('date');
 
-        $weeklyRevenue = WeeklyBill::selectRaw(sprintf("$monthFormat as month_key, SUM(net_amount) as revenue", 'period_end'))
+        $wBills = WeeklyBill::selectRaw($monthFormat . " as month_key, SUM(net_amount) as amount")
+            ->whereNotIn('payment_mode', ['Credit', 'Pending'])
             ->whereDate('period_end', '>=', $startDate)
-            ->groupByRaw(sprintf($monthFormat, 'period_end'))
-            ->get()
-            ->keyBy('month_key');
+            ->groupByRaw($monthFormat)->get()->keyBy('month_key');
 
-        $dailyRevenue = DailyBill::selectRaw(sprintf("$monthFormat as month_key, SUM(net_amount) as revenue", 'date'))
+        $dBills = DailyBill::selectRaw($monthFormatDate . " as month_key, SUM(net_amount) as amount")
+            ->whereNotIn('payment_mode', ['Credit', 'Pending'])
             ->whereDate('date', '>=', $startDate)
-            ->groupByRaw(sprintf($monthFormat, 'date'))
-            ->get()
-            ->keyBy('month_key');
+            ->groupByRaw($monthFormatDate)->get()->keyBy('month_key');
 
-        $purchaseTotals = Purchase::selectRaw(sprintf("$monthFormat as month_key, SUM(total_amount) as total_purchase", 'date'))
+        $cPayments = CustomerPayment::selectRaw($monthFormatDate . " as month_key, SUM(amount) as amount")
             ->whereDate('date', '>=', $startDate)
-            ->groupByRaw(sprintf($monthFormat, 'date'))
-            ->get()
-            ->keyBy('month_key');
+            ->groupByRaw($monthFormatDate)->get()->keyBy('month_key');
 
-        $expenseTotals = Expense::selectRaw(sprintf("$monthFormat as month_key, SUM(amount) as total_expense", 'date'))
+        $purchases = Purchase::selectRaw($monthFormatDate . " as month_key, SUM(total_amount) as amount")
+            ->whereNotIn('payment_mode', ['Credit', 'Pending'])
             ->whereDate('date', '>=', $startDate)
-            ->groupByRaw(sprintf($monthFormat, 'date'))
-            ->get()
-            ->keyBy('month_key');
+            ->groupByRaw($monthFormatDate)->get()->keyBy('month_key');
+
+        $vPayments = VendorPayment::selectRaw($monthFormatDate . " as month_key, SUM(amount) as amount")
+            ->whereDate('date', '>=', $startDate)
+            ->groupByRaw($monthFormatDate)->get()->keyBy('month_key');
+
+        $dPayments = DealerPayment::selectRaw($monthFormatDate . " as month_key, SUM(amount) as amount")
+            ->whereDate('date', '>=', $startDate)
+            ->groupByRaw($monthFormatDate)->get()->keyBy('month_key');
+
+        $expenses = Expense::selectRaw($monthFormatDate . " as month_key, SUM(amount) as amount")
+            ->whereDate('date', '>=', $startDate)
+            ->groupByRaw($monthFormatDate)->get()->keyBy('month_key');
 
         $allKeys = collect([])
-            ->merge($weeklyRevenue->keys())
-            ->merge($dailyRevenue->keys())
-            ->merge($purchaseTotals->keys())
-            ->merge($expenseTotals->keys())
-            ->unique()
-            ->sort();
+            ->merge($wBills->keys())->merge($dBills->keys())->merge($cPayments->keys())
+            ->merge($purchases->keys())->merge($vPayments->keys())->merge($dPayments->keys())
+            ->merge($expenses->keys())
+            ->unique()->sort();
 
-        return $allKeys->map(fn($monthKey) => [
-            'month'  => date('M', strtotime($monthKey . '-01')),
-            'profit' => (float) ($weeklyRevenue[$monthKey]->revenue ?? 0) + 
-                       (float) ($dailyRevenue[$monthKey]->revenue ?? 0) - 
-                       (float) ($purchaseTotals[$monthKey]->total_purchase ?? 0) - 
-                       (float) ($expenseTotals[$monthKey]->total_expense ?? 0),
-        ])->values()->toArray();
+        return $allKeys->map(function($mk) use ($wBills, $dBills, $cPayments, $purchases, $vPayments, $dPayments, $expenses) {
+            $inflow = (float)($wBills[$mk]->amount ?? 0) + (float)($dBills[$mk]->amount ?? 0) + (float)($cPayments[$mk]->amount ?? 0);
+            $outflow = (float)($purchases[$mk]->amount ?? 0) + (float)($vPayments[$mk]->amount ?? 0) + (float)($dPayments[$mk]->amount ?? 0)
+                      + (float)($expenses[$mk]->amount ?? 0);
+            return [
+                'month'  => date('M', strtotime($mk . '-01')),
+                'profit' => $inflow - $outflow,
+            ];
+        })->values()->toArray();
     }
 
     public function getSummary(): array
@@ -125,49 +149,53 @@ class ProfitService
         $month = sprintf('%02d', now()->month);
         $year  = (string)now()->year;
 
-        $revenue  = WeeklyBill::whereMonth('period_end', $month)->whereYear('period_end', $year)->sum('net_amount') +
-                    DailyBill::whereMonth('date', $month)->whereYear('date', $year)->sum('net_amount');
+        $wBills = WeeklyBill::whereMonth('period_end', $month)->whereYear('period_end', $year)->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('net_amount');
+        $dBills = DailyBill::whereMonth('date', $month)->whereYear('date', $year)->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('net_amount');
+        $cPayments = CustomerPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
+        $revenue = $wBills + $dBills + $cPayments;
         
-        $purchase = Purchase::whereMonth('date', $month)->whereYear('date', $year)->sum('total_amount');
+        $purchases = Purchase::whereMonth('date', $month)->whereYear('date', $year)->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('total_amount');
+        $vPayments = VendorPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
+        $dPayments = DealerPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
+        $purchase = $purchases + $vPayments + $dPayments;
         
-        $expenses = Expense::whereMonth('date', $month)->whereYear('date', $year)->sum('amount') +
-                    Emi::whereIn('status', ['Paid', 'Overdue'])
-                       ->whereMonth('due_date', $month)
-                       ->whereYear('due_date', $year)
-                       ->sum('amount');
+        $expensesAmt = Expense::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
+        $emisAmt = Emi::whereIn('status', ['Paid', 'Overdue'])->whereMonth('due_date', $month)->whereYear('due_date', $year)->sum('amount');
+        $expenses = $expensesAmt + $emisAmt;
 
-        $profit   = $revenue - $purchase - $expenses;
+        $profit = $revenue - $purchase - $expenses;
         
         return compact('revenue', 'purchase', 'expenses', 'profit');
     }
 
     public function getProfitBreakdown($startDate, $endDate): array
     {
-        // Total Billed (Revenue generated)
-        $totalBilled = \App\Models\DailyBill::whereBetween('date', [$startDate, $endDate])->sum('net_amount')
-            + \App\Models\WeeklyBill::whereBetween('period_end', [$startDate, $endDate])->sum('net_amount');
+        $totalBilled = DailyBill::whereBetween('date', [$startDate, $endDate])->sum('net_amount')
+            + WeeklyBill::whereBetween('period_end', [$startDate, $endDate])->sum('net_amount');
 
-        // Total Collected (Actual cash received)
-        // Assume CustomerPayment records track collected cash.
-        $totalCollected = \App\Models\CustomerPayment::whereBetween('date', [$startDate, $endDate])->sum('amount');
+        $cashSales = DailyBill::whereBetween('date', [$startDate, $endDate])->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('net_amount')
+            + WeeklyBill::whereBetween('period_end', [$startDate, $endDate])->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('net_amount');
+        $cPayments = CustomerPayment::whereBetween('date', [$startDate, $endDate])->sum('amount');
+        $totalCollected = $cashSales + $cPayments;
 
-        // Total Purchase
-        $totalPurchase = \App\Models\Purchase::whereBetween('date', [$startDate, $endDate])->sum('total_amount');
+        $totalPurchaseBilled = Purchase::whereBetween('date', [$startDate, $endDate])->sum('total_amount');
+        
+        $cashPurchases = Purchase::whereBetween('date', [$startDate, $endDate])->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('total_amount');
+        $vPayments = VendorPayment::whereBetween('date', [$startDate, $endDate])->sum('amount');
+        $dPayments = DealerPayment::whereBetween('date', [$startDate, $endDate])->sum('amount');
+        $totalPurchasePaid = $cashPurchases + $vPayments + $dPayments;
 
-        // Total Expenses
-        $totalExpenses = \App\Models\Expense::whereBetween('date', [$startDate, $endDate])->sum('amount')
-            + \App\Models\Emi::whereIn('status', ['Paid', 'Overdue'])
-                ->whereBetween('due_date', [$startDate, $endDate])
-                ->sum('amount');
+        $totalExpenses = Expense::whereBetween('date', [$startDate, $endDate])->sum('amount')
+            + Emi::whereIn('status', ['Paid', 'Overdue'])->whereBetween('due_date', [$startDate, $endDate])->sum('amount');
 
-        $billedProfit = $totalBilled - ($totalPurchase + $totalExpenses);
-        $collectedProfit = $totalCollected - ($totalPurchase + $totalExpenses);
+        $billedProfit = $totalBilled - ($totalPurchaseBilled + $totalExpenses);
+        $collectedProfit = $totalCollected - ($totalPurchasePaid + $totalExpenses);
         $pendingCollection = $totalBilled - $totalCollected;
 
         return [
             'total_billed'       => round($totalBilled, 2),
             'total_collected'    => round($totalCollected, 2),
-            'total_purchase'     => round($totalPurchase, 2),
+            'total_purchase'     => round($totalPurchasePaid, 2),
             'total_expenses'     => round($totalExpenses, 2),
             'billed_profit'      => round($billedProfit, 2),
             'collected_profit'   => round($collectedProfit, 2),

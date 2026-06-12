@@ -200,6 +200,11 @@ Route::middleware(['auth'])->group(function () {
         Route::middleware(['permission:view dealer ledger'])->group(function () {
             Route::get('dealers/{dealer}/ledger', [DealerPaymentController::class, 'ledger'])->name('dealers.ledger');
         });
+        Route::middleware(['permission:view vendor payments'])->group(function () {
+            Route::get('vendors/{vendor}/ledger', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'ledger'])->name('vendors.ledger');
+            Route::post('vendors/{vendor}/payments', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'store'])->name('vendors.payments.store');
+            Route::delete('vendors/{vendor}/payments/{payment}', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'destroy'])->name('vendors.payments.destroy');
+        });
 
         permissionResource('customers', CustomerPaymentController::class, 'payments');
         permissionResource('dealers', DealerPaymentController::class, 'payments');

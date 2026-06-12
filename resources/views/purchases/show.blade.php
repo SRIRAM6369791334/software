@@ -2,143 +2,139 @@
 @section('title', 'Purchase Invoice #' . $purchase->id)
 
 @section('content')
-<div class="cm-page">
+<div class="animate-fade-in space-y-6">
 
-    {{-- Top Bar Header --}}
-    <div class="cm-topbar mb-6">
+    <div class="mb-4">
+        <a href="{{ route('purchases.invoices') }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-colors w-max">
+            <span class="material-symbols-rounded text-[20px]">arrow_back</span>
+            Back to Invoices
+        </a>
+    </div>
+
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <a href="{{ route('purchases.entry') }}" class="cm-back-link flex items-center gap-1">
-                <span class="material-symbols-rounded">arrow_back</span>
-                Back to Purchase Entry
-            </a>
-            <h1 class="cm-page-title mt-2">Purchase Invoice Details</h1>
-            <p class="cm-page-sub">Reference ID: #PUR{{ str_pad($purchase->id, 5, '0', STR_PAD_LEFT) }}</p>
+            <h1 class="text-2xl font-bold font-cabinet text-zinc-900 dark:text-zinc-100 tracking-tight">Purchase Invoice Details</h1>
+            <p class="text-sm text-zinc-500 mt-1">Reference ID: #PUR{{ str_pad($purchase->id, 5, '0', STR_PAD_LEFT) }}</p>
         </div>
-        <div class="flex gap-2">
-            <a href="{{ route('purchases.print', $purchase->id) }}" class="cm-btn-secondary flex items-center gap-1.5" target="_blank">
-                <span class="material-symbols-rounded" style="font-size: 18px;">print</span>
+        <div class="flex items-center gap-3">
+            <x-button href="{{ route('purchases.print', $purchase->id) }}" variant="outline" icon="print" target="_blank">
                 Print Invoice
-            </a>
+            </x-button>
             @can('edit purchases')
-            <a href="{{ route('purchases.edit', $purchase->id) }}" class="cm-btn-ghost flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/40 dark:hover:bg-teal-900/60 text-teal-600 dark:text-teal-400">
-                <span class="material-symbols-rounded" style="font-size: 18px;">edit</span>
+            <x-button href="{{ route('purchases.edit', $purchase->id) }}" variant="secondary" icon="edit" class="!bg-teal-50 !text-teal-700 !border-teal-200 hover:!bg-teal-100 dark:!bg-teal-900/30 dark:!text-teal-400 dark:!border-teal-800/50">
                 Edit Entry
-            </a>
+            </x-button>
             @endcan
         </div>
     </div>
 
-    {{-- Details Wrapper --}}
-    <div class="cm-form-container-full">
-        <div class="cm-details-card">
-            
-            {{-- 1. Invoice Metadata Header --}}
-            <div class="cm-invoice-header mb-8 pb-6">
-                <div class="cm-brand-block">
-                    <div class="cm-brand-logo">
-                        <span class="material-symbols-rounded">layers</span>
-                        <span>POULTRYPRO</span>
-                    </div>
-                    <p class="cm-brand-sub">Farm Management & Supply Chain Solutions</p>
+    <div class="rounded-3xl p-8 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-2xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)]">
+        
+        {{-- 1. Invoice Metadata Header --}}
+        <div class="flex flex-wrap justify-between items-start border-b border-zinc-200/60 dark:border-zinc-800/60 pb-6 mb-8 gap-6">
+            <div class="flex flex-col gap-1">
+                <div class="flex items-center gap-2 text-xl font-black text-emerald-600 tracking-tight">
+                    <span class="material-symbols-rounded text-[28px]">layers</span>
+                    <span>POULTRYPRO</span>
                 </div>
-                <div class="cm-invoice-meta-block">
-                    <span class="cm-invoice-meta-title">INVOICE</span>
-                    <span class="cm-invoice-meta-id">#PUR{{ str_pad($purchase->id, 5, '0', STR_PAD_LEFT) }}</span>
-                </div>
+                <p class="text-xs text-zinc-500 uppercase tracking-widest font-semibold">Farm Management & Supply Chain</p>
             </div>
-
-            {{-- 2. Partner & Billing Details Grid --}}
-            <div class="cm-details-grid mb-8 pb-6">
-                <div class="cm-details-column">
-                    <div class="cm-details-label">Procured From (Vendor)</div>
-                    <div class="cm-details-value-firm">{{ $purchase->vendor_name }}</div>
-                    <p class="cm-details-sub-text">Registered Partner Master Record</p>
-                </div>
-                <div class="cm-details-column">
-                    <div class="cm-details-label">Billing Date</div>
-                    <div class="cm-details-value">{{ $purchase->date->format('d F, Y') }}</div>
-                    <p class="cm-details-sub-text">Inward Transaction Date</p>
-                </div>
-                <div class="cm-details-column">
-                    <div class="cm-details-label">Payment State / Mode</div>
-                    <div>
-                        <span class="cm-badge-mode cm-badge-mode--{{ strtolower($purchase->payment_mode) }}">
-                            {{ $purchase->payment_mode }}
-                        </span>
-                    </div>
-                    <p class="cm-details-sub-text">Settled Payment Mode</p>
-                </div>
+            <div class="flex flex-col items-end text-right">
+                <span class="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">INVOICE</span>
+                <span class="text-2xl font-black font-mono text-zinc-900 dark:text-zinc-100 leading-none">#PUR{{ str_pad($purchase->id, 5, '0', STR_PAD_LEFT) }}</span>
             </div>
-
-            {{-- 3. Itemized List Table --}}
-            <div class="cm-table-wrap border border-zinc-200 dark:border-gray-800 rounded-xl overflow-hidden mb-8">
-                <table class="cm-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 45%;">Item / Product Description</th>
-                            <th style="width: 20%; text-align: right;">Quantity</th>
-                            <th style="width: 15%; text-align: right;">Unit Rate</th>
-                            <th style="width: 20%; text-align: right;">Taxable Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @php $computedSubtotal = 0; @endphp
-                        @foreach($purchase->items as $item)
-                            @php 
-                                $rowTotal = $item->quantity * $item->rate;
-                                $computedSubtotal += $rowTotal;
-                            @endphp
-                            <tr class="cm-tr">
-                                <td class="cm-td">
-                                    <div class="flex items-start gap-2.5">
-                                        <div class="cm-table-indicator"></div>
-                                        <div>
-                                            <span class="font-semibold text-zinc-900 dark:text-zinc-100 block">{{ $item->item_name }}</span>
-                                            <span class="text-xs text-zinc-400">Stock procurement & placement in {{ $item->warehouse->name ?? 'Default Warehouse' }}</span>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="cm-td text-right font-mono text-zinc-800 dark:text-zinc-200">
-                                    {{ number_format($item->quantity, 2) }} {{ $item->unit }}
-                                </td>
-                                <td class="cm-td text-right text-zinc-600 dark:text-zinc-400">
-                                    ₹{{ number_format($item->rate, 2) }}
-                                </td>
-                                <td class="cm-td text-right font-semibold text-zinc-900 dark:text-zinc-100">
-                                    ₹{{ number_format($rowTotal, 2) }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            {{-- 4. Financial Calculations Summary --}}
-            <div class="cm-invoice-footer">
-                <div class="cm-financial-summary-box">
-                    <div class="cm-summary-line">
-                        <span class="cm-summary-label">Subtotal (Taxable)</span>
-                        <span class="cm-summary-val font-mono">₹{{ number_format($computedSubtotal, 2) }}</span>
-                    </div>
-                    <div class="cm-summary-line">
-                        <span class="cm-summary-label">Integrated GST ({{ $purchase->gst_percentage }}%)</span>
-                        <span class="cm-summary-val font-mono">₹{{ number_format($purchase->gst_amount, 2) }}</span>
-                    </div>
-                    <div class="cm-summary-line cm-grand-net-row">
-                        <span class="cm-grand-label">Grand Net Total</span>
-                        <span class="cm-grand-val">₹{{ number_format($purchase->total_amount, 2) }}</span>
-                    </div>
-                </div>
-            </div>
-
         </div>
-    </div>
 
+        {{-- 2. Partner & Billing Details Grid --}}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 border-b border-zinc-200/60 dark:border-zinc-800/60 pb-8 mb-8">
+            <div class="flex flex-col gap-2">
+                <div class="text-xs font-bold uppercase text-zinc-400 tracking-widest">Procured From (Vendor)</div>
+                <div class="text-lg font-bold text-emerald-700 dark:text-emerald-400">{{ $purchase->vendor_name }}</div>
+                <p class="text-xs text-zinc-500">Registered Partner Master Record</p>
+            </div>
+            <div class="flex flex-col gap-2">
+                <div class="text-xs font-bold uppercase text-zinc-400 tracking-widest">Billing Date</div>
+                <div class="text-base font-semibold text-zinc-900 dark:text-zinc-100">{{ $purchase->date->format('d F, Y') }}</div>
+                <p class="text-xs text-zinc-500">Inward Transaction Date</p>
+            </div>
+            <div class="flex flex-col gap-2">
+                <div class="text-xs font-bold uppercase text-zinc-400 tracking-widest">Payment State / Mode</div>
+                <div>
+                    @if(strtolower($purchase->payment_mode) === 'cash')
+                        <x-badge color="emerald" class="uppercase font-bold tracking-wider text-[10px]">CASH</x-badge>
+                    @elseif(strtolower($purchase->payment_mode) === 'upi')
+                        <x-badge color="blue" class="uppercase font-bold tracking-wider text-[10px]">UPI</x-badge>
+                    @else
+                        <x-badge color="rose" class="uppercase font-bold tracking-wider text-[10px]">{{ $purchase->payment_mode }}</x-badge>
+                    @endif
+                </div>
+                <p class="text-xs text-zinc-500 mt-1">Settled Payment Mode</p>
+            </div>
+        </div>
+
+        {{-- 3. Itemized List Table --}}
+        <div class="border border-zinc-200/80 dark:border-zinc-800 rounded-2xl overflow-hidden mb-8 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] bg-white/50 dark:bg-zinc-900/50">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="bg-zinc-50 dark:bg-zinc-800/50 text-xs font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-200 dark:border-zinc-800">
+                        <th class="px-6 py-4">Item / Product Description</th>
+                        <th class="px-6 py-4 text-right">Quantity</th>
+                        <th class="px-6 py-4 text-right">Unit Rate</th>
+                        <th class="px-6 py-4 text-right">Taxable Amount</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/50">
+                    @php $computedSubtotal = 0; @endphp
+                    @foreach($purchase->items as $item)
+                        @php 
+                            $rowTotal = $item->quantity * $item->rate;
+                            $computedSubtotal += $rowTotal;
+                        @endphp
+                        <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2"></div>
+                                    <div>
+                                        <span class="font-bold text-sm text-zinc-900 dark:text-zinc-100 block">{{ $item->item_name }}</span>
+                                        <span class="text-xs text-zinc-400">Stock procurement & placement in {{ $item->warehouse->name ?? 'Default Warehouse' }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-right font-mono text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                                {{ number_format($item->quantity, 2) }} {{ $item->unit }}
+                            </td>
+                            <td class="px-6 py-4 text-right text-sm text-zinc-600 dark:text-zinc-400">
+                                ₹{{ number_format($item->rate, 2) }}
+                            </td>
+                            <td class="px-6 py-4 text-right font-bold text-zinc-900 dark:text-zinc-100">
+                                ₹{{ number_format($rowTotal, 2) }}
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        {{-- 4. Financial Calculations Summary --}}
+        <div class="flex justify-end mt-8">
+            <div class="w-full max-w-sm bg-zinc-50/80 dark:bg-zinc-900/80 rounded-2xl p-6 border border-zinc-200/60 dark:border-zinc-800/60">
+                <div class="flex justify-between items-center py-2 text-sm text-zinc-500 dark:text-zinc-400 font-medium">
+                    <span>Subtotal (Taxable)</span>
+                    <span class="font-mono text-zinc-900 dark:text-zinc-100">₹{{ number_format($computedSubtotal, 2) }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 text-sm text-zinc-500 dark:text-zinc-400 font-medium">
+                    <span>Integrated GST ({{ $purchase->gst_percentage }}%)</span>
+                    <span class="font-mono text-zinc-900 dark:text-zinc-100">₹{{ number_format($purchase->gst_amount, 2) }}</span>
+                </div>
+                <div class="flex justify-between items-center mt-4 pt-4 border-t border-dashed border-zinc-300 dark:border-zinc-700">
+                    <span class="text-base font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-widest">Grand Net Total</span>
+                    <span class="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">₹{{ number_format($purchase->total_amount, 2) }}</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
 </div>
 @endsection
-
-@push('styles')
-@include('partials.cm-style')
-@endpush
 
 

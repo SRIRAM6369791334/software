@@ -34,16 +34,31 @@ class PurchaseService
             $data['gst_amount'] = $subtotal * ($gstPercent / 100);
             $data['total_amount'] = $subtotal + $data['gst_amount'];
             
+            // Find and set vendor_id
+            $vendorModel = \App\Models\Vendor::where('firm_name', $data['vendor_name'] ?? '')->first();
+            if ($vendorModel) {
+                $data['vendor_id'] = $vendorModel->id;
+            }
+
             // Grand totals are handled by client-side or calculated here
             $purchase = Purchase::create($data);
             
             foreach ($items as $itemData) {
                 // Fetch item details if item_id is provided
                 $itemName = $itemData['name'] ?? 'Unknown';
-                if (!empty($itemData['item_id'])) {
-                    $itemMaster = Item::find($itemData['item_id']);
-                    $itemName = $itemMaster ? $itemMaster->name : $itemName;
-                }
+                $itemMaster = Item::firstOrCreate(
+                    ['name' => $itemName],
+                    [
+                        'code' => strtoupper(substr($itemName, 0, 3)) . '-' . rand(1000, 9999),
+                        'type' => 'Other',
+                        'category' => 'Uncategorized',
+                        'base_unit' => $itemData['unit'] ?? 'kg',
+                        'is_active' => true
+                    ]
+                );
+                
+                $itemData['item_id'] = $itemMaster->id;
+                $itemName = $itemMaster->name;
 
                 $purchaseItem = $purchase->items()->create([
                     'item_name'    => $itemName,
@@ -108,16 +123,31 @@ class PurchaseService
             foreach ($purchase->items as $item) {
                 $stockService->revertMovement(\App\Models\PurchaseItem::class, $item->id);
             }
-                
+
+            // Find and set vendor_id
+            $vendorModel = \App\Models\Vendor::where('firm_name', $data['vendor_name'] ?? '')->first();
+            if ($vendorModel) {
+                $data['vendor_id'] = $vendorModel->id;
+            }
+
             $purchase->items()->delete();
             $purchase->update($data);
 
             foreach ($items as $itemData) {
                 $itemName = $itemData['name'] ?? 'Unknown';
-                if (!empty($itemData['item_id'])) {
-                    $itemMaster = Item::find($itemData['item_id']);
-                    $itemName = $itemMaster ? $itemMaster->name : $itemName;
-                }
+                $itemMaster = Item::firstOrCreate(
+                    ['name' => $itemName],
+                    [
+                        'code' => strtoupper(substr($itemName, 0, 3)) . '-' . rand(1000, 9999),
+                        'type' => 'Other',
+                        'category' => 'Uncategorized',
+                        'base_unit' => $itemData['unit'] ?? 'kg',
+                        'is_active' => true
+                    ]
+                );
+                
+                $itemData['item_id'] = $itemMaster->id;
+                $itemName = $itemMaster->name;
 
                 $purchaseItem = $purchase->items()->create([
                     'item_name'    => $itemName,
@@ -165,6 +195,11 @@ class PurchaseService
                 $stockService->revertMovement(\App\Models\PurchaseItem::class, $item->id);
             }
             
+            if ($purchase->payment_mode === 'Credit') {
+                // Previously, this decremented dealer's pending_amount.
+                // Now, Vendor calculates its outstanding_balance dynamically.
+            }
+
             // Delete corresponding expense entry
             \App\Models\Expense::where('description', 'like', "%[Ref: PR-{$purchase->id}]%")->delete();
             

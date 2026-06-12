@@ -8,11 +8,6 @@
             <x-button variant="outline" href="{{ route('billing.weekly.export') }}" icon="download">
                 Export
             </x-button>
-            @can('create bills')
-            <x-button variant="primary" x-data x-on:click="$dispatch('open-modal', 'record-bill')" icon="add">
-                Record Bill
-            </x-button>
-            @endcan
         </x-slot:actions>
     </x-page-header>
 
@@ -39,7 +34,202 @@
         </div>
     </div>
 
-    {{-- Main List Section --}}
+    @can('create bills')
+    {{-- Inline Expandable Form --}}
+    <x-card class="transition-all duration-300 mb-8" x-data="{ showForm: false }" x-bind:class="showForm ? 'ring-4 ring-indigo-50 dark:ring-indigo-900/30 border-indigo-100 dark:border-indigo-800' : 'hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]'">
+        <div class="flex justify-between items-center cursor-pointer" @click="showForm = !showForm">
+            <div class="flex items-center gap-4">
+                <div class="flex h-12 w-12 items-center justify-center rounded-[14px] bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/20">
+                    <span class="material-symbols-rounded text-[22px]">add_circle</span>
+                </div>
+                <div>
+                    <h2 class="text-[1.1rem] font-extrabold text-zinc-800 dark:text-zinc-100 tracking-tight">Record Dealer Bill</h2>
+                    <p class="text-[0.75rem] font-semibold text-zinc-400 dark:text-zinc-500 mt-0.5 tracking-wide uppercase">Click to expand and fill details</p>
+                </div>
+            </div>
+            <button type="button" class="flex items-center justify-center h-10 px-4 gap-2 rounded-xl text-sm transition-all duration-300 font-bold" :class="showForm ? 'bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'">
+                <span class="material-symbols-rounded" x-text="showForm ? 'expand_less' : 'add'"></span>
+                <span x-text="showForm ? 'Close Panel' : 'New Entry'"></span>
+            </button>
+        </div>
+
+        <div x-show="showForm" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-4" class="pt-8 mt-6 border-t border-zinc-100 dark:border-zinc-800">
+            <div class="border-b border-zinc-200 dark:border-zinc-800 mb-6 flex gap-4">
+                <button id="tab-single-btn" onclick="switchDealerTab('single')" class="px-4 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 focus:outline-none dark:border-indigo-400 dark:text-indigo-400 transition-colors">
+                    Single Invoice
+                </button>
+                <button id="tab-bulk-btn" onclick="switchDealerTab('bulk')" class="px-4 py-2 text-sm font-semibold text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white focus:outline-none transition-colors border-b-2 border-transparent">
+                    Bulk Route Generation
+                </button>
+            </div>
+
+            {{-- Single Invoice Form --}}
+            <form id="form-single" action="{{ route('billing.weekly.store') }}" method="POST">
+                @csrf
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                    <x-form.select name="customer_id" label="Customer" required>
+                        <option value="">Select customer...</option>
+                        @foreach($customers as $c)
+                            <option value="{{ $c->id }}" {{ old('customer_id') == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->route }})</option>
+                        @endforeach
+                    </x-form.select>
+                    <x-form.input type="date" name="period_start" label="Period Start" required value="{{ old('period_start') }}" />
+                    <x-form.input type="date" name="period_end" label="Period End" required value="{{ old('period_end') }}" />
+                    
+                    <x-form.select name="payment_mode" label="Payment Mode" required>
+                        <option value="Cash" {{ old('payment_mode', 'Cash') === 'Cash' ? 'selected' : '' }}>Cash</option>
+                        <option value="Credit" {{ old('payment_mode') === 'Credit' ? 'selected' : '' }}>Credit (Pay Later)</option>
+                        <option value="UPI" {{ old('payment_mode') === 'UPI' ? 'selected' : '' }}>UPI</option>
+                        <option value="NEFT" {{ old('payment_mode') === 'NEFT' ? 'selected' : '' }}>NEFT</option>
+                        <option value="Cheque" {{ old('payment_mode') === 'Cheque' ? 'selected' : '' }}>Cheque</option>
+                    </x-form.select>
+
+                    <x-form.select name="status" label="Initial Status" required>
+                        <option value="Generated" {{ old('status') === 'Generated' ? 'selected' : '' }}>Generated</option>
+                        <option value="Pending" {{ old('status') === 'Pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="Paid" {{ old('status') === 'Paid' ? 'selected' : '' }}>Paid</option>
+                    </x-form.select>
+                </div>
+
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit">Billing Items & Birds</label>
+                        <x-button type="button" variant="outline" size="sm" icon="add" onclick="addWeeklyRow()">Add Item</x-button>
+                    </div>
+                    
+                    <div class="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+                        <table class="w-full text-sm text-left text-zinc-600 dark:text-zinc-400 font-outfit" id="weekly-items-table">
+                            <thead class="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-100/50 dark:bg-zinc-800 font-cabinet">
+                                <tr>
+                                    <th class="px-4 py-3 font-semibold">Item / Description</th>
+                                    <th class="px-4 py-3 font-semibold text-center w-24">Qty/kg</th>
+                                    <th class="px-4 py-3 font-semibold text-right w-32">Rate/kg</th>
+                                    <th class="px-4 py-3 font-semibold text-right w-32">Subtotal</th>
+                                    <th class="px-4 py-3 text-center w-12"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="weekly-items-body" class="divide-y divide-zinc-200 dark:divide-zinc-700">
+                                <tr class="item-row">
+                                    <td class="p-2">
+                                        <select name="items[0][name]" required class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 transition-colors">
+                                            @foreach($items as $item)
+                                                <option value="{{ $item->name }}" {{ $item->name === 'Live Broiler Birds' ? 'selected' : '' }}>
+                                                    {{ $item->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td class="p-2">
+                                        <input type="number" name="items[0][qty]" step="0.01" required placeholder="0.0" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 text-center row-qty" oninput="recalcWeekly()">
+                                    </td>
+                                    <td class="p-2">
+                                        <input type="number" name="items[0][rate]" step="0.01" required placeholder="0.0" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 text-right row-rate" oninput="recalcWeekly()">
+                                    </td>
+                                    <td class="p-2 text-right font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 row-total">
+                                        ₹0.00
+                                    </td>
+                                    <td class="p-2 text-center"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
+                    <div class="bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
+                        <label class="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-4 font-outfit">Tax Settings (GST)</label>
+                        <div class="flex items-center gap-4">
+                            <div class="w-24">
+                                <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">GST %</label>
+                                <input type="number" name="gst_percentage" id="gst-percentage" value="18" readonly class="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 text-sm rounded-lg block w-full p-2 text-center font-jetbrains font-bold cursor-not-allowed">
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Calculated GST</label>
+                                <div id="display-tax" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 font-jetbrains font-bold text-zinc-900 dark:text-zinc-100">₹0.00</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl p-6 shadow-xl shadow-indigo-500/20 text-white flex flex-col sm:flex-row items-center justify-between gap-6">
+                        <div class="flex flex-col">
+                            <span class="text-indigo-100 text-xs font-bold uppercase tracking-wider block mb-1 font-outfit">Grand Total</span>
+                            <span id="display-total" class="text-3xl font-black font-jetbrains tracking-tight">₹0.00</span>
+                            <input type="hidden" name="amount" id="total-hidden">
+                        </div>
+                        <button type="submit" class="w-full sm:w-auto bg-white text-indigo-700 hover:bg-indigo-50 px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
+                            <span class="material-symbols-rounded">receipt_long</span>
+                            Generate Invoice
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            {{-- Bulk Generation Form --}}
+            <form id="form-bulk" action="{{ route('billing.weekly.bulkStore') }}" method="POST" class="hidden">
+                @csrf
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-2">1. Select Dealers</label>
+                        <div class="h-64 overflow-y-auto pr-2 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2 space-y-1 bg-zinc-50 dark:bg-zinc-800/50">
+                            <div class="flex justify-between items-center px-2 py-1 mb-2">
+                                <span class="text-xs text-zinc-500">Select customers for bulk billing</span>
+                                <button type="button" onclick="toggleAllDealers(this)" class="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 uppercase">Select All</button>
+                            </div>
+                            @foreach($customers as $c)
+                                <label class="flex items-center gap-3 p-2 bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-lg hover:border-indigo-200 transition-all cursor-pointer">
+                                    <input type="checkbox" name="customer_ids[]" value="{{ $c->id }}" class="bulk-dealer-cb w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-zinc-300">
+                                    <div class="flex flex-col">
+                                        <span class="text-xs font-bold text-zinc-700 dark:text-zinc-200">{{ $c->name }}</span>
+                                        <span class="text-[9px] font-bold text-zinc-400 uppercase">{{ $c->route }}</span>
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit">2. Global Billing Settings</label>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <x-form.input type="date" name="period_start" label="From Date" required />
+                            <x-form.input type="date" name="period_end" label="To Date" required />
+                        </div>
+
+                        <x-form.input type="number" name="amount" label="Standard Flat Amount (Rs)" required step="0.01" placeholder="0.00" class="font-bold text-indigo-600 dark:text-indigo-400" />
+
+                        <x-form.select name="payment_mode" label="Payment Mode" required>
+                            <option value="Cash">Cash</option>
+                            <option value="Credit">Credit (Pay Later)</option>
+                            <option value="UPI">UPI</option>
+                            <option value="NEFT">NEFT</option>
+                            <option value="Cheque">Cheque</option>
+                        </x-form.select>
+
+                        <x-form.select name="status" label="Initial Status" required>
+                            <option value="Generated">Generated</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Paid">Paid</option>
+                        </x-form.select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 items-end mt-6">
+                    <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl p-6 shadow-xl shadow-indigo-500/20 text-white flex flex-col sm:flex-row items-center justify-between gap-6">
+                        <div class="flex flex-col">
+                            <span class="text-indigo-100 text-xs font-bold uppercase tracking-wider block mb-1 font-outfit">Bulk Action</span>
+                            <span class="text-2xl font-black font-jetbrains tracking-tight">Generate Bulk Bills</span>
+                        </div>
+                        <button type="submit" class="w-full sm:w-auto bg-white text-indigo-700 hover:bg-indigo-50 px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
+                            <span class="material-symbols-rounded">layers</span>
+                            Execute Bulk Billing
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </x-card>
+    @endcan
     <x-card>
         <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">Weekly Invoice Log</h2>
@@ -138,151 +328,7 @@
     </x-card>
 </div>
 
-{{-- Record Bill Modal --}}
-<x-modal name="record-bill" title="Record Dealer Bill" subtitle="Single Invoice or Bulk Generation" icon="receipt_long" iconColor="indigo" maxWidth="3xl">
-    
-    <div class="border-b border-zinc-200 dark:border-zinc-800 mb-6 flex gap-4">
-        <button id="tab-single-btn" onclick="switchDealerTab('single')" class="px-4 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 focus:outline-none dark:border-indigo-400 dark:text-indigo-400 transition-colors">
-            Single Invoice
-        </button>
-        <button id="tab-bulk-btn" onclick="switchDealerTab('bulk')" class="px-4 py-2 text-sm font-semibold text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white focus:outline-none transition-colors">
-            Bulk Route Generation
-        </button>
-    </div>
 
-    {{-- Single Invoice Form --}}
-    <form id="form-single" action="{{ route('billing.weekly.store') }}" method="POST">
-        @csrf
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <x-form.select name="customer_id" label="Customer" required>
-                <option value="">Select customer...</option>
-                @foreach($customers as $c)
-                    <option value="{{ $c->id }}" {{ old('customer_id') == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->route }})</option>
-                @endforeach
-            </x-form.select>
-            <x-form.input type="date" name="period_start" label="Period Start" required value="{{ old('period_start') }}" />
-            <x-form.input type="date" name="period_end" label="Period End" required value="{{ old('period_end') }}" />
-            <x-form.select name="status" label="Initial Status" required>
-                <option value="Generated" {{ old('status') === 'Generated' ? 'selected' : '' }}>Generated</option>
-                <option value="Pending" {{ old('status') === 'Pending' ? 'selected' : '' }}>Pending</option>
-                <option value="Paid" {{ old('status') === 'Paid' ? 'selected' : '' }}>Paid</option>
-            </x-form.select>
-        </div>
-
-        <div class="mb-6">
-            <div class="flex items-center justify-between mb-3">
-                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit">Billing Items & Birds</label>
-                <x-button type="button" variant="outline" size="sm" icon="add" onclick="addWeeklyRow()">Add Item</x-button>
-            </div>
-            
-            <div class="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
-                <table class="w-full text-sm text-left text-zinc-600 dark:text-zinc-400 font-outfit" id="weekly-items-table">
-                    <thead class="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-100/50 dark:bg-zinc-800 font-cabinet">
-                        <tr>
-                            <th class="px-4 py-3 font-semibold">Item / Description</th>
-                            <th class="px-4 py-3 font-semibold text-center w-24">Qty/kg</th>
-                            <th class="px-4 py-3 font-semibold text-right w-32">Rate/kg</th>
-                            <th class="px-4 py-3 font-semibold text-right w-32">Subtotal</th>
-                            <th class="px-4 py-3 text-center w-12"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="weekly-items-body" class="divide-y divide-zinc-200 dark:divide-zinc-700">
-                        <tr class="item-row">
-                            <td class="p-2">
-                                <select name="items[0][name]" required class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 transition-colors">
-                                    @foreach($items as $item)
-                                        <option value="{{ $item->name }}" {{ $item->name === 'Live Broiler Birds' ? 'selected' : '' }}>
-                                            {{ $item->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td class="p-2">
-                                <input type="number" name="items[0][qty]" step="0.01" required placeholder="0.0" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 text-center row-qty" oninput="recalcWeekly()">
-                            </td>
-                            <td class="p-2">
-                                <input type="number" name="items[0][rate]" step="0.01" required placeholder="0.0" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 text-right row-rate" oninput="recalcWeekly()">
-                            </td>
-                            <td class="p-2 text-right font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 row-total">
-                                ₹0.00
-                            </td>
-                            <td class="p-2 text-center"></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700">
-            <div>
-                <label class="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2 font-outfit">Tax Settings (GST)</label>
-                <div class="flex items-center gap-3">
-                    <input type="number" name="gst_percentage" id="gst-percentage" value="18" readonly class="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 text-sm rounded-lg block w-20 p-2 text-center font-jetbrains font-bold cursor-not-allowed">
-                    <span class="text-sm text-zinc-500 font-bold">% GST</span>
-                </div>
-                <p class="text-xs text-zinc-500 mt-2 font-medium">Calculated GST: <span id="display-tax" class="font-jetbrains text-zinc-900 dark:text-zinc-100 font-bold">₹0.00</span></p>
-            </div>
-            
-            <div class="flex flex-col justify-end items-end">
-                <span class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1 font-outfit">Grand Total</span>
-                <span id="display-total" class="font-jetbrains text-3xl font-bold text-indigo-600 dark:text-indigo-400">₹0.00</span>
-                <input type="hidden" name="amount" id="total-hidden">
-            </div>
-        </div>
-
-        <div class="mt-6 flex justify-end gap-3">
-            <x-button type="button" variant="outline" x-on:click="show = false">Cancel</x-button>
-            <x-button type="submit" variant="primary" icon="receipt_long">Generate Invoice</x-button>
-        </div>
-    </form>
-
-    {{-- Bulk Generation Form --}}
-    <form id="form-bulk" action="{{ route('billing.weekly.bulkStore') }}" method="POST" class="hidden">
-        @csrf
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-2">1. Select Dealers</label>
-                <div class="h-64 overflow-y-auto pr-2 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2 space-y-1 bg-zinc-50 dark:bg-zinc-800/50">
-                    <div class="flex justify-between items-center px-2 py-1 mb-2">
-                        <span class="text-xs text-zinc-500">Select customers for bulk billing</span>
-                        <button type="button" onclick="toggleAllDealers(this)" class="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 uppercase">Select All</button>
-                    </div>
-                    @foreach($customers as $c)
-                        <label class="flex items-center gap-3 p-2 bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-lg hover:border-indigo-200 transition-all cursor-pointer">
-                            <input type="checkbox" name="customer_ids[]" value="{{ $c->id }}" class="bulk-dealer-cb w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-zinc-300">
-                            <div class="flex flex-col">
-                                <span class="text-xs font-bold text-zinc-700 dark:text-zinc-200">{{ $c->name }}</span>
-                                <span class="text-[9px] font-bold text-zinc-400 uppercase">{{ $c->route }}</span>
-                            </div>
-                        </label>
-                    @endforeach
-                </div>
-            </div>
-
-            <div class="space-y-4">
-                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit">2. Global Billing Settings</label>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <x-form.input type="date" name="period_start" label="From Date" required />
-                    <x-form.input type="date" name="period_end" label="To Date" required />
-                </div>
-
-                <x-form.input type="number" name="amount" label="Standard Flat Amount (Rs)" required step="0.01" placeholder="0.00" class="font-bold text-indigo-600 dark:text-indigo-400" />
-
-                <x-form.select name="status" label="Initial Status" required>
-                    <option value="Generated">Generated</option>
-                    <option value="Pending">Pending</option>
-                </x-form.select>
-            </div>
-        </div>
-
-        <div class="mt-6 flex justify-end gap-3 border-t border-zinc-200 dark:border-zinc-800 pt-6">
-            <x-button type="button" variant="outline" x-on:click="show = false">Cancel</x-button>
-            <x-button type="submit" variant="primary" icon="layers">Generate Bulk Bills</x-button>
-        </div>
-    </form>
-</x-modal>
 @endsection
 
 @push('scripts')

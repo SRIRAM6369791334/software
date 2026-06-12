@@ -44,6 +44,12 @@ class StockService
     {
         return DB::transaction(function () use ($data) {
             $data = $this->prepareTransactionData($data, 'OUT');
+            
+            $currentStock = $this->getCurrentStock($data['item_id'] ?? $data['item_name']);
+            if ($data['quantity'] > $currentStock) {
+                throw new \Exception("Insufficient stock for {$data['item_name']}. Available: {$currentStock}, Requested: {$data['quantity']}");
+            }
+
             $movement = $this->stockRepo->createTransaction($data);
 
             if (!empty($data['item_id'])) {

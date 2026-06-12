@@ -33,6 +33,8 @@
                     {{ $text }}
                 </option>
             @endforeach
+            
+            {{ $slot }}
         </select>
         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zinc-500 dark:text-zinc-400">
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
