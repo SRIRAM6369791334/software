@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Daily Sales Report')
 
@@ -17,7 +17,9 @@
             <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Date</label>
             <x-form.input type="date" name="date" :value="$date" />
         </div>
-        <x-button type="submit" variant="primary">Apply</x-button>
+        <div class="pb-[2px]">
+            <x-button type="submit" variant="primary">Apply</x-button>
+        </div>
     </form>
 </x-card>
 

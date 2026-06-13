@@ -65,4 +65,18 @@ class Customer extends Model
     {
         return $this->balance > 0 ? '₹' . number_format($this->balance, 0, '.', ',') : '—';
     }
+
+    protected static function booted()
+    {
+        static::created(function ($customer) {
+            $users = \App\Models\User::all();
+            \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\ActivityNotification(
+                'New Customer Added',
+                "Customer {$customer->name} was registered.",
+                route('masters.customers.show', $customer->id),
+                'person',
+                'emerald'
+            ));
+        });
+    }
 }

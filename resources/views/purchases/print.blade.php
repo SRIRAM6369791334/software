@@ -260,7 +260,7 @@
             </div>
             <div class="invoice-title">
                 <h2>PURCHASE INVOICE</h2>
-                <div class="invoice-id">#PUR{{ str_pad($purchase->id, 5, '0', STR_PAD_LEFT) }}</div>
+                <div class="invoice-id">{{ $purchase->invoice_no ?? '#PUR' . str_pad($purchase->id, 5, '0', STR_PAD_LEFT) }}</div>
             </div>
         </div>
 
@@ -338,7 +338,7 @@
 
         {{-- Print Footer --}}
         <div class="footer">
-            <p>This is a system generated legal print invoice for transaction #PUR{{ str_pad($purchase->id, 5, '0', STR_PAD_LEFT) }}. No signature is required.</p>
+            <p>This is a system generated legal print invoice for transaction {{ $purchase->invoice_no ?? '#PUR' . str_pad($purchase->id, 5, '0', STR_PAD_LEFT) }}. No signature is required.</p>
         </div>
 
     </div>

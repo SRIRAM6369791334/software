@@ -17,10 +17,10 @@
     </x-page-header>
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <x-stat-card title="Total Suppliers" value="{{ \App\Models\Vendor::count() }}" icon="local_shipping" color="teal" />
-        <x-stat-card title="Active Routes" value="{{ \App\Models\Vendor::distinct('route')->count('route') }}" icon="route" color="blue" />
-        <x-stat-card title="GST Registered" value="{{ \App\Models\Vendor::whereNotNull('gst_number')->count() }}" icon="verified" color="emerald" />
-        <x-stat-card title="Unregistered" value="{{ \App\Models\Vendor::whereNull('gst_number')->count() }}" icon="warning" color="amber" />
+        <x-stat-card title="Total Suppliers" value="{{ $totalVendors }}" icon="local_shipping" color="teal" />
+        <x-stat-card title="Active Routes" value="{{ $activeRoutes }}" icon="route" color="blue" />
+        <x-stat-card title="GST Registered" value="{{ $gstRegistered }}" icon="verified" color="emerald" />
+        <x-stat-card title="Unregistered" value="{{ $unregistered }}" icon="warning" color="amber" />
     </div>
 
     <x-card padding="p-0">

@@ -25,8 +25,13 @@ class Vendor extends Model
 
     public function getOutstandingBalanceAttribute(): float
     {
-        $totalCreditPurchases = (float) $this->purchases()->where('payment_mode', 'Credit')->sum('total_amount');
-        $totalPaymentsPaid = (float) $this->vendorPayments()->sum('amount');
+        $totalCreditPurchases = $this->relationLoaded('purchases') 
+            ? (float) $this->purchases->where('payment_mode', 'Credit')->sum('total_amount')
+            : (float) $this->purchases()->where('payment_mode', 'Credit')->sum('total_amount');
+
+        $totalPaymentsPaid = $this->relationLoaded('vendorPayments')
+            ? (float) $this->vendorPayments->sum('amount')
+            : (float) $this->vendorPayments()->sum('amount');
         
         return $totalCreditPurchases - $totalPaymentsPaid;
     }
@@ -38,6 +43,20 @@ class Vendor extends Model
             $q->where('firm_name', 'like', "%{$term}%")
               ->orWhere('contact_person', 'like', "%{$term}%")
               ->orWhere('phone', 'like', "%{$term}%");
+        });
+    }
+
+    protected static function booted()
+    {
+        static::created(function ($vendor) {
+            $users = \App\Models\User::all();
+            \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\ActivityNotification(
+                'New Vendor Added',
+                "Vendor {$vendor->firm_name} was registered.",
+                route('masters.vendors.show', $vendor->id),
+                'local_shipping',
+                'amber'
+            ));
         });
     }
 }

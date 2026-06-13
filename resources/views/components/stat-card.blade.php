@@ -38,9 +38,9 @@
         @if($icon)
             <div class="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl {{ $iconClass }} transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
                 @if(Str::startsWith($icon, 'ph-'))
-                    <i class="ph {{ $icon }} text-xl sm:text-2xl"></i>
+                    <i class="ph {{ $icon }} text-xl sm:text-2xl leading-none flex items-center justify-center"></i>
                 @else
-                    <span class="material-symbols-rounded text-xl sm:text-2xl">{{ $icon }}</span>
+                    <span class="material-symbols-rounded text-xl sm:text-2xl leading-none flex items-center justify-center">{{ $icon }}</span>
                 @endif
             </div>
         @endif

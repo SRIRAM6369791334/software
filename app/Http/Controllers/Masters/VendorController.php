@@ -28,7 +28,15 @@ class VendorController extends Controller
         $vendors = $query->orderBy('firm_name')->paginate(15);
         $routes = \App\Models\Vendor::select('route')->distinct()->whereNotNull('route')->where('route', '!=', '')->pluck('route');
         
-        return view('masters.vendors.index', compact('vendors', 'search', 'routeFilter', 'routes'));
+        $totalVendors  = \App\Models\Vendor::count();
+        $activeRoutes  = \App\Models\Vendor::distinct('route')->count('route');
+        $gstRegistered = \App\Models\Vendor::whereNotNull('gst_number')->count();
+        $unregistered  = \App\Models\Vendor::whereNull('gst_number')->count();
+        
+        return view('masters.vendors.index', compact(
+            'vendors', 'search', 'routeFilter', 'routes',
+            'totalVendors', 'activeRoutes', 'gstRegistered', 'unregistered'
+        ));
     }
 
     public function create(): View

@@ -15,11 +15,6 @@
     </x-page-header>
 
     {{-- Stats --}}
-    @php
-        $totalInvoices = \App\Models\Purchase::count();
-        $totalExpenditure = \App\Models\Purchase::sum('total_amount');
-        $totalTaxPaid = \App\Models\Purchase::sum('gst_amount');
-    @endphp
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <x-stat-card 
             label="Archived Invoices" 

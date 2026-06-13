@@ -48,4 +48,18 @@ class Dealer extends Model
     {
         return $this->pending_amount > 0 ? '₹' . number_format($this->pending_amount, 0, '.', ',') : '—';
     }
+
+    protected static function booted()
+    {
+        static::created(function ($dealer) {
+            $users = \App\Models\User::all();
+            \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\ActivityNotification(
+                'New Dealer Added',
+                "Dealer {$dealer->firm_name} was registered.",
+                route('masters.dealers.show', $dealer->id),
+                'storefront',
+                'blue'
+            ));
+        });
+    }
 }

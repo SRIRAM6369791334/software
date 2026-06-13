@@ -7,18 +7,18 @@ use App\Models\Customer;
 use App\Models\DailyBill;
 use App\Models\Item;
 use App\Services\ExportService;
-use App\Services\InvoiceNumberService;
-use App\Services\StockService;
-use App\Services\Tax\GSTCalculator;
+use App\Services\DailyBillingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DailyBillingController extends Controller
 {
-    public function __construct(private ExportService $exporter) {}
+    public function __construct(
+        private ExportService $exporter,
+        private DailyBillingService $billingService
+    ) {}
 
     public function index(Request $request): View
     {
@@ -34,9 +34,9 @@ class DailyBillingController extends Controller
         return redirect()->route('billing.daily.index');
     }
 
-    public function store(Request $request, InvoiceNumberService $invoiceService): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'customer_id'    => 'required|exists:customers,id',
             'date'           => 'required|date|before_or_equal:today',
             'status'         => 'required|in:Generated,Pending,Paid',
@@ -50,64 +50,7 @@ class DailyBillingController extends Controller
         ]);
 
         try {
-            DB::transaction(function () use ($request, $invoiceService) {
-                $itemsData = $request->input('items');
-                $gstPercent = $request->input('gst_percentage');
-                $paymentMode = $request->input('payment_mode');
-                $status = $request->input('status');
-                
-                $subtotal = 0;
-                foreach ($itemsData as $item) {
-                    $subtotal += $item['qty'] * $item['rate'];
-                }
-
-                $gstData = GSTCalculator::calculate($subtotal, $gstPercent);
-                
-                $bill = DailyBill::create([
-                    'customer_id'    => $request->input('customer_id'),
-                    'date'           => $request->input('date'),
-                    'invoice_no'     => $invoiceService->generateUnique('INV-D', 'daily_bills'),
-                    'amount'         => $subtotal,
-                    'gst_percentage' => $gstPercent,
-                    'gst_amount'     => $gstData['total_gst'],
-                    'net_amount'     => $gstData['net_amount'],
-                    'status'         => $status,
-                    'payment_mode'   => $paymentMode,
-                ]);
-
-                // Update Customer Balance if Credit or Pending
-                if ($paymentMode === 'Credit' || $status === 'Pending') {
-                    $customer = Customer::find($request->input('customer_id'));
-                    if ($customer) {
-                        $customer->increment('balance', $gstData['net_amount']);
-                    }
-                }
-
-                foreach ($itemsData as $item) {
-                    $base = $item['qty'] * $item['rate'];
-                    $tax = round($base * $gstPercent / 100, 2);
-                    
-                    $billItem = $bill->items()->create([
-                        'item_name'    => $item['name'],
-                        'quantity_kg'  => $item['qty'],
-                        'rate_per_kg'  => $item['rate'],
-                        'tax_amount'   => $tax,
-                        'total_amount' => $base + $tax,
-                        'unit'         => $item['unit'] ?? 'kg',
-                    ]);
-
-                    // Auto-trigger stock movement
-                    app(StockService::class)->recordOut([
-                        'item_name'      => $billItem->item_name,
-                        'quantity'       => $billItem->quantity_kg,
-                        'rate'           => $billItem->rate_per_kg,
-                        'reference_type' => DailyBill::class,
-                        'reference_id'   => $bill->id,
-                        'date'           => $bill->date,
-                        'created_by'     => auth()->id() ?? 1,
-                    ]);
-                }
-            });
+            $this->billingService->create($validated);
         } catch (\Exception $e) {
             return back()->with('error', 'Could not create bill: ' . $e->getMessage());
         }

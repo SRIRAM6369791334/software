@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'GST Billing Overview')
 
 @section('content')
@@ -32,6 +32,7 @@
                         <td class="px-5 py-4 font-semibold text-zinc-950">{{ $bill->date->format('d M Y') }}</td>
                         <td class="px-5 py-4">
                             <p class="font-bold text-zinc-950">{{ $bill->customer->name }}</p>
+                            <p class="text-xs text-zinc-500 font-semibold font-mono">{{ $bill->invoice_number }}</p>
                             <p class="text-[10px] text-zinc-400 font-mono">{{ $bill->customer->gst_number ?: 'NO GSTIN' }}</p>
                         </td>
                         <td class="px-5 py-4 text-zinc-500 italic">{{ $bill->items_description }}</td>

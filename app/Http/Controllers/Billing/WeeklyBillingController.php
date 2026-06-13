@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\WeeklyBill;
 use App\Models\Item;
 use App\Services\ExportService;
+use App\Services\WeeklyBillingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -14,15 +15,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class WeeklyBillingController extends Controller
 {
-    public function __construct(private ExportService $exporter) {}
+    public function __construct(
+        private ExportService $exporter,
+        private WeeklyBillingService $billingService
+    ) {}
 
     public function index(Request $request): View
     {
-        $search = $request->input('search');
-        $bills  = WeeklyBill::with(['customer', 'items'])
-            ->search($search)
-            ->latest()
-            ->paginate(15);
+        $search    = $request->input('search');
+        $bills     = WeeklyBill::with(['customer', 'items'])->search($search)->latest()->paginate(15);
         $customers = Customer::orderBy('name')->get();
         $items     = Item::active()->get();
         return view('billing.weekly.index', compact('bills', 'customers', 'search', 'items'));
@@ -34,9 +35,9 @@ class WeeklyBillingController extends Controller
         return view('billing.weekly.bulk', compact('customers'));
     }
 
-    public function store(Request $request, \App\Services\InvoiceNumberService $invoiceService): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'customer_id'  => 'required|exists:customers,id',
             'period_start' => 'required|date',
             'period_end'   => 'required|date|after_or_equal:period_start',
@@ -49,62 +50,7 @@ class WeeklyBillingController extends Controller
         ]);
 
         try {
-            \Illuminate\Support\Facades\DB::transaction(function () use ($request, $invoiceService) {
-                $itemsData = $request->input('items');
-                $paymentMode = $request->input('payment_mode');
-                $status = $request->input('status');
-                
-                $subtotal = 0;
-                foreach ($itemsData as $item) {
-                    $subtotal += $item['qty'] * $item['rate'];
-                }
-
-                $gstData = \App\Services\Tax\GSTCalculator::calculate($subtotal, 18);
-                
-                $bill = WeeklyBill::create([
-                    'customer_id'    => $request->input('customer_id'),
-                    'period_start'   => $request->input('period_start'),
-                    'period_end'     => $request->input('period_end'),
-                    'invoice_no'     => $invoiceService->generateUnique('INV-W', 'weekly_bills'),
-                    'amount'         => $subtotal,
-                    'gst_percentage' => 18,
-                    'gst_amount'     => $gstData['total_gst'],
-                    'net_amount'     => $gstData['net_amount'],
-                    'status'         => $status,
-                    'payment_mode'   => $paymentMode,
-                ]);
-
-                if ($paymentMode === 'Credit' || $status === 'Pending') {
-                    $customer = Customer::find($request->input('customer_id'));
-                    if ($customer) {
-                        $customer->increment('balance', $gstData['net_amount']);
-                    }
-                }
-
-                foreach ($itemsData as $item) {
-                    $base = $item['qty'] * $item['rate'];
-                    $tax = round($base * 18 / 100, 2);
-
-                    $billItem = $bill->items()->create([
-                        'item_name'    => $item['name'],
-                        'quantity_kg'  => $item['qty'],
-                        'rate_per_kg'  => $item['rate'],
-                        'tax_amount'   => $tax,
-                        'total_amount' => $base + $tax,
-                    ]);
-
-                    // Auto-trigger stock movement for each item
-                    app(\App\Services\StockService::class)->recordOut([
-                        'item_name'      => $billItem->item_name,
-                        'quantity'       => $billItem->quantity_kg,
-                        'rate'           => $billItem->rate_per_kg,
-                        'reference_type' => WeeklyBill::class,
-                        'reference_id'   => $bill->id,
-                        'date'           => $bill->period_end,
-                        'created_by'     => auth()->id() ?? 1,
-                    ]);
-                }
-            });
+            $this->billingService->create($validated);
         } catch (\Exception $e) {
             return back()->with('error', 'Could not create bill: ' . $e->getMessage());
         }
@@ -112,9 +58,9 @@ class WeeklyBillingController extends Controller
         return back()->with('success', 'Weekly bill created successfully.');
     }
 
-    public function bulkStore(Request $request, \App\Services\InvoiceNumberService $invoiceService): RedirectResponse
+    public function bulkStore(Request $request): RedirectResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'customer_ids'   => 'required|array',
             'customer_ids.*' => 'exists:customers,id',
             'period_start'   => 'required|date',
@@ -125,47 +71,12 @@ class WeeklyBillingController extends Controller
         ]);
 
         try {
-            \Illuminate\Support\Facades\DB::transaction(function () use ($request, $invoiceService) {
-                $paymentMode = $request->input('payment_mode');
-                $status = $request->input('status');
-
-                foreach ($request->customer_ids as $cid) {
-                    $gstData = \App\Services\Tax\GSTCalculator::calculate($request->amount, 18);
-
-                    $bill = WeeklyBill::create([
-                        'invoice_no'   => $invoiceService->generateUnique('INV-W', 'weekly_bills'),
-                        'customer_id'  => $cid,
-                        'period_start' => $request->period_start,
-                        'period_end'   => $request->period_end,
-                        'amount'       => $request->amount,
-                        'gst_percentage' => 18,
-                        'gst_amount'   => $gstData['total_gst'],
-                        'net_amount'   => $gstData['net_amount'],
-                        'status'       => $status,
-                        'payment_mode' => $paymentMode,
-                    ]);
-
-                    if ($paymentMode === 'Credit' || $status === 'Pending') {
-                        $customer = Customer::find($cid);
-                        if ($customer) {
-                            $customer->increment('balance', $gstData['net_amount']);
-                        }
-                    }
-
-                    $bill->items()->create([
-                        'item_name'    => 'Weekly Poultry Settlement',
-                        'quantity_kg'  => 1,
-                        'rate_per_kg'  => $request->amount,
-                        'tax_amount'   => $gstData['total_gst'],
-                        'total_amount' => $gstData['net_amount'],
-                    ]);
-                }
-            });
+            $count = $this->billingService->bulkCreate($validated['customer_ids'], $validated);
         } catch (\Exception $e) {
             return back()->with('error', 'Could not create bills: ' . $e->getMessage());
         }
 
-        return back()->with('success', count($request->customer_ids) . ' bills generated.');
+        return back()->with('success', $count . ' bills generated.');
     }
 
     public function show(WeeklyBill $bill): View
@@ -186,7 +97,7 @@ class WeeklyBillingController extends Controller
         if (!$phone) return back()->with('error', 'Customer phone missing.');
 
         $text = urlencode("Hello {$bill->customer->name}, your poultry bill for period {$bill->period_start->format('d M')} to {$bill->period_end->format('d M')} is ₹" . number_format($bill->amount, 2) . ". Thank you!");
-        
+
         return redirect()->away("https://wa.me/91{$phone}?text={$text}");
     }
 
@@ -212,3 +123,5 @@ class WeeklyBillingController extends Controller
         return $pdf->download("invoice-{$bill->invoice_no}.pdf");
     }
 }
+
+

@@ -10,7 +10,7 @@
                 Export
             </x-button>
             @can('create payments')
-            <x-button variant="primary" x-data x-on:click="$dispatch('open-modal', 'add-payment')" icon="add">
+            <x-button variant="primary" href="{{ route('payments.dealers.create') }}" icon="add">
                 Record Payout
             </x-button>
             @endcan
@@ -99,47 +99,4 @@
         </x-data-table>
     </x-card>
 
-</div>
-
-{{-- Add Payment Modal --}}
-<x-modal name="add-payment" title="Record Payout" subtitle="Enter payment made to clear supplier dues" icon="payments" iconColor="blue" maxWidth="md">
-    <form action="{{ route('payments.dealers.store') }}" method="POST">
-        @csrf
-        
-        <div class="mb-4">
-            <x-form.select name="dealer_id" label="Dealer" required>
-                <option value="">Choose dealer…</option>
-                @foreach($dealers as $d)
-                    <option value="{{ $d->id }}">{{ $d->firm_name }} (Pending: Rs {{ number_format($d->pending_amount, 0) }})</option>
-                @endforeach
-            </x-form.select>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <x-form.input type="number" name="amount" label="Amount Paid (Rs)" required step="0.01" min="0.01" placeholder="0.00" class="text-xl font-bold" />
-            <x-form.input type="date" name="date" label="Payment Date" required value="{{ date('Y-m-d') }}" />
-        </div>
-
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2 font-outfit">Payment Mode <span class="text-rose-500">*</span></label>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                @foreach(['NEFT','Cheque','UPI','Cash'] as $mode)
-                    <label class="flex items-center gap-2 p-2 border border-zinc-200 dark:border-zinc-700 rounded-lg cursor-pointer bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors">
-                        <input type="radio" name="payment_mode" value="{{ $mode }}" {{ $loop->first ? 'checked' : '' }} class="text-emerald-500 focus:ring-emerald-500">
-                        <span class="text-sm font-outfit text-zinc-700 dark:text-zinc-300">{{ $mode }}</span>
-                    </label>
-                @endforeach
-            </div>
-        </div>
-
-        <div class="mb-6">
-            <x-form.input type="text" name="notes" label="Transaction Reference" placeholder="Transaction ID, Cheque #, or reference..." />
-        </div>
-
-        <x-slot:footer>
-            <x-button type="button" variant="outline" x-on:click="show = false">Cancel</x-button>
-            <x-button type="submit" variant="primary" icon="check">Confirm Payout</x-button>
-        </x-slot:footer>
-    </form>
-</x-modal>
 @endsection

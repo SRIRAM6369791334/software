@@ -18,13 +18,13 @@
 
     <div class="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <table class="w-full text-sm text-left text-zinc-600 dark:text-zinc-400 font-outfit">
-            <thead class="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-transparent border-b border-zinc-200/50 dark:border-zinc-700/50 font-cabinet">
+            <thead class="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-transparent border-b border-zinc-200/50 dark:border-zinc-700/50 font-cabinet [&_th]:px-6 [&_th]:py-4 [&_th]:font-semibold [&_th]:tracking-wider [&_th]:whitespace-nowrap">
                 @if(isset($head))
                     {{ $head }}
                 @else
                     <tr>
                         @foreach($headers as $header)
-                            <th scope="col" class="px-6 py-4 font-semibold tracking-wider">
+                            <th scope="col">
                                 @if(is_array($header))
                                     {{ $header['label'] ?? '' }}
                                 @else
@@ -35,7 +35,7 @@
                     </tr>
                 @endif
             </thead>
-            <tbody>
+            <tbody class="[&_td]:px-6 [&_td]:py-4 [&_td]:whitespace-nowrap">
                 {{ $slot }}
             </tbody>
         </table>

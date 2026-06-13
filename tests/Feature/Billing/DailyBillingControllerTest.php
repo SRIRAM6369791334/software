@@ -16,6 +16,7 @@ class DailyBillingControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->seed(\Database\Seeders\RolesAndPermissionsSeeder::class);
         $this->actingAs($this->createAdmin()); // Admin role allows accountant access
     }
 
@@ -37,10 +38,20 @@ class DailyBillingControllerTest extends TestCase
         $customer = Customer::factory()->create();
         $item = Item::factory()->create(['status' => 'Active']);
 
+        // Seed stock for the item to prevent Insufficient stock error
+        app(\App\Services\StockService::class)->recordIn([
+            'item_id' => $item->id,
+            'item_name' => $item->name,
+            'quantity' => 100,
+            'rate' => 10,
+            'date' => now()->toDateString(),
+        ]);
+
         $payload = [
             'customer_id' => $customer->id,
             'date' => now()->toDateString(),
             'status' => 'Paid',
+            'payment_mode' => 'Cash',
             'gst_percentage' => 18,
             'items' => [
                 [

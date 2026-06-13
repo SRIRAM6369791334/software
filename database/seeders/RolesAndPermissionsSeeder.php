@@ -26,7 +26,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'Expenses' => ['view expenses', 'create expenses', 'edit expenses', 'delete expenses'],
             'EMIs' => ['view emis', 'create emis', 'edit emis', 'delete emis'],
             'Reports & Dashboards' => ['view reports', 'view profit dashboard'],
-            'User Management' => ['manage users', 'manage roles', 'manage permissions', 'view activity logs'],
+            'User Management' => [
+                'view users', 'create users', 'edit users', 'delete users',
+                'view roles', 'create roles', 'edit roles', 'delete roles',
+                'view permissions', 'create permissions', 'edit permissions', 'delete permissions',
+                'manage users', 'manage roles', 'manage permissions', 'view activity logs'
+            ],
             'Inventory & Stock' => [
                 'view stock', 'create stock', 'edit stock', 'delete stock', 
                 'view batches', 'create batches', 'edit batches', 'delete batches',

@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Invoice #' . ($bill->invoice_number ?? $bill->id))
 
 @section('content')
@@ -10,7 +10,7 @@
         </div>
         <div class="text-right">
             <h2 class="text-xl font-bold text-zinc-950">INVOICE</h2>
-            <p class="text-sm text-zinc-500 font-mono mt-1">#INV-{{ str_pad($bill->id, 5, '0', STR_PAD_LEFT) }}</p>
+            <p class="text-sm text-zinc-500 font-mono mt-1">#{{ $bill->invoice_number }}</p>
         </div>
     </div>
 

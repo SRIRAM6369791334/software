@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Services\Tax\GSTCalculator;
 use App\Models\Customer;
 use App\Models\DailyBill;
 use App\Models\Item;
-use App\Services\InvoiceNumberService;
-use App\Services\StockService;
+use App\Services\DailyBillingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class DailyBillingController extends BaseApiController
 {
+    public function __construct(
+        private DailyBillingService $billingService
+    ) {}
     /**
      * Get a paginated list of daily bills.
      */
@@ -42,12 +42,13 @@ class DailyBillingController extends BaseApiController
     /**
      * Store a new daily bill.
      */
-    public function store(Request $request, InvoiceNumberService $invoiceService): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'customer_id'    => 'required|exists:customers,id',
             'date'           => 'required|date|before_or_equal:today',
             'status'         => 'required|in:Generated,Pending,Paid',
+            'payment_mode'   => 'sometimes|required|in:Cash,Credit,UPI,NEFT,Cheque',
             'gst_percentage' => 'required|numeric|min:0|max:28',
             'items'          => 'required|array|min:1',
             'items.*.name'   => 'required|string|max:255',
@@ -61,59 +62,9 @@ class DailyBillingController extends BaseApiController
         }
 
         try {
-            $bill = DB::transaction(function () use ($request, $invoiceService) {
-                $itemsData = $request->input('items');
-                $gstPercent = $request->input('gst_percentage');
-                
-                $subtotal = 0;
-                foreach ($itemsData as $item) {
-                    $subtotal += $item['qty'] * $item['rate'];
-                }
-
-                $gstData = GSTCalculator::calculate($subtotal, $gstPercent);
-                
-                $bill = DailyBill::create([
-                    'customer_id'    => $request->input('customer_id'),
-                    'date'           => $request->input('date'),
-                    'invoice_no'     => $invoiceService->generateUnique('INV-D', 'daily_bills'),
-                    'amount'         => $subtotal,
-                    'gst_percentage' => $gstPercent,
-                    'gst_amount'     => $gstData['total_gst'],
-                    'net_amount'     => $gstData['net_amount'],
-                    'status'         => $request->input('status'),
-                    'payment_mode'   => 'Cash', // Default
-                ]);
-
-                foreach ($itemsData as $item) {
-                    $base = $item['qty'] * $item['rate'];
-                    $tax = round($base * $gstPercent / 100, 2);
-                    
-                    $billItem = $bill->items()->create([
-                        'item_name'    => $item['name'],
-                        'quantity_kg'  => $item['qty'],
-                        'rate_per_kg'  => $item['rate'],
-                        'tax_amount'   => $tax,
-                        'total_amount' => $base + $tax,
-                        'unit'         => $item['unit'] ?? 'kg',
-                    ]);
-
-                    // Auto-trigger stock movement
-                    app(StockService::class)->recordOut([
-                        'item_name'      => $billItem->item_name,
-                        'quantity'       => $billItem->quantity_kg,
-                        'rate'           => $billItem->rate_per_kg,
-                        'reference_type' => DailyBill::class,
-                        'reference_id'   => $bill->id,
-                        'date'           => $bill->date,
-                        'created_by'     => auth()->id() ?? 1,
-                    ]);
-                }
-
-                return $bill->load(['customer', 'items']);
-            });
-
+            $bill = $this->billingService->create($validator->validated());
+            $bill->load(['customer', 'items']);
             return $this->sendResponse($bill, 'Daily bill created successfully', 201);
-
         } catch (\Exception $e) {
             return $this->sendError('Could not create bill', ['exception' => $e->getMessage()], 500);
         }
@@ -133,24 +84,9 @@ class DailyBillingController extends BaseApiController
      */
     public function destroy(DailyBill $dailyBill): JsonResponse
     {
-        // Deleting the bill inside a transaction to also clean up stock movements
         try {
-            DB::transaction(function () use ($dailyBill) {
-                // Delete stock transactions related to this daily bill
-                DB::table('stock_transactions')
-                    ->where('reference_type', DailyBill::class)
-                    ->where('reference_id', $dailyBill->id)
-                    ->delete();
-
-                // Delete the items
-                $dailyBill->items()->delete();
-
-                // Delete the bill itself
-                $dailyBill->delete();
-            });
-
+            $this->billingService->delete($dailyBill);
             return $this->sendResponse([], 'Daily bill and associated stock records deleted successfully');
-
         } catch (\Exception $e) {
             return $this->sendError('Could not delete bill', ['exception' => $e->getMessage()], 500);
         }

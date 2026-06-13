@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Weekly Performance Audit')
 
@@ -22,7 +22,9 @@
             <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Period End</label>
             <x-form.input type="date" name="end" :value="$endDate" />
         </div>
-        <x-button type="submit" variant="primary">Refresh Audit</x-button>
+        <div class="pb-[2px]">
+            <x-button type="submit" variant="primary">Refresh Audit</x-button>
+        </div>
     </form>
 </x-card>
 

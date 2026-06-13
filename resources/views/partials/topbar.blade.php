@@ -24,16 +24,108 @@
                 <span class="material-symbols-rounded text-[22px]" x-text="isDark ? 'light_mode' : 'dark_mode'">dark_mode</span>
             </button>
 
-            {{-- Notification Bell --}}
-            <button class="relative rounded-xl p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20" title="Notifications">
-                <span class="material-symbols-rounded text-[22px]">notifications</span>
-                <span class="absolute right-2.5 top-2.5 h-2 w-2 rounded-full border-2 border-white dark:border-zinc-950 bg-rose-500"></span>
-            </button>
+            {{-- Notification Bell Dropdown --}}
+            <div 
+                x-data="{ 
+                    open: false,
+                    count: 0,
+                    notifications: [],
+                    loading: false,
+                    fetchNotifications() {
+                        this.loading = true;
+                        fetch('{{ route('notifications.index') }}')
+                            .then(res => res.json())
+                            .then(data => {
+                                this.count = data.count || 0;
+                                this.notifications = data.notifications || [];
+                                this.loading = false;
+                            });
+                    },
+                    markAsRead(id, url) {
+                        fetch(`/notifications/${id}/read`, {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                        }).then(() => {
+                            window.location.href = url;
+                        });
+                    },
+                    markAllAsRead() {
+                        fetch('{{ route('notifications.readAll') }}', {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                        }).then(() => {
+                            this.count = 0;
+                            this.notifications = [];
+                            this.open = false;
+                        });
+                    }
+                }"
+                x-init="fetchNotifications(); setInterval(() => fetchNotifications(), 60000)"
+                class="relative"
+            >
+                <button @click="open = !open" @click.away="open = false" class="relative rounded-xl p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20" title="Notifications">
+                    <span class="material-symbols-rounded text-[22px]">notifications</span>
+                    <span x-show="count > 0" class="absolute right-2 top-2 h-4 w-4 rounded-full border-2 border-white dark:border-zinc-950 bg-rose-500 text-[9px] font-bold text-white flex items-center justify-center" x-text="count > 9 ? '9+' : count" x-cloak></span>
+                </button>
+
+                {{-- Dropdown Panel --}}
+                <div x-show="open"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+                     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+                     class="absolute right-0 mt-2 w-80 rounded-2xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.08)] overflow-hidden z-50"
+                     x-cloak>
+                    
+                    <div class="flex items-center justify-between p-4 border-b border-zinc-100 dark:border-zinc-800">
+                        <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">Recent Activity</h3>
+                        <button x-show="count > 0" @click="markAllAsRead" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-500 transition-colors">Mark all read</button>
+                    </div>
+
+                    <div class="max-h-80 overflow-y-auto">
+                        <div x-show="loading" class="p-8 text-center text-zinc-400">
+                            <span class="material-symbols-rounded animate-spin">refresh</span>
+                        </div>
+                        
+                        <div x-show="!loading && notifications.length === 0" class="p-8 text-center flex flex-col items-center justify-center">
+                            <div class="h-12 w-12 rounded-full bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-center text-zinc-400 mb-3">
+                                <span class="material-symbols-rounded">notifications_paused</span>
+                            </div>
+                            <p class="text-sm text-zinc-500 font-medium tracking-tight">You're all caught up!</p>
+                            <p class="text-xs text-zinc-400 mt-1">No new activities to show.</p>
+                        </div>
+
+                        <template x-for="notif in notifications" :key="notif.id">
+                            <button @click="markAsRead(notif.id, notif.data.url)" class="w-full text-left p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors border-b border-zinc-50 dark:border-zinc-800/50 last:border-0 flex items-start gap-3">
+                                <div class="mt-0.5 shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-white shadow-sm"
+                                     :class="{
+                                         'bg-emerald-500': notif.data.color === 'emerald',
+                                         'bg-blue-500': notif.data.color === 'blue',
+                                         'bg-amber-500': notif.data.color === 'amber',
+                                         'bg-orange-500': notif.data.color === 'orange',
+                                         'bg-violet-500': notif.data.color === 'violet',
+                                         'bg-purple-500': notif.data.color === 'purple'
+                                     }">
+                                    <span class="material-symbols-rounded text-[16px]" x-text="notif.data.icon"></span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate" x-text="notif.data.title"></p>
+                                    <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 line-clamp-2" x-text="notif.data.message"></p>
+                                    <p class="text-[10px] text-zinc-400 font-medium tracking-wide uppercase mt-1.5" x-text="notif.created_at"></p>
+                                </div>
+                            </button>
+                        </template>
+                    </div>
+                    
+                    <div class="p-2 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 text-center">
+                        <a href="{{ route('dashboard.alerts') }}" class="text-xs font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-colors">View Alert Center</a>
+                    </div>
+                </div>
+            </div>
             
-            {{-- Settings --}}
-            <button class="hidden sm:flex rounded-xl p-2 min-h-[44px] min-w-[44px] items-center justify-center text-zinc-400 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20" title="Settings">
-                <span class="material-symbols-rounded text-[22px]">settings</span>
-            </button>
+         
         </div>
 
         <div class="hidden h-6 w-px bg-zinc-200 dark:bg-zinc-800 sm:block"></div>

@@ -14,7 +14,7 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold font-cabinet text-zinc-900 dark:text-zinc-100 tracking-tight">Purchase Invoice Details</h1>
-            <p class="text-sm text-zinc-500 mt-1">Reference ID: #PUR{{ str_pad($purchase->id, 5, '0', STR_PAD_LEFT) }}</p>
+            <p class="text-sm text-zinc-500 mt-1">Reference ID: {{ $purchase->invoice_no ?? '#PUR' . str_pad($purchase->id, 5, '0', STR_PAD_LEFT) }}</p>
         </div>
         <div class="flex items-center gap-3">
             <x-button href="{{ route('purchases.print', $purchase->id) }}" variant="outline" icon="print" target="_blank">
@@ -41,7 +41,7 @@
             </div>
             <div class="flex flex-col items-end text-right">
                 <span class="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">INVOICE</span>
-                <span class="text-2xl font-black font-mono text-zinc-900 dark:text-zinc-100 leading-none">#PUR{{ str_pad($purchase->id, 5, '0', STR_PAD_LEFT) }}</span>
+                <span class="text-2xl font-black font-mono text-zinc-900 dark:text-zinc-100 leading-none">{{ $purchase->invoice_no ?? '#PUR' . str_pad($purchase->id, 5, '0', STR_PAD_LEFT) }}</span>
             </div>
         </div>
 

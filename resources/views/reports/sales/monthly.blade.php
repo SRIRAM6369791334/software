@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Monthly Financial Audit')
 
 @section('content')
@@ -29,7 +29,9 @@
                 @endforeach
             </x-form.select>
         </div>
-        <x-button type="submit" variant="primary">Refresh Report</x-button>
+        <div class="pb-[2px]">
+            <x-button type="submit" variant="primary">Refresh Report</x-button>
+        </div>
     </form>
 </x-card>
 

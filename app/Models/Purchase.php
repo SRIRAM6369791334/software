@@ -55,7 +55,9 @@ class Purchase extends Model
         if (array_key_exists('quantity', $this->attributes)) {
             return (float) $this->attributes['quantity'];
         }
-        return (float) $this->items()->sum('quantity');
+        return $this->relationLoaded('items')
+            ? (float) $this->items->sum('quantity')
+            : (float) $this->items()->sum('quantity');
     }
 
     public function getUnitAttribute(): ?string
@@ -63,7 +65,7 @@ class Purchase extends Model
         if (array_key_exists('unit', $this->attributes)) {
             return $this->attributes['unit'];
         }
-        $firstItem = $this->items()->first();
+        $firstItem = $this->relationLoaded('items') ? $this->items->first() : $this->items()->first();
         return $firstItem ? $firstItem->unit : null;
     }
 
@@ -72,7 +74,7 @@ class Purchase extends Model
         if (array_key_exists('rate', $this->attributes)) {
             return (float) $this->attributes['rate'];
         }
-        $firstItem = $this->items()->first();
+        $firstItem = $this->relationLoaded('items') ? $this->items->first() : $this->items()->first();
         return $firstItem ? (float) $firstItem->rate : 0.0;
     }
 
@@ -81,8 +83,22 @@ class Purchase extends Model
         if (array_key_exists('item', $this->attributes)) {
             return $this->attributes['item'];
         }
-        $firstItem = $this->items()->first();
+        $firstItem = $this->relationLoaded('items') ? $this->items->first() : $this->items()->first();
         return $firstItem ? $firstItem->item_name : null;
+    }
+
+    protected static function booted()
+    {
+        static::created(function ($purchase) {
+            $users = \App\Models\User::all();
+            \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\ActivityNotification(
+                'New Purchase Invoice',
+                "Purchase invoice {$purchase->invoice_no} was generated for {$purchase->vendor_name}.",
+                route('purchases.show', $purchase->id),
+                'shopping_cart',
+                'orange'
+            ));
+        });
     }
 }
 

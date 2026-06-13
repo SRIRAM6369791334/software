@@ -40,6 +40,10 @@ class PurchaseService
                 $data['vendor_id'] = $vendorModel->id;
             }
 
+            if (empty($data['invoice_no'])) {
+                $data['invoice_no'] = app(\App\Services\InvoiceNumberService::class)->generateUnique('INV', 'purchases');
+            }
+
             // Grand totals are handled by client-side or calculated here
             $purchase = Purchase::create($data);
             

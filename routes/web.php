@@ -17,8 +17,6 @@ use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Masters\RouteController;
-use App\Http\Controllers\StockController;
-use App\Http\Controllers\BirdBatchController;
 use App\Http\Controllers\Inventory\AnalyticsController as InventoryAnalyticsController;
 use App\Http\Controllers\Inventory\BatchController as InventoryBatchController;
 use App\Http\Controllers\Inventory\ConsumptionController as InventoryConsumptionController;
@@ -39,12 +37,12 @@ if (!function_exists('permissionResource')) {
         $edit = array_intersect($methods, ['edit', 'update']);
         $delete = array_intersect($methods, ['destroy']);
         
-        if (!empty($view)) {
-            $r = Route::resource($name, $controller)->only($view)->middleware("permission:view $permission");
-            if (isset($options['names'])) $r->names($options['names']);
-        }
         if (!empty($create)) {
             $r = Route::resource($name, $controller)->only($create)->middleware("permission:create $permission");
+            if (isset($options['names'])) $r->names($options['names']);
+        }
+        if (!empty($view)) {
+            $r = Route::resource($name, $controller)->only($view)->middleware("permission:view $permission");
             if (isset($options['names'])) $r->names($options['names']);
         }
         if (!empty($edit)) {
@@ -77,6 +75,14 @@ Route::middleware(['auth'])->group(function () {
     // Global Access (All Roles)
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/alerts', [DashboardController::class, 'alerts'])->name('dashboard.alerts');
+    Route::get('/global-search', \App\Http\Controllers\GlobalSearchController::class)->name('global.search');
+
+    // ── Notifications ────────────────────────────────────────────────────────
+    Route::prefix('notifications')->name('notifications.')->controller(App\Http\Controllers\NotificationController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/{id}/read', 'markAsRead')->name('read');
+        Route::post('/read-all', 'markAllAsRead')->name('readAll');
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -132,22 +138,6 @@ Route::middleware(['auth'])->group(function () {
     | Inventory & Stock
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['permission:view stock'])->group(function () {
-        Route::get('/stock', [StockController::class, 'index'])->name('stock.index');
-    });
-    Route::middleware(['permission:edit stock'])->group(function () {
-        Route::post('/stock/adjust', [StockController::class, 'adjust'])->name('stock.adjust');
-    });
-
-    Route::middleware(['permission:view batches'])->group(function () {
-        Route::get('/stock/batches', [BirdBatchController::class, 'index'])->name('stock.batches.index');
-    });
-    Route::middleware(['permission:create batches'])->group(function () {
-        Route::post('/stock/batches', [BirdBatchController::class, 'store'])->name('stock.batches.store');
-    });
-    Route::middleware(['permission:edit batches'])->group(function () {
-        Route::post('/stock/batches/{batch}/mortality', [BirdBatchController::class, 'recordMortality'])->name('stock.batches.mortality');
-    });
 
     Route::prefix('inventory')->name('inventory.')->group(function () {
         Route::get('analytics', [InventoryAnalyticsController::class, 'index'])->name('analytics')->middleware('permission:view analytics');
@@ -219,8 +209,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('expenses/categories', [ExpenseController::class, 'categories'])->name('expenses.categories');
         Route::get('expenses/export/csv', [ExpenseController::class, 'export'])->name('expenses.export');
     });
-    permissionResource('expenses', ExpenseController::class, 'expenses');
-
     Route::middleware(['permission:view emis'])->group(function () {
         Route::get('expenses/emis', [ExpenseController::class, 'emisIndex'])->name('expenses.emis.index');
         Route::get('expenses/emis/alerts', [ExpenseController::class, 'emisAlerts'])->name('expenses.emis.alerts');
@@ -232,6 +220,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['permission:delete emis'])->group(function () {
         Route::delete('expenses/emis/{emi}', [ExpenseController::class, 'destroyEmi'])->name('expenses.emis.destroy');
     });
+
+    permissionResource('expenses', ExpenseController::class, 'expenses');
 
     /*
     |--------------------------------------------------------------------------

@@ -38,9 +38,7 @@ class PurchaseController extends Controller
         $dailyBills  = DailyBill::with(['customer', 'items'])->latest()->take(10)->get();
         $weeklyBills = WeeklyBill::with('customer')->latest()->take(10)->get();
         
-        $latestPurchase = \App\Models\Purchase::latest('id')->first();
-        $nextId = $latestPurchase ? $latestPurchase->id + 1 : 1;
-        $autoInvoiceNo = 'INV-' . date('Y') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+        $autoInvoiceNo = null; // Generated securely in the service if left blank
         
         return view('purchases.index', compact(
             'purchases', 'search', 'vendors', 'items', 'batches', 'warehouses',
@@ -56,9 +54,7 @@ class PurchaseController extends Controller
         $batches     = Batch::where('status', 'Active')->get();
         $warehouses  = Warehouse::active()->get();
         
-        $latestPurchase = \App\Models\Purchase::latest('id')->first();
-        $nextId = $latestPurchase ? $latestPurchase->id + 1 : 1;
-        $autoInvoiceNo = 'INV-' . date('Y') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+        $autoInvoiceNo = null; // Generated securely in the service if left blank
 
         return view('purchases.create', compact('vendor_name', 'vendors', 'items', 'batches', 'warehouses', 'autoInvoiceNo'));
     }
@@ -73,7 +69,14 @@ class PurchaseController extends Controller
     {
         $search    = $request->input('search');
         $purchases = $this->service->paginated($search, 15);
-        return view('purchases.invoices', compact('purchases', 'search'));
+        
+        $totalInvoices    = \App\Models\Purchase::count();
+        $totalExpenditure = \App\Models\Purchase::sum('total_amount');
+        $totalTaxPaid     = \App\Models\Purchase::sum('gst_amount');
+
+        return view('purchases.invoices', compact(
+            'purchases', 'search', 'totalInvoices', 'totalExpenditure', 'totalTaxPaid'
+        ));
     }
 
     public function show($id): View

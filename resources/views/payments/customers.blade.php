@@ -10,7 +10,7 @@
                 Export
             </x-button>
             @can('create payments')
-            <x-button variant="primary" x-data x-on:click="$dispatch('open-modal', 'add-payment')" icon="add">
+            <x-button variant="primary" href="{{ route('payments.customers.create') }}" icon="add">
                 Record Collection
             </x-button>
             @endcan
@@ -116,44 +116,4 @@
         </x-data-table>
     </x-card>
 
-</div>
-
-{{-- Add Payment Modal --}}
-<x-modal name="add-payment" title="Record Collection" subtitle="Enter payment details to update customer ledger" icon="payments" maxWidth="md">
-    <form action="{{ route('payments.customers.store') }}" method="POST">
-        @csrf
-        
-        <div class="mb-4">
-            <x-form.select name="customer_id" label="Customer" required>
-                <option value="">Choose customer…</option>
-                @foreach($customers as $c)
-                    <option value="{{ $c->id }}">{{ $c->name }} (Pending: Rs {{ number_format($c->balance, 0) }})</option>
-                @endforeach
-            </x-form.select>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <x-form.input type="number" name="amount" label="Amount (Rs)" required step="0.01" min="0.01" placeholder="0.00" class="text-xl font-bold" />
-            <x-form.input type="date" name="date" label="Payment Date" required value="{{ date('Y-m-d') }}" />
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <x-form.select name="payment_mode" label="Payment Mode" required>
-                @foreach(['Cash','UPI','NEFT','Cheque'] as $m)<option value="{{ $m }}">{{ $m }}</option>@endforeach
-            </x-form.select>
-            <x-form.select name="payment_type" label="Receipt Type" required>
-                @foreach(['Part','Full','Advance'] as $t)<option value="{{ $t }}">{{ $t }}</option>@endforeach
-            </x-form.select>
-        </div>
-
-        <div class="mb-6">
-            <x-form.input name="notes" label="Remarks / Reference" placeholder="e.g. UPI Transaction ID or Cheque Number..." />
-        </div>
-
-        <x-slot:footer>
-            <x-button type="button" variant="outline" x-on:click="show = false">Cancel</x-button>
-            <x-button type="submit" variant="primary" icon="check">Record Collection</x-button>
-        </x-slot:footer>
-    </form>
-</x-modal>
 @endsection

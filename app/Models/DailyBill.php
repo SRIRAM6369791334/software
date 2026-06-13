@@ -56,7 +56,7 @@ class DailyBill extends Model
         if (array_key_exists('items_description', $this->attributes)) {
             return $this->attributes['items_description'];
         }
-        $firstItem = $this->items()->first();
+        $firstItem = $this->relationLoaded('items') ? $this->items->first() : $this->items()->first();
         return $firstItem ? $firstItem->item_name : null;
     }
 
@@ -65,7 +65,9 @@ class DailyBill extends Model
         if (array_key_exists('quantity_kg', $this->attributes)) {
             return (float) $this->attributes['quantity_kg'];
         }
-        return (float) $this->items()->sum('quantity_kg');
+        return $this->relationLoaded('items')
+            ? (float) $this->items->sum('quantity_kg')
+            : (float) $this->items()->sum('quantity_kg');
     }
 
     public function getRatePerKgAttribute(): float
@@ -73,8 +75,22 @@ class DailyBill extends Model
         if (array_key_exists('rate_per_kg', $this->attributes)) {
             return (float) $this->attributes['rate_per_kg'];
         }
-        $firstItem = $this->items()->first();
+        $firstItem = $this->relationLoaded('items') ? $this->items->first() : $this->items()->first();
         return $firstItem ? (float) $firstItem->rate_per_kg : 0.0;
+    }
+
+    protected static function booted()
+    {
+        static::created(function ($bill) {
+            $users = \App\Models\User::all();
+            \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\ActivityNotification(
+                'New Daily Invoice',
+                "Daily invoice {$bill->invoice_number} was generated.",
+                route('billing.daily.invoice', $bill->id),
+                'receipt',
+                'violet'
+            ));
+        });
     }
 }
 

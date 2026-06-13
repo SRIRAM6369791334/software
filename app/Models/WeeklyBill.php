@@ -58,7 +58,9 @@ class WeeklyBill extends Model
         if (array_key_exists('items_description', $this->attributes) && $this->attributes['items_description'] !== null) {
             return $this->attributes['items_description'];
         }
-        return $this->items->pluck('item_name')->implode(', ');
+        return $this->relationLoaded('items') 
+            ? $this->items->pluck('item_name')->implode(', ')
+            : $this->items()->pluck('item_name')->implode(', ');
     }
 
     public function getQuantityKgAttribute(): float
@@ -66,6 +68,22 @@ class WeeklyBill extends Model
         if (array_key_exists('quantity_kg', $this->attributes) && $this->attributes['quantity_kg'] !== null) {
             return (float) $this->attributes['quantity_kg'];
         }
-        return (float) $this->items->sum('quantity_kg');
+        return $this->relationLoaded('items')
+            ? (float) $this->items->sum('quantity_kg')
+            : (float) $this->items()->sum('quantity_kg');
+    }
+
+    protected static function booted()
+    {
+        static::created(function ($bill) {
+            $users = \App\Models\User::all();
+            \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\ActivityNotification(
+                'New Weekly Invoice',
+                "Weekly invoice {$bill->invoice_number} was generated.",
+                route('billing.weekly.show', $bill->id),
+                'receipt_long',
+                'purple'
+            ));
+        });
     }
 }
