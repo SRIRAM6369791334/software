@@ -22,4 +22,11 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
-.zip
+*.zip
+.phpunit.result.zip
+
+# AI and Scratch Files
+/.agents/
+/scratch/
+ORIGINAL_REQUEST.md
+routes_list.txt
