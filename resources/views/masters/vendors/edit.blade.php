@@ -36,6 +36,7 @@
                     label="Contact Person" 
                     icon="person" 
                     :value="$vendor->contact_person" 
+                    required
                 />
 
                 <x-form.input 
@@ -59,6 +60,7 @@
                     label="Location / City" 
                     icon="location_on" 
                     :value="$vendor->location" 
+                    required
                 />
 
                 <div class="md:col-span-2">
@@ -67,6 +69,7 @@
                         label="Route" 
                         icon="alt_route" 
                         :value="$vendor->route" 
+                        required
                     />
                 </div>
 
@@ -76,6 +79,7 @@
                         label="Strategic Notes" 
                         :value="$vendor->notes" 
                         rows="3"
+                        required
                     />
                 </div>
             </div>

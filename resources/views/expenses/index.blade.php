@@ -100,10 +100,17 @@
                             'Upcoming' => ['variant' => 'info', 'icon' => 'schedule']
                         ];
                         $style = $statusMap[$emi->status] ?? $statusMap['Upcoming'];
+                        
+                        $displayName = $emi->loan_name;
+                        if ($emi->emi_type === 'Vendor' && $emi->vendor) {
+                            $displayName = ($emi->vendor->firm_name ?? $emi->vendor->name) . ' — ' . $emi->loan_name;
+                        } elseif ($emi->bank_name) {
+                            $displayName = $emi->bank_name . ' — ' . $emi->loan_name;
+                        }
                     @endphp
                     <div class="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl p-5 hover:border-emerald-500/30 transition-colors">
                         <div class="flex items-center justify-between mb-2">
-                            <div class="font-cabinet text-base font-bold text-zinc-900 dark:text-white">{{ $emi->item }}</div>
+                            <div class="font-cabinet text-base font-bold text-zinc-900 dark:text-white">{{ $displayName }}</div>
                             <span class="material-symbols-rounded text-xl {{ $emi->status == 'Paid' ? 'text-emerald-500' : ($emi->status == 'Overdue' ? 'text-rose-500' : 'text-blue-500') }}">{{ $style['icon'] }}</span>
                         </div>
                         <div class="flex items-center justify-between mt-4">
@@ -129,8 +136,8 @@
 </div>
 
 {{-- Add Expense Modal --}}
-<x-modal name="add-expense" title="Record Expense" subtitle="Log operational expenditures" icon="receipt_long" maxWidth="md">
-    <form action="{{ route('expenses.store') }}" method="POST">
+<x-modal name="add-expense" title="Record Expense" subtitle="Log operational expenditures" icon="receipt_long" maxWidth="md" :show="$errors->any()">
+    <form id="add-expense-form" action="{{ route('expenses.store') }}" method="POST">
         @csrf
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <x-form.select name="category" label="Category" required>
@@ -151,7 +158,7 @@
 
         <x-slot:footer>
             <x-button type="button" variant="outline" x-on:click="show = false">Cancel</x-button>
-            <x-button type="submit" variant="primary" icon="check">Log Expense</x-button>
+            <x-button type="submit" form="add-expense-form" variant="primary" icon="check">Log Expense</x-button>
         </x-slot:footer>
     </form>
 </x-modal>

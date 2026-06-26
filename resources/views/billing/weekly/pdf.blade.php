@@ -20,13 +20,13 @@
 <table class="invoice-details">
     <tr>
         <td>
-            <div class="section-label">Bill To Customer</div>
-            <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #111827;">{{ $bill->customer->name ?? 'N/A' }}</div>
+            <div class="section-label">Bill To Dealer</div>
+            <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #111827;">{{ $bill->dealer->firm_name ?? 'N/A' }}</div>
             <div style="color: #4b5563; line-height: 1.4;">
-                {{ $bill->customer->address ?? 'No address provided' }}<br>
-                <strong>Phone: {{ $bill->customer->phone ?? 'N/A' }}</strong>
-                @if($bill->customer->gst_number)
-                    <br><span style="font-size: 10px; color: #9ca3af;">GSTIN: {{ $bill->customer->gst_number }}</span>
+                {{ $bill->dealer->location ?? 'No location provided' }}<br>
+                <strong>Phone: {{ $bill->dealer->phone ?? 'N/A' }}</strong>
+                @if($bill->dealer->gst_number)
+                    <br><span style="font-size: 10px; color: #9ca3af;">GSTIN: {{ $bill->dealer->gst_number }}</span>
                 @endif
             </div>
         </td>

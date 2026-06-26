@@ -9,25 +9,25 @@
         <td>
             <div class="summary-card">
                 <div class="summary-label">Total Revenue</div>
-                <div class="summary-value text-emerald">Rs {{ number_format($summary['total_revenue'] ?? 0, 2) }}</div>
+                <div class="summary-value text-emerald">Rs {{ number_format($summary['revenue'] ?? 0, 2) }}</div>
             </div>
         </td>
         <td>
             <div class="summary-card">
                 <div class="summary-label">Procurement Cost</div>
-                <div class="summary-value text-rose">Rs {{ number_format($summary['total_purchases'] ?? 0, 2) }}</div>
+                <div class="summary-value text-rose">Rs {{ number_format($summary['purchase'] ?? 0, 2) }}</div>
             </div>
         </td>
         <td>
             <div class="summary-card">
                 <div class="summary-label">Operating Expenses</div>
-                <div class="summary-value text-rose">Rs {{ number_format($summary['total_expenses'] ?? 0, 2) }}</div>
+                <div class="summary-value text-rose">Rs {{ number_format($summary['expenses'] ?? 0, 2) }}</div>
             </div>
         </td>
         <td>
             <div class="summary-card" style="border-left: 3px solid #10b981;">
                 <div class="summary-label">Net Profit</div>
-                <div class="summary-value text-emerald" style="font-size: 16px;">Rs {{ number_format($summary['net_profit'] ?? 0, 2) }}</div>
+                <div class="summary-value text-emerald" style="font-size: 16px;">Rs {{ number_format($summary['profit'] ?? 0, 2) }}</div>
             </div>
         </td>
     </tr>

@@ -17,10 +17,16 @@ class ReportService
 {
     public function getIndexSummary(string $month, string $year): array
     {
+        // INFLOW: Customer (DailyBill + CustomerPayment) + Dealer (WeeklyBill + DealerPayment)
+        $dailyBillRevenue  = DailyBill::whereMonth('date', $month)->whereYear('date', $year)->sum('net_amount');
+        $weeklyBillRevenue = WeeklyBill::whereMonth('period_end', $month)->whereYear('period_end', $year)->sum('net_amount');
+        $cPayRevenue       = CustomerPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
+        $dPayRevenue       = \App\Models\DealerPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
+
         return [
             'total_customers'       => Customer::count(),
             'total_dealers'         => Dealer::count(),
-            'total_revenue_month'   => CustomerPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount'),
+            'total_revenue_month'   => $dailyBillRevenue + $weeklyBillRevenue + $cPayRevenue + $dPayRevenue,
             'total_purchases_month' => Purchase::whereMonth('date', $month)->whereYear('date', $year)->sum('total_amount'),
             'total_expenses_month'  => Expense::whereMonth('date', $month)->whereYear('date', $year)->sum('amount'),
             'pending_receivables'   => Customer::where('balance', '>', 0)->sum('balance'),
@@ -59,12 +65,12 @@ class ReportService
 
     public function getWeeklySales(string $startDate, string $endDate): array
     {
-        $bills = WeeklyBill::with('customer')
+        $bills = WeeklyBill::with('dealer')
             ->whereBetween('period_start', [$startDate, $endDate])
             ->get();
 
         $totalSale = $bills->sum('net_amount');
-        $routeWise = $bills->groupBy('customer.route')
+        $routeWise = $bills->groupBy('dealer.route')
             ->map(fn($group) => $group->sum('net_amount'));
 
         return compact('bills', 'totalSale', 'routeWise', 'startDate', 'endDate');
@@ -72,15 +78,24 @@ class ReportService
 
     public function getMonthlySales(int $month, int $year): array
     {
-        // User tests expect DailyBill for monthly report aggregation
-        $bills = DailyBill::with('customer')
+        // Customer retail sales (DailyBill)
+        $dailyBills = DailyBill::with('customer')
             ->whereMonth('date', sprintf('%02d', $month))
             ->whereYear('date', (string)$year)
             ->get();
 
-        $totalSale = $bills->sum('net_amount');
+        // Dealer wholesale sales (WeeklyBill)
+        $weeklyBills = WeeklyBill::with('dealer')
+            ->whereMonth('period_end', sprintf('%02d', $month))
+            ->whereYear('period_end', (string)$year)
+            ->get();
 
-        return compact('bills', 'totalSale', 'month', 'year');
+        $totalSale = $dailyBills->sum('net_amount') + $weeklyBills->sum('net_amount');
+
+        // Keep $bills as dailyBills for backward-compatible view rendering
+        $bills = $dailyBills;
+
+        return compact('bills', 'weeklyBills', 'totalSale', 'month', 'year');
     }
 
     public function getDailyPurchases(string $date): array
@@ -155,7 +170,7 @@ class ReportService
             $data = DailyBill::with('customer')->whereDate('date', $date)->get();
             $title = "Daily Sales Report - " . $date;
         } elseif ($start && $end) {
-            $data = WeeklyBill::with('customer')->whereBetween('period_start', [$start, $end])->get();
+            $data = WeeklyBill::with('dealer')->whereBetween('period_start', [$start, $end])->get();
             $title = "Weekly Sales Report (" . $start . " to " . $end . ")";
         } elseif ($month && $year) {
             $data = DailyBill::with('customer')->whereMonth('date', sprintf('%02d', $month))->whereYear('date', (string)$year)->get();

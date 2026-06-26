@@ -35,6 +35,7 @@
                     label="Contact Person" 
                     icon="person" 
                     placeholder="e.g. Sales Manager" 
+                    required
                 />
 
                 <x-form.input 
@@ -58,6 +59,7 @@
                     label="Location / City" 
                     icon="location_on" 
                     placeholder="e.g. Industrial Estate" 
+                    required
                 />
 
                 <x-form.input 
@@ -65,6 +67,7 @@
                     label="Route" 
                     icon="alt_route" 
                     placeholder="Supply route..." 
+                    required
                 />
 
                 <x-form.input 
@@ -74,6 +77,7 @@
                     icon="account_balance_wallet" 
                     value="0.00" 
                     step="0.01" 
+                    required
                 />
             </div>
 

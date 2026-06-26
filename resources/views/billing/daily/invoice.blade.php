@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Daily Sale Invoice #' . $bill->id)
 
 @section('content')
@@ -8,7 +8,7 @@
 
     <div class="flex justify-between items-start border-b border-zinc-200 pb-8 mb-8">
         <div>
-            <h1 class="text-4xl font-black text-emerald-600 tracking-tighter italic">Flockwise <span class="text-zinc-950 not-italic tracking-normal font-bold">BizTrack</span></h1>
+            <h1 class="text-4xl font-black text-emerald-600 tracking-tighter italic">Poultry <span class="text-zinc-950 not-italic tracking-normal font-bold"></span></h1>
             <p class="text-[10px] text-zinc-400 mt-1.5 uppercase tracking-[0.2em] font-black bg-emerald-50 px-3 py-1 rounded-full inline-block">Poultry Management Solutions</p>
             <div class="mt-6 text-sm text-zinc-500 space-y-1">
                 <p class="font-bold text-zinc-950">Poultry Farm Unit #1</p>
@@ -66,7 +66,7 @@
     <div class="mb-12 overflow-hidden rounded-2xl border border-zinc-200 shadow-sm">
         <table class="w-full text-left">
             <thead>
-                <tr class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-zinc-200 text-[10px] font-black text-white uppercase tracking-widest">
+                <tr class="bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-zinc-200 text-[10px] font-black text-emerald-800 uppercase tracking-widest">
                     <th class="px-8 py-4">Item Description</th>
                     <th class="px-8 py-4 text-center">Quantity</th>
                     <th class="px-8 py-4 text-right">Unit Price</th>
@@ -90,7 +90,7 @@
     </div>
 
     <div class="flex justify-end mb-16">
-        <div class="w-72 bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-zinc-200 rounded-3xl p-8 text-white shadow-lg relative overflow-hidden">
+        <div class="w-72 bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-zinc-200 rounded-3xl p-8 text-zinc-800 shadow-lg relative overflow-hidden">
             {{-- Decorative Circle --}}
             <div class="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/20 rounded-full"></div>
             
@@ -99,12 +99,12 @@
                     <span>Subtotal</span>
                     <span>Rs {{ number_format($bill->amount, 2) }}</span>
                 </div>
-                <div class="flex justify-between items-center text-xs opacity-60 font-bold uppercase tracking-widest pb-4 border-b border-white/10">
+                <div class="flex justify-between items-center text-xs opacity-60 font-bold uppercase tracking-widest pb-4 border-b border-zinc-200">
                     <span>GST ({{ $bill->gst_percentage }}%)</span>
                     <span>Rs {{ number_format($bill->gst_amount, 2) }}</span>
                 </div>
                 <div class="flex justify-between items-center pt-2">
-                    <span class="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">Total Net</span>
+                    <span class="text-xs font-black uppercase tracking-[0.2em] text-emerald-600">Total Net</span>
                     <span class="text-3xl font-black font-mono">Rs {{ number_format($bill->net_amount, 2) }}</span>
                 </div>
             </div>

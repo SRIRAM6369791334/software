@@ -15,8 +15,18 @@
             </span>
         </div>
 
+        @if ($errors->any())
+            <div class="mb-4 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl relative">
+                <ul class="list-disc pl-5">
+                    @foreach ($errors->all() as $error)
+                        <li class="text-sm font-medium">{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <x-card>
-            <form action="{{ route('purchases.store') }}" method="POST" id="purchase-create-form">
+            <form action="{{ route('purchases.store') }}" method="POST" id="purchase-create-form" x-data="{ paymentMode: 'Cash' }">
                 @csrf
                 
                 {{-- Form Section Title --}}
@@ -56,9 +66,11 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Mode <span class="text-rose-500">*</span></label>
-                            <x-form.select name="payment_mode" required :options="['Cash' => 'Cash', 'UPI' => 'UPI', 'NEFT' => 'NEFT', 'Cheque' => 'Cheque', 'Credit' => 'Credit']" value="Cash" />
+                            <x-form.select name="payment_mode" required x-model="paymentMode" :options="['Cash' => 'Cash', 'UPI' => 'UPI', 'NEFT' => 'NEFT', 'Cheque(Bank Transfer)' => 'Cheque(Bank Transfer)', 'Pay later(EMI)' => 'Pay later(EMI)']" />
                         </div>
                     </div>
+                    
+                    <x-emi-schedule-generator totalAmountId="display-total" />
                 </div>
 
                 {{-- 2. Item details --}}

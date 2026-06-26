@@ -162,6 +162,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('weekly/{bill}/whatsapp', [WeeklyBillingController::class, 'whatsapp'])->name('weekly.whatsapp');
             Route::get('weekly/{bill}/pdf', [WeeklyBillingController::class, 'downloadPdf'])->name('weekly.pdf');
             Route::get('weekly/export/csv', [WeeklyBillingController::class, 'export'])->name('weekly.export');
+            Route::get('weekly/calculate-preview', [WeeklyBillingController::class, 'calculatePreview'])->name('weekly.calculate-preview');
             
             Route::get('daily/gst/view', [DailyBillingController::class, 'gst'])->name('daily.gst');
             Route::get('daily/export/csv', [DailyBillingController::class, 'export'])->name('daily.export');
@@ -171,6 +172,9 @@ Route::middleware(['auth'])->group(function () {
         
         Route::middleware(['permission:create bills'])->group(function () {
             Route::post('weekly/bulk', [WeeklyBillingController::class, 'bulkStore'])->name('weekly.bulkStore');
+            Route::post('weekly/purchase', [WeeklyBillingController::class, 'storePurchase'])->name('weekly.purchase.store');
+            Route::post('weekly/generate', [WeeklyBillingController::class, 'generateWeekly'])->name('weekly.generate');
+            Route::post('weekly/{bill}/pay-split/{part}', [WeeklyBillingController::class, 'paySplit'])->name('weekly.pay-split');
         });
 
         permissionResource('weekly', WeeklyBillingController::class, 'bills');
@@ -219,6 +223,12 @@ Route::middleware(['auth'])->group(function () {
     });
     Route::middleware(['permission:delete emis'])->group(function () {
         Route::delete('expenses/emis/{emi}', [ExpenseController::class, 'destroyEmi'])->name('expenses.emis.destroy');
+    });
+    Route::middleware(['permission:edit emis'])->group(function () {
+        Route::get('expenses/emis/{emi}/edit', [ExpenseController::class, 'emisEdit'])->name('expenses.emis.edit');
+        Route::put('expenses/emis/{emi}', [ExpenseController::class, 'updateEmi'])->name('expenses.emis.update');
+        Route::post('expenses/emis/{emi}/pay', [ExpenseController::class, 'payEmi'])->name('expenses.emis.pay');
+        Route::post('expenses/emis/{emi}/close-full', [ExpenseController::class, 'closeFullEmi'])->name('expenses.emis.close-full');
     });
 
     permissionResource('expenses', ExpenseController::class, 'expenses');

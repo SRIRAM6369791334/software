@@ -81,19 +81,19 @@ class GlobalSearchController extends Controller
 
         // ── Weekly Bills (Invoice Search) ──────────────────────────────────
         // invoice_no is a real DB column in weekly_bills
-        $weeklyQuery = WeeklyBill::with('customer')->limit(4);
+        $weeklyQuery = WeeklyBill::with('dealer')->limit(4);
         $byWeeklyInvoice = (clone $weeklyQuery)->where('invoice_no', 'like', "%{$term}%")->get();
 
         $extractedWeeklyId = $this->extractId($term, 'INV-W-');
         $byWeeklyId = $extractedWeeklyId
-            ? WeeklyBill::with('customer')->where('id', $extractedWeeklyId)->limit(4)->get()
+            ? WeeklyBill::with('dealer')->where('id', $extractedWeeklyId)->limit(4)->get()
             : collect();
 
         $weeklyBills = $byWeeklyInvoice->merge($byWeeklyId)->unique('id')->toBase()->map(fn($b) => [
             'id'    => $b->id,
             'type'  => 'Weekly Invoice',
             'label' => $b->invoice_number,
-            'sub'   => ($b->customer->name ?? '—') . ' · ₹' . number_format($b->net_amount, 0),
+            'sub'   => ($b->dealer->firm_name ?? '—') . ' · ₹' . number_format($b->net_amount, 0),
             'icon'  => 'receipt_long',
             'color' => 'purple',
             'url'   => route('billing.weekly.show', $b->id),

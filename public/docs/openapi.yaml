@@ -281,7 +281,7 @@ components:
           example: admin
         email:
           type: string
-          example: admin@flockwise.com
+          example: admin@Poultry.com
         is_active:
           type: boolean
           example: true

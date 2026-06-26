@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Customer;
 use App\Models\DailyBillItem;
-use App\Models\WeeklyBillItem;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -43,23 +42,17 @@ class CustomerService
 
     /**
      * Load full customer detail stats and purchase analytics.
+     * Note: WeeklyBills are now for Dealers only.
      */
     public function getDetails(Customer $customer): array
     {
-        $customer->loadCount(['weeklyBills', 'dailyBills', 'payments', 'emis'])
+        $customer->loadCount(['dailyBills', 'payments', 'emis'])
                  ->loadSum('payments', 'amount');
 
-        $latestWeeklyBill = $customer->weeklyBills()->latest()->first();
         $latestDailyBill  = $customer->dailyBills()->latest()->first();
+        $latestBill       = $latestDailyBill;
 
-        $latestBill = match (true) {
-            $latestWeeklyBill && $latestDailyBill => $latestWeeklyBill->period_end > $latestDailyBill->date
-                ? $latestWeeklyBill : $latestDailyBill,
-            default => $latestWeeklyBill ?: $latestDailyBill,
-        };
-
-        $dailyBillIds    = $customer->dailyBills()->pluck('id');
-        $weeklyBillIds   = $customer->weeklyBills()->pluck('id');
+        $dailyBillIds = $customer->dailyBills()->pluck('id');
 
         $topRetailProducts = DailyBillItem::whereIn('daily_bill_id', $dailyBillIds)
             ->select('item_name', DB::raw('SUM(quantity_kg) as total_qty'), DB::raw('COUNT(*) as times_bought'))
@@ -68,12 +61,8 @@ class CustomerService
             ->limit(5)
             ->get();
 
-        $topWholesaleProducts = WeeklyBillItem::whereIn('weekly_bill_id', $weeklyBillIds)
-            ->select('item_name', DB::raw('SUM(quantity_kg) as total_qty'), DB::raw('COUNT(*) as times_bought'))
-            ->groupBy('item_name')
-            ->orderByDesc('total_qty')
-            ->limit(5)
-            ->get();
+        // Weekly wholesale products: empty collection since weekly bills moved to dealers
+        $topWholesaleProducts = collect([]);
 
         $upcomingEmis = $customer->emis()->where('status', 'Upcoming')->whereDate('due_date', '<=', now()->addDays(7))->orderBy('due_date')->get();
         $overdueEmis = $customer->emis()->where('status', 'Upcoming')->whereDate('due_date', '<', today())->orderBy('due_date')->get();
@@ -81,12 +70,12 @@ class CustomerService
         return [
             'stats' => [
                 'payments_sum_amount' => (float) $customer->payments_sum_amount,
-                'weekly_bills_count'  => $customer->weekly_bills_count,
+                'weekly_bills_count'  => 0,
                 'daily_bills_count'   => $customer->daily_bills_count,
                 'payments_count'      => $customer->payments_count,
             ],
             'latest_bill'             => $latestBill,
-            'latest_weekly_bill'      => $latestWeeklyBill,
+            'latest_weekly_bill'      => null,
             'latest_daily_bill'       => $latestDailyBill,
             'latest_payment'          => $customer->payments()->latest()->first(),
             'top_retail_products'     => $topRetailProducts,
@@ -95,6 +84,7 @@ class CustomerService
             'overdue_emis'            => $overdueEmis,
         ];
     }
+
 
     /**
      * Get paginated EMI history for a customer.
@@ -109,14 +99,22 @@ class CustomerService
      */
     public function getBillingHistory(Customer $customer, int $perPage = 10): array
     {
-        $totalWeeklyBilled = $customer->weeklyBills()->sum('amount');
-        $totalDailyBilled  = $customer->dailyBills()->sum('amount');
+        $totalWeeklyBilled = 0.00;
+        $totalDailyBilled  = (float) $customer->dailyBills()->sum('amount');
+
+        $emptyPaginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            collect([]),
+            0,
+            $perPage,
+            1,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
 
         return [
             'total_billed'        => (float) ($totalWeeklyBilled + $totalDailyBilled),
             'total_weekly_billed' => (float) $totalWeeklyBilled,
             'total_daily_billed'  => (float) $totalDailyBilled,
-            'weekly_bills'        => $customer->weeklyBills()->latest()->paginate($perPage, ['*'], 'weekly_page'),
+            'weekly_bills'        => $emptyPaginator,
             'daily_bills'         => $customer->dailyBills()->with('items')->latest()->paginate($perPage, ['*'], 'daily_page'),
         ];
     }

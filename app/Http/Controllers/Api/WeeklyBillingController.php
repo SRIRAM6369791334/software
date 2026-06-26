@@ -22,7 +22,7 @@ class WeeklyBillingController extends BaseApiController
         $search = $request->input('search');
         $perPage = min((int)$request->input('per_page', 15), 100);
 
-        $bills = WeeklyBill::with(['customer', 'items'])
+        $bills = WeeklyBill::with(['dealer', 'items'])
             ->search($search)
             ->latest()
             ->paginate($perPage);

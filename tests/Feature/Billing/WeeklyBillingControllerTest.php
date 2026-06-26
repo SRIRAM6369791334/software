@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Billing;
 
-use App\Models\Customer;
+use App\Models\Dealer;
 use App\Models\WeeklyBill;
 use App\Models\Item;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,12 +35,12 @@ class WeeklyBillingControllerTest extends TestCase
         $response = $this->get(route('billing.weekly.bulk'));
 
         $response->assertStatus(200);
-        $response->assertViewHas('customers');
+        $response->assertViewHas('dealers');
     }
 
     public function test_store_creates_weekly_bill()
     {
-        $customer = Customer::factory()->create();
+        $dealer = Dealer::factory()->create();
         $item = Item::factory()->create(['status' => 'Active']);
 
         // Seed stock for the item to prevent Insufficient stock error
@@ -53,7 +53,7 @@ class WeeklyBillingControllerTest extends TestCase
         ]);
 
         $payload = [
-            'customer_id' => $customer->id,
+            'dealer_id' => $dealer->id,
             'period_start' => now()->startOfWeek()->toDateString(),
             'period_end' => now()->endOfWeek()->toDateString(),
             'status' => 'Generated',
@@ -73,7 +73,7 @@ class WeeklyBillingControllerTest extends TestCase
         $response->assertSessionHas('success');
 
         $this->assertDatabaseHas('weekly_bills', [
-            'customer_id' => $customer->id,
+            'dealer_id' => $dealer->id,
             'status' => 'Generated',
             'amount' => 5000,
             'gst_percentage' => 18,
@@ -89,11 +89,11 @@ class WeeklyBillingControllerTest extends TestCase
 
     public function test_bulk_store_creates_multiple_bills()
     {
-        $customer1 = Customer::factory()->create();
-        $customer2 = Customer::factory()->create();
+        $dealer1 = Dealer::factory()->create();
+        $dealer2 = Dealer::factory()->create();
 
         $payload = [
-            'customer_ids' => [$customer1->id, $customer2->id],
+            'dealer_ids' => [$dealer1->id, $dealer2->id],
             'period_start' => now()->startOfWeek()->toDateString(),
             'period_end' => now()->endOfWeek()->toDateString(),
             'amount' => 10000,
@@ -107,13 +107,13 @@ class WeeklyBillingControllerTest extends TestCase
         $response->assertSessionHas('success');
 
         $this->assertDatabaseHas('weekly_bills', [
-            'customer_id' => $customer1->id,
+            'dealer_id' => $dealer1->id,
             'amount' => 10000,
             'status' => 'Generated',
         ]);
 
         $this->assertDatabaseHas('weekly_bills', [
-            'customer_id' => $customer2->id,
+            'dealer_id' => $dealer2->id,
             'amount' => 10000,
             'status' => 'Generated',
         ]);
@@ -132,8 +132,8 @@ class WeeklyBillingControllerTest extends TestCase
 
     public function test_whatsapp_redirects()
     {
-        $customer = Customer::factory()->create(['phone' => '1234567890']);
-        $bill = WeeklyBill::factory()->create(['customer_id' => $customer->id]);
+        $dealer = Dealer::factory()->create(['phone' => '1234567890']);
+        $bill = WeeklyBill::factory()->create(['dealer_id' => $dealer->id]);
 
         $response = $this->get(route('billing.weekly.whatsapp', $bill));
 

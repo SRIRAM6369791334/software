@@ -36,6 +36,7 @@
                     label="Contact Person" 
                     icon="person" 
                     :value="$dealer->contact_person" 
+                    required
                 />
 
                 <x-form.input 
@@ -59,6 +60,7 @@
                     label="Location" 
                     icon="location_on" 
                     :value="$dealer->location" 
+                    required
                 />
 
                 <x-form.input 
@@ -66,6 +68,7 @@
                     label="Route" 
                     icon="alt_route" 
                     :value="$dealer->route" 
+                    required
                 />
 
                 <x-form.input 
@@ -75,6 +78,7 @@
                     icon="account_balance_wallet" 
                     :value="$dealer->pending_amount" 
                     step="0.01" 
+                    required
                 />
             </div>
 

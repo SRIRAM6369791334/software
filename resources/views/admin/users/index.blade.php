@@ -1,16 +1,16 @@
 @extends('layouts.app')
-@section('title', 'Sovereign Console')
+@section('title', 'User Management')
 
 @section('content')
 <div class="space-y-6">
     <x-page-header 
-        title="Sovereign Console" 
+        title="User Management" 
         subtitle="Identity orchestration and system-wide security audit"
     >
         <x-slot:actions>
             @can('manage users')
                 <x-button onclick="openModal('userModal')" variant="primary" icon="person_add">
-                    Deploy Agent
+                    Create User
                 </x-button>
             @endcan
         </x-slot:actions>
@@ -43,7 +43,7 @@
                     </td>
                     <td class="px-6 py-4">
                         <x-badge variant="{{ $user->roles->first()?->name === 'admin' ? 'info' : 'secondary' }}">
-                            {{ $user->roles->first()?->name ?? 'No Role' }}
+                            {{ Str::title(str_replace('_', ' ', $user->roles->first()?->name ?? 'No Role')) }}
                         </x-badge>
                     </td>
                     <td class="px-6 py-4">
@@ -106,25 +106,25 @@
                                     <span class="material-symbols-rounded text-emerald-600 dark:text-emerald-400">person_add</span>
                                 </div>
                                 <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
-                                    <h3 class="text-lg font-semibold leading-6 text-zinc-900 dark:text-zinc-100" id="modalTitle">Deploy System Agent</h3>
+                                    <h3 class="text-lg font-semibold leading-6 text-zinc-900 dark:text-zinc-100" id="modalTitle">Create New User</h3>
                                     <div class="mt-4 space-y-4">
                                         <x-form.input name="name" id="userName" label="Full Name" icon="person" required />
                                         <x-form.input name="username" id="userUsername" label="Username" icon="badge" required />
                                         <x-form.input type="email" name="email" id="userEmail" label="Email Address" icon="mail" required />
                                         <x-form.input type="password" name="password" id="userPassword" label="Password" icon="lock" />
                                         <p class="text-xs text-zinc-500 -mt-2" id="passwordHelp">Leave blank to keep existing password when editing.</p>
-                                        <x-form.input name="role" id="role" label="Primary Role" icon="admin_panel_settings" required list="roleOptions" placeholder="Type or select a role..." />
-                                        <datalist id="roleOptions">
+                                        <x-form.select name="role" id="role" label="Primary Role" required>
+                                            <option value="">Select a role...</option>
                                             @foreach($roles as $r)
-                                                <option value="{{ $r->name }}"></option>
+                                                <option value="{{ $r->name }}">{{ Str::title(str_replace('_', ' ', $r->name)) }}</option>
                                             @endforeach
-                                        </datalist>
+                                        </x-form.select>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="bg-zinc-50 dark:bg-zinc-900/50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t border-zinc-100 dark:border-zinc-800">
-                            <x-button type="submit" variant="primary" class="w-full sm:ml-3 sm:w-auto">Save Agent</x-button>
+                            <x-button type="submit" variant="primary" class="w-full sm:ml-3 sm:w-auto">Save User</x-button>
                             <x-button type="button" variant="secondary" onclick="closeModal('userModal')" class="mt-3 w-full sm:mt-0 sm:w-auto">Cancel</x-button>
                         </div>
                     </form>
@@ -137,7 +137,7 @@
 @push('scripts')
 <script>
     function openModal(modalId) {
-        document.getElementById('modalTitle').innerText = 'Deploy System Agent';
+        document.getElementById('modalTitle').innerText = 'Create New User';
         document.getElementById('userForm').action = "{{ route('admin.users.store') }}";
         document.getElementById('formMethod').value = 'POST';
         document.getElementById('userForm').reset();

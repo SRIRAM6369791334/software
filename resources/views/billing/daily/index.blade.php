@@ -1,9 +1,9 @@
 @extends('layouts.app')
-@section('title', 'Daily Customer Billing')
+@section('title', 'Customer Billing')
 
 @section('content')
 <div class="animate-fade-in">
-    <x-page-header title="Daily Customer Billing" subtitle="Record counter sales, calculate GST automatically, and issue receipts">
+    <x-page-header title="Customer Billing" subtitle="Record counter sales, calculate GST automatically, and issue receipts">
         <x-slot:actions>
             <x-button variant="outline" href="{{ route('billing.daily.export') }}" icon="download">
                 Export
@@ -54,7 +54,7 @@
         </div>
 
         <div x-show="showForm" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-4" class="pt-8 mt-6 border-t border-zinc-100 dark:border-zinc-800">
-            <form action="{{ route('billing.daily.store') }}" method="POST" id="daily-sale-form">
+            <form action="{{ route('billing.daily.store') }}" method="POST" id="daily-sale-form" x-data="{ paymentMode: 'Cash' }">
                 @csrf
                 
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -66,12 +66,12 @@
                     </x-form.select>
                     <x-form.input type="date" name="date" label="Sale Date" required value="{{ old('date', date('Y-m-d')) }}" />
                     
-                    <x-form.select name="payment_mode" label="Payment Mode" required>
+                    <x-form.select name="payment_mode" label="Payment Mode" required x-model="paymentMode">
                         <option value="Cash" {{ old('payment_mode', 'Cash') === 'Cash' ? 'selected' : '' }}>Cash</option>
-                        <option value="Credit" {{ old('payment_mode') === 'Credit' ? 'selected' : '' }}>Credit (Pay Later)</option>
+                        <option value="Pay later(EMI)" {{ old('payment_mode') === 'Pay later(EMI)' ? 'selected' : '' }}>Pay later(EMI)</option>
                         <option value="UPI" {{ old('payment_mode') === 'UPI' ? 'selected' : '' }}>UPI</option>
                         <option value="NEFT" {{ old('payment_mode') === 'NEFT' ? 'selected' : '' }}>NEFT</option>
-                        <option value="Cheque" {{ old('payment_mode') === 'Cheque' ? 'selected' : '' }}>Cheque</option>
+                        <option value="Cheque(Bank Transfer)" {{ old('payment_mode') === 'Cheque(Bank Transfer)' ? 'selected' : '' }}>Cheque(Bank Transfer)</option>
                     </x-form.select>
                     
                     <x-form.select name="status" label="Invoice Status" required>
@@ -124,6 +124,8 @@
                         </table>
                     </div>
                 </div>
+
+                <x-emi-schedule-generator totalAmountId="display-total" />
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
                     <div class="bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">

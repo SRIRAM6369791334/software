@@ -8,12 +8,9 @@ abstract class TestCase extends BaseTestCase
 {
     protected function createAdmin()
     {
+        $this->seed(\Database\Seeders\RolesAndPermissionsSeeder::class);
         $user = \App\Models\User::factory()->create();
-        $adminRole = \App\Models\Role::firstOrCreate(
-            ['name' => 'admin', 'guard_name' => 'web'],
-            ['description' => 'Admin', 'is_system' => true]
-        );
-        $user->assignRole($adminRole);
+        $user->assignRole('admin');
 
         return $user;
     }

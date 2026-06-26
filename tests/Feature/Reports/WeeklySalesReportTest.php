@@ -3,7 +3,7 @@
 namespace Tests\Feature\Reports;
 
 use App\Models\WeeklyBill;
-use App\Models\Customer;
+use App\Models\Dealer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -15,6 +15,7 @@ class WeeklySalesReportTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->seed(\Database\Seeders\RolesAndPermissionsSeeder::class);
         $this->actingAs($this->createAdmin());
     }
 
@@ -39,15 +40,15 @@ class WeeklySalesReportTest extends TestCase
 
     public function test_weekly_report_route_wise_filter()
     {
-        $customerA = Customer::factory()->create(['route' => 'Route A']);
-        $customerB = Customer::factory()->create(['route' => 'Route B']);
+        $dealerA = Dealer::factory()->create(['route' => 'Route A']);
+        $dealerB = Dealer::factory()->create(['route' => 'Route B']);
 
         WeeklyBill::factory()->create([
-            'customer_id' => $customerA->id, 
+            'dealer_id' => $dealerA->id, 
             'period_start' => now()->startOfWeek()
         ]);
         WeeklyBill::factory()->create([
-            'customer_id' => $customerB->id, 
+            'dealer_id' => $dealerB->id, 
             'period_start' => now()->startOfWeek()
         ]);
 

@@ -83,6 +83,21 @@ class DailyBillingService
                 ]);
             }
 
+            // Create EMI schedules if payment mode is Pay later(EMI)
+            if ($paymentMode === 'Pay later(EMI)' && isset($data['emis']) && is_array($data['emis'])) {
+                foreach ($data['emis'] as $emiData) {
+                    \App\Models\Emi::create([
+                        'emi_type'   => 'Customer',
+                        'entity_id'  => $bill->customer_id,
+                        'loan_name'  => 'Sales EMI - ' . $bill->invoice_number,
+                        'bank_name'  => 'Daily Bill',
+                        'amount'     => $emiData['amount'],
+                        'due_date'   => $emiData['due_date'],
+                        'status'     => 'Upcoming',
+                    ]);
+                }
+            }
+
             return $bill;
         });
     }

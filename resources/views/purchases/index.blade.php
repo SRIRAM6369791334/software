@@ -31,9 +31,19 @@
                 <span x-text="showForm ? 'Close Panel' : 'New Entry'"></span>
             </button>
         </div>
+
+        @if ($errors->any())
+            <div class="mt-4 mb-4 mx-6 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl relative">
+                <ul class="list-disc pl-5">
+                    @foreach ($errors->all() as $error)
+                        <li class="text-sm font-medium">{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
         
         <div x-show="showForm" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-4" class="pt-8 mt-6 border-t border-zinc-100 dark:border-zinc-800">
-            <form action="{{ route('purchases.store') }}" method="POST" id="purchase-form">
+            <form action="{{ route('purchases.store') }}" method="POST" id="purchase-form" x-data="{ paymentMode: 'Cash' }">
                 @csrf
                 
                 {{-- 1. Header Information Row --}}
@@ -65,20 +75,17 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">4. Payment Mode <span class="text-rose-500">*</span></label>
-                        <x-form.select name="payment_mode" required onchange="toggleDueDateField()">
-                            <option value="Cash" {{ old('payment_mode') === 'Cash' ? 'selected' : '' }}>Cash</option>
-                            <option value="UPI" {{ old('payment_mode', 'UPI') === 'UPI' ? 'selected' : '' }}>UPI</option>
+                        <x-form.select name="payment_mode" required x-model="paymentMode">
+                            <option value="Cash" {{ old('payment_mode', 'Cash') === 'Cash' ? 'selected' : '' }}>Cash</option>
+                            <option value="Pay later(EMI)" {{ old('payment_mode') === 'Pay later(EMI)' ? 'selected' : '' }}>Pay later(EMI)</option>
+                            <option value="UPI" {{ old('payment_mode') === 'UPI' ? 'selected' : '' }}>UPI</option>
                             <option value="NEFT" {{ old('payment_mode') === 'NEFT' ? 'selected' : '' }}>NEFT</option>
-                            <option value="Cheque" {{ old('payment_mode') === 'Cheque' ? 'selected' : '' }}>Cheque</option>
-                            <option value="Credit" {{ old('payment_mode') === 'Credit' ? 'selected' : '' }}>Credit</option>
+                            <option value="Cheque(Bank Transfer)" {{ old('payment_mode') === 'Cheque(Bank Transfer)' ? 'selected' : '' }}>Cheque(Bank Transfer)</option>
                         </x-form.select>
                     </div>
-                    
-                    <div id="due-date-group" class="hidden">
-                        <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">5. Payment Due Date <span class="text-rose-500">*</span></label>
-                        <x-form.input type="date" name="due_date" id="due_date_input" value="{{ old('due_date') }}" />
-                    </div>
                 </div>
+
+                <x-emi-schedule-generator totalAmountId="display-total" />
 
                 {{-- 2. Dynamic Refill Rows Table --}}
                 <div class="mb-8">
@@ -222,21 +229,6 @@
                             };
                         @endphp
                         <x-badge :color="$paymentColor">{{ $p->payment_mode }}</x-badge>
-                        
-                        @if($p->payment_mode === 'Credit')
-                            @if($p->due_date)
-                                <div class="mt-1.5 text-[10px] font-bold uppercase tracking-wider {{ $p->due_date->isPast() ? 'text-rose-500 animate-pulse' : 'text-zinc-500 dark:text-zinc-400' }}">
-                                    Due: {{ $p->due_date->format('d M') }}
-                                    @if($p->due_date->isPast())
-                                        <span class="block text-[9px] text-rose-600 dark:text-rose-400 font-black mt-0.5">(OVERDUE)</span>
-                                    @endif
-                                </div>
-                            @else
-                                <div class="mt-1.5 text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
-                                    No Due Date
-                                </div>
-                            @endif
-                        @endif
                     </td>
                     <td class="px-4 py-3 text-center">
                         <div class="flex items-center justify-center gap-1.5">
@@ -348,28 +340,6 @@ function recalculate() {
     }
 }
 
-function toggleDueDateField() {
-    const paymentModeSelect = document.querySelector('select[name="payment_mode"]');
-    const dueDateGroup = document.getElementById('due-date-group');
-    const dueDateInput = document.getElementById('due_date_input');
-    
-    if (!paymentModeSelect || !dueDateGroup) return;
-
-    if (paymentModeSelect.value === 'Credit') {
-        dueDateGroup.classList.remove('hidden');
-        dueDateInput.required = true;
-        
-        if (!dueDateInput.value) {
-            const today = new Date();
-            today.setDate(today.getDate() + 15);
-            dueDateInput.value = today.toISOString().split('T')[0];
-        }
-    } else {
-        dueDateGroup.classList.add('hidden');
-        dueDateInput.required = false;
-        dueDateInput.value = '';
-    }
-}
 
 function updateVendorOutstanding() {
     const vendorSelect = document.querySelector('select[name="vendor_name"]');
@@ -401,7 +371,6 @@ window.addEventListener('DOMContentLoaded', () => {
     const selector = document.querySelector('.item-selector');
     if (selector && selector.value) updateUnit(selector);
     
-    toggleDueDateField();
     updateVendorOutstanding();
 });
 </script>

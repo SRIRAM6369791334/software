@@ -41,13 +41,13 @@ class DealerController extends Controller
     public function store(StoreDealerRequest $request): RedirectResponse
     {
         $this->service->create($request->validated());
-        return back()->with('success', 'Dealer added successfully.');
+        return redirect()->route('masters.dealers.index')->with('success', 'Dealer added successfully.');
     }
 
     public function update(StoreDealerRequest $request, Dealer $dealer): RedirectResponse
     {
         $this->service->update($dealer, $request->validated());
-        return back()->with('success', 'Dealer updated.');
+        return redirect()->route('masters.dealers.index')->with('success', 'Dealer updated.');
     }
 
     public function show(Dealer $dealer): View

@@ -17,6 +17,7 @@ class PurchaseManagementTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->seed(\Database\Seeders\RolesAndPermissionsSeeder::class);
         $this->actingAs($this->createAdmin());
     }
 
@@ -167,7 +168,7 @@ class PurchaseManagementTest extends TestCase
         $this->assertDatabaseMissing('purchases', ['id' => $purchase->id]);
     }
 
-    public function test_purchase_can_be_stored_on_credit_with_due_date()
+    public function test_purchase_can_be_stored_on_emi_with_schedules()
     {
         $vendor = Vendor::factory()->create();
         $item = Item::create([
@@ -189,8 +190,7 @@ class PurchaseManagementTest extends TestCase
         $data = [
             'vendor_id' => $vendor->id,
             'vendor_name' => $vendor->firm_name,
-            'payment_mode' => 'Credit',
-            'due_date' => today()->addDays(15)->format('Y-m-d'),
+            'payment_mode' => 'Pay later(EMI)',
             'date' => today()->format('Y-m-d'),
             'gst_percentage' => 12,
             'items' => [
@@ -201,6 +201,10 @@ class PurchaseManagementTest extends TestCase
                     'rate' => 100,
                     'unit' => 'kg'
                 ]
+            ],
+            'emis' => [
+                ['due_date' => today()->addDays(30)->format('Y-m-d'), 'amount' => 2800.00],
+                ['due_date' => today()->addDays(60)->format('Y-m-d'), 'amount' => 2800.00],
             ]
         ];
 
@@ -209,14 +213,21 @@ class PurchaseManagementTest extends TestCase
         
         $this->assertDatabaseHas('purchases', [
             'vendor_name' => $vendor->firm_name,
-            'payment_mode' => 'Credit',
-            'due_date' => today()->addDays(15)->format('Y-m-d') . ' 00:00:00'
+            'payment_mode' => 'Pay later(EMI)'
         ]);
 
         // Verify that the expense was automatically registered!
         $this->assertDatabaseHas('expenses', [
             'category' => 'Purchase',
             'amount' => 5600.00, // 50 * 100 = 5000 + 12% GST = 5600
+        ]);
+
+        // Verify that the EMIs were created in the database!
+        $this->assertDatabaseHas('emis', [
+            'entity_id' => $vendor->id,
+            'emi_type' => 'Vendor',
+            'amount' => 2800.00,
+            'status' => 'Upcoming'
         ]);
     }
 

@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\WeeklyBill;
-use App\Models\Customer;
+use App\Models\Dealer;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class WeeklyBillFactory extends Factory
@@ -17,7 +17,7 @@ class WeeklyBillFactory extends Factory
         $gstAmount = $amount * ($gstPercentage / 100);
 
         return [
-            'customer_id' => Customer::factory(),
+            'dealer_id' => Dealer::factory(),
             'period_start' => today()->subDays(7),
             'period_end' => today(),
             'amount' => $amount,

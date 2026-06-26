@@ -26,4 +26,9 @@ class Emi extends Model
     {
         return $this->belongsTo(Dealer::class, 'entity_id');
     }
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class, 'entity_id');
+    }
 }

@@ -76,14 +76,22 @@ class ProfitService
             ->unique()->sort();
 
         return $allKeys->map(function ($wk) use ($wBills, $dBills, $cPayments, $purchases, $vPayments, $dPayments, $expenses, $emis) {
-            $inflow = (float)($wBills[$wk]->amount ?? 0) + (float)($dBills[$wk]->amount ?? 0) + (float)($cPayments[$wk]->amount ?? 0);
-            $outflow = (float)($purchases[$wk]->amount ?? 0) + (float)($vPayments[$wk]->amount ?? 0) + (float)($dPayments[$wk]->amount ?? 0)
-                      + (float)($expenses[$wk]->amount ?? 0) + (float)($emis[$wk]->amount ?? 0);
+            // INFLOW: money we RECEIVE (customer bills + dealer bills + customer payments + dealer payments)
+            $inflow = (float)($wBills[$wk]->amount ?? 0)
+                    + (float)($dBills[$wk]->amount ?? 0)
+                    + (float)($cPayments[$wk]->amount ?? 0)
+                    + (float)($dPayments[$wk]->amount ?? 0);  // Dealer pays US → INFLOW
+
+            // OUTFLOW: money we SPEND (purchases from vendors + vendor payments + expenses + EMIs)
+            $outflow = (float)($purchases[$wk]->amount ?? 0)
+                     + (float)($vPayments[$wk]->amount ?? 0)
+                     + (float)($expenses[$wk]->amount ?? 0)
+                     + (float)($emis[$wk]->amount ?? 0);
             
             return [
                 'week'     => 'Week ' . substr($wk, -2),
                 'revenue'  => $inflow,
-                'purchase' => (float)($purchases[$wk]->amount ?? 0) + (float)($vPayments[$wk]->amount ?? 0) + (float)($dPayments[$wk]->amount ?? 0),
+                'purchase' => (float)($purchases[$wk]->amount ?? 0) + (float)($vPayments[$wk]->amount ?? 0),
                 'expenses' => (float)($expenses[$wk]->amount ?? 0) + (float)($emis[$wk]->amount ?? 0),
                 'profit'   => $inflow - $outflow,
             ];
@@ -134,9 +142,16 @@ class ProfitService
             ->unique()->sort();
 
         return $allKeys->map(function($mk) use ($wBills, $dBills, $cPayments, $purchases, $vPayments, $dPayments, $expenses) {
-            $inflow = (float)($wBills[$mk]->amount ?? 0) + (float)($dBills[$mk]->amount ?? 0) + (float)($cPayments[$mk]->amount ?? 0);
-            $outflow = (float)($purchases[$mk]->amount ?? 0) + (float)($vPayments[$mk]->amount ?? 0) + (float)($dPayments[$mk]->amount ?? 0)
-                      + (float)($expenses[$mk]->amount ?? 0);
+            // INFLOW: Customer bills + Dealer bills + Customer payments + Dealer payments
+            $inflow = (float)($wBills[$mk]->amount ?? 0)
+                    + (float)($dBills[$mk]->amount ?? 0)
+                    + (float)($cPayments[$mk]->amount ?? 0)
+                    + (float)($dPayments[$mk]->amount ?? 0); // Dealer pays US → INFLOW
+
+            // OUTFLOW: Purchases from Vendor + Vendor payments + Expenses
+            $outflow = (float)($purchases[$mk]->amount ?? 0)
+                     + (float)($vPayments[$mk]->amount ?? 0)
+                     + (float)($expenses[$mk]->amount ?? 0);
             return [
                 'month'  => date('M', strtotime($mk . '-01')),
                 'profit' => $inflow - $outflow,
@@ -149,19 +164,21 @@ class ProfitService
         $month = sprintf('%02d', now()->month);
         $year  = (string)now()->year;
 
-        $wBills = WeeklyBill::whereMonth('period_end', $month)->whereYear('period_end', $year)->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('net_amount');
-        $dBills = DailyBill::whereMonth('date', $month)->whereYear('date', $year)->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('net_amount');
+        // INFLOW — money we RECEIVE
+        $wBills    = WeeklyBill::whereMonth('period_end', $month)->whereYear('period_end', $year)->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('net_amount');
+        $dBills    = DailyBill::whereMonth('date', $month)->whereYear('date', $year)->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('net_amount');
         $cPayments = CustomerPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
-        $revenue = $wBills + $dBills + $cPayments;
+        $dPayments = DealerPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount'); // Dealer pays US
+        $revenue   = $wBills + $dBills + $cPayments + $dPayments;
         
-        $purchases = Purchase::whereMonth('date', $month)->whereYear('date', $year)->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('total_amount');
-        $vPayments = VendorPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
-        $dPayments = DealerPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
-        $purchase = $purchases + $vPayments + $dPayments;
+        // OUTFLOW — money we SPEND
+        $purchases  = Purchase::whereMonth('date', $month)->whereYear('date', $year)->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('total_amount');
+        $vPayments  = VendorPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount'); // We pay Vendor
+        $purchase   = $purchases + $vPayments;
         
         $expensesAmt = Expense::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
-        $emisAmt = Emi::whereIn('status', ['Paid', 'Overdue'])->whereMonth('due_date', $month)->whereYear('due_date', $year)->sum('amount');
-        $expenses = $expensesAmt + $emisAmt;
+        $emisAmt     = Emi::whereIn('status', ['Paid', 'Overdue'])->whereMonth('due_date', $month)->whereYear('due_date', $year)->sum('amount');
+        $expenses    = $expensesAmt + $emisAmt;
 
         $profit = $revenue - $purchase - $expenses;
         
@@ -170,27 +187,30 @@ class ProfitService
 
     public function getProfitBreakdown($startDate, $endDate): array
     {
+        // INFLOW — Total billed (all bills)
         $totalBilled = DailyBill::whereBetween('date', [$startDate, $endDate])->sum('net_amount')
             + WeeklyBill::whereBetween('period_end', [$startDate, $endDate])->sum('net_amount');
 
+        // INFLOW — Actually collected (cash sales + customer payments + dealer payments)
         $cashSales = DailyBill::whereBetween('date', [$startDate, $endDate])->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('net_amount')
             + WeeklyBill::whereBetween('period_end', [$startDate, $endDate])->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('net_amount');
-        $cPayments = CustomerPayment::whereBetween('date', [$startDate, $endDate])->sum('amount');
-        $totalCollected = $cashSales + $cPayments;
+        $cPayments  = CustomerPayment::whereBetween('date', [$startDate, $endDate])->sum('amount');
+        $dPayments  = DealerPayment::whereBetween('date', [$startDate, $endDate])->sum('amount'); // Dealer pays US → INFLOW
+        $totalCollected = $cashSales + $cPayments + $dPayments;
 
+        // OUTFLOW — Purchases
         $totalPurchaseBilled = Purchase::whereBetween('date', [$startDate, $endDate])->sum('total_amount');
-        
         $cashPurchases = Purchase::whereBetween('date', [$startDate, $endDate])->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('total_amount');
-        $vPayments = VendorPayment::whereBetween('date', [$startDate, $endDate])->sum('amount');
-        $dPayments = DealerPayment::whereBetween('date', [$startDate, $endDate])->sum('amount');
-        $totalPurchasePaid = $cashPurchases + $vPayments + $dPayments;
+        $vPayments     = VendorPayment::whereBetween('date', [$startDate, $endDate])->sum('amount'); // We pay Vendor → OUTFLOW
+        $totalPurchasePaid = $cashPurchases + $vPayments;
 
+        // OUTFLOW — Expenses
         $totalExpenses = Expense::whereBetween('date', [$startDate, $endDate])->sum('amount')
             + Emi::whereIn('status', ['Paid', 'Overdue'])->whereBetween('due_date', [$startDate, $endDate])->sum('amount');
 
-        $billedProfit = $totalBilled - ($totalPurchaseBilled + $totalExpenses);
-        $collectedProfit = $totalCollected - ($totalPurchasePaid + $totalExpenses);
-        $pendingCollection = $totalBilled - $totalCollected;
+        $billedProfit      = $totalBilled    - ($totalPurchaseBilled + $totalExpenses);
+        $collectedProfit   = $totalCollected - ($totalPurchasePaid   + $totalExpenses);
+        $pendingCollection = $totalBilled    - $totalCollected;
 
         return [
             'total_billed'       => round($totalBilled, 2),

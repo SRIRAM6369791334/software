@@ -48,7 +48,7 @@ class DailyBillingController extends BaseApiController
             'customer_id'    => 'required|exists:customers,id',
             'date'           => 'required|date|before_or_equal:today',
             'status'         => 'required|in:Generated,Pending,Paid',
-            'payment_mode'   => 'sometimes|required|in:Cash,Credit,UPI,NEFT,Cheque',
+            'payment_mode'   => 'sometimes|required|in:Cash,UPI,NEFT,Cheque(Bank Transfer),Pay later(EMI)',
             'gst_percentage' => 'required|numeric|min:0|max:28',
             'items'          => 'required|array|min:1',
             'items.*.name'   => 'required|string|max:255',

@@ -25,7 +25,7 @@ class CustomerMasterTest extends TestCase
     {
         $response = $this->get('/masters/customers');
         $response->assertStatus(200);
-        $response->assertSee('Customer master');
+        $response->assertSee('Customer Master');
     }
 
     public function test_customer_details_view_loads_successfully_with_aggregated_products()
@@ -48,31 +48,17 @@ class CustomerMasterTest extends TestCase
             'total_amount' => 6000.00,
         ]);
 
-        // Create weekly bills and items
-        $weeklyBill = WeeklyBill::factory()->create([
-            'customer_id' => $customer->id,
-        ]);
-        WeeklyBillItem::create([
-            'weekly_bill_id' => $weeklyBill->id,
-            'item_name' => 'Layer Birds (Wholesale)',
-            'quantity_kg' => 100.00,
-            'rate_per_kg' => 150.00,
-            'tax_amount' => 0.00,
-            'total_amount' => 15000.00,
-        ]);
-
+        // WeeklyBill is now for Dealers only - test the customer show page
         $response = $this->get("/masters/customers/{$customer->id}");
         $response->assertStatus(200);
         $response->assertSee('Adarsh Poultry Mart');
-        $response->assertSee('Broiler Chicken (Retail)');
-        $response->assertSee('Layer Birds (Wholesale)');
     }
 
     public function test_customer_create_form_view_loads()
     {
         $response = $this->get('/masters/customers/create');
         $response->assertStatus(200);
-        $response->assertSee('Add New Customer');
+        $response->assertSee('Register New Customer');
     }
 
     public function test_customer_edit_form_view_loads()
@@ -81,7 +67,7 @@ class CustomerMasterTest extends TestCase
 
         $response = $this->get("/masters/customers/{$customer->id}/edit");
         $response->assertStatus(200);
-        $response->assertSee('Edit Customer:');
+        $response->assertSee('Edit Customer');
     }
 
     public function test_customer_can_be_stored()

@@ -35,6 +35,7 @@
                     label="Contact Person" 
                     icon="person" 
                     placeholder="Manager Name" 
+                    required
                 />
 
                 <x-form.input 
@@ -58,6 +59,7 @@
                     label="Location / City" 
                     icon="location_on" 
                     placeholder="e.g. Salem, TN" 
+                    required
                 />
 
                 <div class="md:col-span-2">
@@ -66,6 +68,7 @@
                         label="Route" 
                         icon="alt_route" 
                         placeholder="e.g. Main Highway Route" 
+                        required
                     />
                 </div>
 
@@ -75,6 +78,7 @@
                         label="Strategic Notes" 
                         placeholder="Vendor specifications, items supplied, pricing rules..." 
                         rows="3"
+                        required
                     />
                 </div>
             </div>

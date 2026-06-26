@@ -19,9 +19,10 @@
                 
                 <div class="grid grid-cols-1 gap-5 mb-5">
                     <x-form.select name="emi_type" id="emi_type" label="EMI Type" required onchange="toggleEntitySelect()">
-                        <option value="Bank Loan">Bank Loan / Finance</option>
-                        <option value="Customer">Customer</option>
-                        <option value="Dealer">Dealer</option>
+                        <option value="Customer">Customer (To Receive)</option>
+                        <option value="Dealer">Dealer (To Receive)</option>
+                        <option value="Vendor">Vendor (To Pay)</option>
+                        <option value="Bank Loan">Bank Loan / Finance (To Pay)</option>
                     </x-form.select>
                 </div>
 
@@ -62,6 +63,7 @@
 <script>
     const customers = @json($customers ?? []);
     const dealers = @json($dealers ?? []);
+    const vendors = @json($vendors ?? []);
     
     function toggleEntitySelect() {
         const type = document.getElementById('emi_type').value;
@@ -86,7 +88,15 @@
             loanNameDiv.classList.add('hidden');
             loanNameInput.required = false;
             
-            const list = type === 'Customer' ? customers : dealers;
+            let list = [];
+            if (type === 'Customer') {
+                list = customers;
+            } else if (type === 'Dealer') {
+                list = dealers;
+            } else if (type === 'Vendor') {
+                list = vendors;
+            }
+            
             entityLabel.innerHTML = 'Select ' + type + ' <span class="text-rose-500">*</span>';
             
             list.forEach(item => {

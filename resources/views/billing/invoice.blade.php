@@ -5,7 +5,7 @@
 <div class="max-w-3xl mx-auto bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 p-8 border border-zinc-200 shadow-lg rounded-xl my-4" id="invoice-print">
     <div class="flex justify-between items-start border-b pb-6 mb-6">
         <div>
-            <h1 class="text-3xl font-black text-emerald-600 tracking-tighter italic">Flockwise <span class="text-zinc-950 not-italic tracking-normal font-bold">BizTrack</span></h1>
+            <h1 class="text-3xl font-black text-emerald-600 tracking-tighter italic">Poultry <span class="text-zinc-950 not-italic tracking-normal font-bold"></span></h1>
             <p class="text-xs text-zinc-400 mt-1 uppercase tracking-widest font-semibold text-center bg-emerald-50 py-1 rounded">Poultry Management Solutions</p>
         </div>
         <div class="text-right">
@@ -17,11 +17,11 @@
     <div class="grid grid-cols-2 gap-12 mb-10">
         <div>
             <p class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Bill To</p>
-            <h3 class="text-lg font-bold text-zinc-950">{{ $bill->customer?->name ?? 'N/A' }}</h3>
-            <p class="text-sm text-zinc-600 mt-1 leading-relaxed">{{ $bill->customer?->address ?? 'No address provided' }}</p>
-            <p class="text-sm text-zinc-600 font-medium mt-1"> {{ $bill->customer?->phone ?? 'N/A' }}</p>
-            @if($bill->customer?->gst_number)
-                <p class="text-xs text-zinc-400 mt-2">GSTIN: <span class="text-zinc-700 font-mono">{{ $bill->customer->gst_number }}</span></p>
+            <h3 class="text-lg font-bold text-zinc-950">{{ $bill->dealer?->firm_name ?? 'N/A' }}</h3>
+            <p class="text-sm text-zinc-600 mt-1 leading-relaxed">{{ $bill->dealer?->location ?? 'No address provided' }}</p>
+            <p class="text-sm text-zinc-600 font-medium mt-1"> {{ $bill->dealer?->phone ?? 'N/A' }}</p>
+            @if($bill->dealer?->gst_number)
+                <p class="text-xs text-zinc-400 mt-2">GSTIN: <span class="text-zinc-700 font-mono">{{ $bill->dealer->gst_number }}</span></p>
             @endif
         </div>
         <div class="text-right">
@@ -91,7 +91,7 @@
         <p class="text-sm text-zinc-950 font-bold mb-1">Thank you for your business!</p>
         <p class="text-xs text-zinc-400">Please settle the payment within 7 days of invoice generation.</p>
         <div class="mt-8 flex justify-center gap-4 no-print">
-            <button onclick="window.print()" class="px-6 py-2 bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-zinc-200 text-white text-sm font-bold rounded-lg hover:bg-emerald-50 transition-all shadow-lg hover:shadow-zinc-200/60"> Print Invoice</button>
+            <button onclick="window.print()" class="px-6 py-2 bg-gradient-to-br from-white via-emerald-50/30 to-sky-50/30 border border-zinc-200 text-emerald-700 text-sm font-bold rounded-lg hover:bg-emerald-50 transition-all shadow-lg hover:shadow-zinc-200/60"> Print Invoice</button>
             <button onclick="window.close()" class="px-6 py-2 border border-zinc-200 text-zinc-600 text-sm font-bold rounded-lg hover:bg-emerald-50 transition-all">Close</button>
         </div>
     </div>

@@ -15,6 +15,7 @@ class PdfExportTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->seed(\Database\Seeders\RolesAndPermissionsSeeder::class);
         $this->actingAs($this->createAdmin());
     }
 

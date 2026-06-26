@@ -47,13 +47,13 @@ class VendorController extends Controller
     public function store(StoreVendorRequest $request): RedirectResponse
     {
         $this->service->create($request->validated());
-        return back()->with('success', 'Vendor added successfully.');
+        return redirect()->route('masters.vendors.index')->with('success', 'Vendor added successfully.');
     }
 
     public function update(StoreVendorRequest $request, Vendor $vendor): RedirectResponse
     {
         $this->service->update($vendor, $request->validated());
-        return back()->with('success', 'Vendor updated.');
+        return redirect()->route('masters.vendors.index')->with('success', 'Vendor updated.');
     }
 
     public function show(Vendor $vendor): View

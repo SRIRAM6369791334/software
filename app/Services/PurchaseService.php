@@ -49,18 +49,27 @@ class PurchaseService
             
             foreach ($items as $itemData) {
                 // Fetch item details if item_id is provided
-                $itemName = $itemData['name'] ?? 'Unknown';
-                $itemMaster = Item::firstOrCreate(
-                    ['name' => $itemName],
-                    [
-                        'code' => strtoupper(substr($itemName, 0, 3)) . '-' . rand(1000, 9999),
-                        'type' => 'Other',
-                        'category' => 'Uncategorized',
-                        'base_unit' => $itemData['unit'] ?? 'kg',
-                        'is_active' => true
-                    ]
-                );
-                
+                $itemId = $itemData['item_id'] ?? null;
+                $itemMaster = null;
+
+                if ($itemId) {
+                    $itemMaster = Item::find($itemId);
+                }
+
+                if (!$itemMaster) {
+                    $itemName = $itemData['name'] ?? 'Unknown';
+                    $itemMaster = Item::firstOrCreate(
+                        ['name' => $itemName],
+                        [
+                            'code' => strtoupper(substr($itemName, 0, 3)) . '-' . rand(1000, 9999),
+                            'type' => 'Other',
+                            'category' => 'Uncategorized',
+                            'base_unit' => $itemData['unit'] ?? 'kg',
+                            'is_active' => true
+                        ]
+                    );
+                }
+
                 $itemData['item_id'] = $itemMaster->id;
                 $itemName = $itemMaster->name;
 
@@ -97,6 +106,21 @@ class PurchaseService
                 'description' => "Purchase from {$purchase->vendor_name} (Inv: " . ($purchase->invoice_no ?: 'N/A') . ") [Ref: PR-{$purchase->id}]",
                 'amount'      => $purchase->total_amount,
             ]);
+            
+            // Create EMI schedules if payment mode is Pay later(EMI)
+            if (($data['payment_mode'] ?? '') === 'Pay later(EMI)' && isset($data['emis']) && is_array($data['emis'])) {
+                foreach ($data['emis'] as $emiData) {
+                    \App\Models\Emi::create([
+                        'emi_type'   => 'Vendor',
+                        'entity_id'  => $purchase->vendor_id,
+                        'loan_name'  => 'Purchase EMI - ' . ($purchase->invoice_no ?: 'PR-'.$purchase->id),
+                        'bank_name'  => 'Purchase Bill',
+                        'amount'     => $emiData['amount'],
+                        'due_date'   => $emiData['due_date'],
+                        'status'     => 'Upcoming',
+                    ]);
+                }
+            }
             
             return $purchase;
         });
@@ -138,18 +162,27 @@ class PurchaseService
             $purchase->update($data);
 
             foreach ($items as $itemData) {
-                $itemName = $itemData['name'] ?? 'Unknown';
-                $itemMaster = Item::firstOrCreate(
-                    ['name' => $itemName],
-                    [
-                        'code' => strtoupper(substr($itemName, 0, 3)) . '-' . rand(1000, 9999),
-                        'type' => 'Other',
-                        'category' => 'Uncategorized',
-                        'base_unit' => $itemData['unit'] ?? 'kg',
-                        'is_active' => true
-                    ]
-                );
-                
+                $itemId = $itemData['item_id'] ?? null;
+                $itemMaster = null;
+
+                if ($itemId) {
+                    $itemMaster = Item::find($itemId);
+                }
+
+                if (!$itemMaster) {
+                    $itemName = $itemData['name'] ?? 'Unknown';
+                    $itemMaster = Item::firstOrCreate(
+                        ['name' => $itemName],
+                        [
+                            'code' => strtoupper(substr($itemName, 0, 3)) . '-' . rand(1000, 9999),
+                            'type' => 'Other',
+                            'category' => 'Uncategorized',
+                            'base_unit' => $itemData['unit'] ?? 'kg',
+                            'is_active' => true
+                        ]
+                    );
+                }
+
                 $itemData['item_id'] = $itemMaster->id;
                 $itemName = $itemMaster->name;
 

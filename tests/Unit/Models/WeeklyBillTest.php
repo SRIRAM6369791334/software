@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Models;
 
-use App\Models\Customer;
+use App\Models\Dealer;
 use App\Models\WeeklyBill;
 use App\Models\WeeklyBillItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,10 +12,10 @@ class WeeklyBillTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_belongs_to_a_customer()
+    public function test_it_belongs_to_a_dealer()
     {
         $bill = WeeklyBill::factory()->create();
-        $this->assertInstanceOf(Customer::class, $bill->customer);
+        $this->assertInstanceOf(Dealer::class, $bill->dealer);
     }
 
     public function test_it_has_many_items()
@@ -25,18 +25,18 @@ class WeeklyBillTest extends TestCase
         $this->assertInstanceOf(WeeklyBillItem::class, $bill->items->first());
     }
 
-    public function test_search_scope_filters_by_customer_name()
+    public function test_search_scope_filters_by_dealer_firm_name()
     {
-        $customer1 = Customer::factory()->create(['name' => 'Alice Adams']);
-        $customer2 = Customer::factory()->create(['name' => 'Bob Brown']);
+        $dealer1 = Dealer::factory()->create(['firm_name' => 'Alice Adams']);
+        $dealer2 = Dealer::factory()->create(['firm_name' => 'Bob Brown']);
 
-        WeeklyBill::factory()->create(['customer_id' => $customer1->id]);
-        WeeklyBill::factory()->create(['customer_id' => $customer2->id]);
+        WeeklyBill::factory()->create(['dealer_id' => $dealer1->id]);
+        WeeklyBill::factory()->create(['dealer_id' => $dealer2->id]);
 
         $results = WeeklyBill::search('Alice')->get();
 
         $this->assertCount(1, $results);
-        $this->assertEquals('Alice Adams', $results->first()->customer->name);
+        $this->assertEquals('Alice Adams', $results->first()->dealer->firm_name);
     }
 
     public function test_get_invoice_number_attribute()

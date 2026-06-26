@@ -5,6 +5,7 @@
     'maxWidth' => '2xl',
     'icon' => null,
     'iconColor' => 'emerald', // Deprecated: Always uses emerald for consistency
+    'show' => false,
 ])
 
 @php
@@ -21,7 +22,7 @@ $maxWidthClass = match($maxWidth) {
 
 <div
     x-data="{
-        show: false,
+        show: {{ $show ? 'true' : 'false' }},
         focusables() {
             let selector = 'a, button, input:not([type=\'hidden\']), textarea, select, details, [tabindex]:not([tabindex=\'-1\'])'
             return [...$el.querySelectorAll(selector)]

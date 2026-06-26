@@ -40,13 +40,16 @@ class DailyBillingController extends Controller
             'customer_id'    => 'required|exists:customers,id',
             'date'           => 'required|date|before_or_equal:today',
             'status'         => 'required|in:Generated,Pending,Paid',
-            'payment_mode'   => 'required|in:Cash,Credit,UPI,NEFT,Cheque',
+            'payment_mode'   => 'required|in:Cash,UPI,NEFT,Cheque(Bank Transfer),Pay later(EMI)',
             'gst_percentage' => 'required|numeric|min:0|max:28',
             'items'          => 'required|array|min:1',
             'items.*.name'   => 'required|string|max:255',
             'items.*.qty'    => 'required|numeric|min:0.01',
             'items.*.rate'   => 'required|numeric|min:0.01',
             'items.*.unit'   => 'nullable|string|max:20',
+            'emis'           => 'required_if:payment_mode,Pay later(EMI)|array',
+            'emis.*.due_date'=> 'required_if:payment_mode,Pay later(EMI)|date',
+            'emis.*.amount'  => 'required_if:payment_mode,Pay later(EMI)|numeric|min:0.01',
         ]);
 
         try {

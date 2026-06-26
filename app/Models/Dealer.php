@@ -34,6 +34,11 @@ class Dealer extends Model
         return $this->hasMany(Purchase::class, 'vendor_name', 'firm_name');
     }
 
+    public function dealerPurchases(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(DealerPurchase::class);
+    }
+
     public function scopeSearch($query, ?string $term)
     {
         if (!$term) return $query;

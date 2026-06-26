@@ -28,7 +28,7 @@ class GeneratePdfInvoiceJob implements ShouldQueue
     {
         Log::info("Generating PDF Invoice in the background for Bill ID: {$this->billId}");
 
-        $bill = WeeklyBill::with(['customer', 'items'])->find($this->billId);
+        $bill = WeeklyBill::with(['dealer', 'items'])->find($this->billId);
 
         if (!$bill) {
             Log::warning("Bill ID {$this->billId} not found. Aborting PDF compilation.");

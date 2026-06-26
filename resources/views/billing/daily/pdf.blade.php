@@ -93,7 +93,7 @@
     <div style="font-size: 9px; font-weight: bold; color: #9ca3af; text-transform: uppercase; margin-bottom: 10px;">
         NO SIGNATURE REQUIRED &bull; COMPUTER GENERATED &bull; AUTH VERIFIED
     </div>
-    <p style="font-weight: bold; color: #374151; margin: 5px 0;">Thank you for choosing {{ config('app.name', 'Flockwise BizTrack') }}!</p>
+    <p style="font-weight: bold; color: #374151; margin: 5px 0;">Thank you for choosing {{ config('app.name', 'Poultry ') }}!</p>
     <p style="font-size: 10px; color: #6b7280; margin: 0;">Please settle the payment according to the agreed credit terms.</p>
 </div>
 

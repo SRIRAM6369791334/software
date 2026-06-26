@@ -76,7 +76,7 @@ class ReportController extends BaseApiController
         $startDate = $request->get('start', now()->startOfWeek()->toDateString());
         $endDate   = $request->get('end',   now()->endOfWeek()->toDateString());
 
-        $bills = WeeklyBill::with('customer')
+        $bills = WeeklyBill::with('dealer')
             ->whereBetween('period_start', [$startDate, $endDate])
             ->get();
 

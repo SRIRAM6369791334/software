@@ -12,22 +12,29 @@ class WeeklyBill extends Model
     use HasFactory;
     
     protected $fillable = [
-        'customer_id', 'period_start', 'period_end', 'invoice_no',
+        'dealer_id', 'period_start', 'period_end', 'invoice_no',
         'amount', 'gst_percentage', 'gst_amount', 'net_amount', 
-        'status', 'payment_mode'
+        'status', 'payment_mode',
+        'monday_payment_amount', 'monday_payment_status',
+        'friday_payment_amount', 'friday_payment_status',
+        'previous_outstanding', 'payments_during_week'
     ];
 
     protected $casts = [
-        'period_start' => 'date',
-        'period_end'   => 'date',
-        'amount'       => 'decimal:2',
-        'gst_amount'   => 'decimal:2',
-        'net_amount'   => 'decimal:2',
+        'period_start'          => 'date',
+        'period_end'            => 'date',
+        'amount'                => 'decimal:2',
+        'gst_amount'            => 'decimal:2',
+        'net_amount'            => 'decimal:2',
+        'monday_payment_amount' => 'decimal:2',
+        'friday_payment_amount' => 'decimal:2',
+        'previous_outstanding'  => 'decimal:2',
+        'payments_during_week'  => 'decimal:2',
     ];
 
-    public function customer(): BelongsTo
+    public function dealer(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Dealer::class);
     }
 
     public function items(): HasMany
@@ -35,10 +42,15 @@ class WeeklyBill extends Model
         return $this->hasMany(WeeklyBillItem::class);
     }
 
+    public function dealerPurchases(): HasMany
+    {
+        return $this->hasMany(DealerPurchase::class);
+    }
+
     public function scopeSearch($query, ?string $term)
     {
         if (!$term) return $query;
-        return $query->whereHas('customer', fn($q) => $q->where('name', 'like', "%{$term}%"))
+        return $query->whereHas('dealer', fn($q) => $q->where('firm_name', 'like', "%{$term}%"))
                      ->orWhereHas('items', fn($q) => $q->where('item_name', 'like', "%{$term}%"));
     }
 

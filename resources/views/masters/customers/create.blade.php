@@ -12,7 +12,7 @@
 
     <x-page-header 
         title="Register New Customer" 
-        subtitle="Enter the details below to add a new customer to BizTrack."
+        subtitle="Enter the details below to add a new customer to ."
     />
 
     <x-card>
@@ -42,6 +42,7 @@
                         label="Store Address" 
                         placeholder="Street, Area, City..." 
                         rows="2"
+                        required
                     />
                 </div>
 
@@ -52,17 +53,29 @@
                     placeholder="22AAAAA0000A1Z5" 
                 />
 
-                <x-form.select 
-                    name="route_id" 
-                    label="Route / Area" 
-                    :options="$routes->pluck('route_name', 'id')->toArray()" 
-                    placeholder="Select Route"
-                />
+                @if($routes->isEmpty())
+                    <x-form.input 
+                        name="route" 
+                        label="Route / Area" 
+                        icon="alt_route" 
+                        placeholder="Supply route..." 
+                        required
+                    />
+                @else
+                    <x-form.select 
+                        name="route_id" 
+                        label="Route / Area" 
+                        :options="$routes->pluck('route_name', 'id')->toArray()" 
+                        placeholder="Select Route"
+                        required
+                    />
+                @endif
 
                 <x-form.select 
                     name="type" 
                     label="Customer Type" 
                     :options="['Retail' => 'Retail', 'Wholesale' => 'Wholesale']" 
+                    required
                 />
 
                 <x-form.input 
@@ -72,6 +85,7 @@
                     icon="account_balance_wallet" 
                     value="0.00" 
                     step="0.01" 
+                    required
                 />
             </div>
 

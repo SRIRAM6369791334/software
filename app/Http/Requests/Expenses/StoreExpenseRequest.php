@@ -14,7 +14,7 @@ class StoreExpenseRequest extends FormRequest
             'category'    => 'required|in:Fuel,Salary,Transport,Utility,Misc',
             'description' => 'required|string|max:500',
             'amount'      => 'required|numeric|min:0.01',
-            'date'        => 'required|date|before_or_equal:today',
+            'date'        => 'required|date',
         ];
     }
 }

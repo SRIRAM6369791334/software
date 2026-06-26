@@ -15,7 +15,7 @@ class ExpenseService
 
     public function allEmis(): \Illuminate\Database\Eloquent\Collection
     {
-        return Emi::orderBy('due_date')->get();
+        return Emi::whereNotIn('emi_type', ['Customer', 'Dealer'])->orderBy('due_date')->get();
     }
 
     public function createExpense(array $data): Expense
@@ -32,7 +32,7 @@ class ExpenseService
     {
         return [
             'total_expenses' => Expense::whereMonth('date', now()->month)->sum('amount'),
-            'total_emis'     => Emi::sum('amount'),
+            'total_emis'     => Emi::whereNotIn('emi_type', ['Customer', 'Dealer'])->sum('amount'),
         ];
     }
 

@@ -19,7 +19,7 @@ class ReportControllerTest extends TestCase
     {
         parent::setUp();
         
-        Role::create(['name' => 'admin']);
+        $this->seed(\Database\Seeders\RolesAndPermissionsSeeder::class);
         $this->user = User::factory()->create(['is_active' => true]);
         $this->user->assignRole('admin');
     }

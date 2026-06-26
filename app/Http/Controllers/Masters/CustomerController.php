@@ -52,13 +52,13 @@ class CustomerController extends Controller
     public function store(StoreCustomerRequest $request): RedirectResponse
     {
         $this->service->create($request->validated());
-        return back()->with('success', 'Customer added successfully.');
+        return redirect()->route('masters.customers.index')->with('success', 'Customer added successfully.');
     }
 
     public function update(StoreCustomerRequest $request, Customer $customer): RedirectResponse
     {
         $this->service->update($customer, $request->validated());
-        return back()->with('success', 'Customer updated successfully.');
+        return redirect()->route('masters.customers.index')->with('success', 'Customer updated successfully.');
     }
 
     public function show(Customer $customer): View
@@ -123,13 +123,7 @@ class CustomerController extends Controller
 
     public function downloadLedgerPdf(Customer $customer)
     {
-        $bills = $customer->weeklyBills()->get()->map(fn($b) => [
-            'date' => $b->period_end,
-            'desc' => "Invoice #{$b->invoice_no} ({$b->items_description})",
-            'debit' => $b->net_amount,
-            'credit' => 0,
-            'type' => 'bill'
-        ]);
+        $bills = collect([]);
 
         $dailyBills = $customer->dailyBills()->get()->map(fn($b) => [
             'date' => $b->date,

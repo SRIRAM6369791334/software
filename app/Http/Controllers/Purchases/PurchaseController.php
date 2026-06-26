@@ -36,7 +36,7 @@ class PurchaseController extends Controller
         
         $customers   = Customer::orderBy('name')->get();
         $dailyBills  = DailyBill::with(['customer', 'items'])->latest()->take(10)->get();
-        $weeklyBills = WeeklyBill::with('customer')->latest()->take(10)->get();
+        $weeklyBills = WeeklyBill::with('dealer')->latest()->take(10)->get();
         
         $autoInvoiceNo = null; // Generated securely in the service if left blank
         

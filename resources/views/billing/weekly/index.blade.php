@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Weekly Dealer Billing')
+@section('title', 'Dealer Billing System')
 
 @section('content')
-<div class="animate-fade-in">
-    <x-page-header title="Weekly Dealer Billing" subtitle="Create wholesale billing settlements, bulk route invoices, and manage ledger transactions">
+<div class="animate-fade-in" x-data="{ activeTab: 'invoices', payBillId: null, payPart: '', payAmount: 0 }">
+    <x-page-header title="Dealer Billing & Purchases" subtitle="Record daily purchases, calculate weekly cycles, manage Monday/Friday split payments, and view ledger logs">
         <x-slot:actions>
             <x-button variant="outline" href="{{ route('billing.weekly.export') }}" icon="download">
-                Export
+                Export Log
             </x-button>
         </x-slot:actions>
     </x-page-header>
@@ -14,7 +14,7 @@
     {{-- Performance Stats Header --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <x-stat-card 
-            label="Generated Invoices" 
+            label="Weekly Invoices" 
             value="{{ $bills->total() }}" 
             icon="receipt_long" 
             color="indigo" />
@@ -34,84 +34,184 @@
         </div>
     </div>
 
-    @can('create bills')
-    {{-- Inline Expandable Form --}}
-    <x-card class="transition-all duration-300 mb-8" x-data="{ showForm: false }" x-bind:class="showForm ? 'ring-4 ring-indigo-50 dark:ring-indigo-900/30 border-indigo-100 dark:border-indigo-800' : 'hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]'">
-        <div class="flex justify-between items-center cursor-pointer" @click="showForm = !showForm">
-            <div class="flex items-center gap-4">
-                <div class="flex h-12 w-12 items-center justify-center rounded-[14px] bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/20">
-                    <span class="material-symbols-rounded text-[22px]">add_circle</span>
-                </div>
-                <div>
-                    <h2 class="text-[1.1rem] font-extrabold text-zinc-800 dark:text-zinc-100 tracking-tight">Record Dealer Bill</h2>
-                    <p class="text-[0.75rem] font-semibold text-zinc-400 dark:text-zinc-500 mt-0.5 tracking-wide uppercase">Click to expand and fill details</p>
-                </div>
-            </div>
-            <button type="button" class="flex items-center justify-center h-10 px-4 gap-2 rounded-xl text-sm transition-all duration-300 font-bold" :class="showForm ? 'bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'">
-                <span class="material-symbols-rounded" x-text="showForm ? 'expand_less' : 'add'"></span>
-                <span x-text="showForm ? 'Close Panel' : 'New Entry'"></span>
-            </button>
-        </div>
+    {{-- Tabs Navigation --}}
+    <div class="border-b border-zinc-200 dark:border-zinc-800 mb-8 flex flex-wrap gap-2">
+        <button @click="activeTab = 'invoices'" :class="activeTab === 'invoices' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-white'" class="px-5 py-3 text-sm font-bold border-b-2 transition-colors duration-200 focus:outline-none flex items-center gap-2">
+            <span class="material-symbols-rounded text-lg">receipt_long</span>
+            Weekly Invoices
+        </button>
+        <button @click="activeTab = 'record_purchase'" :class="activeTab === 'record_purchase' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-white'" class="px-5 py-3 text-sm font-bold border-b-2 transition-colors duration-200 focus:outline-none flex items-center gap-2">
+            <span class="material-symbols-rounded text-lg">add_circle</span>
+            Record Daily Purchase
+        </button>
+        <button @click="activeTab = 'purchase_log'" :class="activeTab === 'purchase_log' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-white'" class="px-5 py-3 text-sm font-bold border-b-2 transition-colors duration-200 focus:outline-none flex items-center gap-2">
+            <span class="material-symbols-rounded text-lg">history</span>
+            Purchase Log
+        </button>
+        <button @click="activeTab = 'generate_invoice'" :class="activeTab === 'generate_invoice' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-white'" class="px-5 py-3 text-sm font-bold border-b-2 transition-colors duration-200 focus:outline-none flex items-center gap-2">
+            <span class="material-symbols-rounded text-lg">calculate</span>
+            Generate Weekly Bill
+        </button>
+    </div>
 
-        <div x-show="showForm" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-4" class="pt-8 mt-6 border-t border-zinc-100 dark:border-zinc-800">
-            <div class="border-b border-zinc-200 dark:border-zinc-800 mb-6 flex gap-4">
-                <button id="tab-single-btn" onclick="switchDealerTab('single')" class="px-4 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 focus:outline-none dark:border-indigo-400 dark:text-indigo-400 transition-colors">
-                    Single Invoice
-                </button>
-                <button id="tab-bulk-btn" onclick="switchDealerTab('bulk')" class="px-4 py-2 text-sm font-semibold text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white focus:outline-none transition-colors border-b-2 border-transparent">
-                    Bulk Route Generation
-                </button>
+    {{-- Tab 1: Weekly Invoices --}}
+    <div x-show="activeTab === 'invoices'" class="space-y-6">
+        <x-card>
+            <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">Weekly Invoice Log</h2>
+                <form method="GET" class="relative max-w-sm w-full sm:w-auto">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-zinc-400">
+                        <span class="material-symbols-rounded text-xl">search</span>
+                    </div>
+                    <input type="text" name="search" value="{{ $search }}" class="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-xl focus:ring-emerald-500 focus:border-emerald-500 block w-full pl-10 p-2.5 transition-colors font-outfit" placeholder="Search invoice or dealer...">
+                </form>
             </div>
 
-            {{-- Single Invoice Form --}}
-            <form id="form-single" action="{{ route('billing.weekly.store') }}" method="POST">
+            <x-data-table :headers="['Inv No', 'Dealer', 'Period', 'Outstanding & Weekly Payments', 'Total Amount', 'Split Payments Status', 'Status', 'Actions']">
+                @forelse($bills as $bill)
+                    <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors group">
+                        <td class="px-6 py-4">
+                            <span class="font-jetbrains text-xs font-bold text-zinc-500">
+                                #{{ $bill->invoice_no ?? $bill->invoice_number }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <x-avatar :name="$bill->dealer->firm_name ?? 'd'" size="sm" />
+                                <div>
+                                    <p class="font-cabinet font-bold text-zinc-900 dark:text-zinc-100">{{ $bill->dealer->firm_name ?? '-' }}</p>
+                                    <p class="font-outfit text-xs text-zinc-500">{{ $bill->dealer->route ?? 'General Route' }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="font-medium text-zinc-900 dark:text-zinc-100">{{ $bill->period_start->format('d M') }} - {{ $bill->period_end->format('d M') }}</p>
+                            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">{{ $bill->period_end->format('Y') }}</p>
+                        </td>
+                        <td class="px-6 py-4 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                            <div class="space-y-1">
+                                <p>Prev Bal: <span class="font-jetbrains font-bold">₹{{ number_format($bill->previous_outstanding, 2) }}</span></p>
+                                <p>Payments: <span class="font-jetbrains font-bold">₹{{ number_format($bill->payments_during_week, 2) }}</span></p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 font-jetbrains font-medium text-indigo-600 dark:text-indigo-400">
+                            <div class="flex flex-col">
+                                <span class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 text-sm">Rs {{ number_format($bill->net_amount, 2) }}</span>
+                                <span class="text-[9px] text-indigo-600 font-bold uppercase tracking-tighter">Incl. GST</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-xs">
+                            <div class="space-y-2">
+                                {{-- Monday Split Part --}}
+                                <div class="flex items-center justify-between gap-4">
+                                    <span>Mon (50%): <span class="font-jetbrains font-bold">₹{{ number_format($bill->monday_payment_amount, 2) }}</span></span>
+                                    @if($bill->monday_payment_status === 'Paid')
+                                        <x-badge variant="success">PAID</x-badge>
+                                    @else
+                                        <div class="flex items-center gap-2">
+                                            <x-badge variant="warning">PENDING</x-badge>
+                                            <button @click="payBillId = {{ $bill->id }}; payPart = 'monday'; payAmount = {{ $bill->monday_payment_amount }};" class="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold px-2 py-1 rounded transition-all">Pay</button>
+                                        </div>
+                                    @endif
+                                </div>
+                                {{-- Friday Split Part --}}
+                                <div class="flex items-center justify-between gap-4">
+                                    <span>Fri (50%): <span class="font-jetbrains font-bold">₹{{ number_format($bill->friday_payment_amount, 2) }}</span></span>
+                                    @if($bill->friday_payment_status === 'Paid')
+                                        <x-badge variant="success">PAID</x-badge>
+                                    @else
+                                        <div class="flex items-center gap-2">
+                                            <x-badge variant="warning">PENDING</x-badge>
+                                            <button @click="payBillId = {{ $bill->id }}; payPart = 'friday'; payAmount = {{ $bill->friday_payment_amount }};" class="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold px-2 py-1 rounded transition-all">Pay</button>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            @php
+                                $statusMap = [
+                                    'Generated' => 'info',
+                                    'Pending'   => 'warning',
+                                    'Paid'      => 'success',
+                                ];
+                                $st = $statusMap[$bill->status] ?? 'warning';
+                            @endphp
+                            <x-badge :variant="$st">{{ strtoupper($bill->status) }}</x-badge>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <a href="{{ route('billing.weekly.show', $bill) }}" target="_blank" class="text-zinc-400 hover:text-indigo-600 transition-colors" title="Print Invoice">
+                                    <span class="material-symbols-rounded text-lg">print</span>
+                                </a>
+                                <a href="{{ route('billing.weekly.pdf', $bill) }}" class="text-zinc-400 hover:text-rose-600 transition-colors" title="Download PDF">
+                                    <span class="material-symbols-rounded text-lg">picture_as_pdf</span>
+                                </a>
+                                <a href="{{ route('billing.weekly.whatsapp', $bill) }}" target="_blank" class="text-emerald-500 hover:text-emerald-600 transition-colors" title="WhatsApp Message">
+                                    <span class="material-symbols-rounded text-lg">chat</span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <x-slot:empty>
+                        <x-empty-state 
+                            icon="receipt_long" 
+                            title="No Weekly Bills Found" 
+                            description="Start generating invoices for your dealers." />
+                    </x-slot:empty>
+                @endforelse
+
+                @if($bills->hasPages())
+                    <x-slot:pagination>
+                        {{ $bills->appends(request()->except('bills_page'))->links() }}
+                    </x-slot:pagination>
+                @endif
+            </x-data-table>
+        </x-card>
+    </div>
+
+    {{-- Tab 2: Record Daily Purchase --}}
+    <div x-show="activeTab === 'record_purchase'">
+        <x-card class="max-w-4xl mx-auto">
+            <div class="border-b border-zinc-200 dark:border-zinc-800 pb-4 mb-6">
+                <h2 class="text-lg font-extrabold text-zinc-900 dark:text-zinc-50 font-cabinet">Record Dealer Daily Purchase</h2>
+                <p class="text-xs text-zinc-500 mt-1">Record daily purchases by a dealer. Stock will be reduced immediately upon saving.</p>
+            </div>
+
+            <form action="{{ route('billing.weekly.purchase.store') }}" method="POST" id="dealer-purchase-form">
                 @csrf
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-                    <x-form.select name="customer_id" label="Customer" required>
-                        <option value="">Select customer...</option>
-                        @foreach($customers as $c)
-                            <option value="{{ $c->id }}" {{ old('customer_id') == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->route }})</option>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <x-form.select name="dealer_id" label="Dealer" required>
+                        <option value="">Select dealer...</option>
+                        @foreach($dealers as $d)
+                            <option value="{{ $d->id }}">{{ $d->firm_name }} ({{ $d->route }})</option>
                         @endforeach
                     </x-form.select>
-                    <x-form.input type="date" name="period_start" label="Period Start" required value="{{ old('period_start') }}" />
-                    <x-form.input type="date" name="period_end" label="Period End" required value="{{ old('period_end') }}" />
-                    
-                    <x-form.select name="payment_mode" label="Payment Mode" required>
-                        <option value="Cash" {{ old('payment_mode', 'Cash') === 'Cash' ? 'selected' : '' }}>Cash</option>
-                        <option value="Credit" {{ old('payment_mode') === 'Credit' ? 'selected' : '' }}>Credit (Pay Later)</option>
-                        <option value="UPI" {{ old('payment_mode') === 'UPI' ? 'selected' : '' }}>UPI</option>
-                        <option value="NEFT" {{ old('payment_mode') === 'NEFT' ? 'selected' : '' }}>NEFT</option>
-                        <option value="Cheque" {{ old('payment_mode') === 'Cheque' ? 'selected' : '' }}>Cheque</option>
-                    </x-form.select>
-
-                    <x-form.select name="status" label="Initial Status" required>
-                        <option value="Generated" {{ old('status') === 'Generated' ? 'selected' : '' }}>Generated</option>
-                        <option value="Pending" {{ old('status') === 'Pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="Paid" {{ old('status') === 'Paid' ? 'selected' : '' }}>Paid</option>
-                    </x-form.select>
+                    <x-form.input type="date" name="date" label="Purchase Date" required value="{{ today()->format('Y-m-d') }}" />
                 </div>
 
                 <div class="mb-6">
                     <div class="flex items-center justify-between mb-3">
-                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit">Billing Items & Birds</label>
-                        <x-button type="button" variant="outline" size="sm" icon="add" onclick="addWeeklyRow()">Add Item</x-button>
+                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit">Items & Weights</label>
+                        <x-button type="button" variant="outline" size="sm" icon="add" onclick="addPurchaseRow()">Add Item</x-button>
                     </div>
                     
                     <div class="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
-                        <table class="w-full text-sm text-left text-zinc-600 dark:text-zinc-400 font-outfit" id="weekly-items-table">
+                        <table class="w-full text-sm text-left text-zinc-600 dark:text-zinc-400 font-outfit" id="purchase-items-table">
                             <thead class="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-zinc-100/50 dark:bg-zinc-800 font-cabinet">
                                 <tr>
-                                    <th class="px-4 py-3 font-semibold">Item / Description</th>
-                                    <th class="px-4 py-3 font-semibold text-center w-24">Qty/kg</th>
-                                    <th class="px-4 py-3 font-semibold text-right w-32">Rate/kg</th>
-                                    <th class="px-4 py-3 font-semibold text-right w-32">Subtotal</th>
+                                    <th class="px-4 py-3 font-semibold">Item Name</th>
+                                    <th class="px-4 py-3 font-semibold text-center w-28">Qty/kg</th>
+                                    <th class="px-4 py-3 font-semibold text-right w-36">Rate/kg</th>
+                                    <th class="px-4 py-3 font-semibold text-right w-36">Subtotal</th>
                                     <th class="px-4 py-3 text-center w-12"></th>
                                 </tr>
                             </thead>
-                            <tbody id="weekly-items-body" class="divide-y divide-zinc-200 dark:divide-zinc-700">
-                                <tr class="item-row">
+                            <tbody id="purchase-items-body" class="divide-y divide-zinc-200 dark:divide-zinc-700">
+                                <tr class="purchase-item-row">
                                     <td class="p-2">
-                                        <select name="items[0][name]" required class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 transition-colors">
+                                        <select name="items[0][name]" required class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2 transition-colors">
                                             @foreach($items as $item)
                                                 <option value="{{ $item->name }}" {{ $item->name === 'Live Broiler Birds' ? 'selected' : '' }}>
                                                     {{ $item->name }}
@@ -120,12 +220,12 @@
                                         </select>
                                     </td>
                                     <td class="p-2">
-                                        <input type="number" name="items[0][qty]" step="0.01" required placeholder="0.0" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 text-center row-qty" oninput="recalcWeekly()">
+                                        <input type="number" name="items[0][qty]" step="0.01" required placeholder="0.00" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2 text-center p-qty" oninput="recalcPurchase()">
                                     </td>
                                     <td class="p-2">
-                                        <input type="number" name="items[0][rate]" step="0.01" required placeholder="0.0" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 text-right row-rate" oninput="recalcWeekly()">
+                                        <input type="number" name="items[0][rate]" step="0.01" required placeholder="0.00" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2 text-right p-rate" oninput="recalcPurchase()">
                                     </td>
-                                    <td class="p-2 text-right font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 row-total">
+                                    <td class="p-2 text-right font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 p-row-total">
                                         ₹0.00
                                     </td>
                                     <td class="p-2 text-center"></td>
@@ -135,211 +235,216 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                     <div class="bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
-                        <label class="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-4 font-outfit">Tax Settings (GST)</label>
-                        <div class="flex items-center gap-4">
-                            <div class="w-24">
-                                <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">GST %</label>
-                                <input type="number" name="gst_percentage" id="gst-percentage" value="18" readonly class="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 text-sm rounded-lg block w-full p-2 text-center font-jetbrains font-bold cursor-not-allowed">
-                            </div>
-                            <div class="flex-1">
-                                <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Calculated GST</label>
-                                <div id="display-tax" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 font-jetbrains font-bold text-zinc-900 dark:text-zinc-100">₹0.00</div>
-                            </div>
-                        </div>
+                        <label class="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 font-outfit">GST (18%)</label>
+                        <div id="p-display-tax" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3 font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 text-sm">₹0.00</div>
                     </div>
                     
                     <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl p-6 shadow-xl shadow-indigo-500/20 text-white flex flex-col sm:flex-row items-center justify-between gap-6">
                         <div class="flex flex-col">
                             <span class="text-indigo-100 text-xs font-bold uppercase tracking-wider block mb-1 font-outfit">Grand Total</span>
-                            <span id="display-total" class="text-3xl font-black font-jetbrains tracking-tight">₹0.00</span>
-                            <input type="hidden" name="amount" id="total-hidden">
+                            <span id="p-display-total" class="text-3xl font-black font-jetbrains tracking-tight">₹0.00</span>
                         </div>
                         <button type="submit" class="w-full sm:w-auto bg-white text-indigo-700 hover:bg-indigo-50 px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
-                            <span class="material-symbols-rounded">receipt_long</span>
-                            Generate Invoice
+                            <span class="material-symbols-rounded">save</span>
+                            Record Purchase
                         </button>
                     </div>
                 </div>
             </form>
+        </x-card>
+    </div>
 
-            {{-- Bulk Generation Form --}}
-            <form id="form-bulk" action="{{ route('billing.weekly.bulkStore') }}" method="POST" class="hidden">
-                @csrf
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-2">1. Select Dealers</label>
-                        <div class="h-64 overflow-y-auto pr-2 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2 space-y-1 bg-zinc-50 dark:bg-zinc-800/50">
-                            <div class="flex justify-between items-center px-2 py-1 mb-2">
-                                <span class="text-xs text-zinc-500">Select customers for bulk billing</span>
-                                <button type="button" onclick="toggleAllDealers(this)" class="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 uppercase">Select All</button>
+    {{-- Tab 3: Purchase Log --}}
+    <div x-show="activeTab === 'purchase_log'">
+        <x-card>
+            <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-between">
+                <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">Daily Purchase Log</h2>
+            </div>
+
+            <x-data-table :headers="['Date', 'Invoice No', 'Dealer', 'Product Breakdown', 'Total Qty', 'Net Amount', 'Weekly Invoice Status']">
+                @forelse($purchases as $pur)
+                    <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors group">
+                        <td class="px-6 py-4">
+                            <p class="font-medium text-zinc-900 dark:text-zinc-100">{{ $pur->date->format('d M Y') }}</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="font-jetbrains text-xs font-bold text-zinc-500">
+                                #{{ $pur->invoice_no }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <x-avatar :name="$pur->dealer->firm_name ?? 'd'" size="sm" />
+                                <div>
+                                    <p class="font-cabinet font-bold text-zinc-900 dark:text-zinc-100">{{ $pur->dealer->firm_name ?? '-' }}</p>
+                                    <p class="font-outfit text-xs text-zinc-500">{{ $pur->dealer->route ?? 'General Route' }}</p>
+                                </div>
                             </div>
-                            @foreach($customers as $c)
-                                <label class="flex items-center gap-3 p-2 bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-lg hover:border-indigo-200 transition-all cursor-pointer">
-                                    <input type="checkbox" name="customer_ids[]" value="{{ $c->id }}" class="bulk-dealer-cb w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-zinc-300">
-                                    <div class="flex flex-col">
-                                        <span class="text-xs font-bold text-zinc-700 dark:text-zinc-200">{{ $c->name }}</span>
-                                        <span class="text-[9px] font-bold text-zinc-400 uppercase">{{ $c->route }}</span>
-                                    </div>
-                                </label>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <div class="space-y-4">
-                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit">2. Global Billing Settings</label>
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <x-form.input type="date" name="period_start" label="From Date" required />
-                            <x-form.input type="date" name="period_end" label="To Date" required />
-                        </div>
-
-                        <x-form.input type="number" name="amount" label="Standard Flat Amount (Rs)" required step="0.01" placeholder="0.00" class="font-bold text-indigo-600 dark:text-indigo-400" />
-
-                        <x-form.select name="payment_mode" label="Payment Mode" required>
-                            <option value="Cash">Cash</option>
-                            <option value="Credit">Credit (Pay Later)</option>
-                            <option value="UPI">UPI</option>
-                            <option value="NEFT">NEFT</option>
-                            <option value="Cheque">Cheque</option>
-                        </x-form.select>
-
-                        <x-form.select name="status" label="Initial Status" required>
-                            <option value="Generated">Generated</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Paid">Paid</option>
-                        </x-form.select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 items-end mt-6">
-                    <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl p-6 shadow-xl shadow-indigo-500/20 text-white flex flex-col sm:flex-row items-center justify-between gap-6">
-                        <div class="flex flex-col">
-                            <span class="text-indigo-100 text-xs font-bold uppercase tracking-wider block mb-1 font-outfit">Bulk Action</span>
-                            <span class="text-2xl font-black font-jetbrains tracking-tight">Generate Bulk Bills</span>
-                        </div>
-                        <button type="submit" class="w-full sm:w-auto bg-white text-indigo-700 hover:bg-indigo-50 px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
-                            <span class="material-symbols-rounded">layers</span>
-                            Execute Bulk Billing
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </x-card>
-    @endcan
-    <x-card>
-        <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">Weekly Invoice Log</h2>
-            <form method="GET" class="relative max-w-sm w-full sm:w-auto">
-                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-zinc-400">
-                    <span class="material-symbols-rounded text-xl">search</span>
-                </div>
-                <input type="text" name="search" value="{{ $search }}" class="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-xl focus:ring-emerald-500 focus:border-emerald-500 block w-full pl-10 p-2.5 transition-colors font-outfit" placeholder="Search customer or invoice...">
-            </form>
-        </div>
-
-        <x-data-table :headers="['Inv No', 'Customer', 'Period', 'Product Breakdown', 'Quantity', 'Net Amount', 'Status', 'Actions']">
-            @forelse($bills as $bill)
-                <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors group">
-                    <td class="px-6 py-4">
-                        <span class="font-jetbrains text-xs font-bold text-zinc-500">
-                            #{{ $bill->invoice_no ?? $bill->invoice_number }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4">
-                        <div class="flex items-center gap-3">
-                            <x-avatar :name="$bill->customer->name ?? 'a'" size="sm" />
-                            <div>
-                                <p class="font-cabinet font-bold text-zinc-900 dark:text-zinc-100">{{ $bill->customer->name ?? '-' }}</p>
-                                <p class="font-outfit text-xs text-zinc-500">{{ $bill->customer->route ?? 'General Route' }}</p>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4">
-                        <p class="font-medium text-zinc-900 dark:text-zinc-100">{{ $bill->period_start->format('d M') }} - {{ $bill->period_end->format('d M') }}</p>
-                        <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">{{ $bill->period_end->format('Y') }}</p>
-                    </td>
-                    <td class="px-6 py-4">
-                        <div class="flex flex-wrap items-center gap-2 max-w-[200px]">
-                            @if($bill->items_description)
-                                @foreach(explode(',', $bill->items_description) as $item)
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-wrap items-center gap-2 max-w-[200px]">
+                                @foreach(explode(',', $pur->items_description) as $item)
                                     @if(trim($item))
                                         <x-badge variant="zinc">{{ trim($item) }}</x-badge>
                                     @endif
                                 @endforeach
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-100">{{ number_format($pur->quantity_kg, 2) }}</span>
+                            <span class="text-[10px] text-zinc-500 font-medium uppercase ml-0.5">kg</span>
+                        </td>
+                        <td class="px-6 py-4 font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 text-right">
+                            ₹{{ number_format($pur->net_amount, 2) }}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            @if($pur->weekly_bill_id)
+                                <a href="{{ route('billing.weekly.show', $pur->weekly_bill_id) }}" target="_blank" class="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-bold hover:underline flex items-center justify-center gap-1">
+                                    <span class="material-symbols-rounded text-sm">link</span>
+                                    #{{ $pur->weeklyBill->invoice_no ?? 'Weekly Bill' }}
+                                </a>
                             @else
-                                <span class="text-zinc-400 text-xs">—</span>
+                                <x-badge variant="warning">Not Invoiced</x-badge>
                             @endif
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-100">{{ number_format($bill->quantity_kg, 2) }}</span>
-                        <span class="text-[10px] text-zinc-500 font-medium uppercase ml-0.5">kg</span>
-                    </td>
-                    <td class="px-6 py-4 font-jetbrains font-medium text-indigo-600 dark:text-indigo-400 text-center">
-                        <div class="flex flex-col items-end">
-                            <span class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 text-sm">Rs {{ number_format($bill->net_amount ?? $bill->amount, 0) }}</span>
-                            <span class="text-[9px] text-indigo-600 font-bold uppercase tracking-tighter">Incl. GST</span>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        @php
-                            $statusMap = [
-                                'Generated' => 'info',
-                                'Pending'   => 'warning',
-                                'Paid'      => 'success',
-                            ];
-                            $st = $statusMap[$bill->status] ?? 'warning';
-                        @endphp
-                        <x-badge :variant="$st">{{ strtoupper($bill->status) }}</x-badge>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <div class="flex items-center justify-center gap-2">
-                            <a href="{{ route('billing.weekly.show', $bill) }}" target="_blank" class="text-zinc-400 hover:text-indigo-600 transition-colors" title="Print Invoice">
-                                <span class="material-symbols-rounded text-lg">print</span>
-                            </a>
-                            <a href="{{ route('billing.weekly.pdf', $bill) }}" class="text-zinc-400 hover:text-rose-600 transition-colors" title="Download PDF">
-                                <span class="material-symbols-rounded text-lg">picture_as_pdf</span>
-                            </a>
-                            <a href="{{ route('billing.weekly.whatsapp', $bill) }}" target="_blank" class="text-emerald-500 hover:text-emerald-600 transition-colors" title="WhatsApp Message">
-                                <span class="material-symbols-rounded text-lg">chat</span>
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-            @empty
-                <x-slot:empty>
-                    <x-empty-state 
-                        icon="receipt_long" 
-                        title="No Bills Found" 
-                        description="Start generating invoices for your dealers." />
-                </x-slot:empty>
-            @endforelse
+                        </td>
+                    </tr>
+                @empty
+                    <x-slot:empty>
+                        <x-empty-state 
+                            icon="history" 
+                            title="No Purchase Logs Found" 
+                            description="Dealer daily purchases will appear here." />
+                    </x-slot:empty>
+                @endforelse
 
-            @if($bills->hasPages())
-                <x-slot:pagination>
-                    {{ $bills->withQueryString()->links() }}
-                </x-slot:pagination>
-            @endif
-        </x-data-table>
-    </x-card>
+                @if($purchases->hasPages())
+                    <x-slot:pagination>
+                        {{ $purchases->appends(request()->except('purchases_page'))->links() }}
+                    </x-slot:pagination>
+                @endif
+            </x-data-table>
+        </x-card>
+    </div>
+
+    {{-- Tab 4: Generate Weekly Invoice --}}
+    <div x-show="activeTab === 'generate_invoice'">
+        <x-card class="max-w-2xl mx-auto" x-data="{ previewLoaded: false, prevOutstanding: 0, totalPurchases: 0, totalPayments: 0, netInvoice: 0, purchasesCount: 0 }">
+            <div class="border-b border-zinc-200 dark:border-zinc-800 pb-4 mb-6">
+                <h2 class="text-lg font-extrabold text-zinc-900 dark:text-zinc-50 font-cabinet">Generate Weekly Invoice</h2>
+                <p class="text-xs text-zinc-500 mt-1">Select a dealer and period. Compile purchases and payments into a weekly invoice with split payments.</p>
+            </div>
+
+            <form action="{{ route('billing.weekly.generate') }}" method="POST" id="generate-weekly-bill-form">
+                @csrf
+                <div class="space-y-4 mb-6">
+                    <x-form.select name="dealer_id" label="Dealer" required id="gen-dealer-id">
+                        <option value="">Select dealer...</option>
+                        @foreach($dealers as $d)
+                            <option value="{{ $d->id }}">{{ $d->firm_name }}</option>
+                        @endforeach
+                    </x-form.select>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <x-form.input type="date" name="period_start" label="From Date" required id="gen-period-start" />
+                        <x-form.input type="date" name="period_end" label="To Date" required id="gen-period-end" />
+                    </div>
+                </div>
+
+                <div class="mb-6 flex gap-4">
+                    <button type="button" onclick="previewWeeklyBilling(this)" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <span class="material-symbols-rounded">analytics</span>
+                        Calculate & Preview Bill
+                    </button>
+                </div>
+
+                {{-- Preview Section --}}
+                <div x-show="previewLoaded" x-transition class="bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 mb-6 space-y-4">
+                    <h3 class="text-sm font-bold text-zinc-700 dark:text-zinc-300 font-cabinet uppercase tracking-wider">Calculation Details</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm font-outfit text-zinc-600 dark:text-zinc-400">
+                        <div>Previous Outstanding Balance:</div>
+                        <div class="text-right font-jetbrains font-bold text-zinc-900 dark:text-white" x-text="'₹' + prevOutstanding.toLocaleString('en-IN', { minimumFractionDigits: 2 })"></div>
+                        
+                        <div>Current Week's Purchases (<span x-text="purchasesCount"></span> logs):</div>
+                        <div class="text-right font-jetbrains font-bold text-zinc-900 dark:text-white text-emerald-600 dark:text-emerald-400" x-text="'+ ₹' + totalPurchases.toLocaleString('en-IN', { minimumFractionDigits: 2 })"></div>
+                        
+                        <div>Current Week's Payments:</div>
+                        <div class="text-right font-jetbrains font-bold text-zinc-900 dark:text-white text-rose-600 dark:text-rose-400" x-text="'- ₹' + totalPayments.toLocaleString('en-IN', { minimumFractionDigits: 2 })"></div>
+                        
+                        <div class="border-t border-zinc-200 dark:border-zinc-700 pt-2 font-bold text-zinc-800 dark:text-zinc-200">Net Weekly Invoice Amount:</div>
+                        <div class="border-t border-zinc-200 dark:border-zinc-700 pt-2 text-right font-jetbrains font-black text-indigo-600 dark:text-indigo-400 text-lg" x-text="'₹' + netInvoice.toLocaleString('en-IN', { minimumFractionDigits: 2 })"></div>
+                    </div>
+
+                    {{-- Split Schedule Preview --}}
+                    <div class="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3 space-y-2">
+                        <p class="text-xs font-bold text-zinc-500 uppercase tracking-wide">Split Payment Schedule</p>
+                        <div class="flex justify-between text-xs font-outfit text-zinc-600 dark:text-zinc-400">
+                            <span>Monday Part (50%):</span>
+                            <span class="font-jetbrains font-bold text-zinc-900 dark:text-white" x-text="'₹' + (netInvoice/2).toLocaleString('en-IN', { minimumFractionDigits: 2 })"></span>
+                        </div>
+                        <div class="flex justify-between text-xs font-outfit text-zinc-600 dark:text-zinc-400">
+                            <span>Friday Part (50%):</span>
+                            <span class="font-jetbrains font-bold text-zinc-900 dark:text-white" x-text="'₹' + (netInvoice - netInvoice/2).toLocaleString('en-IN', { minimumFractionDigits: 2 })"></span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg shadow-indigo-500/20 transition-transform active:scale-95 flex items-center justify-center gap-2">
+                        <span class="material-symbols-rounded">verified</span>
+                        Confirm & Generate Weekly Bill
+                    </button>
+                </div>
+            </form>
+        </x-card>
+    </div>
+
+    {{-- Split Payment Modal --}}
+    <div x-show="payBillId !== null" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm" x-transition>
+        <x-card class="w-full max-w-md shadow-2xl" @click.away="payBillId = null">
+            <div class="flex justify-between items-center pb-4 border-b border-zinc-200 dark:border-zinc-800 mb-6">
+                <h3 class="text-lg font-bold text-zinc-950 dark:text-zinc-50 font-cabinet">Record Split Payment</h3>
+                <button @click="payBillId = null" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <form :action="`{{ url('billing/weekly') }}/${payBillId}/pay-split/${payPart}`" method="POST">
+                @csrf
+                <div class="space-y-4 mb-6">
+                    <div class="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-3 text-center">
+                        <span class="text-xs text-zinc-500 uppercase font-bold block mb-1">Paying Amount</span>
+                        <span class="text-2xl font-black font-jetbrains text-indigo-600 dark:text-indigo-400" x-text="'₹' + payAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })"></span>
+                    </div>
+
+                    <x-form.select name="payment_mode" label="Payment Mode" required>
+                        <option value="Cash">Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="NEFT">NEFT</option>
+                        <option value="Cheque(Bank Transfer)">Cheque(Bank Transfer)</option>
+                    </x-form.select>
+
+                    <x-form.input type="text" name="notes" label="Notes (Optional)" placeholder="e.g. Received via GPay" />
+                </div>
+
+                <div class="flex justify-end gap-3">
+                    <button type="button" @click="payBillId = null" class="px-4 py-2 text-sm font-semibold text-zinc-500 hover:text-zinc-700 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-lg transition-colors">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-all shadow-md shadow-indigo-500/10">Confirm Payment</button>
+                </div>
+            </form>
+        </x-card>
+    </div>
 </div>
-
-
 @endsection
 
 @push('scripts')
 <script>
-let weeklyRowCount = 1;
+let purchaseRowCount = 1;
 const activeItems = @json($items);
 
-function addWeeklyRow() {
-    const body = document.getElementById('weekly-items-body');
+function addPurchaseRow() {
+    const body = document.getElementById('purchase-items-body');
     const newRow = document.createElement('tr');
-    newRow.className = 'item-row border-t border-zinc-200 dark:border-zinc-700';
+    newRow.className = 'purchase-item-row border-t border-zinc-200 dark:border-zinc-700';
     
     let optionsHtml = activeItems.map(i => `
         <option value="${i.name}" ${i.name === 'Live Broiler Birds' ? 'selected' : ''}>
@@ -349,80 +454,106 @@ function addWeeklyRow() {
 
     newRow.innerHTML = `
         <td class="p-2">
-            <select name="items[${weeklyRowCount}][name]" required class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 transition-colors">
+            <select name="items[${purchaseRowCount}][name]" required class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2 transition-colors">
                 ${optionsHtml}
             </select>
         </td>
         <td class="p-2">
-            <input type="number" name="items[${weeklyRowCount}][qty]" step="0.01" required placeholder="0.00" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 text-center row-qty" oninput="recalcWeekly()">
+            <input type="number" name="items[${purchaseRowCount}][qty]" step="0.01" required placeholder="0.00" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2 text-center p-qty" oninput="recalcPurchase()">
         </td>
         <td class="p-2">
-            <input type="number" name="items[${weeklyRowCount}][rate]" step="0.01" required placeholder="0.00" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 text-right row-rate" oninput="recalcWeekly()">
+            <input type="number" name="items[${purchaseRowCount}][rate]" step="0.01" required placeholder="0.00" class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2 text-right p-rate" oninput="recalcPurchase()">
         </td>
-        <td class="p-2 text-right font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 row-total">
+        <td class="p-2 text-right font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 p-row-total">
             ₹0.00
         </td>
         <td class="p-2 text-center">
-            <button type="button" onclick="this.closest('tr').remove(); recalcWeekly();" class="text-zinc-400 hover:text-rose-500 transition-colors p-1">
+            <button type="button" onclick="this.closest('tr').remove(); recalcPurchase();" class="text-zinc-400 hover:text-rose-500 transition-colors p-1">
                 <span class="material-symbols-rounded text-lg block">close</span>
             </button>
         </td>
     `;
     body.appendChild(newRow);
-    weeklyRowCount++;
+    purchaseRowCount++;
 }
 
-function recalcWeekly() {
+function recalcPurchase() {
     let subtotal = 0;
-    document.querySelectorAll('.item-row').forEach(row => {
-        const qty = parseFloat(row.querySelector('.row-qty').value) || 0;
-        const rate = parseFloat(row.querySelector('.row-rate').value) || 0;
+    document.querySelectorAll('.purchase-item-row').forEach(row => {
+        const qty = parseFloat(row.querySelector('.p-qty').value) || 0;
+        const rate = parseFloat(row.querySelector('.p-rate').value) || 0;
         const total = qty * rate;
-        row.querySelector('.row-total').textContent = '₹' + total.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+        row.querySelector('.p-row-total').textContent = '₹' + total.toLocaleString('en-IN', { minimumFractionDigits: 2 });
         subtotal += total;
     });
 
-    const gstP = parseFloat(document.getElementById('gst-percentage').value) || 0;
-    const gstA = subtotal * gstP / 100;
+    const gstA = subtotal * 18 / 100;
     const final = subtotal + gstA;
 
-    document.getElementById('display-tax').textContent = '₹' + gstA.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-    document.getElementById('display-total').textContent = '₹' + final.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-    document.getElementById('total-hidden').value = final.toFixed(2);
+    document.getElementById('p-display-tax').textContent = '₹' + gstA.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    document.getElementById('p-display-total').textContent = '₹' + final.toLocaleString('en-IN', { minimumFractionDigits: 2 });
 }
 
-function switchDealerTab(mode) {
-    const tabSingleBtn = document.getElementById('tab-single-btn');
-    const tabBulkBtn = document.getElementById('tab-bulk-btn');
-    const formSingle = document.getElementById('form-single');
-    const formBulk = document.getElementById('form-bulk');
+function previewWeeklyBilling(btn) {
+    const dealerId = document.getElementById('gen-dealer-id').value;
+    const start = document.getElementById('gen-period-start').value;
+    const end = document.getElementById('gen-period-end').value;
 
-    const activeClasses = "px-4 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 focus:outline-none dark:border-indigo-400 dark:text-indigo-400 transition-colors";
-    const inactiveClasses = "px-4 py-2 text-sm font-semibold text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white focus:outline-none transition-colors border-b-2 border-transparent";
-
-    if (mode === 'single') {
-        tabSingleBtn.className = activeClasses;
-        tabBulkBtn.className = inactiveClasses;
-        formSingle.classList.remove('hidden');
-        formBulk.classList.add('hidden');
-    } else {
-        tabBulkBtn.className = activeClasses;
-        tabSingleBtn.className = inactiveClasses;
-        formBulk.classList.remove('hidden');
-        formSingle.classList.add('hidden');
+    if (!dealerId || !start || !end) {
+        alert("Please fill dealer, start date, and end date.");
+        return;
     }
-}
 
-function toggleAllDealers(btn) {
-    const checkboxes = document.querySelectorAll('.bulk-dealer-cb');
-    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-    checkboxes.forEach(cb => cb.checked = !allChecked);
-    btn.textContent = allChecked ? 'Select All' : 'Deselect All';
+    btn.disabled = true;
+    btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Loading...`;
+
+    fetch(`{{ route('billing.weekly.calculate-preview') }}?dealer_id=${dealerId}&period_start=${start}&period_end=${end}`)
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = `<span class="material-symbols-rounded">analytics</span> Calculate & Preview Bill`;
+
+            if (data.success) {
+                const scope = Alpine.find(document.querySelector('[x-data]'));
+                scope.prevOutstanding = parseFloat(data.previous_outstanding);
+                scope.totalPurchases = parseFloat(data.total_purchases);
+                scope.totalPayments = parseFloat(data.total_payments);
+                scope.netInvoice = parseFloat(data.net_invoice_amount);
+                scope.purchasesCount = data.purchases_count;
+                scope.previewLoaded = true;
+            } else {
+                alert("Error: " + data.message);
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = `<span class="material-symbols-rounded">analytics</span> Calculate & Preview Bill`;
+            alert("Calculation failed: " + err.message);
+        });
 }
 
 // Auto-run on load
 window.addEventListener('DOMContentLoaded', () => {
-    recalcWeekly();
+    recalcPurchase();
+    
+    // Auto fill date range to last week (Monday to Sunday)
+    const startInput = document.getElementById('gen-period-start');
+    const endInput = document.getElementById('gen-period-end');
+    if (startInput && endInput && !startInput.value && !endInput.value) {
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // Sunday = 0, Monday = 1
+        
+        // Let's set start to previous Monday, and end to previous Sunday
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const prevMonday = new Date(today);
+        prevMonday.setDate(today.getDate() + mondayOffset - 7);
+        
+        const prevSunday = new Date(today);
+        prevSunday.setDate(today.getDate() + mondayOffset - 1);
+        
+        startInput.value = prevMonday.toISOString().split('T')[0];
+        endInput.value = prevSunday.toISOString().split('T')[0];
+    }
 });
 </script>
 @endpush

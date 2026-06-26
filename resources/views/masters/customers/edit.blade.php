@@ -43,6 +43,7 @@
                         label="Store Address" 
                         :value="$customer->address" 
                         rows="2"
+                        required
                     />
                 </div>
 
@@ -53,18 +54,31 @@
                     :value="$customer->gst_number" 
                 />
 
-                <x-form.input 
-                    name="route" 
-                    label="Route / Area" 
-                    icon="alt_route" 
-                    :value="$customer->route" 
-                />
+                @if($routes->isEmpty())
+                    <x-form.input 
+                        name="route" 
+                        label="Route / Area" 
+                        icon="alt_route" 
+                        :value="$customer->route" 
+                        required
+                    />
+                @else
+                    <x-form.select 
+                        name="route_id" 
+                        label="Route / Area" 
+                        :options="$routes->pluck('route_name', 'id')->toArray()" 
+                        :selected="$customer->route_id"
+                        placeholder="Select Route"
+                        required
+                    />
+                @endif
 
                 <x-form.select 
                     name="type" 
                     label="Customer Type" 
                     :options="['Retail' => 'Retail', 'Wholesale' => 'Wholesale']" 
                     :selected="$customer->type"
+                    required
                 />
 
                 <x-form.input 
@@ -74,6 +88,7 @@
                     icon="account_balance_wallet" 
                     :value="$customer->balance" 
                     step="0.01" 
+                    required
                 />
             </div>
 

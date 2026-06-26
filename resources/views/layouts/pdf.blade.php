@@ -164,12 +164,12 @@
         <table>
             <tr>
                 <td style="width: 50%;">
-                    <h1 class="company-name">{{ config('app.name', 'Flockwise BizTrack') }}</h1>
+                    <h1 class="company-name">{{ config('app.name', 'Poultry ') }}</h1>
                     <p class="company-details">
                         123 Poultry Farm Road<br>
                         Industrial Area, Tech City - 600001<br>
                         Phone: +91 98765 43210<br>
-                        Email: info@flockwise.local
+                        Email: info@Poultry.local
                     </p>
                 </td>
                 <td style="width: 50%;" class="report-title-container">
@@ -188,7 +188,7 @@
     </div>
 
     <div class="footer">
-        {{ config('app.name', 'Flockwise BizTrack') }} - Generated System Report &bull; Page <span class="page-number"></span>
+        {{ config('app.name', 'Poultry ') }} - Generated System Report &bull; Page <span class="page-number"></span>
     </div>
 
 </body>
