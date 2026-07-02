@@ -12,10 +12,15 @@ class Expense extends Model
     use HasFactory;
     use SoftDeletes;
 
-    protected $fillable = ['date', 'category', 'description', 'amount'];
+    protected $fillable = ['date', 'category', 'category_id', 'description', 'amount'];
 
     protected $casts = [
         'date'   => 'date',
         'amount' => 'decimal:2',
     ];
+
+    public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(ExpenseCategory::class, 'category_id');
+    }
 }

@@ -11,7 +11,16 @@ class Vendor extends Model
     use HasFactory;
     use SoftDeletes;
 
-    protected $fillable = ['firm_name', 'gst_number', 'location', 'contact_person', 'phone', 'route', 'notes'];
+    protected $fillable = ['firm_name', 'is_shop', 'gst_number', 'location', 'contact_person', 'phone', 'route', 'notes'];
+
+    protected $casts = [
+        'is_shop' => 'boolean',
+    ];
+
+    public function dayLoadEntries(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(DayLoadEntry::class);
+    }
 
     public function purchases(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
@@ -44,6 +53,11 @@ class Vendor extends Model
               ->orWhere('contact_person', 'like', "%{$term}%")
               ->orWhere('phone', 'like', "%{$term}%");
         });
+    }
+
+    public function scopeShops($query)
+    {
+        return $query->where('is_shop', true);
     }
 
     protected static function booted()

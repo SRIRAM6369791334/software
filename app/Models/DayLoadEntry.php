@@ -1,0 +1,79 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class DayLoadEntry extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'batch_id',
+        'vendor_id',
+        'dealer_id',
+        'no_of_boxes',
+        'box_weight',
+        'empty_weight',
+        'farm_weight',
+        'status',
+        'parent_entry_id',
+        'version',
+        'remarks',
+    ];
+
+    protected $casts = [
+        'no_of_boxes' => 'integer',
+        'box_weight' => 'decimal:2',
+        'empty_weight' => 'decimal:2',
+        'bird_weight' => 'decimal:2',
+        'farm_weight' => 'decimal:2',
+        'loss_weight' => 'decimal:2',
+        'version' => 'integer',
+    ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (DayLoadEntry $entry): void {
+            $birdWeight = round((float) $entry->box_weight - (float) $entry->empty_weight, 2);
+
+            $entry->bird_weight = $birdWeight;
+            $entry->loss_weight = $entry->farm_weight === null
+                ? null
+                : round($birdWeight - (float) $entry->farm_weight, 2);
+        });
+    }
+
+    public function batch(): BelongsTo
+    {
+        return $this->belongsTo(DayLoadBatch::class, 'batch_id');
+    }
+
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class, 'vendor_id');
+    }
+
+    public function dealer(): BelongsTo
+    {
+        return $this->belongsTo(Dealer::class, 'dealer_id');
+    }
+
+    public function parentEntry(): BelongsTo
+    {
+        return $this->belongsTo(DayLoadEntry::class, 'parent_entry_id');
+    }
+
+    public function childEntries(): HasMany
+    {
+        return $this->hasMany(DayLoadEntry::class, 'parent_entry_id');
+    }
+
+    public function adjustmentLogs(): HasMany
+    {
+        return $this->hasMany(EntryAdjustmentLog::class, 'entry_id');
+    }
+}

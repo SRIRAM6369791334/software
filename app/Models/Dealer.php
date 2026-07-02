@@ -29,6 +29,11 @@ class Dealer extends Model
         return $this->hasMany(DealerPayment::class);
     }
 
+    public function dayLoadEntries(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(DayLoadEntry::class);
+    }
+
     public function purchases(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Purchase::class, 'vendor_name', 'firm_name');
