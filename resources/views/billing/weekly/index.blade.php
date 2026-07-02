@@ -495,9 +495,12 @@ function recalcPurchase() {
 }
 
 function previewWeeklyBilling(btn) {
-    const dealerId = document.getElementById('gen-dealer-id').value;
-    const start = document.getElementById('gen-period-start').value;
-    const end = document.getElementById('gen-period-end').value;
+    const dealerEl = document.getElementById('gen-dealer-id') || document.querySelector('select[name="dealer_id"]');
+    const startEl = document.getElementById('gen-period-start') || document.querySelector('input[name="period_start"]');
+    const endEl = document.getElementById('gen-period-end') || document.querySelector('input[name="period_end"]');
+    const dealerId = dealerEl ? dealerEl.value : '';
+    const start = startEl ? startEl.value : '';
+    const end = endEl ? endEl.value : '';
 
     if (!dealerId || !start || !end) {
         alert("Please fill dealer, start date, and end date.");
@@ -537,8 +540,8 @@ window.addEventListener('DOMContentLoaded', () => {
     recalcPurchase();
     
     // Auto fill date range to last week (Monday to Sunday)
-    const startInput = document.getElementById('gen-period-start');
-    const endInput = document.getElementById('gen-period-end');
+    const startInput = document.getElementById('gen-period-start') || document.querySelector('input[name="period_start"]');
+    const endInput = document.getElementById('gen-period-end') || document.querySelector('input[name="period_end"]');
     if (startInput && endInput && !startInput.value && !endInput.value) {
         const today = new Date();
         const dayOfWeek = today.getDay(); // Sunday = 0, Monday = 1
