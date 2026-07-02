@@ -12,13 +12,14 @@ class DailyBill extends Model
     use HasFactory;
 
     protected $fillable = [
-        'customer_id', 'date', 'amount', 'gst_percentage', 'gst_amount', 
-        'net_amount', 'payment_mode', 'status'
+        'customer_id', 'date', 'amount', 'gst_percentage', 'gst_amount',
+        'net_amount', 'payment_mode', 'bank_method', 'status'
     ];
 
     protected $casts = [
         'date'       => 'date',
         'amount'     => 'decimal:2',
+        'gst_percentage' => 'decimal:2',
         'gst_amount' => 'decimal:2',
         'net_amount' => 'decimal:2',
     ];
@@ -93,4 +94,3 @@ class DailyBill extends Model
         });
     }
 }
-

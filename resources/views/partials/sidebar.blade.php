@@ -20,27 +20,15 @@
         ['label' => 'Vendors', 'icon' => 'inventory_2', 'route' => 'masters.vendors.index', 'permission' => 'view vendors'],
         
         ['header' => 'Operations'],
-        ['label' => 'Purchase List', 'icon' => 'shopping_cart', 'route' => 'purchases.entry', 'permission' => 'view purchases'],
-        ['label' => 'Purchase Invoices', 'icon' => 'receipt_long', 'route' => 'purchases.invoices', 'permission' => 'view purchases'],
-        ['label' => 'Dealer billing', 'icon' => 'description', 'route' => 'billing.weekly.index', 'permission' => 'view bills'],
+        ['label' => 'Billing', 'icon' => 'description', 'route' => 'billing.day-load.index', 'permission' => 'view bills'],
+        ['label' => 'Weekly Billing', 'icon' => 'receipt_long', 'route' => 'billing.weekly.index', 'permission' => 'view bills'],
+        ['label' => 'Purchase Invoices', 'icon' => 'shopping_cart', 'route' => 'purchases.invoices', 'permission' => 'view purchases'],
         ['label' => 'Customer Billing', 'icon' => 'event_note', 'route' => 'billing.daily.index', 'permission' => 'view bills'],
 
         ['header' => 'Finance & Payments'],
         ['label' => 'Customer Payments', 'icon' => 'credit_card', 'route' => 'payments.customers.index', 'permission' => 'view payments'],
-        ['label' => 'Dealer Payments', 'icon' => 'account_balance', 'route' => 'payments.dealers.index', 'permission' => 'view payments'],
         ['label' => 'Expenses', 'icon' => 'account_balance_wallet', 'route' => 'expenses.index', 'permission' => 'view expenses'],
         ['label' => 'EMI Records', 'icon' => 'notifications_active', 'route' => 'expenses.emis.index', 'permission' => 'view emis'],
-
-        ['header' => 'Sales Reports'],
-        ['label' => 'Reports Home', 'icon' => 'assessment', 'route' => 'reports.index', 'permission' => 'view reports'],
-        ['label' => 'Daily Sales', 'icon' => 'calendar_today', 'route' => 'reports.sales.daily', 'permission' => 'view reports'],
-        ['label' => 'Weekly Sales', 'icon' => 'date_range', 'route' => 'reports.sales.weekly', 'permission' => 'view reports'],
-        ['label' => 'Monthly Sales', 'icon' => 'bar_chart', 'route' => 'reports.sales.monthly', 'permission' => 'view reports'],
-
-        ['header' => 'Purchase Reports'],
-        ['label' => 'Daily Purchase', 'icon' => 'calendar_today', 'route' => 'reports.purchases.daily', 'permission' => 'view reports'],
-        ['label' => 'Weekly Purchase', 'icon' => 'date_range', 'route' => 'reports.purchases.weekly', 'permission' => 'view reports'],
-        ['label' => 'Monthly Purchase', 'icon' => 'bar_chart', 'route' => 'reports.purchases.monthly', 'permission' => 'view reports'],
         
         ['header' => 'Performance'],
         ['label' => 'Profit & Loss', 'icon' => 'show_chart', 'route' => 'profit.index', 'permission' => 'view profit dashboard'],

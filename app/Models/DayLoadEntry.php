@@ -15,6 +15,9 @@ class DayLoadEntry extends Model
         'batch_id',
         'vendor_id',
         'dealer_id',
+        'paper_rate',
+        'billing_rate',
+        'customer_rate',
         'no_of_boxes',
         'box_weight',
         'empty_weight',
@@ -27,6 +30,9 @@ class DayLoadEntry extends Model
 
     protected $casts = [
         'no_of_boxes' => 'integer',
+        'paper_rate' => 'decimal:2',
+        'billing_rate' => 'decimal:2',
+        'customer_rate' => 'decimal:2',
         'box_weight' => 'decimal:2',
         'empty_weight' => 'decimal:2',
         'bird_weight' => 'decimal:2',
@@ -75,5 +81,10 @@ class DayLoadEntry extends Model
     public function adjustmentLogs(): HasMany
     {
         return $this->hasMany(EntryAdjustmentLog::class, 'entry_id');
+    }
+
+    public function getRateDifferenceAttribute(): float
+    {
+        return round((float) $this->customer_rate - (float) $this->paper_rate, 2);
     }
 }

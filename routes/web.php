@@ -7,6 +7,7 @@ use App\Http\Controllers\Masters\DealerController;
 use App\Http\Controllers\Masters\VendorController;
 use App\Http\Controllers\Billing\WeeklyBillingController;
 use App\Http\Controllers\Billing\DailyBillingController;
+use App\Http\Controllers\Billing\DayLoadBillingController;
 use App\Http\Controllers\Purchases\PurchaseController;
 use App\Http\Controllers\Payments\CustomerPaymentController;
 use App\Http\Controllers\Payments\DealerPaymentController;
@@ -158,6 +159,7 @@ Route::middleware(['auth'])->group(function () {
     */
     Route::prefix('billing')->name('billing.')->group(function () {
         Route::middleware(['permission:view bills'])->group(function () {
+            Route::get('day-load', [DayLoadBillingController::class, 'index'])->name('day-load.index');
             Route::get('weekly/bulk', [WeeklyBillingController::class, 'bulk'])->name('weekly.bulk');
             Route::get('weekly/{bill}/whatsapp', [WeeklyBillingController::class, 'whatsapp'])->name('weekly.whatsapp');
             Route::get('weekly/{bill}/pdf', [WeeklyBillingController::class, 'downloadPdf'])->name('weekly.pdf');
@@ -171,6 +173,7 @@ Route::middleware(['auth'])->group(function () {
         });
         
         Route::middleware(['permission:create bills'])->group(function () {
+            Route::post('day-load', [DayLoadBillingController::class, 'store'])->name('day-load.store');
             Route::post('weekly/bulk', [WeeklyBillingController::class, 'bulkStore'])->name('weekly.bulkStore');
             Route::post('weekly/purchase', [WeeklyBillingController::class, 'storePurchase'])->name('weekly.purchase.store');
             Route::post('weekly/generate', [WeeklyBillingController::class, 'generateWeekly'])->name('weekly.generate');
@@ -201,7 +204,9 @@ Route::middleware(['auth'])->group(function () {
         });
 
         permissionResource('customers', CustomerPaymentController::class, 'payments');
-        permissionResource('dealers', DealerPaymentController::class, 'payments');
+        Route::get('dealers', fn () => redirect()->route('billing.weekly.index'))->name('dealers.index')->middleware('permission:view payments');
+        Route::get('dealers/create', fn () => redirect()->route('billing.weekly.index'))->name('dealers.create')->middleware('permission:create payments');
+        Route::post('dealers', [DealerPaymentController::class, 'store'])->name('dealers.store')->middleware('permission:create payments');
     });
 
     /*

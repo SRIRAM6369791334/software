@@ -22,9 +22,11 @@ class CustomerPaymentController extends Controller
     public function index(Request $request): View
     {
         $search    = $request->input('search');
-        $payments  = $this->service->paginated($search, 15);
+        $period    = $request->input('period', 'all');
+        $date      = $request->input('date', today()->format('Y-m-d'));
+        $payments  = $this->service->paginated($search, 15, $period, $date);
         $customers = Customer::orderBy('name')->get();
-        return view('payments.customers', compact('payments', 'customers', 'search'));
+        return view('payments.customers', compact('payments', 'customers', 'search', 'period', 'date'));
     }
 
     public function create(Request $request): View
@@ -44,11 +46,11 @@ class CustomerPaymentController extends Controller
     {
         $rows = $this->service->allForExport()->map(fn($p) => [
             $p->customer->name ?? '—', $p->date->format('Y-m-d'),
-            $p->amount, $p->payment_mode, $p->payment_type, $p->balance_after,
+            $p->cod_amount, $p->bank_transfer_amount, $p->total_amount, $p->payment_mode, $p->payment_type, $p->balance_after,
         ]);
         return $this->exporter->streamCsv(
             'customer-payments',
-            ['Customer','Date','Amount','Mode','Type','Balance After'],
+            ['Customer','Date','COD Amount','Bank Transfer Amount','Total Amount','Mode','Type','Balance After'],
             $rows
         );
     }
