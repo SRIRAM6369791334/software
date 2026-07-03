@@ -109,31 +109,70 @@
 
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-6">
-                        <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Payment Transaction History</h4>
+                        <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Transaction History</h4>
                         <button onclick="window.print()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1">
                             <span class="material-symbols-rounded text-[16px]">print</span> Print
                         </button>
                     </div>
 
-                    <x-data-table :headers="['Date', 'Transaction Details', 'Ref #', ['label' => 'Credit (Payment)', 'align' => 'right']]">
-                        @forelse($payments as $p)
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="p-3 rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-900/20">
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Total Loads (Kg)</div>
+                            <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">{{ number_format($totalDebit, 1) }}</div>
+                        </div>
+                        <div class="p-3 rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-900/20">
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Total Paid (Rs)</div>
+                            <div class="text-lg font-bold text-emerald-600 dark:text-emerald-400 font-jetbrains">{{ number_format($totalCredit, 2) }}</div>
+                        </div>
+                        <div class="p-3 rounded-xl border border-purple-200 bg-purple-50 dark:border-purple-900/50 dark:bg-purple-900/20">
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Balance (Kg)</div>
+                            <div class="text-lg font-bold {{ ($totalDebit - $totalCredit) > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400' }} font-jetbrains">{{ number_format($totalDebit - $totalCredit, 1) }}</div>
+                        </div>
+                    </div>
+
+                    <x-data-table :headers="['Date', 'Transaction Details', 'Ref #', ['label' => 'Debit (Load Kg)', 'align' => 'right'], ['label' => 'Credit (Payment Rs)', 'align' => 'right']]">
+                        @forelse($paginated as $row)
                             <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
-                                <td class="px-6 py-4 font-bold text-sm">{{ $p->date->format('d M Y') }}</td>
+                                <td class="px-6 py-4 font-bold text-sm">{{ $row['date']->format('d M Y') }}</td>
                                 <td class="px-6 py-4">
-                                    <div class="font-medium text-zinc-900 dark:text-zinc-100">Payment Received</div>
-                                    @if($p->notes)
-                                        <div class="text-xs text-zinc-500 mt-0.5">{{ $p->notes }}</div>
+                                    @if($row['type'] === 'load')
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                                <span class="material-symbols-rounded text-[14px]">local_shipping</span>
+                                            </div>
+                                            <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $row['desc'] }}</div>
+                                        </div>
+                                    @else
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-6 h-6 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                                <span class="material-symbols-rounded text-[14px]">payments</span>
+                                            </div>
+                                            <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $row['desc'] }}</div>
+                                        </div>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-center font-mono text-xs text-zinc-500">PAY-{{ str_pad($p->id, 4, '0', STR_PAD_LEFT) }}</td>
-                                <td class="px-6 py-4 text-right font-bold text-emerald-600 dark:text-emerald-400 font-jetbrains">Rs {{ number_format($p->amount, 2) }}</td>
+                                <td class="px-6 py-4 text-center font-mono text-xs text-zinc-500">{{ $row['ref'] }}</td>
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm">
+                                    @if($row['debit'] > 0)
+                                        <span class="font-bold text-blue-600 dark:text-blue-400">{{ number_format($row['debit'], 1) }} kg</span>
+                                    @else
+                                        <span class="text-zinc-300 dark:text-zinc-600">—</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm">
+                                    @if($row['credit'] > 0)
+                                        <span class="font-bold text-emerald-600 dark:text-emerald-400">Rs {{ number_format($row['credit'], 2) }}</span>
+                                    @else
+                                        <span class="text-zinc-300 dark:text-zinc-600">—</span>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
-                            <tr><td colspan="4" class="text-center py-8 text-zinc-500">No transactions found.</td></tr>
+                            <tr><td colspan="5" class="text-center py-8 text-zinc-500">No transactions found.</td></tr>
                         @endforelse
-                        
+
                         <x-slot:pagination>
-                            {{ $payments->links() }}
+                            {{ $paginated->links() }}
                         </x-slot:pagination>
                     </x-data-table>
                 </div>

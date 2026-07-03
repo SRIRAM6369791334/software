@@ -46,8 +46,57 @@ class DealerPaymentController extends Controller
 
     public function ledger(Dealer $dealer): View
     {
-        $payments = $dealer->payments()->latest('date')->paginate(20);
-        return view('payments.dealers.ledger', compact('dealer', 'payments'));
+        $dayLoads = $dealer->dayLoadEntries()
+            ->with(['vendor', 'batch'])
+            ->get();
+
+        $payments = $dealer->payments()->get();
+
+        $rows = [];
+
+        foreach ($dayLoads as $e) {
+            $rows[] = [
+                'date' => $e->batch->billing_date,
+                'type' => 'load',
+                'desc' => 'Day-Load: ' . $e->no_of_boxes . ' boxes (' . ($e->vendor->firm_name ?? '-') . ')',
+                'ref' => 'DL-' . $e->id,
+                'debit' => round((float) $e->bird_weight, 2),
+                'credit' => 0,
+            ];
+        }
+
+        foreach ($payments as $p) {
+            $rows[] = [
+                'date' => $p->date,
+                'type' => 'payment',
+                'desc' => 'Payment (' . $p->payment_mode . ')',
+                'ref' => 'PAY-' . str_pad($p->id, 4, '0', STR_PAD_LEFT),
+                'debit' => 0,
+                'credit' => round((float) $p->amount, 2),
+            ];
+        }
+
+        usort($rows, fn($a, $b) => $a['date'] <=> $b['date']);
+
+        $totalDebit = array_sum(array_column($rows, 'debit'));
+        $totalCredit = array_sum(array_column($rows, 'credit'));
+
+        $page = request()->input('page', 1);
+        $perPage = 20;
+        $offset = ($page - 1) * $perPage;
+        $sliced = array_slice($rows, $offset, $perPage);
+
+        $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $sliced,
+            count($rows),
+            $perPage,
+            $page,
+            ['path' => request()->url()]
+        );
+
+        return view('payments.dealers.ledger', compact(
+            'dealer', 'paginated', 'totalDebit', 'totalCredit'
+        ));
     }
 
     public function export(): StreamedResponse

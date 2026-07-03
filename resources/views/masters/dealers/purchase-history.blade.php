@@ -108,57 +108,49 @@
                 </div>
 
                 <div class="p-6">
-                    <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider mb-6">Purchase History Ledger</h4>
+                    <div class="flex items-center justify-between mb-6">
+                        <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Day-Load History</h4>
+                    </div>
 
-                    <x-data-table :headers="['Date', 'Item Purchased', ['label' => 'Quantity', 'align' => 'right'], ['label' => 'Rate', 'align' => 'right'], ['label' => 'Total Amount', 'align' => 'right'], ['label' => 'Mode', 'align' => 'center']]">
-                        @forelse($purchases as $purchase)
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="p-3 rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-900/20">
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Total Boxes</div>
+                            <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">{{ number_format($totalBoxes) }}</div>
+                        </div>
+                        <div class="p-3 rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-900/20">
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Bird Weight</div>
+                            <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">{{ number_format($totalBirdWeight, 1) }} kg</div>
+                        </div>
+                        <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-900/20">
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Loss Weight</div>
+                            <div class="text-lg font-bold text-rose-600 dark:text-rose-400 font-jetbrains">{{ number_format($totalLossWeight, 1) }} kg</div>
+                        </div>
+                    </div>
+
+                    <x-data-table :headers="['Date', 'Vendor', ['label' => 'Boxes', 'align' => 'right'], ['label' => 'Bird Weight', 'align' => 'right'], ['label' => 'Farm Weight', 'align' => 'right'], ['label' => 'Loss', 'align' => 'right']]">
+                        @forelse($dayLoadEntries as $entry)
                             <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
-                                <td class="px-6 py-4 font-bold text-sm">{{ $purchase->date->format('d M Y') }}</td>
+                                <td class="px-6 py-4 font-bold text-sm">{{ $entry->batch->billing_date->format('d M Y') }}</td>
                                 <td class="px-6 py-4">
-                                    <div class="flex flex-wrap gap-1 mb-1">
-                                        @forelse($purchase->items as $item)
-                                            <span class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium border border-emerald-100 dark:border-emerald-800/50" title="{{ $item->item_name }}">
-                                                {{ $item->item_name }} ({{ number_format($item->quantity, 2) }} {{ $item->unit }} @ Rs {{ number_format($item->rate, 2) }})
-                                            </span>
-                                        @empty
-                                            @if($purchase->item)
-                                                <span class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium border border-emerald-100 dark:border-emerald-800/50">
-                                                    {{ $purchase->item }} ({{ number_format($purchase->quantity, 2) }} {{ $purchase->unit }} @ Rs {{ number_format($purchase->rate, 2) }})
-                                                </span>
-                                            @else
-                                                <span class="text-zinc-400 text-xs">—</span>
-                                            @endif
-                                        @endforelse
-                                    </div>
-                                    <div class="text-xs font-mono text-zinc-500">#PUR-{{ $purchase->id }}</div>
+                                    <div class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $entry->vendor->firm_name ?? '-' }}</div>
                                 </td>
-                                <td class="px-6 py-4 text-right font-mono text-sm text-zinc-600 dark:text-zinc-400">
-                                    @if($purchase->items->isNotEmpty())
-                                        {{ number_format($purchase->items->sum('quantity'), 2) }} {{ $purchase->items->first()->unit }}
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm">{{ $entry->no_of_boxes }}</td>
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm">{{ number_format($entry->bird_weight, 1) }} kg</td>
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm">{{ number_format($entry->farm_weight ?? 0, 1) }} kg</td>
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm">
+                                    @if(($entry->loss_weight ?? 0) > 0)
+                                        <span class="text-rose-600 dark:text-rose-400">{{ number_format($entry->loss_weight, 1) }} kg</span>
                                     @else
-                                        {{ number_format($purchase->quantity, 2) }} {{ $purchase->unit }}
+                                        <span class="text-emerald-600 dark:text-emerald-400">0 kg</span>
                                     @endif
-                                </td>
-                                <td class="px-6 py-4 text-right text-sm text-zinc-600 dark:text-zinc-400">
-                                    @if($purchase->items->count() === 1)
-                                        Rs {{ number_format($purchase->items->first()->rate, 2) }}
-                                    @elseif($purchase->items->count() > 1)
-                                        <span class="text-xs italic">Multiple</span>
-                                    @else
-                                        Rs {{ number_format($purchase->rate, 2) }}
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-right font-bold text-sm font-jetbrains">Rs {{ number_format($purchase->total_amount, 2) }}</td>
-                                <td class="px-6 py-4 text-center">
-                                    <x-badge color="emerald">{{ $purchase->payment_mode }}</x-badge>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="text-center py-8 text-zinc-500">No purchases found.</td></tr>
+                            <tr><td colspan="6" class="text-center py-8 text-zinc-500">No day-load entries found.</td></tr>
                         @endforelse
-                        @if($purchases->hasPages())
+                        @if($dayLoadEntries->hasPages())
                             <x-slot:pagination>
-                                {{ $purchases->links() }}
+                                {{ $dayLoadEntries->links() }}
                             </x-slot:pagination>
                         @endif
                     </x-data-table>

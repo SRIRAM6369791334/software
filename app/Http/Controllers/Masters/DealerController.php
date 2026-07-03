@@ -94,7 +94,20 @@ class DealerController extends Controller
     public function purchaseHistory(Dealer $dealer): View
     {
         $purchases = $dealer->purchases()->with('items')->latest()->paginate(15);
-        return view('masters.dealers.purchase-history', compact('dealer', 'purchases'));
+
+        $dayLoadEntries = $dealer->dayLoadEntries()
+            ->with(['vendor', 'batch'])
+            ->latest()
+            ->paginate(15);
+
+        $totalBoxes = $dealer->dayLoadEntries()->sum('no_of_boxes');
+        $totalBirdWeight = $dealer->dayLoadEntries()->sum('bird_weight');
+        $totalLossWeight = $dealer->dayLoadEntries()->sum('loss_weight');
+
+        return view('masters.dealers.purchase-history', compact(
+            'dealer', 'purchases', 'dayLoadEntries',
+            'totalBoxes', 'totalBirdWeight', 'totalLossWeight'
+        ));
     }
 
     public function outstandingReport(Dealer $dealer): View

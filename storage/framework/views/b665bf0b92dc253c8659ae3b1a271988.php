@@ -255,40 +255,79 @@
 
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-6">
-                        <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Payment Transaction History</h4>
+                        <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Transaction History</h4>
                         <button onclick="window.print()" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1">
                             <span class="material-symbols-rounded text-[16px]">print</span> Print
                         </button>
                     </div>
 
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="p-3 rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-900/20">
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Total Loads (Kg)</div>
+                            <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains"><?php echo e(number_format($totalDebit, 1)); ?></div>
+                        </div>
+                        <div class="p-3 rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-900/20">
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Total Paid (Rs)</div>
+                            <div class="text-lg font-bold text-emerald-600 dark:text-emerald-400 font-jetbrains"><?php echo e(number_format($totalCredit, 2)); ?></div>
+                        </div>
+                        <div class="p-3 rounded-xl border border-purple-200 bg-purple-50 dark:border-purple-900/50 dark:bg-purple-900/20">
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Balance (Kg)</div>
+                            <div class="text-lg font-bold <?php echo e(($totalDebit - $totalCredit) > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'); ?> font-jetbrains"><?php echo e(number_format($totalDebit - $totalCredit, 1)); ?></div>
+                        </div>
+                    </div>
+
                     <?php if (isset($component)) { $__componentOriginalc8463834ba515134d5c98b88e1a9dc03 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc8463834ba515134d5c98b88e1a9dc03 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.data-table','data' => ['headers' => ['Date', 'Transaction Details', 'Ref #', ['label' => 'Credit (Payment)', 'align' => 'right']]]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.data-table','data' => ['headers' => ['Date', 'Transaction Details', 'Ref #', ['label' => 'Debit (Load Kg)', 'align' => 'right'], ['label' => 'Credit (Payment Rs)', 'align' => 'right']]]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('data-table'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['headers' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(['Date', 'Transaction Details', 'Ref #', ['label' => 'Credit (Payment)', 'align' => 'right']])]); ?>
-                        <?php $__empty_1 = true; $__currentLoopData = $payments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $p): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+<?php $component->withAttributes(['headers' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(['Date', 'Transaction Details', 'Ref #', ['label' => 'Debit (Load Kg)', 'align' => 'right'], ['label' => 'Credit (Payment Rs)', 'align' => 'right']])]); ?>
+                        <?php $__empty_1 = true; $__currentLoopData = $paginated; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
-                                <td class="px-6 py-4 font-bold text-sm"><?php echo e($p->date->format('d M Y')); ?></td>
+                                <td class="px-6 py-4 font-bold text-sm"><?php echo e($row['date']->format('d M Y')); ?></td>
                                 <td class="px-6 py-4">
-                                    <div class="font-medium text-zinc-900 dark:text-zinc-100">Payment Received</div>
-                                    <?php if($p->notes): ?>
-                                        <div class="text-xs text-zinc-500 mt-0.5"><?php echo e($p->notes); ?></div>
+                                    <?php if($row['type'] === 'load'): ?>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                                <span class="material-symbols-rounded text-[14px]">local_shipping</span>
+                                            </div>
+                                            <div class="font-medium text-zinc-900 dark:text-zinc-100"><?php echo e($row['desc']); ?></div>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-6 h-6 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                                <span class="material-symbols-rounded text-[14px]">payments</span>
+                                            </div>
+                                            <div class="font-medium text-zinc-900 dark:text-zinc-100"><?php echo e($row['desc']); ?></div>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
-                                <td class="px-6 py-4 text-center font-mono text-xs text-zinc-500">PAY-<?php echo e(str_pad($p->id, 4, '0', STR_PAD_LEFT)); ?></td>
-                                <td class="px-6 py-4 text-right font-bold text-emerald-600 dark:text-emerald-400 font-jetbrains">Rs <?php echo e(number_format($p->amount, 2)); ?></td>
+                                <td class="px-6 py-4 text-center font-mono text-xs text-zinc-500"><?php echo e($row['ref']); ?></td>
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm">
+                                    <?php if($row['debit'] > 0): ?>
+                                        <span class="font-bold text-blue-600 dark:text-blue-400"><?php echo e(number_format($row['debit'], 1)); ?> kg</span>
+                                    <?php else: ?>
+                                        <span class="text-zinc-300 dark:text-zinc-600">—</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm">
+                                    <?php if($row['credit'] > 0): ?>
+                                        <span class="font-bold text-emerald-600 dark:text-emerald-400">Rs <?php echo e(number_format($row['credit'], 2)); ?></span>
+                                    <?php else: ?>
+                                        <span class="text-zinc-300 dark:text-zinc-600">—</span>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                            <tr><td colspan="4" class="text-center py-8 text-zinc-500">No transactions found.</td></tr>
+                            <tr><td colspan="5" class="text-center py-8 text-zinc-500">No transactions found.</td></tr>
                         <?php endif; ?>
-                        
+
                          <?php $__env->slot('pagination', null, []); ?> 
-                            <?php echo e($payments->links()); ?>
+                            <?php echo e($paginated->links()); ?>
 
                          <?php $__env->endSlot(); ?>
                      <?php echo $__env->renderComponent(); ?>

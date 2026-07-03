@@ -254,88 +254,58 @@
                 </div>
 
                 <div class="p-6">
-                    <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider mb-6">Purchase History Ledger</h4>
+                    <div class="flex items-center justify-between mb-6">
+                        <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Day-Load History</h4>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="p-3 rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-900/20">
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Total Boxes</div>
+                            <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains"><?php echo e(number_format($totalBoxes)); ?></div>
+                        </div>
+                        <div class="p-3 rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-900/20">
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Bird Weight</div>
+                            <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains"><?php echo e(number_format($totalBirdWeight, 1)); ?> kg</div>
+                        </div>
+                        <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-900/20">
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Loss Weight</div>
+                            <div class="text-lg font-bold text-rose-600 dark:text-rose-400 font-jetbrains"><?php echo e(number_format($totalLossWeight, 1)); ?> kg</div>
+                        </div>
+                    </div>
 
                     <?php if (isset($component)) { $__componentOriginalc8463834ba515134d5c98b88e1a9dc03 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc8463834ba515134d5c98b88e1a9dc03 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.data-table','data' => ['headers' => ['Date', 'Item Purchased', ['label' => 'Quantity', 'align' => 'right'], ['label' => 'Rate', 'align' => 'right'], ['label' => 'Total Amount', 'align' => 'right'], ['label' => 'Mode', 'align' => 'center']]]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.data-table','data' => ['headers' => ['Date', 'Vendor', ['label' => 'Boxes', 'align' => 'right'], ['label' => 'Bird Weight', 'align' => 'right'], ['label' => 'Farm Weight', 'align' => 'right'], ['label' => 'Loss', 'align' => 'right']]]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('data-table'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['headers' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(['Date', 'Item Purchased', ['label' => 'Quantity', 'align' => 'right'], ['label' => 'Rate', 'align' => 'right'], ['label' => 'Total Amount', 'align' => 'right'], ['label' => 'Mode', 'align' => 'center']])]); ?>
-                        <?php $__empty_1 = true; $__currentLoopData = $purchases; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $purchase): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+<?php $component->withAttributes(['headers' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(['Date', 'Vendor', ['label' => 'Boxes', 'align' => 'right'], ['label' => 'Bird Weight', 'align' => 'right'], ['label' => 'Farm Weight', 'align' => 'right'], ['label' => 'Loss', 'align' => 'right']])]); ?>
+                        <?php $__empty_1 = true; $__currentLoopData = $dayLoadEntries; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $entry): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
-                                <td class="px-6 py-4 font-bold text-sm"><?php echo e($purchase->date->format('d M Y')); ?></td>
+                                <td class="px-6 py-4 font-bold text-sm"><?php echo e($entry->batch->billing_date->format('d M Y')); ?></td>
                                 <td class="px-6 py-4">
-                                    <div class="flex flex-wrap gap-1 mb-1">
-                                        <?php $__empty_2 = true; $__currentLoopData = $purchase->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_2 = false; ?>
-                                            <span class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium border border-emerald-100 dark:border-emerald-800/50" title="<?php echo e($item->item_name); ?>">
-                                                <?php echo e($item->item_name); ?> (<?php echo e(number_format($item->quantity, 2)); ?> <?php echo e($item->unit); ?> @ Rs <?php echo e(number_format($item->rate, 2)); ?>)
-                                            </span>
-                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_2): ?>
-                                            <?php if($purchase->item): ?>
-                                                <span class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium border border-emerald-100 dark:border-emerald-800/50">
-                                                    <?php echo e($purchase->item); ?> (<?php echo e(number_format($purchase->quantity, 2)); ?> <?php echo e($purchase->unit); ?> @ Rs <?php echo e(number_format($purchase->rate, 2)); ?>)
-                                                </span>
-                                            <?php else: ?>
-                                                <span class="text-zinc-400 text-xs">—</span>
-                                            <?php endif; ?>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="text-xs font-mono text-zinc-500">#PUR-<?php echo e($purchase->id); ?></div>
+                                    <div class="text-sm font-medium text-zinc-900 dark:text-zinc-100"><?php echo e($entry->vendor->firm_name ?? '-'); ?></div>
                                 </td>
-                                <td class="px-6 py-4 text-right font-mono text-sm text-zinc-600 dark:text-zinc-400">
-                                    <?php if($purchase->items->isNotEmpty()): ?>
-                                        <?php echo e(number_format($purchase->items->sum('quantity'), 2)); ?> <?php echo e($purchase->items->first()->unit); ?>
-
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm"><?php echo e($entry->no_of_boxes); ?></td>
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm"><?php echo e(number_format($entry->bird_weight, 1)); ?> kg</td>
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm"><?php echo e(number_format($entry->farm_weight ?? 0, 1)); ?> kg</td>
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm">
+                                    <?php if(($entry->loss_weight ?? 0) > 0): ?>
+                                        <span class="text-rose-600 dark:text-rose-400"><?php echo e(number_format($entry->loss_weight, 1)); ?> kg</span>
                                     <?php else: ?>
-                                        <?php echo e(number_format($purchase->quantity, 2)); ?> <?php echo e($purchase->unit); ?>
-
+                                        <span class="text-emerald-600 dark:text-emerald-400">0 kg</span>
                                     <?php endif; ?>
-                                </td>
-                                <td class="px-6 py-4 text-right text-sm text-zinc-600 dark:text-zinc-400">
-                                    <?php if($purchase->items->count() === 1): ?>
-                                        Rs <?php echo e(number_format($purchase->items->first()->rate, 2)); ?>
-
-                                    <?php elseif($purchase->items->count() > 1): ?>
-                                        <span class="text-xs italic">Multiple</span>
-                                    <?php else: ?>
-                                        Rs <?php echo e(number_format($purchase->rate, 2)); ?>
-
-                                    <?php endif; ?>
-                                </td>
-                                <td class="px-6 py-4 text-right font-bold text-sm font-jetbrains">Rs <?php echo e(number_format($purchase->total_amount, 2)); ?></td>
-                                <td class="px-6 py-4 text-center">
-                                    <?php if (isset($component)) { $__componentOriginal2ddbc40e602c342e508ac696e52f8719 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal2ddbc40e602c342e508ac696e52f8719 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.badge','data' => ['color' => 'emerald']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('badge'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['color' => 'emerald']); ?><?php echo e($purchase->payment_mode); ?> <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal2ddbc40e602c342e508ac696e52f8719)): ?>
-<?php $attributes = $__attributesOriginal2ddbc40e602c342e508ac696e52f8719; ?>
-<?php unset($__attributesOriginal2ddbc40e602c342e508ac696e52f8719); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal2ddbc40e602c342e508ac696e52f8719)): ?>
-<?php $component = $__componentOriginal2ddbc40e602c342e508ac696e52f8719; ?>
-<?php unset($__componentOriginal2ddbc40e602c342e508ac696e52f8719); ?>
-<?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                            <tr><td colspan="6" class="text-center py-8 text-zinc-500">No purchases found.</td></tr>
+                            <tr><td colspan="6" class="text-center py-8 text-zinc-500">No day-load entries found.</td></tr>
                         <?php endif; ?>
-                        <?php if($purchases->hasPages()): ?>
+                        <?php if($dayLoadEntries->hasPages()): ?>
                              <?php $__env->slot('pagination', null, []); ?> 
-                                <?php echo e($purchases->links()); ?>
+                                <?php echo e($dayLoadEntries->links()); ?>
 
                              <?php $__env->endSlot(); ?>
                         <?php endif; ?>
