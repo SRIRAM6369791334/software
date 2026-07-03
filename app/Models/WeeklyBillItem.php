@@ -11,7 +11,7 @@ class WeeklyBillItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'weekly_bill_id', 'item_name', 'quantity_kg', 'rate_per_kg', 
+        'weekly_bill_id', 'item_name', 'vendor_name', 'quantity_kg', 'rate_per_kg', 
         'tax_amount', 'total_amount'
     ];
 

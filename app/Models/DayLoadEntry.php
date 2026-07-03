@@ -22,6 +22,7 @@ class DayLoadEntry extends Model
         'box_weight',
         'empty_weight',
         'farm_weight',
+        'total_weight',
         'status',
         'parent_entry_id',
         'version',
@@ -37,6 +38,7 @@ class DayLoadEntry extends Model
         'empty_weight' => 'decimal:2',
         'bird_weight' => 'decimal:2',
         'farm_weight' => 'decimal:2',
+        'total_weight' => 'decimal:2',
         'loss_weight' => 'decimal:2',
         'version' => 'integer',
     ];
@@ -46,10 +48,11 @@ class DayLoadEntry extends Model
         static::saving(function (DayLoadEntry $entry): void {
             $birdWeight = round((float) $entry->box_weight - (float) $entry->empty_weight, 2);
 
+            $farmWeight = (float) ($entry->farm_weight ?? 0);
+
             $entry->bird_weight = $birdWeight;
-            $entry->loss_weight = $entry->farm_weight === null
-                ? null
-                : round($birdWeight - (float) $entry->farm_weight, 2);
+            $entry->loss_weight = round($birdWeight - $farmWeight, 2);
+            $entry->total_weight = round($birdWeight - $farmWeight, 2);
         });
     }
 

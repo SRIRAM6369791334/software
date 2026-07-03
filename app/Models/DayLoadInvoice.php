@@ -20,6 +20,7 @@ class DayLoadInvoice extends Model
         'total_empty_weight',
         'total_bird_weight',
         'total_farm_weight',
+        'total_weight',
         'total_loss_weight',
         'status',
         'version',
@@ -32,6 +33,7 @@ class DayLoadInvoice extends Model
         'total_empty_weight' => 'decimal:2',
         'total_bird_weight' => 'decimal:2',
         'total_farm_weight' => 'decimal:2',
+        'total_weight' => 'decimal:2',
         'total_loss_weight' => 'decimal:2',
         'version' => 'integer',
     ];

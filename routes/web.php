@@ -161,8 +161,10 @@ Route::middleware(['auth'])->group(function () {
         Route::middleware(['permission:view bills'])->group(function () {
             Route::get('day-load', [DayLoadBillingController::class, 'index'])->name('day-load.index');
             Route::get('weekly/bulk', [WeeklyBillingController::class, 'bulk'])->name('weekly.bulk');
-            Route::get('weekly/{bill}/whatsapp', [WeeklyBillingController::class, 'whatsapp'])->name('weekly.whatsapp');
-            Route::get('weekly/{bill}/pdf', [WeeklyBillingController::class, 'downloadPdf'])->name('weekly.pdf');
+            Route::get('weekly/dealer-invoice', [WeeklyBillingController::class, 'dealerInvoice'])->name('weekly.dealer-invoice');
+            Route::post('weekly/dealer-invoice/generate', [WeeklyBillingController::class, 'generateInvoice'])->name('weekly.generate-invoice');
+            Route::get('weekly/{weekly}/whatsapp', [WeeklyBillingController::class, 'whatsapp'])->name('weekly.whatsapp');
+            Route::get('weekly/{weekly}/pdf', [WeeklyBillingController::class, 'downloadPdf'])->name('weekly.pdf');
             Route::get('weekly/export/csv', [WeeklyBillingController::class, 'export'])->name('weekly.export');
             Route::get('weekly/calculate-preview', [WeeklyBillingController::class, 'calculatePreview'])->name('weekly.calculate-preview');
             
@@ -174,10 +176,14 @@ Route::middleware(['auth'])->group(function () {
         
         Route::middleware(['permission:create bills'])->group(function () {
             Route::post('day-load', [DayLoadBillingController::class, 'store'])->name('day-load.store');
+            Route::post('day-load/{entry}/transfer', [DayLoadBillingController::class, 'transfer'])->name('day-load.transfer');
+            Route::put('day-load/{entry}/update', [DayLoadBillingController::class, 'update'])->name('day-load.update');
+            Route::put('day-load/bulk-update', [DayLoadBillingController::class, 'bulkUpdate'])->name('day-load.bulk-update');
+            Route::post('day-load/set-farm-weight', [DayLoadBillingController::class, 'setFarmWeight'])->name('day-load.set-farm-weight');
             Route::post('weekly/bulk', [WeeklyBillingController::class, 'bulkStore'])->name('weekly.bulkStore');
             Route::post('weekly/purchase', [WeeklyBillingController::class, 'storePurchase'])->name('weekly.purchase.store');
             Route::post('weekly/generate', [WeeklyBillingController::class, 'generateWeekly'])->name('weekly.generate');
-            Route::post('weekly/{bill}/pay-split/{part}', [WeeklyBillingController::class, 'paySplit'])->name('weekly.pay-split');
+            Route::post('weekly/{weekly}/pay-split/{part}', [WeeklyBillingController::class, 'paySplit'])->name('weekly.pay-split');
         });
 
         permissionResource('weekly', WeeklyBillingController::class, 'bills');

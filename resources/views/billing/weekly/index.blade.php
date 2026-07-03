@@ -5,6 +5,9 @@
 <div class="animate-fade-in" x-data="{ activeTab: 'invoices', payBillId: null, payPart: '', payAmount: 0 }">
     <x-page-header title="Dealer Billing & Purchases" subtitle="Record daily purchases, calculate weekly cycles, manage Monday/Friday split payments, and view ledger logs">
         <x-slot:actions>
+            <x-button variant="outline" href="{{ route('billing.weekly.dealer-invoice') }}" icon="receipt_long">
+                Dealer Invoice
+            </x-button>
             <x-button variant="outline" href="{{ route('billing.weekly.export') }}" icon="download">
                 Export Log
             </x-button>
@@ -330,7 +333,15 @@
 
     {{-- Tab 4: Generate Weekly Invoice --}}
     <div x-show="activeTab === 'generate_invoice'">
-        <x-card class="max-w-2xl mx-auto" x-data="{ previewLoaded: false, prevOutstanding: 0, totalPurchases: 0, totalPayments: 0, netInvoice: 0, purchasesCount: 0 }">
+        <x-card class="max-w-2xl mx-auto" x-data="{ previewLoaded: false, prevOutstanding: 0, totalPurchases: 0, totalPayments: 0, netInvoice: 0, purchasesCount: 0 }"
+            @preview-update.window="
+                previewLoaded = true;
+                prevOutstanding = $event.detail.prevOutstanding;
+                totalPurchases = $event.detail.totalPurchases;
+                totalPayments = $event.detail.totalPayments;
+                netInvoice = $event.detail.netInvoice;
+                purchasesCount = $event.detail.purchasesCount;
+            ">
             <div class="border-b border-zinc-200 dark:border-zinc-800 pb-4 mb-6">
                 <h2 class="text-lg font-extrabold text-zinc-900 dark:text-zinc-50 font-cabinet">Generate Weekly Invoice</h2>
                 <p class="text-xs text-zinc-500 mt-1">Select a dealer and period. Compile purchases and payments into a weekly invoice with split payments.</p>
@@ -339,16 +350,25 @@
             <form action="{{ route('billing.weekly.generate') }}" method="POST" id="generate-weekly-bill-form">
                 @csrf
                 <div class="space-y-4 mb-6">
-                    <x-form.select name="dealer_id" label="Dealer" required id="gen-dealer-id">
-                        <option value="">Select dealer...</option>
-                        @foreach($dealers as $d)
-                            <option value="{{ $d->id }}">{{ $d->firm_name }}</option>
-                        @endforeach
-                    </x-form.select>
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-2">Dealer <span class="text-red-500">*</span></label>
+                        <select name="dealer_id" id="gen-dealer-id" required class="appearance-none block w-full pl-3 pr-10 py-2.5 min-h-[44px] text-base border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 sm:text-sm rounded-xl bg-white/30 dark:bg-zinc-900/30 text-zinc-900 dark:text-zinc-100 transition-all">
+                            <option value="">Select dealer...</option>
+                            @foreach($dealers as $d)
+                                <option value="{{ $d->id }}">{{ $d->firm_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <x-form.input type="date" name="period_start" label="From Date" required id="gen-period-start" />
-                        <x-form.input type="date" name="period_end" label="To Date" required id="gen-period-end" />
+                        <div>
+                            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-2">From Date <span class="text-red-500">*</span></label>
+                            <input type="date" name="period_start" id="gen-period-start" required class="block w-full bg-white/30 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 p-3 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-2">To Date <span class="text-red-500">*</span></label>
+                            <input type="date" name="period_end" id="gen-period-end" required class="block w-full bg-white/30 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 p-3 transition-all">
+                        </div>
                     </div>
                 </div>
 
@@ -517,13 +537,15 @@ function previewWeeklyBilling(btn) {
             btn.innerHTML = `<span class="material-symbols-rounded">analytics</span> Calculate & Preview Bill`;
 
             if (data.success) {
-                const scope = Alpine.find(document.querySelector('[x-data]'));
-                scope.prevOutstanding = parseFloat(data.previous_outstanding);
-                scope.totalPurchases = parseFloat(data.total_purchases);
-                scope.totalPayments = parseFloat(data.total_payments);
-                scope.netInvoice = parseFloat(data.net_invoice_amount);
-                scope.purchasesCount = data.purchases_count;
-                scope.previewLoaded = true;
+                window.dispatchEvent(new CustomEvent('preview-update', {
+                    detail: {
+                        prevOutstanding: parseFloat(data.previous_outstanding),
+                        totalPurchases: parseFloat(data.total_purchases),
+                        totalPayments: parseFloat(data.total_payments),
+                        netInvoice: parseFloat(data.net_invoice_amount),
+                        purchasesCount: data.purchases_count,
+                    }
+                }));
             } else {
                 alert("Error: " + data.message);
             }
