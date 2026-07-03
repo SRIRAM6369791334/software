@@ -117,7 +117,7 @@
                             </div>
                             <div>
                                 <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Total Purchased</div>
-                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">Rs {{ number_format($dealer->purchases()->sum('total_amount'), 0) }}</div>
+                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">Rs {{ number_format($totalPurchased, 0) }}</div>
                             </div>
                         </div>
 
@@ -127,7 +127,7 @@
                             </div>
                             <div>
                                 <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Total Paid</div>
-                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">Rs {{ number_format($dealer->payments()->sum('amount'), 0) }}</div>
+                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">Rs {{ number_format($totalPaid, 0) }}</div>
                             </div>
                         </div>
 
@@ -137,7 +137,7 @@
                             </div>
                             <div>
                                 <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Outstanding</div>
-                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">Rs {{ number_format($dealer->pending_amount, 0) }}</div>
+                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">Rs {{ number_format($outstanding, 0) }}</div>
                             </div>
                         </div>
                     </div>
@@ -145,36 +145,43 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
                         <div class="p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
-                            <h5 class="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider mb-4">Aging Analysis (Conceptual)</h5>
+                            <h5 class="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider mb-4">Aging Analysis</h5>
                             
                             <div class="space-y-4">
+                                @php
+                                    $totalAging = $buckets['0_30'] + $buckets['31_60'] + $buckets['60_plus'];
+                                    $pct0_30 = $totalAging > 0 ? round(($buckets['0_30'] / $totalAging) * 100) : 0;
+                                    $pct31_60 = $totalAging > 0 ? round(($buckets['31_60'] / $totalAging) * 100) : 0;
+                                    $pct60_plus = $totalAging > 0 ? 100 - $pct0_30 - $pct31_60 : 0;
+                                @endphp
+
                                 <div>
                                     <div class="flex justify-between items-center mb-1">
                                         <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">0 - 30 Days</span>
-                                        <span class="text-sm font-bold text-zinc-900 dark:text-zinc-100">Rs {{ number_format($dealer->pending_amount * 0.7, 0) }}</span>
+                                        <span class="text-sm font-bold text-zinc-900 dark:text-zinc-100">Rs {{ number_format($buckets['0_30'], 0) }}</span>
                                     </div>
                                     <div class="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-2">
-                                        <div class="bg-emerald-500 h-2 rounded-full" style="width: 70%"></div>
+                                        <div class="bg-emerald-500 h-2 rounded-full" style="width: {{ $pct0_30 }}%"></div>
                                     </div>
                                 </div>
                                 
                                 <div>
                                     <div class="flex justify-between items-center mb-1">
                                         <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">31 - 60 Days</span>
-                                        <span class="text-sm font-bold text-zinc-900 dark:text-zinc-100">Rs {{ number_format($dealer->pending_amount * 0.2, 0) }}</span>
+                                        <span class="text-sm font-bold text-zinc-900 dark:text-zinc-100">Rs {{ number_format($buckets['31_60'], 0) }}</span>
                                     </div>
                                     <div class="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-2">
-                                        <div class="bg-amber-500 h-2 rounded-full" style="width: 20%"></div>
+                                        <div class="bg-amber-500 h-2 rounded-full" style="width: {{ $pct31_60 }}%"></div>
                                     </div>
                                 </div>
 
                                 <div>
                                     <div class="flex justify-between items-center mb-1">
                                         <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">60+ Days</span>
-                                        <span class="text-sm font-bold text-rose-600 dark:text-rose-400">Rs {{ number_format($dealer->pending_amount * 0.1, 0) }}</span>
+                                        <span class="text-sm font-bold text-rose-600 dark:text-rose-400">Rs {{ number_format($buckets['60_plus'], 0) }}</span>
                                     </div>
                                     <div class="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-2">
-                                        <div class="bg-rose-500 h-2 rounded-full" style="width: 10%"></div>
+                                        <div class="bg-rose-500 h-2 rounded-full" style="width: {{ $pct60_plus }}%"></div>
                                     </div>
                                 </div>
                             </div>
@@ -188,19 +195,21 @@
                                     <div class="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 text-lg">⚡</div>
                                     <div>
                                         <div class="text-xs text-zinc-500 font-medium">Avg. Payment Days</div>
-                                        <div class="text-sm font-bold text-zinc-900 dark:text-zinc-100">12 Days</div>
+                                        <div class="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                                            {{ $avgPaymentDays !== null ? $avgPaymentDays . ' Days' : 'No payment data' }}
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <div class="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 text-lg">🛡️</div>
                                     <div>
-                                        <div class="text-xs text-zinc-500 font-medium">Credit Limit</div>
-                                        <div class="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">Rs 5,00,000</div>
+                                        <div class="text-xs text-zinc-500 font-medium">Total Payments Made</div>
+                                        <div class="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">{{ $payments->count() }} transactions</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <x-button variant="primary" icon="description" class="w-full justify-center !bg-indigo-600 hover:!bg-indigo-700">Generate Official PDF</x-button>
+                            <x-button href="{{ route('masters.dealers.ledger-pdf', $dealer) }}" variant="primary" icon="description" class="w-full justify-center !bg-indigo-600 hover:!bg-indigo-700">Download Ledger PDF</x-button>
                         </div>
 
                     </div>

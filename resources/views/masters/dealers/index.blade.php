@@ -18,8 +18,8 @@
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <x-stat-card title="Total Dealers" value="{{ $dealers->total() }}" icon="group" color="emerald" />
-        <x-stat-card title="Total Payable" value="{{ number_format($dealers->sum('pending_amount'), 0) }}" icon="warning" color="rose" prefix="Rs " />
-        <x-stat-card title="Active Accounts" value="{{ $dealers->where('pending_amount', '>', 0)->count() }}" icon="account_balance" color="amber" subtitle="with dues" />
+        <x-stat-card title="Total Payable" value="{{ number_format($totalPending, 0) }}" icon="warning" color="rose" prefix="Rs " />
+        <x-stat-card title="Active Accounts" value="{{ $activeDealers }}" icon="account_balance" color="amber" subtitle="with dues" />
     </div>
 
     <x-card padding="p-0">

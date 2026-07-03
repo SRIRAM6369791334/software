@@ -23,13 +23,23 @@ class DealerController extends Controller
         $query = Dealer::with('routeRelation')->search($search);
         
         if ($balanceFilter === 'pending') {
-            $query->where('balance', '>', 0);
+            $query->where('pending_amount', '>', 0);
         } elseif ($balanceFilter === 'cleared') {
-            $query->where('balance', '<=', 0);
+            $query->where('pending_amount', '<=', 0);
         }
 
         $dealers = $query->orderBy('firm_name')->paginate(15);
-        return view('masters.dealers.index', compact('dealers', 'search', 'balanceFilter'));
+
+        $statsQuery = Dealer::query();
+        if ($balanceFilter === 'pending') {
+            $statsQuery->where('pending_amount', '>', 0);
+        } elseif ($balanceFilter === 'cleared') {
+            $statsQuery->where('pending_amount', '<=', 0);
+        }
+        $totalPending = (clone $statsQuery)->sum('pending_amount');
+        $activeDealers = (clone $statsQuery)->where('pending_amount', '>', 0)->count();
+
+        return view('masters.dealers.index', compact('dealers', 'search', 'balanceFilter', 'totalPending', 'activeDealers'));
     }
 
     public function create(): View
@@ -52,7 +62,21 @@ class DealerController extends Controller
 
     public function show(Dealer $dealer): View
     {
-        return view('masters.dealers.show', compact('dealer'));
+        $recentPurchases = $dealer->purchases()->with('items')->latest()->take(3)->get();
+        $recentPayments = $dealer->payments()->latest()->take(3)->get();
+
+        $totalBoxesReceived = $dealer->dayLoadEntries()->sum('no_of_boxes');
+        $totalBirdWeight = $dealer->dayLoadEntries()->sum('bird_weight');
+        $totalFarmWeight = $dealer->dayLoadEntries()->sum('farm_weight');
+        $totalLossWeight = $dealer->dayLoadEntries()->sum('loss_weight');
+        $lossRate = $totalBirdWeight > 0 ? round(($totalLossWeight / $totalBirdWeight) * 100, 2) : 0;
+        $loadCount = $dealer->dayLoadEntries()->count();
+
+        return view('masters.dealers.show', compact(
+            'dealer', 'recentPurchases', 'recentPayments',
+            'totalBoxesReceived', 'totalBirdWeight', 'totalFarmWeight',
+            'totalLossWeight', 'lossRate', 'loadCount'
+        ));
     }
 
     public function edit(Dealer $dealer): View
@@ -75,7 +99,46 @@ class DealerController extends Controller
 
     public function outstandingReport(Dealer $dealer): View
     {
-        return view('masters.dealers.outstanding-report', compact('dealer'));
+        $today = now()->toDateString();
+
+        $purchases = $dealer->purchases()->where('total_amount', '>', 0)->get();
+        $payments = $dealer->payments()->get();
+
+        $totalPurchased = $purchases->sum('total_amount');
+        $totalPaid = $payments->sum('amount');
+        $outstanding = $dealer->pending_amount;
+
+        $buckets = ['0_30' => 0, '31_60' => 0, '60_plus' => 0];
+        foreach ($purchases as $purchase) {
+            $days = \Carbon\Carbon::parse($purchase->date)->diffInDays(now());
+            $amount = (float) $purchase->total_amount;
+            if ($days <= 30) {
+                $buckets['0_30'] += $amount;
+            } elseif ($days <= 60) {
+                $buckets['31_60'] += $amount;
+            } else {
+                $buckets['60_plus'] += $amount;
+            }
+        }
+
+        $avgPaymentDays = null;
+        if ($payments->isNotEmpty()) {
+            $totalDays = 0;
+            $matchedPayments = 0;
+            foreach ($payments as $payment) {
+                $relatedPurchase = $purchases->where('date', '<=', $payment->date)->last();
+                if ($relatedPurchase) {
+                    $totalDays += \Carbon\Carbon::parse($relatedPurchase->date)->diffInDays($payment->date);
+                    $matchedPayments++;
+                }
+            }
+            $avgPaymentDays = $matchedPayments > 0 ? round($totalDays / $matchedPayments) : null;
+        }
+
+        return view('masters.dealers.outstanding-report', compact(
+            'dealer', 'totalPurchased', 'totalPaid', 'outstanding',
+            'buckets', 'avgPaymentDays', 'payments'
+        ));
     }
 
     public function downloadLedgerPdf(Dealer $dealer)

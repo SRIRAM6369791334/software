@@ -58,7 +58,27 @@ class VendorController extends Controller
 
     public function show(Vendor $vendor): View
     {
-        return view('masters.vendors.show', compact('vendor'));
+        $totalPurchaseAmount = $vendor->purchases()->sum('total_amount');
+        $totalPurchaseCount = $vendor->purchases()->count();
+        $lastPurchaseDate = $vendor->purchases()->latest('date')->first()?->date;
+        $recentPurchases = $vendor->purchases()->with('items')->latest()->take(5)->get();
+
+        $totalBoxesLoaded = $vendor->dayLoadEntries()->sum('no_of_boxes');
+        $totalBirdWeight = $vendor->dayLoadEntries()->sum('bird_weight');
+        $totalFarmWeight = $vendor->dayLoadEntries()->sum('farm_weight');
+        $totalLossWeight = $vendor->dayLoadEntries()->sum('loss_weight');
+        $avgRateVariance = $vendor->dayLoadEntries()
+            ->where('paper_rate', '>', 0)
+            ->where('customer_rate', '>', 0)
+            ->avg(\DB::raw('customer_rate - paper_rate'));
+        $loadCount = $vendor->dayLoadEntries()->count();
+
+        return view('masters.vendors.show', compact(
+            'vendor',
+            'totalPurchaseAmount', 'totalPurchaseCount', 'lastPurchaseDate', 'recentPurchases',
+            'totalBoxesLoaded', 'totalBirdWeight', 'totalFarmWeight', 'totalLossWeight',
+            'avgRateVariance', 'loadCount'
+        ));
     }
 
     public function edit(Vendor $vendor): View

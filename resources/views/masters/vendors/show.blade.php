@@ -43,10 +43,10 @@
             <div class="rounded-3xl p-6 bg-teal-500/40 dark:bg-teal-900/40 backdrop-blur-2xl text-teal-900 dark:text-teal-100 shadow-[0_8px_32px_rgba(20,184,166,0.15)] border border-teal-300/50 dark:border-teal-700/50 relative overflow-hidden transition-all duration-300 hover:shadow-[0_8px_32px_rgba(20,184,166,0.25)] hover:-translate-y-1">
                 <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/20 dark:bg-teal-400/10 rounded-full blur-2xl"></div>
                 <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-teal-400/20 dark:bg-teal-600/20 rounded-full blur-2xl"></div>
-                <div class="relative z-10 text-center">
+                    <div class="relative z-10 text-center">
                     <div class="text-xs font-bold uppercase tracking-widest text-teal-800/80 dark:text-teal-200 mb-2">Total Business Volume</div>
                     <div class="text-3xl font-extrabold tracking-tight font-jetbrains mb-6 text-teal-950 dark:text-white drop-shadow-sm">
-                        Rs {{ number_format($vendor->purchases()->sum('total_amount'), 2) }}
+                        Rs {{ number_format($totalPurchaseAmount, 2) }}
                     </div>
                     <div class="flex flex-col gap-3">
                         @can('create purchases')
@@ -126,7 +126,7 @@
                             <div>
                                 <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Total Purchases</div>
                                 <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                                    {{ $vendor->purchases()->count() }}
+                                    {{ $totalPurchaseCount }}
                                 </div>
                             </div>
                         </div>
@@ -138,7 +138,7 @@
                             <div>
                                 <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Total Volume</div>
                                 <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">
-                                    Rs {{ number_format($vendor->purchases()->sum('total_amount'), 0) }}
+                                    Rs {{ number_format($totalPurchaseAmount, 0) }}
                                 </div>
                             </div>
                         </div>
@@ -150,7 +150,7 @@
                             <div>
                                 <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider">Last Purchase</div>
                                 <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                                    {{ $vendor->purchases()->latest('date')->first()?->date->format('d M y') ?? 'N/A' }}
+                                    {{ $lastPurchaseDate?->format('d M y') ?? 'N/A' }}
                                 </div>
                             </div>
                         </div>
@@ -167,7 +167,7 @@
                         </div>
 
                     <x-data-table :headers="['Date', 'Item Details', ['label' => 'Quantity', 'align' => 'right'], ['label' => 'Total Bill', 'align' => 'right']]">
-                        @forelse($vendor->purchases()->with('items')->latest()->take(5)->get() as $purchase)
+                        @forelse($recentPurchases as $purchase)
                             <tr class="hover:bg-white/80 dark:hover:bg-zinc-800/50 transition-all duration-300">
                                 <td class="px-6 py-4 font-semibold text-sm text-zinc-700 dark:text-zinc-300">
                                     {{ $purchase->date->format('d M Y') }}
@@ -202,7 +202,41 @@
                             </tr>
                         @endforelse
                     </x-data-table>
+
+                    @if($loadCount > 0)
+                    <div class="pt-8 border-t border-zinc-200 dark:border-zinc-800 mt-8">
+                        <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider mb-6">Day-Load Activity</h4>
+
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                            <div class="p-4 rounded-2xl border border-white/60 dark:border-zinc-700 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl">
+                                <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Total Loads</div>
+                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">{{ $loadCount }}</div>
+                            </div>
+                            <div class="p-4 rounded-2xl border border-white/60 dark:border-zinc-700 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl">
+                                <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Total Boxes</div>
+                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">{{ number_format($totalBoxesLoaded) }}</div>
+                            </div>
+                            <div class="p-4 rounded-2xl border border-white/60 dark:border-zinc-700 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl">
+                                <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Bird Weight</div>
+                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">{{ number_format($totalBirdWeight, 1) }} kg</div>
+                            </div>
+                            <div class="p-4 rounded-2xl border border-white/60 dark:border-zinc-700 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl">
+                                <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Farm Weight</div>
+                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">{{ number_format($totalFarmWeight, 1) }} kg</div>
+                            </div>
+                            <div class="p-4 rounded-2xl border border-white/60 dark:border-zinc-700 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl">
+                                <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Loss Weight</div>
+                                <div class="text-lg font-bold text-rose-600 dark:text-rose-400 font-jetbrains">{{ number_format($totalLossWeight, 1) }} kg</div>
+                            </div>
+                            <div class="p-4 rounded-2xl border border-white/60 dark:border-zinc-700 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl">
+                                <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Avg Rate Variance</div>
+                                <div class="text-lg font-bold {{ $avgRateVariance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400' }} font-jetbrains">
+                                    {{ $avgRateVariance !== null ? number_format($avgRateVariance, 2) : 'N/A' }}
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
