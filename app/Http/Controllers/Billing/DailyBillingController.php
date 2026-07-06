@@ -23,9 +23,20 @@ class DailyBillingController extends Controller
     public function index(Request $request): View
     {
         $search    = $request->input('search');
-        $bills     = DailyBill::with(['customer', 'items'])->search($search)->latest()->paginate(15);
+        $date      = $request->input('date', today()->format('Y-m-d'));
+
+        $bills     = DailyBill::with(['customer', 'items'])
+            ->whereDate('date', $date)
+            ->search($search)
+            ->latest()
+            ->paginate(15);
+
         $customers = Customer::orderBy('name')->get();
         $items     = Item::active()->get();
+
+        $dailyTotalSale  = $bills->sum('net_amount');
+        $dailyTotalGST   = $bills->sum('gst_amount');
+        $dailyTotalCash  = $bills->where('payment_mode', 'Cash')->sum('net_amount');
 
         $dealerDayLoads = \App\Models\DayLoadEntry::with(['dealer', 'batch'])
             ->where('status', '!=', 'Cancelled')
@@ -37,9 +48,39 @@ class DailyBillingController extends Controller
         $dealerDayLoadTotalLoss  = \App\Models\DayLoadEntry::where('status', '!=', 'Cancelled')->sum('loss_weight');
 
         return view('billing.daily.index', compact(
-            'bills', 'customers', 'search', 'items',
+            'bills', 'customers', 'search', 'items', 'date',
+            'dailyTotalSale', 'dailyTotalGST', 'dailyTotalCash',
             'dealerDayLoads', 'dealerDayLoadTotalBoxes', 'dealerDayLoadTotalBird', 'dealerDayLoadTotalLoss'
         ));
+    }
+
+    public function edit(DailyBill $bill): RedirectResponse
+    {
+        return redirect()->route('billing.daily.index');
+    }
+
+    public function update(Request $request, DailyBill $bill): RedirectResponse
+    {
+        $validated = $request->validate([
+            'customer_id'    => 'required|exists:customers,id',
+            'date'           => 'required|date|before_or_equal:today',
+            'status'         => 'required|in:Generated,Pending,Paid',
+            'payment_mode'   => 'required|in:Cash,UPI,NEFT,Cheque(Bank Transfer),Pay later(EMI)',
+            'gst_percentage' => 'required|numeric|min:0|max:28',
+            'items'          => 'required|array|min:1',
+            'items.*.name'   => 'required|string|max:255',
+            'items.*.qty'    => 'required|numeric|min:0.01',
+            'items.*.rate'   => 'required|numeric|min:0.01',
+            'items.*.unit'   => 'nullable|string|max:20',
+        ]);
+
+        try {
+            $this->billingService->update($bill, $validated);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Could not update bill: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Bill updated successfully.');
     }
 
     public function create(): RedirectResponse

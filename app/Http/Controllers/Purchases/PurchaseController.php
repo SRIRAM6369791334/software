@@ -127,7 +127,7 @@ class PurchaseController extends Controller
             return view('purchases.invoices-day', compact(
                 'purchases', 'dayLoadBatch', 'date', 'search', 'dayStats',
                 'totalPurchases', 'totalExpenditure', 'totalTaxPaid', 'totalDayLoads', 'totalBirdsLoaded'
-            ));
+            ) + ['vendors' => Vendor::orderBy('firm_name')->get()]);
         }
 
         // Date list view: combine dates from both purchases and day-load batches

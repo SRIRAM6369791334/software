@@ -2,7 +2,16 @@
 @section('title', 'Customer Billing')
 
 @section('content')
-<div class="animate-fade-in">
+<div class="animate-fade-in" x-data="{
+    editId: 0,
+    editFormAction: '',
+    editCustomerId: 0,
+    editDate: '',
+    editPaymentMode: 'Cash',
+    editStatus: 'Paid',
+    editGstPercentage: 18,
+    editItems: [],
+}">
     <x-page-header title="Customer Billing" subtitle="Record counter sales, calculate GST automatically, and issue receipts">
         <x-slot:actions>
             <x-button variant="outline" href="{{ route('billing.daily.export') }}" icon="download">
@@ -11,27 +20,13 @@
         </x-slot:actions>
     </x-page-header>
 
-    {{-- Insights Header Cards --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <x-stat-card 
-            label="Today's Sales" 
-            value="Rs {{ number_format($bills->where('date', date('Y-m-d'))->sum('net_amount'), 0) }}" 
-            icon="bar_chart" 
-            color="emerald" />
-        <x-stat-card 
-            label="Avg Ticket Size" 
-            value="Rs {{ number_format($bills->avg('net_amount') ?: 0, 0) }}" 
-            icon="show_chart" 
-            color="blue" />
-        <div class="rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-800 p-6 shadow-sm text-white flex items-center justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-emerald-500/20">
-            <div>
-                <p class="font-outfit text-sm font-medium text-emerald-100">Total Counter Cash</p>
-                <p class="font-jetbrains mt-2 text-3xl font-bold tracking-tight">Rs {{ number_format($bills->sum('net_amount'), 0) }}</p>
-            </div>
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-                <span class="material-symbols-rounded text-2xl">bolt</span>
-            </div>
-        </div>
+    {{-- Day-load Pattern Stat Cards --}}
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <x-stat-card label="Sale Date" value="{{ \Carbon\Carbon::parse($date)->format('d M Y') }}" icon="calendar_today" color="blue" />
+        <x-stat-card label="Day" value="{{ \Carbon\Carbon::parse($date)->format('l') }}" icon="event" color="emerald" />
+        <x-stat-card label="Total Sale" value="Rs {{ number_format($dailyTotalSale, 0) }}" icon="payments" color="indigo" />
+        <x-stat-card label="Total GST" value="Rs {{ number_format($dailyTotalGST, 0) }}" icon="receipt" color="amber" />
+        <x-stat-card label="Cash Sales" value="Rs {{ number_format($dailyTotalCash, 0) }}" icon="payments" color="violet" />
     </div>
 
     @can('create bills')
@@ -64,7 +59,7 @@
                             <option value="{{ $c->id }}" {{ old('customer_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
                         @endforeach
                     </x-form.select>
-                    <x-form.input type="date" name="date" label="Sale Date" required value="{{ old('date', date('Y-m-d')) }}" />
+                    <x-form.input type="date" name="date" label="Sale Date" required value="{{ old('date', $date) }}" />
                     
                     <x-form.select name="payment_mode" label="Payment Mode" required x-model="paymentMode">
                         <option value="Cash" {{ old('payment_mode', 'Cash') === 'Cash' ? 'selected' : '' }}>Cash</option>
@@ -159,17 +154,16 @@
     </x-card>
     @endcan
     <x-card>
-        <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">Recent Counter Sales</h2>
-            <form method="GET" class="relative max-w-sm w-full sm:w-auto">
-                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-zinc-400">
-                    <span class="material-symbols-rounded text-xl">search</span>
-                </div>
-                <input type="text" name="search" value="{{ $search }}" class="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-xl focus:ring-emerald-500 focus:border-emerald-500 block w-full pl-10 p-2.5 transition-colors font-outfit" placeholder="Search customer, item or route...">
+        <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">Sales</h2>
+            <form method="GET" class="flex flex-col sm:flex-row gap-3">
+                <input type="date" name="date" value="{{ $date }}" class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                <input type="text" name="search" value="{{ $search }}" placeholder="Search customer..." class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                <x-button type="submit" variant="outline" icon="filter_alt">Filter</x-button>
             </form>
         </div>
 
-        <x-data-table :headers="['Invoice', 'Sale Date', 'Customer', 'Product Breakdown', 'Total Qty', 'Net Amount', 'Status', 'Action']">
+        <x-data-table :headers="['Invoice', 'Customer', 'Items', 'Qty', 'Amount', 'Status', 'Actions']">
             @forelse($bills as $bill)
                 <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors group">
                     <td class="px-6 py-4">

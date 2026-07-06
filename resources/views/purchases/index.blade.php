@@ -2,7 +2,16 @@
 @section('title', 'Purchase Entry')
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6" x-data="{
+    editId: 0,
+    editFormAction: '',
+    editVendorName: '',
+    editInvoiceNo: '',
+    editDate: '',
+    editPaymentMode: 'Cash',
+    editGstPercentage: 18,
+    editItems: [],
+}">
 
     <x-page-header title="Purchase Entry & Refills" subtitle="Record incoming inventory supply and map it to specific batches & locations">
         <x-button href="{{ route('purchases.invoices') }}" variant="secondary" icon="receipt_long">
@@ -12,6 +21,14 @@
             Export
         </x-button>
     </x-page-header>
+
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <x-stat-card label="Purchase Date" value="{{ \Carbon\Carbon::parse($date)->format('d M Y') }}" icon="calendar_today" color="blue" />
+        <x-stat-card label="Day" value="{{ \Carbon\Carbon::parse($date)->format('l') }}" icon="event" color="emerald" />
+        <x-stat-card label="Total Amount" value="Rs {{ number_format($dailyTotalAmount, 0) }}" icon="payments" color="indigo" />
+        <x-stat-card label="Total GST" value="Rs {{ number_format($dailyTotalGST, 0) }}" icon="receipt" color="amber" />
+        <x-stat-card label="Items" value="{{ number_format($dailyItemCount, 0) }}" icon="inventory_2" color="violet" />
+    </div>
 
     @can('create purchases')
     {{-- Inline Form Block --}}
@@ -71,7 +88,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">3. Billing Date <span class="text-rose-500">*</span></label>
-                        <x-form.input type="date" name="date" required value="{{ old('date', date('Y-m-d')) }}" />
+                        <x-form.input type="date" name="date" required value="{{ old('date', $date) }}" />
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">4. Payment Mode <span class="text-rose-500">*</span></label>
@@ -171,7 +188,164 @@
         </div>
     </x-card>
     @endcan
-        
+
+    {{-- Date Filter + Daily Purchases --}}
+    <x-card>
+        <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">Daily Purchases</h2>
+            <form method="GET" class="flex flex-col sm:flex-row gap-3">
+                <input type="date" name="date" value="{{ $date }}" class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                <input type="text" name="search" value="{{ $search }}" placeholder="Search vendor or invoice" class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                <x-button type="submit" variant="outline" icon="filter_alt">Filter</x-button>
+            </form>
+        </div>
+
+        <x-data-table :headers="['Date', 'Vendor & Invoice', 'Items', ['label' => 'Amount', 'align' => 'right'], ['label' => 'GST', 'align' => 'right'], ['label' => 'Total', 'align' => 'right'], ['label' => 'Mode', 'align' => 'center'], 'Actions']">
+            @forelse($dailyPurchases as $p)
+                <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
+                    <td class="px-4 py-3 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                        {{ $p->date->format('d M Y') }}
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <x-avatar name="{{ $p->vendor_name }}" size="sm" />
+                            <div>
+                                <span class="block font-bold text-zinc-900 dark:text-zinc-100 text-sm">{{ $p->vendor_name }}</span>
+                                <span class="block text-[10px] text-zinc-500 font-mono">#{{ $p->invoice_no ?: 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex flex-wrap gap-1">
+                            @foreach($p->items as $item)
+                                <span class="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-[11px] font-medium text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+                                    {{ $item->item_name }} <b>({{ number_format($item->quantity) }} {{ $item->unit }})</b>
+                                </span>
+                            @endforeach
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-right font-jetbrains text-sm text-zinc-600">{{ number_format($p->total_amount - $p->gst_amount, 0) }}</td>
+                    <td class="px-4 py-3 text-right font-jetbrains text-sm text-amber-600">{{ number_format($p->gst_amount, 0) }}</td>
+                    <td class="px-4 py-3 text-right font-jetbrains font-bold text-sm">{{ number_format($p->total_amount, 0) }}</td>
+                    <td class="px-4 py-3 text-center">
+                        @php
+                            $pc = match(strtolower($p->payment_mode)) {
+                                'cash' => 'emerald', 'upi' => 'indigo', 'neft' => 'sky', default => 'slate',
+                            };
+                        @endphp
+                        <x-badge :color="$pc">{{ $p->payment_mode }}</x-badge>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button
+                                type="button"
+                                x-on:click="
+                                    $dispatch('open-modal', 'edit-purchase-modal');
+                                    $nextTick(() => {
+                                        editId = {{ $p->id }};
+                                        editFormAction = '{{ route('purchases.update', $p->id) }}';
+                                        editVendorName = '{{ addslashes($p->vendor_name) }}';
+                                        editInvoiceNo = '{{ addslashes($p->invoice_no ?? '') }}';
+                                        editDate = '{{ $p->date->format('Y-m-d') }}';
+                                        editPaymentMode = '{{ $p->payment_mode }}';
+                                        editGstPercentage = {{ $p->gst_percentage }};
+                                        editItems = [
+                                            @foreach($p->items as $item)
+                                                { name: '{{ addslashes($item->item_name) }}', qty: {{ $item->quantity }}, unit: '{{ addslashes($item->unit) }}', rate: {{ $item->rate }} },
+                                            @endforeach
+                                        ];
+                                    });
+                                "
+                                class="inline-flex items-center gap-1 text-xs font-medium text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
+                            >
+                                <span class="material-symbols-rounded text-sm">edit</span>
+                                Edit
+                            </button>
+                            <form action="{{ route('purchases.destroy', $p->id) }}" method="POST" onsubmit="return confirm('Delete this purchase?')" class="inline">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="inline-flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 transition-colors">
+                                    <span class="material-symbols-rounded text-sm">delete</span>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            @empty
+                <tr><td colspan="8" class="text-center py-8 text-zinc-500">No purchases found for this date.</td></tr>
+            @endforelse
+            @if($dailyPurchases->hasPages())
+                <x-slot:pagination>
+                    {{ $dailyPurchases->withQueryString()->links() }}
+                </x-slot:pagination>
+            @endif
+        </x-data-table>
+    </x-card>
+
+    {{-- Edit Purchase Modal --}}
+    <x-modal name="edit-purchase-modal" title="Edit Purchase" subtitle="Update vendor, items, or payment details" icon="edit" maxWidth="2xl">
+        <form id="edit-purchase-form" :action="editFormAction" method="POST">
+            @csrf
+            <input type="hidden" name="_method" value="PUT">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Vendor</label>
+                    <select name="vendor_name" required x-model="editVendorName" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                        <option value="">Select vendor...</option>
+                        @foreach($vendors as $vendor)
+                            <option value="{{ $vendor->firm_name }}">{{ $vendor->firm_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Invoice No</label>
+                    <input type="text" name="invoice_no" x-model="editInvoiceNo" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-mono">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Date</label>
+                    <input type="date" name="date" required x-model="editDate" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Mode</label>
+                    <select name="payment_mode" required x-model="editPaymentMode" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                        <option value="Cash">Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="NEFT">NEFT</option>
+                        <option value="Cheque(Bank Transfer)">Cheque(Bank Transfer)</option>
+                        <option value="Pay later(EMI)">Pay later(EMI)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">GST %</label>
+                <input type="number" name="gst_percentage" step="0.1" min="0" max="28" x-model.number="editGstPercentage" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains w-24">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Items</label>
+                <p class="text-xs text-zinc-500 mb-2">Edit items below (qty, rate changes are applied on save)</p>
+                <template x-for="(item, idx) in editItems" :key="idx">
+                    <div class="flex gap-2 mb-2 items-start">
+                        <input type="text" x-model="item.name" :name="'items[' + idx + '][name]'" required class="flex-1 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                        <input type="number" step="0.01" x-model="item.qty" :name="'items[' + idx + '][qty]'" required placeholder="Qty" class="w-24 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-center font-jetbrains">
+                        <input type="text" x-model="item.unit" :name="'items[' + idx + '][unit]'" class="w-16 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-center">
+                        <input type="number" step="0.01" x-model="item.rate" :name="'items[' + idx + '][rate]'" required placeholder="Rate" class="w-24 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-center font-jetbrains">
+                    </div>
+                </template>
+                <input type="hidden" name="vendor_id" value="">
+            </div>
+
+            <x-slot:footer>
+                <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'edit-purchase-modal')">Cancel</x-button>
+                <x-button type="submit" form="edit-purchase-form" variant="primary" icon="save">Save Changes</x-button>
+            </x-slot:footer>
+        </form>
+    </x-modal>
+
     {{-- 4. Vendor Bird Supply via Day-Load --}}
     <x-card>
         <div class="flex flex-col sm:flex-row gap-4 mb-6 justify-between items-center">
@@ -229,10 +403,10 @@
         </x-data-table>
     </x-card>
 
-    {{-- 5. Recent Purchase Logs Directory --}}
+    {{-- 5. All Purchase History --}}
     <x-card>
         <div class="flex flex-col sm:flex-row gap-4 mb-6 justify-between items-center">
-            <h2 class="text-lg font-bold text-zinc-900 dark:text-zinc-100">Recent Purchase Logs</h2>
+            <h2 class="text-lg font-bold text-zinc-900 dark:text-zinc-100">All Purchase History</h2>
             <form method="GET" class="flex w-full sm:w-80">
                 <x-search name="search" value="{{ $search }}" placeholder="Search vendor or product name..." class="w-full" />
             </form>

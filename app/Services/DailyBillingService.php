@@ -103,6 +103,69 @@ class DailyBillingService
     }
 
     /**
+     * Update a Daily Bill.
+     */
+    public function update(DailyBill $bill, array $data, ?int $updatedBy = null): DailyBill
+    {
+        return DB::transaction(function () use ($bill, $data, $updatedBy) {
+            $itemsData = $data['items'];
+            $gstPercent = $data['gst_percentage'];
+            $paymentMode = $data['payment_mode'];
+            $status = $data['status'];
+
+            $subtotal = 0;
+            foreach ($itemsData as $item) {
+                $subtotal += $item['qty'] * $item['rate'];
+            }
+
+            $gstData = GSTCalculator::calculate($subtotal, $gstPercent);
+
+            // Revert old customer balance if was credit
+            $oldCustomer = Customer::find($bill->customer_id);
+            if ($oldCustomer && ($bill->payment_mode === 'Credit' || $bill->status === 'Pending')) {
+                $oldCustomer->decrement('balance', $bill->net_amount);
+            }
+
+            $bill->update([
+                'customer_id'    => $data['customer_id'],
+                'date'           => $data['date'],
+                'amount'         => $subtotal,
+                'gst_percentage' => $gstPercent,
+                'gst_amount'     => $gstData['total_gst'],
+                'net_amount'     => $gstData['net_amount'],
+                'status'         => $status,
+                'payment_mode'   => $paymentMode,
+            ]);
+
+            // Apply new customer balance
+            if ($paymentMode === 'Credit' || $status === 'Pending') {
+                $customer = Customer::find($data['customer_id']);
+                if ($customer) {
+                    $customer->increment('balance', $gstData['net_amount']);
+                }
+            }
+
+            // Delete old items and recreate
+            $bill->items()->delete();
+            foreach ($itemsData as $item) {
+                $base = $item['qty'] * $item['rate'];
+                $tax = round($base * $gstPercent / 100, 2);
+
+                $bill->items()->create([
+                    'item_name'    => $item['name'],
+                    'quantity_kg'  => $item['qty'],
+                    'rate_per_kg'  => $item['rate'],
+                    'tax_amount'   => $tax,
+                    'total_amount' => $base + $tax,
+                    'unit'         => $item['unit'] ?? 'kg',
+                ]);
+            }
+
+            return $bill->fresh();
+        });
+    }
+
+    /**
      * Delete a Daily Bill and associated records.
      *
      * @param DailyBill $bill
