@@ -26,7 +26,20 @@ class DailyBillingController extends Controller
         $bills     = DailyBill::with(['customer', 'items'])->search($search)->latest()->paginate(15);
         $customers = Customer::orderBy('name')->get();
         $items     = Item::active()->get();
-        return view('billing.daily.index', compact('bills', 'customers', 'search', 'items'));
+
+        $dealerDayLoads = \App\Models\DayLoadEntry::with(['dealer', 'batch'])
+            ->where('status', '!=', 'Cancelled')
+            ->latest()
+            ->paginate(15, ['*'], 'dealer_dayload_page');
+
+        $dealerDayLoadTotalBoxes = \App\Models\DayLoadEntry::where('status', '!=', 'Cancelled')->sum('no_of_boxes');
+        $dealerDayLoadTotalBird  = \App\Models\DayLoadEntry::where('status', '!=', 'Cancelled')->sum('bird_weight');
+        $dealerDayLoadTotalLoss  = \App\Models\DayLoadEntry::where('status', '!=', 'Cancelled')->sum('loss_weight');
+
+        return view('billing.daily.index', compact(
+            'bills', 'customers', 'search', 'items',
+            'dealerDayLoads', 'dealerDayLoadTotalBoxes', 'dealerDayLoadTotalBird', 'dealerDayLoadTotalLoss'
+        ));
     }
 
     public function create(): RedirectResponse

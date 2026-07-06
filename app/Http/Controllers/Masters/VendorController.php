@@ -95,7 +95,21 @@ class VendorController extends Controller
     public function purchaseHistory(Vendor $vendor): View
     {
         $purchases = $vendor->purchases()->with('items')->latest()->paginate(15);
-        return view('masters.vendors.purchase-history', compact('vendor', 'purchases'));
+
+        $dayLoadEntries = $vendor->dayLoadEntries()
+            ->with(['dealer', 'batch'])
+            ->latest()
+            ->paginate(15);
+
+        $totalBoxes = $vendor->dayLoadEntries()->sum('no_of_boxes');
+        $totalBirdWeight = $vendor->dayLoadEntries()->sum('bird_weight');
+        $totalFarmWeight = $vendor->dayLoadEntries()->sum('farm_weight');
+        $totalLossWeight = $vendor->dayLoadEntries()->sum('loss_weight');
+
+        return view('masters.vendors.purchase-history', compact(
+            'vendor', 'purchases', 'dayLoadEntries',
+            'totalBoxes', 'totalBirdWeight', 'totalFarmWeight', 'totalLossWeight'
+        ));
     }
 
     public function downloadHistoryPdf(Vendor $vendor)

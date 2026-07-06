@@ -185,6 +185,26 @@
 <?php $component = $__componentOriginal2ddbc40e602c342e508ac696e52f8719; ?>
 <?php unset($__componentOriginal2ddbc40e602c342e508ac696e52f8719); ?>
 <?php endif; ?>
+                                            <?php elseif($txn->type === 'Day-Load'): ?>
+                                                <?php if (isset($component)) { $__componentOriginal2ddbc40e602c342e508ac696e52f8719 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal2ddbc40e602c342e508ac696e52f8719 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.badge','data' => ['color' => 'blue']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('badge'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['color' => 'blue']); ?><?php echo e($txn->type); ?> <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal2ddbc40e602c342e508ac696e52f8719)): ?>
+<?php $attributes = $__attributesOriginal2ddbc40e602c342e508ac696e52f8719; ?>
+<?php unset($__attributesOriginal2ddbc40e602c342e508ac696e52f8719); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal2ddbc40e602c342e508ac696e52f8719)): ?>
+<?php $component = $__componentOriginal2ddbc40e602c342e508ac696e52f8719; ?>
+<?php unset($__componentOriginal2ddbc40e602c342e508ac696e52f8719); ?>
+<?php endif; ?>
                                             <?php else: ?>
                                                 <?php if (isset($component)) { $__componentOriginal2ddbc40e602c342e508ac696e52f8719 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal2ddbc40e602c342e508ac696e52f8719 = $attributes; } ?>
@@ -210,14 +230,13 @@
                                         <td class="px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
                                             <?php echo e($txn->reference); ?>
 
-                                            <?php if(!$txn->is_credit && $txn->type === 'Purchase'): ?>
-                                                <span class="text-[10px] bg-zinc-200 text-zinc-600 px-1 rounded ml-1">Cash</span>
-                                            <?php endif; ?>
                                         </td>
                                         <td class="px-4 py-3 text-sm text-right font-jetbrains font-bold text-rose-600 dark:text-rose-400">
                                             <?php if($txn->type === 'Purchase' && $txn->is_credit): ?>
                                                 ₹<?php echo e(number_format($txn->amount, 2)); ?>
 
+                                            <?php elseif($txn->type === 'Day-Load'): ?>
+                                                <?php echo e(number_format($txn->amount, 1)); ?> kg
                                             <?php else: ?>
                                                 -
                                             <?php endif; ?>

@@ -15,8 +15,8 @@ class VendorPaymentController extends Controller
     {
         $purchases = $vendor->purchases()->orderBy('date', 'desc')->get();
         $payments = $vendor->vendorPayments()->orderBy('date', 'desc')->get();
+        $dayLoads = $vendor->dayLoadEntries()->with('batch')->get();
         
-        // Merge and sort by date descending
         $transactions = collect();
         
         foreach ($purchases as $p) {
@@ -27,6 +27,17 @@ class VendorPaymentController extends Controller
                 'amount' => $p->total_amount,
                 'mode' => $p->payment_mode,
                 'is_credit' => $p->payment_mode === 'Credit',
+            ]);
+        }
+
+        foreach ($dayLoads as $e) {
+            $transactions->push((object)[
+                'type' => 'Day-Load',
+                'date' => $e->batch->billing_date,
+                'reference' => 'DL-' . $e->id . ' (' . $e->no_of_boxes . ' boxes)',
+                'amount' => round((float) $e->bird_weight, 2),
+                'mode' => 'Load',
+                'is_credit' => true,
             ]);
         }
         

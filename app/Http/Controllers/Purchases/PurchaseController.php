@@ -31,6 +31,8 @@ class PurchaseController extends Controller
     public function index(Request $request): View
     {
         $search      = $request->input('search');
+        $date        = $request->input('date', today()->format('Y-m-d'));
+
         $purchases   = $this->service->paginated($search, 15);
         $vendors     = Vendor::orderBy('firm_name')->get();
         $items       = Item::active()->get();
@@ -41,11 +43,32 @@ class PurchaseController extends Controller
         $dailyBills  = DailyBill::with(['customer', 'items'])->latest()->take(10)->get();
         $weeklyBills = WeeklyBill::with('dealer')->latest()->take(10)->get();
         
-        $autoInvoiceNo = null; // Generated securely in the service if left blank
+        $autoInvoiceNo = null;
+
+        $dailyPurchases = Purchase::with(['vendor', 'items'])
+            ->whereDate('date', $date)
+            ->latest()
+            ->paginate(15, ['*'], 'daily_purchases_page');
+
+        $dailyTotalAmount = $dailyPurchases->sum('total_amount');
+        $dailyTotalGST    = $dailyPurchases->sum('gst_amount');
+        $dailyItemCount   = $dailyPurchases->sum(fn($p) => $p->items->sum('quantity'));
+        $dailyVendorCount = $dailyPurchases->pluck('vendor_id')->unique()->count();
+
+        $vendorDayLoads = \App\Models\DayLoadEntry::with(['vendor', 'batch'])
+            ->where('status', '!=', 'Cancelled')
+            ->latest()
+            ->paginate(15, ['*'], 'vendor_dayload_page');
+
+        $vendorDayLoadTotalBoxes = \App\Models\DayLoadEntry::where('status', '!=', 'Cancelled')->sum('no_of_boxes');
+        $vendorDayLoadTotalBird  = \App\Models\DayLoadEntry::where('status', '!=', 'Cancelled')->sum('bird_weight');
+        $vendorDayLoadTotalFarm  = \App\Models\DayLoadEntry::where('status', '!=', 'Cancelled')->sum('farm_weight');
         
         return view('purchases.index', compact(
             'purchases', 'search', 'vendors', 'items', 'batches', 'warehouses',
-            'customers', 'dailyBills', 'weeklyBills', 'autoInvoiceNo'
+            'customers', 'dailyBills', 'weeklyBills', 'autoInvoiceNo', 'date',
+            'dailyPurchases', 'dailyTotalAmount', 'dailyTotalGST', 'dailyItemCount', 'dailyVendorCount',
+            'vendorDayLoads', 'vendorDayLoadTotalBoxes', 'vendorDayLoadTotalBird', 'vendorDayLoadTotalFarm'
         ));
     }
 

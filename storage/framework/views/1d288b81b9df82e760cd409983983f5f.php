@@ -462,6 +462,120 @@
 <?php endif; ?>
 <?php $component->withAttributes([]); ?>
         <div class="flex flex-col sm:flex-row gap-4 mb-6 justify-between items-center">
+            <div>
+                <h2 class="text-lg font-bold text-zinc-900 dark:text-zinc-100">Vendor Bird Supply</h2>
+                <p class="text-xs text-zinc-500 mt-1">Day-load birds supplied by vendors</p>
+            </div>
+            <div class="flex gap-3 text-xs font-bold">
+                <span class="px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                    <span class="material-symbols-rounded text-[14px] align-text-bottom">inventory_2</span>
+                    <?php echo e(number_format($vendorDayLoadTotalBoxes)); ?> Boxes
+                </span>
+                <span class="px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                    <span class="material-symbols-rounded text-[14px] align-text-bottom">scale</span>
+                    <?php echo e(number_format($vendorDayLoadTotalBird, 1)); ?> kg Bird
+                </span>
+                <span class="px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                    <span class="material-symbols-rounded text-[14px] align-text-bottom">agriculture</span>
+                    <?php echo e(number_format($vendorDayLoadTotalFarm, 1)); ?> kg Farm
+                </span>
+            </div>
+        </div>
+
+        <?php if (isset($component)) { $__componentOriginalc8463834ba515134d5c98b88e1a9dc03 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalc8463834ba515134d5c98b88e1a9dc03 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.data-table','data' => ['headers' => ['Date', 'Vendor', ['label' => 'Boxes', 'align' => 'right'], ['label' => 'Bird Weight', 'align' => 'right'], ['label' => 'Farm Weight', 'align' => 'right'], ['label' => 'Loss', 'align' => 'right']]]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('data-table'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['headers' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(['Date', 'Vendor', ['label' => 'Boxes', 'align' => 'right'], ['label' => 'Bird Weight', 'align' => 'right'], ['label' => 'Farm Weight', 'align' => 'right'], ['label' => 'Loss', 'align' => 'right']])]); ?>
+            <?php $__empty_1 = true; $__currentLoopData = $vendorDayLoads; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $entry): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
+                    <td class="px-4 py-3 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                        <?php echo e($entry->batch->billing_date->format('d M Y')); ?>
+
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <?php if (isset($component)) { $__componentOriginal8ca5b43b8fff8bb34ab2ba4eb4bdd67b = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal8ca5b43b8fff8bb34ab2ba4eb4bdd67b = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.avatar','data' => ['name' => ''.e($entry->vendor->firm_name ?? '-').'','size' => 'sm']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('avatar'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['name' => ''.e($entry->vendor->firm_name ?? '-').'','size' => 'sm']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal8ca5b43b8fff8bb34ab2ba4eb4bdd67b)): ?>
+<?php $attributes = $__attributesOriginal8ca5b43b8fff8bb34ab2ba4eb4bdd67b; ?>
+<?php unset($__attributesOriginal8ca5b43b8fff8bb34ab2ba4eb4bdd67b); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal8ca5b43b8fff8bb34ab2ba4eb4bdd67b)): ?>
+<?php $component = $__componentOriginal8ca5b43b8fff8bb34ab2ba4eb4bdd67b; ?>
+<?php unset($__componentOriginal8ca5b43b8fff8bb34ab2ba4eb4bdd67b); ?>
+<?php endif; ?>
+                            <span class="font-bold text-zinc-900 dark:text-zinc-100 text-sm"><?php echo e($entry->vendor->firm_name ?? '-'); ?></span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-right font-jetbrains text-sm"><?php echo e($entry->no_of_boxes); ?></td>
+                    <td class="px-4 py-3 text-right font-jetbrains text-sm"><?php echo e(number_format($entry->bird_weight, 1)); ?> kg</td>
+                    <td class="px-4 py-3 text-right font-jetbrains text-sm"><?php echo e(number_format($entry->farm_weight ?? 0, 1)); ?> kg</td>
+                    <td class="px-4 py-3 text-right font-jetbrains text-sm">
+                        <?php if(($entry->loss_weight ?? 0) > 0): ?>
+                            <span class="text-rose-600 dark:text-rose-400"><?php echo e(number_format($entry->loss_weight, 1)); ?> kg</span>
+                        <?php else: ?>
+                            <span class="text-emerald-600 dark:text-emerald-400">0 kg</span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                <tr><td colspan="6" class="text-center py-8 text-zinc-500">No vendor day-load entries found.</td></tr>
+            <?php endif; ?>
+            <?php if($vendorDayLoads->hasPages()): ?>
+                 <?php $__env->slot('pagination', null, []); ?> 
+                    <?php echo e($vendorDayLoads->links()); ?>
+
+                 <?php $__env->endSlot(); ?>
+            <?php endif; ?>
+         <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalc8463834ba515134d5c98b88e1a9dc03)): ?>
+<?php $attributes = $__attributesOriginalc8463834ba515134d5c98b88e1a9dc03; ?>
+<?php unset($__attributesOriginalc8463834ba515134d5c98b88e1a9dc03); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc8463834ba515134d5c98b88e1a9dc03)): ?>
+<?php $component = $__componentOriginalc8463834ba515134d5c98b88e1a9dc03; ?>
+<?php unset($__componentOriginalc8463834ba515134d5c98b88e1a9dc03); ?>
+<?php endif; ?>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal53747ceb358d30c0105769f8471417f6)): ?>
+<?php $attributes = $__attributesOriginal53747ceb358d30c0105769f8471417f6; ?>
+<?php unset($__attributesOriginal53747ceb358d30c0105769f8471417f6); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal53747ceb358d30c0105769f8471417f6)): ?>
+<?php $component = $__componentOriginal53747ceb358d30c0105769f8471417f6; ?>
+<?php unset($__componentOriginal53747ceb358d30c0105769f8471417f6); ?>
+<?php endif; ?>
+
+    
+    <?php if (isset($component)) { $__componentOriginal53747ceb358d30c0105769f8471417f6 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal53747ceb358d30c0105769f8471417f6 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.card','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+        <div class="flex flex-col sm:flex-row gap-4 mb-6 justify-between items-center">
             <h2 class="text-lg font-bold text-zinc-900 dark:text-zinc-100">Recent Purchase Logs</h2>
             <form method="GET" class="flex w-full sm:w-80">
                 <?php if (isset($component)) { $__componentOriginal9b33c063a2222f59546ad2a2a9a94bc6 = $component; } ?>

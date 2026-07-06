@@ -111,19 +111,20 @@
                                         <td class="px-4 py-3 text-sm">
                                             @if($txn->type === 'Purchase')
                                                 <x-badge color="rose">{{ $txn->type }}</x-badge>
+                                            @elseif($txn->type === 'Day-Load')
+                                                <x-badge color="blue">{{ $txn->type }}</x-badge>
                                             @else
                                                 <x-badge color="emerald">{{ $txn->type }}</x-badge>
                                             @endif
                                         </td>
                                         <td class="px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
                                             {{ $txn->reference }}
-                                            @if(!$txn->is_credit && $txn->type === 'Purchase')
-                                                <span class="text-[10px] bg-zinc-200 text-zinc-600 px-1 rounded ml-1">Cash</span>
-                                            @endif
                                         </td>
                                         <td class="px-4 py-3 text-sm text-right font-jetbrains font-bold text-rose-600 dark:text-rose-400">
                                             @if($txn->type === 'Purchase' && $txn->is_credit)
                                                 ₹{{ number_format($txn->amount, 2) }}
+                                            @elseif($txn->type === 'Day-Load')
+                                                {{ number_format($txn->amount, 1) }} kg
                                             @else
                                                 -
                                             @endif
