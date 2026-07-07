@@ -217,12 +217,18 @@ class WeeklyBillingService
 
             // Record Dealer Payment
             DealerPayment::create([
-                'dealer_id'    => $bill->dealer_id,
-                'date'         => $paymentData['date'] ?? now()->format('Y-m-d'),
-                'amount'       => $amount,
-                'payment_mode' => $paymentData['payment_mode'] ?? 'Cash',
-                'notes'        => $paymentData['notes'] ?? "Split payment ({$part}) for Invoice #{$bill->invoice_no}",
+                'dealer_id'          => $bill->dealer_id,
+                'date'               => $paymentData['date'] ?? now()->format('Y-m-d'),
+                'amount'             => $amount,
+                'payment_mode'       => $paymentData['payment_mode'] ?? 'Cash',
+                'cash_amount'        => $paymentData['cash_amount'] ?? $amount,
+                'bank_amount'        => $paymentData['bank_amount'] ?? 0.00,
+                'bank_transfer_type' => $paymentData['bank_transfer_type'] ?? null,
+                'notes'              => $paymentData['notes'] ?? "Split payment ({$part}) for Invoice #{$bill->invoice_no}",
             ]);
+
+            // Recalculate cash/bank ledger
+            app(CashBankLedgerService::class)->recalculateForDate(now());
 
             // Decrement dealer outstanding
             $dealer->decrement('pending_amount', $amount);

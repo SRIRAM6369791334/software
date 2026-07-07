@@ -250,12 +250,18 @@ class DayLoadBillingController extends Controller
     public function recordVendorPayment(Request $request, DayLoadEntry $entry): RedirectResponse
     {
         $validated = $request->validate([
-            'date'             => 'required|date|before_or_equal:today',
-            'amount'           => 'required|numeric|min:0.01',
-            'payment_mode'     => 'required|in:' . implode(',', config('payments.modes')),
-            'reference_number' => 'nullable|string|max:100',
-            'notes'            => 'nullable|string|max:500',
+            'date'               => 'required|date|before_or_equal:today',
+            'cash_amount'        => 'required|numeric|min:0',
+            'bank_amount'        => 'required|numeric|min:0',
+            'payment_mode'       => 'required|in:' . implode(',', config('payments.modes')),
+            'bank_transfer_type' => 'nullable|required_if:bank_amount,>0|in:UPI,Bank Transfer,NEFT,RTGS,IMPS,Cheque,Other',
+            'reference_number'   => 'nullable|string|max:100',
+            'notes'              => 'nullable|string|max:500',
         ]);
+
+        if ((float) $validated['cash_amount'] + (float) $validated['bank_amount'] <= 0) {
+            return back()->with('error', 'Total payment amount must be greater than zero.');
+        }
 
         try {
             $this->dayLoadPaymentService->recordVendorPayment($entry, $validated);

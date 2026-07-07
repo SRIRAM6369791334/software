@@ -186,7 +186,7 @@ class WeeklyBillingNewFlowTest extends TestCase
             'notes' => 'Monday Payment via UPI',
         ];
 
-        $response = $this->post(route('billing.weekly.pay-split', ['bill' => $bill->id, 'part' => 'monday']), $payload);
+        $response = $this->post(route('billing.weekly.pay-split', ['weekly' => $bill->id, 'part' => 'monday']), $payload);
 
         $response->assertRedirect();
         $response->assertSessionHas('success');

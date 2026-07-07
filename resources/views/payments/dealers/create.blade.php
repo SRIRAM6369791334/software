@@ -13,7 +13,7 @@
 
     <div class="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] rounded-3xl overflow-hidden p-6 sm:p-10">
         
-        <form action="{{ route('payments.dealers.store') }}" method="POST" class="space-y-8">
+        <form action="{{ route('payments.dealers.store') }}" method="POST" class="space-y-8" x-data="{ cashAmount: 0, bankAmount: 0, paymentMode: 'Cash', bankTransferType: '' }">
             @csrf
             
             {{-- Dealer Selection Section --}}
@@ -30,7 +30,7 @@
                         <option value="">Choose dealer…</option>
                         @foreach($dealers as $d)
                             <option value="{{ $d->id }}" {{ $selected_dealer_id == $d->id ? 'selected' : '' }}>
-                                {{ $d->firm_name }} — Pending: Rs {{ number_format($d->pending_amount, 0) }}
+                            {{ $d->firm_name }} — Pending: Rs {{ number_format($d->displayed_outstanding, 0) }}
                             </option>
                         @endforeach
                     </x-form.select>
@@ -46,11 +46,22 @@
                     <h3 class="text-lg font-bold text-zinc-900 dark:text-zinc-100 tracking-tight font-cabinet">Payout Information</h3>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-800/30">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-800/30 mb-4">
                     <div>
-                        <label class="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2 font-cabinet tracking-wide uppercase">Amount Paid (Rs) <span class="text-rose-500">*</span></label>
-                        <input type="number" name="amount" required step="0.01" min="0.01" placeholder="0.00" class="block w-full rounded-xl border-blue-200 dark:border-blue-800 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-zinc-900 text-3xl font-black text-blue-600 dark:text-blue-400 placeholder:text-zinc-300 dark:placeholder:text-zinc-600 shadow-sm py-4 px-5 transition-all">
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-2">Cash Amount (Rs) <span class="text-rose-500">*</span></label>
+                        <input type="number" name="cash_amount" required step="0.01" min="0" x-model.number="cashAmount" class="block w-full rounded-xl border-blue-200 dark:border-blue-800 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-zinc-900 text-2xl font-black text-zinc-800 dark:text-white shadow-sm py-3 px-4 transition-all">
                     </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-2">Bank Amount (Rs) <span class="text-rose-500">*</span></label>
+                        <input type="number" name="bank_amount" required step="0.01" min="0" x-model.number="bankAmount" class="block w-full rounded-xl border-blue-200 dark:border-blue-800 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-zinc-900 text-2xl font-black text-zinc-800 dark:text-white shadow-sm py-3 px-4 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-2">Total Amount (Rs)</label>
+                        <div class="rounded-xl border border-blue-200 dark:border-blue-800 bg-white dark:bg-zinc-900 text-2xl font-black text-blue-600 dark:text-blue-400 py-3 px-4 shadow-sm" x-text="'Rs ' + (cashAmount + bankAmount).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <x-form.input type="date" name="date" label="Payment Date" required value="{{ date('Y-m-d') }}" class="!bg-white dark:!bg-zinc-900 shadow-sm" />
                 </div>
             </section>
@@ -65,15 +76,28 @@
                 </div>
 
                 <div class="p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60">
-                    <div class="mb-6">
-                        <label class="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-3 font-cabinet tracking-wide uppercase">Payment Mode <span class="text-rose-500">*</span></label>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            @foreach(['NEFT','Cheque','UPI','Cash'] as $mode)
-                                <label class="flex items-center justify-center p-3 border border-zinc-200 dark:border-zinc-700 rounded-xl cursor-pointer bg-white dark:bg-zinc-900 shadow-sm hover:shadow-md hover:border-blue-400 dark:hover:border-blue-500 transition-all group has-[:checked]:border-blue-500 has-[:checked]:ring-2 has-[:checked]:ring-blue-500 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-900/20">
-                                    <input type="radio" name="payment_mode" value="{{ $mode }}" {{ $loop->first ? 'checked' : '' }} class="sr-only">
-                                    <span class="text-sm font-bold text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">{{ $mode }}</span>
-                                </label>
-                            @endforeach
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2 font-cabinet tracking-wide uppercase">Payment Mode <span class="text-rose-500">*</span></label>
+                            <select name="payment_mode" x-model="paymentMode" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm shadow-sm">
+                                <option value="Cash">Cash</option>
+                                <option value="UPI">UPI</option>
+                                <option value="NEFT">NEFT</option>
+                                <option value="Cheque">Cheque</option>
+                            </select>
+                        </div>
+                        <div x-show="bankAmount > 0" x-transition>
+                            <label class="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2 font-cabinet tracking-wide uppercase">Bank Transfer Type</label>
+                            <select name="bank_transfer_type" x-model="bankTransferType" :required="bankAmount > 0" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm shadow-sm">
+                                <option value="">Select type...</option>
+                                <option value="UPI">UPI</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="NEFT">NEFT</option>
+                                <option value="RTGS">RTGS</option>
+                                <option value="IMPS">IMPS</option>
+                                <option value="Cheque">Cheque</option>
+                                <option value="Other">Other</option>
+                            </select>
                         </div>
                     </div>
                     

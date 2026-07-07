@@ -61,13 +61,27 @@ class VendorPaymentController extends Controller
     public function store(Request $request, Vendor $vendor): RedirectResponse
     {
         $validated = $request->validate([
-            'date' => 'required|date',
-            'amount' => 'required|numeric|min:1',
-            'payment_mode' => 'required|in:Cash,UPI,NEFT,Cheque',
-            'notes' => 'nullable|string'
+            'date'               => 'required|date',
+            'cash_amount'        => 'required|numeric|min:0',
+            'bank_amount'        => 'required|numeric|min:0',
+            'payment_mode'       => 'required|in:Cash,UPI,NEFT,Cheque',
+            'bank_transfer_type' => 'nullable|required_if:bank_amount,>0|in:UPI,Bank Transfer,NEFT,RTGS,IMPS,Cheque,Other',
+            'notes'              => 'nullable|string'
         ]);
         
+        $cashAmount = (float) $validated['cash_amount'];
+        $bankAmount = (float) $validated['bank_amount'];
+        
+        if ($cashAmount + $bankAmount <= 0) {
+            return back()->with('error', 'Total payment amount must be greater than zero.');
+        }
+
+        $validated['amount'] = round($cashAmount + $bankAmount, 2);
+        
         $vendor->vendorPayments()->create($validated);
+
+        // Recalculate cash/bank ledger
+        app(\App\Services\CashBankLedgerService::class)->recalculateForDate(now());
         
         return back()->with('success', 'Payment recorded successfully.');
     }

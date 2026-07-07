@@ -108,21 +108,43 @@ class DayLoadPaymentService
     public function recordVendorPayment(DayLoadEntry $entry, array $data): VendorPayment
     {
         return DB::transaction(function () use ($entry, $data) {
-            $amount = (float) $data['amount'];
+            $cashAmount = isset($data['cash_amount']) ? (float) $data['cash_amount'] : 0.00;
+            $bankAmount = isset($data['bank_amount']) ? (float) $data['bank_amount'] : 0.00;
+            
+            // Backward compatibility fallback
+            if (!isset($data['cash_amount']) && !isset($data['bank_amount'])) {
+                $amount = (float) ($data['amount'] ?? 0);
+                if (($data['payment_mode'] ?? 'Cash') === 'Cash') {
+                    $cashAmount = $amount;
+                    $bankAmount = 0.00;
+                } else {
+                    $cashAmount = 0.00;
+                    $bankAmount = $amount;
+                }
+            }
+
+            $amount = round($cashAmount + $bankAmount, 2);
             $entry->increment('vendor_paid', $amount);
 
             $this->refreshVendorPaymentStatus($entry);
             $this->refreshBatchFinancials($entry->batch);
 
-            return VendorPayment::create([
+            $payment = VendorPayment::create([
                 'vendor_id'        => $entry->vendor_id,
                 'day_load_entry_id'=> $entry->id,
                 'date'             => $data['date'],
                 'amount'           => $amount,
                 'payment_mode'     => $data['payment_mode'],
+                'cash_amount'      => $cashAmount,
+                'bank_amount'      => $bankAmount,
+                'bank_transfer_type'=> $data['bank_transfer_type'] ?? null,
                 'reference_number' => $data['reference_number'] ?? null,
                 'notes'            => $data['notes'] ?? null,
             ]);
+
+            $this->cashBankLedgerService->recalculateForDate(now());
+
+            return $payment;
         });
     }
 

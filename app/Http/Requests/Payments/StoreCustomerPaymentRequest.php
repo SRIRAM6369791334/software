@@ -10,12 +10,36 @@ class StoreCustomerPaymentRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $codAmount = (float) $this->input('cod_amount', 0);
-        $bankTransferAmount = (float) $this->input('bank_transfer_amount', 0);
+        $codAmount = $this->input('cod_amount');
+        $bankTransferAmount = $this->input('bank_transfer_amount');
+        $amount = $this->input('amount');
+        $paymentMode = $this->input('payment_mode');
+
+        if ($codAmount === null && $bankTransferAmount === null && $amount === null) {
+            return;
+        }
+
+        if ($codAmount === null && $bankTransferAmount === null && $amount !== null) {
+            $amountVal = (float) $amount;
+            if ($paymentMode === 'Cash') {
+                $codAmount = $amountVal;
+                $bankTransferAmount = 0.00;
+            } else {
+                $codAmount = 0.00;
+                $bankTransferAmount = $amountVal;
+            }
+        } else {
+            $codAmount = (float) ($codAmount ?? 0);
+            $bankTransferAmount = (float) ($bankTransferAmount ?? 0);
+            $amount = round($codAmount + $bankTransferAmount, 2);
+            $paymentMode = ($codAmount > 0 && $bankTransferAmount <= 0) ? 'Cash' : 'Bank Transfer';
+        }
 
         $this->merge([
-            'amount' => round($codAmount + $bankTransferAmount, 2),
-            'payment_mode' => $codAmount > 0 && $bankTransferAmount <= 0 ? 'Cash' : 'Bank Transfer',
+            'cod_amount'           => $codAmount,
+            'bank_transfer_amount' => $bankTransferAmount,
+            'amount'               => $amount,
+            'payment_mode'         => $paymentMode,
         ]);
     }
 

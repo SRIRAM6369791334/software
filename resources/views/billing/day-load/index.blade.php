@@ -261,7 +261,9 @@
                                             vpEntryDealer = '{{ addslashes($entry->dealer->firm_name ?? '-') }}';
                                             vpEntryCost = {{ $entry->vendor_cost }};
                                             vpEntryPaid = {{ (float) $entry->vendor_paid }};
-                                            vpAmount = {{ round($entry->vendor_cost - (float) $entry->vendor_paid, 2) }};
+                                            vpCashAmount = {{ round($entry->vendor_cost - (float) $entry->vendor_paid, 2) }};
+                                            vpBankAmount = 0;
+                                            vpBankTransferType = '';
                                         });
                                     "
                                     class="inline-flex items-center gap-1 text-xs font-medium text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300 transition-colors"
@@ -328,7 +330,9 @@
         vpEntryDealer: '',
         vpEntryCost: 0,
         vpEntryPaid: 0,
-        vpAmount: 0,
+        vpCashAmount: 0,
+        vpBankAmount: 0,
+        vpBankTransferType: '',
         vpDate: '{{ $date }}',
         vpMode: 'Cash',
         vpRefNo: '',
@@ -800,8 +804,19 @@
                         <input type="date" name="date" required x-model="vpDate" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Amount (Rs)</label>
-                        <input type="number" step="0.01" min="0.01" name="amount" required x-model.number="vpAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Cash Amount (Rs)</label>
+                        <input type="number" step="0.01" min="0" name="cash_amount" required x-model.number="vpCashAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Amount (Rs)</label>
+                        <input type="number" step="0.01" min="0" name="bank_amount" required x-model.number="vpBankAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Total</label>
+                        <p class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-sm font-jetbrains text-lg font-bold text-emerald-600" x-text="'Rs ' + (vpCashAmount + vpBankAmount).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
                     </div>
                 </div>
 
@@ -814,7 +829,20 @@
                             @endforeach
                         </select>
                     </div>
-                    <div>
+                    <div x-show="vpBankAmount > 0" x-transition>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Transfer Type</label>
+                        <select name="bank_transfer_type" x-model="vpBankTransferType" :required="vpBankAmount > 0" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                            <option value="">Select type...</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="NEFT">NEFT</option>
+                            <option value="RTGS">RTGS</option>
+                            <option value="IMPS">IMPS</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div x-show="vpBankAmount <= 0">
                         <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reference No</label>
                         <input type="text" name="reference_number" x-model="vpRefNo" placeholder="UPI ref / Cheque no / Tx ID" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
                     </div>

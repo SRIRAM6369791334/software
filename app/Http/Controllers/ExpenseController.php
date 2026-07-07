@@ -30,7 +30,9 @@ class ExpenseController extends Controller
 
     public function store(StoreExpenseRequest $request): RedirectResponse
     {
-        $this->service->createExpense($request->validated());
+        $data = $request->validated();
+        $data['payment_method'] = $data['payment_method'] ?? 'Cash';
+        $this->service->createExpense($data);
         return back()->with('success', 'Expense added successfully.');
     }
 
@@ -298,8 +300,10 @@ class ExpenseController extends Controller
             'description' => 'required|string|max:500',
             'amount'      => 'required|numeric|min:0.01',
             'date'        => 'required|date',
+            'payment_method' => 'nullable|in:Cash,Bank Transfer',
         ]);
         
+        $data['payment_method'] = $data['payment_method'] ?? 'Cash';
         $expense->update($data);
         
         return back()->with('success', 'Expense updated successfully.');

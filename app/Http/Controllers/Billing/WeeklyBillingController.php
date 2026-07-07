@@ -28,7 +28,18 @@ class WeeklyBillingController extends Controller
     public function index(Request $request): View
     {
         $search = $request->input('search');
-        
+
+        // Compute true totals from the full dataset (not paginated)
+        $outstandingDuesTotal = WeeklyBill::search($search)
+            ->where('status', 'Pending')
+            ->selectRaw('SUM(COALESCE(net_amount, amount)) as total')
+            ->value('total') ?? 0;
+
+        $paidRevenueTotal = WeeklyBill::search($search)
+            ->where('status', 'Paid')
+            ->selectRaw('SUM(COALESCE(net_amount, amount)) as total')
+            ->value('total') ?? 0;
+
         $bills = WeeklyBill::with(['dealer', 'items'])
             ->search($search)
             ->latest()
@@ -42,7 +53,10 @@ class WeeklyBillingController extends Controller
         $dealers = Dealer::orderBy('firm_name')->get();
         $items = Item::active()->get();
 
-        return view('billing.weekly.index', compact('bills', 'purchases', 'dealers', 'search', 'items'));
+        return view('billing.weekly.index', compact(
+            'bills', 'purchases', 'dealers', 'search', 'items',
+            'outstandingDuesTotal', 'paidRevenueTotal'
+        ));
     }
 
     public function bulk(): View
@@ -133,16 +147,51 @@ class WeeklyBillingController extends Controller
      */
     public function paySplit(Request $request, WeeklyBill $weekly, string $part): RedirectResponse
     {
-        $request->validate([
-            'payment_mode' => 'required|in:Cash,UPI,NEFT,Cheque(Bank Transfer)',
-            'notes'        => 'nullable|string|max:500',
+        $expectedAmount = 0.0;
+        if ($part === 'monday') {
+            $expectedAmount = (float) $weekly->monday_payment_amount;
+        } elseif ($part === 'friday') {
+            $expectedAmount = (float) $weekly->friday_payment_amount;
+        }
+
+        if (!$request->has('cash_amount') && !$request->has('bank_amount')) {
+            if ($request->input('payment_mode') === 'Cash') {
+                $request->merge([
+                    'cash_amount' => $expectedAmount,
+                    'bank_amount' => 0.0,
+                ]);
+            } else {
+                $request->merge([
+                    'cash_amount' => 0.0,
+                    'bank_amount' => $expectedAmount,
+                ]);
+            }
+        }
+
+        $validated = $request->validate([
+            'cash_amount'        => 'required|numeric|min:0',
+            'bank_amount'        => 'required|numeric|min:0',
+            'payment_mode'       => 'required|in:Cash,UPI,NEFT,Cheque(Bank Transfer)',
+            'bank_transfer_type' => 'nullable|required_if:bank_amount,>0|in:UPI,Bank Transfer,NEFT,RTGS,IMPS,Cheque,Other',
+            'notes'              => 'nullable|string|max:500',
         ]);
+
+        $cashAmount = (float) $validated['cash_amount'];
+        $bankAmount = (float) $validated['bank_amount'];
+        $totalPaid = round($cashAmount + $bankAmount, 2);
+
+        if (abs($totalPaid - $expectedAmount) > 0.01) {
+            return back()->with('error', "Total payment must equal the expected split amount of Rs " . number_format($expectedAmount, 2));
+        }
 
         try {
             $this->billingService->recordSplitPayment($weekly->id, $part, [
-                'payment_mode' => $request->input('payment_mode'),
-                'notes'        => $request->input('notes'),
-                'date'         => now()->format('Y-m-d'),
+                'payment_mode'       => $validated['payment_mode'],
+                'cash_amount'        => $cashAmount,
+                'bank_amount'        => $bankAmount,
+                'bank_transfer_type' => $validated['bank_transfer_type'] ?? null,
+                'notes'              => $validated['notes'],
+                'date'               => now()->format('Y-m-d'),
             ]);
         } catch (\Exception $e) {
             return back()->with('error', 'Could not record split payment: ' . $e->getMessage());

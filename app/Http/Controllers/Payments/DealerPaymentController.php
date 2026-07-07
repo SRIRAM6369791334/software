@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Payments;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Payments\StoreDealerPaymentRequest;
 use App\Models\Dealer;
+use App\Models\DealerPayment;
 use App\Services\DealerPaymentService;
 use App\Services\ExportService;
 use Illuminate\Http\RedirectResponse;
@@ -21,10 +22,26 @@ class DealerPaymentController extends Controller
 
     public function index(Request $request): View
     {
-        $search   = $request->input('search');
-        $payments = $this->service->paginated($search, 15);
-        $dealers  = Dealer::orderBy('firm_name')->get();
-        return view('payments.dealers', compact('payments', 'dealers', 'search'));
+        $search       = $request->input('search');
+        $dealerFilter = $request->input('dealer_id');
+        $dateFrom     = $request->input('date_from');
+        $dateTo       = $request->input('date_to');
+        $modeFilter   = $request->input('payment_mode');
+
+        $payments = DealerPayment::with('dealer')
+            ->search($search)
+            ->when($dealerFilter, fn($q) => $q->where('dealer_id', $dealerFilter))
+            ->when($dateFrom, fn($q) => $q->whereDate('date', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->whereDate('date', '<=', $dateTo))
+            ->when($modeFilter, fn($q) => $q->where('payment_mode', $modeFilter))
+            ->latest('date')
+            ->paginate(15);
+
+        $dealers = Dealer::orderBy('firm_name')->get();
+        return view('payments.dealers', compact(
+            'payments', 'dealers', 'search',
+            'dealerFilter', 'dateFrom', 'dateTo', 'modeFilter'
+        ));
     }
 
     public function create(Request $request): View
@@ -37,6 +54,10 @@ class DealerPaymentController extends Controller
     public function store(StoreDealerPaymentRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+        
+        if ((float) $validated['cash_amount'] + (float) $validated['bank_amount'] <= 0) {
+            return back()->with('error', 'Total payout amount must be greater than zero.');
+        }
         
         // 1. Record payment (Service handles deduction)
         $payment = $this->service->record($validated);

@@ -19,15 +19,42 @@ class DealerPaymentService
     public function record(array $data): DealerPayment
     {
         $dealer = Dealer::findOrFail($data['dealer_id']);
-        $dealer->decrement('pending_amount', abs($data['amount']));
+        
+        $cashAmount = isset($data['cash_amount']) ? (float) $data['cash_amount'] : 0.00;
+        $bankAmount = isset($data['bank_amount']) ? (float) $data['bank_amount'] : 0.00;
+        
+        // Fallback for old tests / seeds
+        if (!isset($data['cash_amount']) && !isset($data['bank_amount'])) {
+            $amount = (float) ($data['amount'] ?? 0);
+            if (($data['payment_mode'] ?? 'Cash') === 'Cash') {
+                $cashAmount = $amount;
+                $bankAmount = 0.00;
+            } else {
+                $cashAmount = 0.00;
+                $bankAmount = $amount;
+            }
+        }
+        
+        $amount = round($cashAmount + $bankAmount, 2);
+        
+        $dealer->decrement('pending_amount', abs($amount));
         
         // Prevent negative balance
         if ($dealer->pending_amount < 0) {
             $dealer->update(['pending_amount' => 0]);
         }
 
+        $data['amount'] = $amount;
+        $data['cash_amount'] = $cashAmount;
+        $data['bank_amount'] = $bankAmount;
         $data['pending_balance_after'] = $dealer->pending_amount;
-        return DealerPayment::create($data);
+        
+        $payment = DealerPayment::create($data);
+        
+        // Recalculate cash/bank ledger
+        app(CashBankLedgerService::class)->recalculateForDate(now());
+        
+        return $payment;
     }
 
     public function allForExport(): \Illuminate\Database\Eloquent\Collection

@@ -192,6 +192,7 @@ Route::middleware(['auth'])->group(function () {
 
             // Cash & Bank Ledger (route names are placeholders; sidebar menu placement to be finalized by project owner)
             Route::get('cash-bank-ledger', [CashBankLedgerController::class, 'index'])->name('cash-bank-ledger.index');
+            Route::get('cash-bank-ledger/{date}/details', [CashBankLedgerController::class, 'showDay'])->name('cash-bank-ledger.show-day');
             Route::post('cash-bank-ledger/{ledger}/approve', [CashBankLedgerController::class, 'approve'])->name('cash-bank-ledger.approve');
 
             Route::post('weekly/bulk', [WeeklyBillingController::class, 'bulkStore'])->name('weekly.bulkStore');
@@ -224,8 +225,8 @@ Route::middleware(['auth'])->group(function () {
         });
 
         permissionResource('customers', CustomerPaymentController::class, 'payments');
-        Route::get('dealers', fn () => redirect()->route('billing.weekly.index'))->name('dealers.index')->middleware('permission:view payments');
-        Route::get('dealers/create', fn () => redirect()->route('billing.weekly.index'))->name('dealers.create')->middleware('permission:create payments');
+        Route::get('dealers', [DealerPaymentController::class, 'index'])->name('dealers.index')->middleware('permission:view payments');
+        Route::get('dealers/create', [DealerPaymentController::class, 'create'])->name('dealers.create')->middleware('permission:create payments');
         Route::post('dealers', [DealerPaymentController::class, 'store'])->name('dealers.store')->middleware('permission:create payments');
     });
 

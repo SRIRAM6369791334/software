@@ -16,6 +16,9 @@ class VendorPayment extends Model
         'date',
         'amount',
         'payment_mode',
+        'cash_amount',
+        'bank_amount',
+        'bank_transfer_type',
         'reference_number',
         'notes',
         'pending_balance_after',
@@ -24,6 +27,8 @@ class VendorPayment extends Model
     protected $casts = [
         'date' => 'date',
         'amount' => 'decimal:2',
+        'cash_amount' => 'decimal:2',
+        'bank_amount' => 'decimal:2',
         'pending_balance_after' => 'decimal:2',
     ];
 

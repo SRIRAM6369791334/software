@@ -15,6 +15,7 @@ class StoreExpenseRequest extends FormRequest
             'description' => 'required|string|max:500',
             'amount'      => 'required|numeric|min:0.01',
             'date'        => 'required|date',
+            'payment_method' => 'nullable|in:Cash,Bank Transfer',
         ];
     }
 }

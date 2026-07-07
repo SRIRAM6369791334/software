@@ -44,7 +44,7 @@
                     <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">General Expense Ledger</h2>
                 </div>
                 
-                <x-data-table :headers="['Date', 'Category', 'Description', 'Amount', 'Action']">
+                <x-data-table :headers="['Date', 'Category', 'Description', 'Payment Method', 'Amount', 'Action']">
                     @forelse($expenses as $e)
                         <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors group">
                             <td class="px-6 py-4 font-medium text-zinc-900 dark:text-zinc-100">
@@ -55,6 +55,11 @@
                             </td>
                             <td class="px-6 py-4 text-zinc-600 dark:text-zinc-400">
                                 {{ $e->description }}
+                            </td>
+                            <td class="px-6 py-4">
+                                <x-badge :variant="$e->payment_method === 'Bank Transfer' ? 'info' : 'zinc'">
+                                    {{ $e->payment_method ?? 'Cash' }}
+                                </x-badge>
                             </td>
                             <td class="px-6 py-4 font-jetbrains font-medium text-rose-600 dark:text-rose-400">
                                 <x-currency :amount="$e->amount" />
@@ -152,8 +157,12 @@
             <x-form.input name="description" label="Description" required placeholder="What was this expense for?" />
         </div>
 
-        <div class="mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <x-form.input type="number" name="amount" label="Amount (Rs)" required step="0.01" min="0.01" placeholder="0.00" class="text-xl font-bold" />
+            <x-form.select name="payment_method" label="Payment Method" required>
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+            </x-form.select>
         </div>
 
         <x-slot:footer>

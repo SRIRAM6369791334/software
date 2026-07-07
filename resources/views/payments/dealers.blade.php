@@ -26,7 +26,7 @@
             color="blue" />
         <x-stat-card 
             label="Payable to Dealers" 
-            value="Rs {{ number_format($dealers->sum('pending_amount'), 0) }}" 
+            value="Rs {{ number_format($dealers->sum(fn($d) => $d->displayed_outstanding), 0) }}" 
             icon="error" 
             color="rose" />
         <x-stat-card 
@@ -38,15 +38,88 @@
             :trendUp="true" />
     </div>
 
+    {{-- Filter Bar --}}
+    <div class="mb-6 p-4 bg-zinc-50/50 dark:bg-zinc-800/30 rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50"
+         x-data="{
+            setDates(period) {
+                const now = new Date();
+                const to = now.toISOString().split('T')[0];
+                let from;
+                if (period === 'today') { from = to; }
+                else if (period === '7d') { from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; }
+                else if (period === '30d') { from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; }
+                else if (period === 'month') { from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]; }
+                $refs.dateFrom.value = from;
+                $refs.dateTo.value = to;
+                $refs.filterForm.submit();
+            }
+         }">
+        <form method="GET" x-ref="filterForm" class="flex flex-wrap gap-3 items-end">
+            <div>
+                <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">Dealer</label>
+                <select name="dealer_id" class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm min-w-[160px]">
+                    <option value="">All Dealers</option>
+                    @foreach($dealers as $d)
+                        <option value="{{ $d->id }}" {{ ($dealerFilter ?? '') == $d->id ? 'selected' : '' }}>{{ $d->firm_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">From</label>
+                <input type="date" name="date_from" x-ref="dateFrom" value="{{ $dateFrom ?? '' }}" class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">To</label>
+                <input type="date" name="date_to" x-ref="dateTo" value="{{ $dateTo ?? '' }}" class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">Mode</label>
+                <select name="payment_mode" class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm min-w-[120px]">
+                    <option value="">All Modes</option>
+                    <option value="Cash" {{ ($modeFilter ?? '') === 'Cash' ? 'selected' : '' }}>Cash</option>
+                    <option value="UPI" {{ ($modeFilter ?? '') === 'UPI' ? 'selected' : '' }}>UPI</option>
+                    <option value="NEFT" {{ ($modeFilter ?? '') === 'NEFT' ? 'selected' : '' }}>NEFT</option>
+                    <option value="Cheque(Bank Transfer)" {{ ($modeFilter ?? '') === 'Cheque(Bank Transfer)' ? 'selected' : '' }}>Cheque</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">&nbsp;</label>
+                <x-button type="submit" variant="primary" icon="filter_alt" size="sm">Filter</x-button>
+            </div>
+            @if($dealerFilter || $dateFrom || $dateTo || $modeFilter)
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">&nbsp;</label>
+                    <a href="{{ route('payments.dealers.index') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 dark:hover:bg-rose-900/20 dark:hover:border-rose-800 dark:hover:text-rose-400 transition-all">
+                        <span class="material-symbols-rounded text-[16px]">close</span>
+                        Clear
+                    </a>
+                </div>
+            @endif
+            <div class="flex gap-1.5 ml-auto items-end">
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">&nbsp;</label>
+                    <div class="flex gap-1.5">
+                        <button type="button" @click="setDates('today')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:border-emerald-800 dark:hover:text-emerald-400 transition-all">Today</button>
+                        <button type="button" @click="setDates('7d')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:border-emerald-800 dark:hover:text-emerald-400 transition-all">7 Days</button>
+                        <button type="button" @click="setDates('30d')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:border-emerald-800 dark:hover:text-emerald-400 transition-all">30 Days</button>
+                        <button type="button" @click="setDates('month')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:border-emerald-800 dark:hover:text-emerald-400 transition-all">This Month</button>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">Search</label>
+                <div class="relative">
+                    <span class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-[18px] pointer-events-none">search</span>
+                    <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Dealer or reference..." class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 pl-10 text-sm min-w-[180px]">
+                </div>
+            </div>
+        </form>
+    </div>
+
     {{-- Table Card --}}
     <x-card>
         <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50">
-            <form method="GET" class="relative max-w-sm">
-                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-zinc-400">
-                    <span class="material-symbols-rounded text-xl">search</span>
-                </div>
-                <input type="text" name="search" value="{{ $search ?? '' }}" class="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-xl focus:ring-emerald-500 focus:border-emerald-500 block w-full pl-10 p-2.5 transition-colors font-outfit" placeholder="Search dealer or reference…">
-            </form>
+            <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">{{ $payments->total() }} payment{{ $payments->total() !== 1 ? 's' : '' }} found</p>
         </div>
         
         <x-data-table :headers="['Dealer / Firm', 'Payout Date', 'Amount Paid', 'Payment Mode', 'Cash / Bank', 'Balance After', 'Actions']">

@@ -61,7 +61,7 @@
             @forelse($topDealers as $d)
                 <tr>
                     <td class="font-medium text-zinc-950">{{ $d->firm_name }}</td>
-                    <td class="text-right font-mono font-bold text-amber-600"><x-currency :amount="$d->pending_amount" /></td>
+                    <td class="text-right font-mono font-bold text-amber-600"><x-currency :amount="$d->displayed_outstanding" /></td>
                 </tr>
             @empty
                 <tr><td colspan="2" class="text-center text-zinc-500 py-6">No pending payments</td></tr>

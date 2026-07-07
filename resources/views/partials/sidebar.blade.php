@@ -28,6 +28,8 @@
 
         ['header' => 'Finance & Payments'],
         ['label' => 'Customer Payments', 'icon' => 'credit_card', 'route' => 'payments.customers.index', 'permission' => 'view payments'],
+        ['label' => 'Dealer Payments', 'icon' => 'payments', 'route' => 'payments.dealers.index', 'permission' => 'view payments'],
+        ['label' => 'Cash & Bank Ledger', 'icon' => 'account_balance', 'route' => 'billing.cash-bank-ledger.index', 'permission' => 'create bills'],
         ['label' => 'Expenses', 'icon' => 'account_balance_wallet', 'route' => 'expenses.index', 'permission' => 'view expenses'],
         ['label' => 'EMI Records', 'icon' => 'notifications_active', 'route' => 'expenses.emis.index', 'permission' => 'view emis'],
         

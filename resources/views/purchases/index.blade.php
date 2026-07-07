@@ -30,7 +30,7 @@
         <x-stat-card label="Items" value="{{ number_format($dailyItemCount, 0) }}" icon="inventory_2" color="violet" />
     </div>
 
-    @can('create purchases')
+    <!-- @can('create purchases')
     {{-- Inline Form Block --}}
     <x-card class="transition-all duration-300" x-data="{ showForm: false }" x-bind:class="showForm ? 'ring-4 ring-emerald-50 dark:ring-emerald-900/30 border-emerald-100 dark:border-emerald-800' : 'hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]'">
         <div class="flex justify-between items-center cursor-pointer" @click="showForm = !showForm">
@@ -187,10 +187,10 @@
             </form>
         </div>
     </x-card>
-    @endcan
+    @endcan -->
 
     {{-- Date Filter + Daily Purchases --}}
-    <x-card>
+    <!-- <x-card>
         <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">Daily Purchases</h2>
             <form method="GET" class="flex flex-col sm:flex-row gap-3">
@@ -279,7 +279,7 @@
                 </x-slot:pagination>
             @endif
         </x-data-table>
-    </x-card>
+    </x-card> -->
 
     {{-- Edit Purchase Modal --}}
     <x-modal name="edit-purchase-modal" title="Edit Purchase" subtitle="Update vendor, items, or payment details" icon="edit" maxWidth="2xl">
@@ -369,6 +369,61 @@
             </div>
         </div>
 
+        {{-- Filter Form --}}
+        <div class="mb-6 p-4 bg-zinc-50/50 dark:bg-zinc-800/30 rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50"
+             x-data="{
+                setDates(period) {
+                    const now = new Date();
+                    const to = now.toISOString().split('T')[0];
+                    let from;
+                    if (period === 'today') {
+                        from = to;
+                    } else if (period === '7d') {
+                        from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                    } else if (period === '30d') {
+                        from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                    } else if (period === 'month') {
+                        from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                    }
+                    $refs.dateFrom.value = from;
+                    $refs.dateTo.value = to;
+                    $refs.filterForm.submit();
+                }
+             }">
+            <form method="GET" action="{{ route('purchases.entry') }}" x-ref="filterForm" class="flex flex-wrap gap-3 items-end">
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">Vendor</label>
+                    <select name="vendor_filter" class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm min-w-[160px]">
+                        <option value="">All Vendors</option>
+                        @foreach($vendors as $v)
+                            <option value="{{ $v->id }}" {{ $vendorFilter == $v->id ? 'selected' : '' }}>{{ $v->firm_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">From</label>
+                    <input type="date" name="date_from" x-ref="dateFrom" value="{{ $dateFrom }}" class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">To</label>
+                    <input type="date" name="date_to" x-ref="dateTo" value="{{ $dateTo }}" class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                </div>
+                <x-button type="submit" variant="primary" icon="filter_alt" size="sm">Filter</x-button>
+                @if($vendorFilter || $dateFrom || $dateTo)
+                    <a href="{{ route('purchases.entry') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 dark:hover:bg-rose-900/20 dark:hover:border-rose-800 dark:hover:text-rose-400 transition-all">
+                        <span class="material-symbols-rounded text-[16px]">close</span>
+                        Clear Filters
+                    </a>
+                @endif
+                <div class="flex gap-1.5 ml-auto">
+                    <button type="button" @click="setDates('today')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:border-emerald-800 dark:hover:text-emerald-400 transition-all">Today</button>
+                    <button type="button" @click="setDates('7d')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:border-emerald-800 dark:hover:text-emerald-400 transition-all">7 Days</button>
+                    <button type="button" @click="setDates('30d')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:border-emerald-800 dark:hover:text-emerald-400 transition-all">30 Days</button>
+                    <button type="button" @click="setDates('month')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:border-emerald-800 dark:hover:text-emerald-400 transition-all">This Month</button>
+                </div>
+            </form>
+        </div>
+
         <x-data-table :headers="['Date', 'Vendor', ['label' => 'Boxes', 'align' => 'right'], ['label' => 'Bird Weight', 'align' => 'right'], ['label' => 'Farm Weight', 'align' => 'right'], ['label' => 'Loss', 'align' => 'right']]">
             @forelse($vendorDayLoads as $entry)
                 <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
@@ -403,7 +458,7 @@
         </x-data-table>
     </x-card>
 
-    {{-- 5. All Purchase History --}}
+    <!-- {{-- 5. All Purchase History --}}
     <x-card>
         <div class="flex flex-col sm:flex-row gap-4 mb-6 justify-between items-center">
             <h2 class="text-lg font-bold text-zinc-900 dark:text-zinc-100">All Purchase History</h2>
@@ -484,7 +539,7 @@
                 {{ $purchases->withQueryString()->links() }}
             </div>
         @endif
-    </x-card>
+    </x-card> -->
 
 </div>
 @endsection

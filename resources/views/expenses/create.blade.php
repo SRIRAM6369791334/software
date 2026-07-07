@@ -30,8 +30,12 @@
                     </x-form.select>
                 </div>
 
-                <div class="mb-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
                     <x-form.input type="number" name="amount" label="Amount (Rs)" required step="0.01" placeholder="0.00" class="text-xl font-bold" />
+                    <x-form.select name="payment_method" label="Payment Method" required>
+                        <option value="Cash" {{ old('payment_method') === 'Cash' ? 'selected' : '' }}>Cash</option>
+                        <option value="Bank Transfer" {{ old('payment_method') === 'Bank Transfer' ? 'selected' : '' }}>Bank Transfer</option>
+                    </x-form.select>
                 </div>
 
                 <div class="mb-6">

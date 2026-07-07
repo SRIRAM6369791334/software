@@ -120,7 +120,7 @@
     </x-card>
     @endif
 
-    {{-- Purchases Section --}}
+    <!-- {{-- Purchases Section --}}
     <x-card>
         <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50">
             <div class="flex items-center gap-2">
@@ -232,7 +232,7 @@
                 description="No purchase invoices were recorded for this day." />
         </div>
         @endif
-    </x-card>
+    </x-card> -->
 
     {{-- Edit Purchase Modal --}}
     <x-modal name="edit-purchase-modal" title="Edit Purchase" subtitle="Update vendor, items, or payment details" icon="edit" maxWidth="2xl">

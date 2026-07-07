@@ -41,7 +41,7 @@
                         {{ number_format($vendor->outstanding_balance, 2) }}
                     </div>
                     
-                    <form action="{{ route('payments.vendors.payments.store', $vendor) }}" method="POST" class="text-left space-y-4 bg-white/80 dark:bg-zinc-900/80 p-5 rounded-[1.25rem] backdrop-blur-xl shadow-sm border border-white/50 dark:border-zinc-700/50">
+                    <form action="{{ route('payments.vendors.payments.store', $vendor) }}" method="POST" class="text-left space-y-4 bg-white/80 dark:bg-zinc-900/80 p-5 rounded-[1.25rem] backdrop-blur-xl shadow-sm border border-white/50 dark:border-zinc-700/50" x-data="{ cashAmount: 0, bankAmount: 0 }">
                         @csrf
                         <div class="space-y-1.5">
                             <label class="text-[11px] font-extrabold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 pl-1">Date</label>
@@ -49,13 +49,18 @@
                         </div>
                         
                         <div class="space-y-1.5">
-                            <label class="text-[11px] font-extrabold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 pl-1">Amount</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <span class="text-zinc-500 font-bold">₹</span>
-                                </div>
-                                <input type="number" name="amount" min="1" step="0.01" placeholder="0.00" required class="w-full pl-9 pr-4 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 rounded-xl border border-zinc-200/80 dark:border-zinc-700/80 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 bg-white/50 dark:bg-zinc-800/50 transition-all duration-300 shadow-sm outline-none placeholder:text-zinc-400">
-                            </div>
+                            <label class="text-[11px] font-extrabold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 pl-1">Cash Amount</label>
+                            <input type="number" name="cash_amount" min="0" step="0.01" placeholder="0.00" x-model.number="cashAmount" required class="w-full px-4 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 rounded-xl border border-zinc-200/80 dark:border-zinc-700/80 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 bg-white/50 dark:bg-zinc-800/50 transition-all duration-300 shadow-sm outline-none">
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-extrabold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 pl-1">Bank Amount</label>
+                            <input type="number" name="bank_amount" min="0" step="0.01" placeholder="0.00" x-model.number="bankAmount" required class="w-full px-4 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 rounded-xl border border-zinc-200/80 dark:border-zinc-700/80 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 bg-white/50 dark:bg-zinc-800/50 transition-all duration-300 shadow-sm outline-none">
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-extrabold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 pl-1">Total</label>
+                            <div class="w-full px-4 py-2.5 text-sm font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/20 rounded-xl border border-rose-200 dark:border-rose-900 shadow-sm" x-text="'₹ ' + (cashAmount + bankAmount).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></div>
                         </div>
 
                         <div class="space-y-1.5">
@@ -65,6 +70,20 @@
                                 <option value="UPI">UPI</option>
                                 <option value="NEFT">NEFT</option>
                                 <option value="Cheque">Cheque</option>
+                            </select>
+                        </div>
+
+                        <div class="space-y-1.5" x-show="bankAmount > 0" x-transition>
+                            <label class="text-[11px] font-extrabold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 pl-1">Bank Transfer Type</label>
+                            <select name="bank_transfer_type" :required="bankAmount > 0" class="w-full px-4 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 rounded-xl border border-zinc-200/80 dark:border-zinc-700/80 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 bg-white/50 dark:bg-zinc-800/50 transition-all duration-300 shadow-sm outline-none">
+                                <option value="">Select type...</option>
+                                <option value="UPI">UPI</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="NEFT">NEFT</option>
+                                <option value="RTGS">RTGS</option>
+                                <option value="IMPS">IMPS</option>
+                                <option value="Cheque">Cheque</option>
+                                <option value="Other">Other</option>
                             </select>
                         </div>
 

@@ -2,7 +2,7 @@
 @section('title', 'Dealer Billing System')
 
 @section('content')
-<div class="animate-fade-in" x-data="{ activeTab: 'invoices', payBillId: null, payPart: '', payAmount: 0 }">
+<div class="animate-fade-in" x-data="{ activeTab: 'invoices', payBillId: null, payPart: '', payAmount: 0, payCashAmount: 0, payBankAmount: 0, payBankTransferType: '' }">
     <x-page-header title="Dealer Billing & Purchases" subtitle="Record daily purchases, calculate weekly cycles, manage Monday/Friday split payments, and view ledger logs">
         <x-slot:actions>
             <x-button variant="outline" href="{{ route('billing.weekly.dealer-invoice') }}" icon="receipt_long">
@@ -23,13 +23,13 @@
             color="indigo" />
         <x-stat-card 
             label="Outstanding Dues" 
-            value="Rs {{ number_format($bills->where('status', 'Pending')->sum(fn($b) => $b->net_amount ?? $b->amount), 0) }}" 
+            value="Rs {{ number_format($outstandingDuesTotal, 0) }}" 
             icon="pending_actions" 
             color="amber" />
         <div class="rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 dark:from-indigo-600 dark:to-indigo-800 p-6 shadow-sm text-white flex items-center justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/20">
             <div>
                 <p class="font-outfit text-sm font-medium text-indigo-100">Total Revenue</p>
-                <p class="font-jetbrains mt-2 text-3xl font-bold tracking-tight">Rs {{ number_format($bills->where('status', 'Paid')->sum(fn($b) => $b->net_amount ?? $b->amount), 0) }}</p>
+                <p class="font-jetbrains mt-2 text-3xl font-bold tracking-tight">Rs {{ number_format($paidRevenueTotal, 0) }}</p>
             </div>
             <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
                 <span class="material-symbols-rounded text-2xl">account_balance_wallet</span>
@@ -43,10 +43,10 @@
             <span class="material-symbols-rounded text-lg">receipt_long</span>
             Weekly Invoices
         </button>
-        <button @click="activeTab = 'record_purchase'" :class="activeTab === 'record_purchase' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-white'" class="px-5 py-3 text-sm font-bold border-b-2 transition-colors duration-200 focus:outline-none flex items-center gap-2">
+        <!-- <button @click="activeTab = 'record_purchase'" :class="activeTab === 'record_purchase' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-white'" class="px-5 py-3 text-sm font-bold border-b-2 transition-colors duration-200 focus:outline-none flex items-center gap-2">
             <span class="material-symbols-rounded text-lg">add_circle</span>
             Record Daily Purchase
-        </button>
+        </button> -->
         <button @click="activeTab = 'purchase_log'" :class="activeTab === 'purchase_log' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400' : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-white'" class="px-5 py-3 text-sm font-bold border-b-2 transition-colors duration-200 focus:outline-none flex items-center gap-2">
             <span class="material-symbols-rounded text-lg">history</span>
             Purchase Log
@@ -113,7 +113,7 @@
                                     @else
                                         <div class="flex items-center gap-2">
                                             <x-badge variant="warning">PENDING</x-badge>
-                                            <button @click="payBillId = {{ $bill->id }}; payPart = 'monday'; payAmount = {{ $bill->monday_payment_amount }};" class="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold px-2 py-1 rounded transition-all">Pay</button>
+                                            <button @click="payBillId = {{ $bill->id }}; payPart = 'monday'; payAmount = {{ $bill->monday_payment_amount }}; payCashAmount = {{ $bill->monday_payment_amount }}; payBankAmount = 0; payBankTransferType = '';" class="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold px-2 py-1 rounded transition-all">Pay</button>
                                         </div>
                                     @endif
                                 </div>
@@ -125,7 +125,7 @@
                                     @else
                                         <div class="flex items-center gap-2">
                                             <x-badge variant="warning">PENDING</x-badge>
-                                            <button @click="payBillId = {{ $bill->id }}; payPart = 'friday'; payAmount = {{ $bill->friday_payment_amount }};" class="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold px-2 py-1 rounded transition-all">Pay</button>
+                                            <button @click="payBillId = {{ $bill->id }}; payPart = 'friday'; payAmount = {{ $bill->friday_payment_amount }}; payCashAmount = {{ $bill->friday_payment_amount }}; payBankAmount = 0; payBankTransferType = '';" class="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold px-2 py-1 rounded transition-all">Pay</button>
                                         </div>
                                     @endif
                                 </div>
@@ -432,8 +432,27 @@
                 @csrf
                 <div class="space-y-4 mb-6">
                     <div class="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-3 text-center">
-                        <span class="text-xs text-zinc-500 uppercase font-bold block mb-1">Paying Amount</span>
+                        <span class="text-xs text-zinc-500 uppercase font-bold block mb-1">Total Expected Amount</span>
                         <span class="text-2xl font-black font-jetbrains text-indigo-600 dark:text-indigo-400" x-text="'₹' + payAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })"></span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Cash Amount (Rs) <span class="text-rose-500">*</span></label>
+                            <input type="number" step="0.01" min="0" name="cash_amount" required x-model.number="payCashAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Amount (Rs) <span class="text-rose-500">*</span></label>
+                            <input type="number" step="0.01" min="0" name="bank_amount" required x-model.number="payBankAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
+                        </div>
+                    </div>
+
+                    <div class="bg-indigo-50 dark:bg-indigo-950/20 rounded-lg p-2.5 text-center border border-indigo-100 dark:border-indigo-900">
+                        <span class="text-[10px] text-zinc-500 uppercase font-bold block">Total Entered</span>
+                        <span class="text-lg font-black font-jetbrains text-emerald-600 dark:text-emerald-400" x-text="'₹' + (payCashAmount + payBankAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })"></span>
+                        <p class="text-[10px] mt-1 font-bold text-rose-500" x-show="Math.abs(payCashAmount + payBankAmount - payAmount) > 0.01">
+                            Must equal expected ₹<span x-text="payAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })"></span>
+                        </p>
                     </div>
 
                     <x-form.select name="payment_mode" label="Payment Mode" required>
@@ -442,6 +461,20 @@
                         <option value="NEFT">NEFT</option>
                         <option value="Cheque(Bank Transfer)">Cheque(Bank Transfer)</option>
                     </x-form.select>
+
+                    <div x-show="payBankAmount > 0" x-transition>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Transfer Type</label>
+                        <select name="bank_transfer_type" x-model="payBankTransferType" :required="payBankAmount > 0" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                            <option value="">Select type...</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="NEFT">NEFT</option>
+                            <option value="RTGS">RTGS</option>
+                            <option value="IMPS">IMPS</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
 
                     <x-form.input type="text" name="notes" label="Notes (Optional)" placeholder="e.g. Received via GPay" />
                 </div>
