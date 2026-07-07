@@ -15,8 +15,10 @@ return new class extends Migration
         $this->normalizeBillStatuses('daily_bills');
         $this->normalizeBillStatuses('weekly_bills');
 
-        DB::statement("ALTER TABLE `daily_bills` MODIFY `status` ENUM('COD', 'Pending', 'Bank') NOT NULL DEFAULT 'Pending'");
-        DB::statement("ALTER TABLE `weekly_bills` MODIFY `status` ENUM('COD', 'Pending', 'Bank') NOT NULL DEFAULT 'Pending'");
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE `daily_bills` MODIFY `status` ENUM('COD', 'Pending', 'Bank') NOT NULL DEFAULT 'Pending'");
+            DB::statement("ALTER TABLE `weekly_bills` MODIFY `status` ENUM('COD', 'Pending', 'Bank') NOT NULL DEFAULT 'Pending'");
+        }
 
         Schema::table('daily_bills', function (Blueprint $table) {
             $table->enum('bank_method', ['UPI', 'Cheque', 'NEFT'])->nullable()->after('payment_mode');
@@ -37,8 +39,10 @@ return new class extends Migration
             $table->dropColumn('bank_method');
         });
 
-        DB::statement("ALTER TABLE `daily_bills` MODIFY `status` VARCHAR(255) NOT NULL DEFAULT 'Pending'");
-        DB::statement("ALTER TABLE `weekly_bills` MODIFY `status` VARCHAR(255) NOT NULL DEFAULT 'Pending'");
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE `daily_bills` MODIFY `status` VARCHAR(255) NOT NULL DEFAULT 'Pending'");
+            DB::statement("ALTER TABLE `weekly_bills` MODIFY `status` VARCHAR(255) NOT NULL DEFAULT 'Pending'");
+        }
     }
 
     private function normalizeBillStatuses(string $table): void

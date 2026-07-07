@@ -156,14 +156,14 @@
         
         <?php if (isset($component)) { $__componentOriginalc8463834ba515134d5c98b88e1a9dc03 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc8463834ba515134d5c98b88e1a9dc03 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.data-table','data' => ['headers' => ['Dealer / Firm', 'Payout Date', 'Amount Paid', 'Payment Mode', 'Balance After', 'Actions']]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.data-table','data' => ['headers' => ['Dealer / Firm', 'Payout Date', 'Amount Paid', 'Payment Mode', 'Cash / Bank', 'Balance After', 'Actions']]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('data-table'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['headers' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(['Dealer / Firm', 'Payout Date', 'Amount Paid', 'Payment Mode', 'Balance After', 'Actions'])]); ?>
+<?php $component->withAttributes(['headers' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(['Dealer / Firm', 'Payout Date', 'Amount Paid', 'Payment Mode', 'Cash / Bank', 'Balance After', 'Actions'])]); ?>
             <?php $__empty_1 = true; $__currentLoopData = $payments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $p): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                 <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors group">
                     <td class="px-6 py-4">
@@ -240,6 +240,69 @@
 <?php $component = $__componentOriginal2ddbc40e602c342e508ac696e52f8719; ?>
 <?php unset($__componentOriginal2ddbc40e602c342e508ac696e52f8719); ?>
 <?php endif; ?>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-col items-start gap-0.5">
+                            <?php
+                                $hasCash = !is_null($p->cash_amount) && $p->cash_amount > 0;
+                                $hasBank = !is_null($p->bank_amount) && $p->bank_amount > 0;
+                            ?>
+                            <?php if($hasCash || $hasBank): ?>
+                                <?php if($hasCash): ?>
+                                    <span class="text-xs font-jetbrains text-zinc-700 dark:text-zinc-300">
+                                        Cash: <?php if (isset($component)) { $__componentOriginal6ad77814db6844366c1e7089b9401721 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal6ad77814db6844366c1e7089b9401721 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.currency','data' => ['amount' => $p->cash_amount]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('currency'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['amount' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($p->cash_amount)]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal6ad77814db6844366c1e7089b9401721)): ?>
+<?php $attributes = $__attributesOriginal6ad77814db6844366c1e7089b9401721; ?>
+<?php unset($__attributesOriginal6ad77814db6844366c1e7089b9401721); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal6ad77814db6844366c1e7089b9401721)): ?>
+<?php $component = $__componentOriginal6ad77814db6844366c1e7089b9401721; ?>
+<?php unset($__componentOriginal6ad77814db6844366c1e7089b9401721); ?>
+<?php endif; ?>
+                                    </span>
+                                <?php endif; ?>
+                                <?php if($hasBank): ?>
+                                    <span class="text-xs font-jetbrains text-zinc-700 dark:text-zinc-300">
+                                        Bank: <?php if (isset($component)) { $__componentOriginal6ad77814db6844366c1e7089b9401721 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal6ad77814db6844366c1e7089b9401721 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.currency','data' => ['amount' => $p->bank_amount]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('currency'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['amount' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($p->bank_amount)]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal6ad77814db6844366c1e7089b9401721)): ?>
+<?php $attributes = $__attributesOriginal6ad77814db6844366c1e7089b9401721; ?>
+<?php unset($__attributesOriginal6ad77814db6844366c1e7089b9401721); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal6ad77814db6844366c1e7089b9401721)): ?>
+<?php $component = $__componentOriginal6ad77814db6844366c1e7089b9401721; ?>
+<?php unset($__componentOriginal6ad77814db6844366c1e7089b9401721); ?>
+<?php endif; ?>
+                                        <?php if($p->bank_transfer_type): ?>
+                                            <span class="text-[10px] text-zinc-400 ml-0.5">(<?php echo e($p->bank_transfer_type); ?>)</span>
+                                        <?php endif; ?>
+                                    </span>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <span class="text-xs text-zinc-400">—</span>
+                            <?php endif; ?>
+                        </div>
                     </td>
                     <td class="px-6 py-4 text-right">
                         <span class="font-jetbrains font-medium text-zinc-900 dark:text-zinc-100">

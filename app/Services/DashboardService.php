@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Customer;
 use App\Models\WeeklyBill;
 use App\Models\DailyBill;
+use App\Models\DayLoadInvoice;
 use App\Models\Purchase;
 use App\Models\Dealer;
 use App\Models\Emi;
@@ -27,7 +28,8 @@ class DashboardService
             $endOfMonth   = now()->endOfMonth();
 
             $monthlyRevenue  = WeeklyBill::whereBetween('period_end', [$startOfMonth, $endOfMonth])->sum('amount') +
-                               DailyBill::whereBetween('date', [$startOfMonth, $endOfMonth])->sum('amount');
+                               DailyBill::whereBetween('date', [$startOfMonth, $endOfMonth])->sum('amount') +
+                               DayLoadInvoice::whereBetween('invoice_date', [$startOfMonth, $endOfMonth])->sum('total_amount');
                                
             $monthlyPurchase = Purchase::whereBetween('date', [$startOfMonth, $endOfMonth])->sum('total_amount');
             $activeDealers   = Dealer::where('pending_amount', '>', 0)->count();

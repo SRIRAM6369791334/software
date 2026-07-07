@@ -213,12 +213,30 @@ class DayLoadBillingController extends Controller
     public function recordDealerPayment(Request $request, DayLoadEntry $entry): RedirectResponse
     {
         $validated = $request->validate([
-            'date'             => 'required|date|before_or_equal:today',
-            'amount'           => 'required|numeric|min:0.01',
-            'payment_mode'     => 'required|in:' . implode(',', config('payments.modes')),
-            'reference_number' => 'nullable|string|max:100',
-            'notes'            => 'nullable|string|max:500',
+            'date'              => 'required|date|before_or_equal:today',
+            'payment_mode'      => 'required|in:' . implode(',', config('payments.modes')),
+            'cash_amount'       => 'required|numeric|min:0',
+            'bank_amount'       => 'required|numeric|min:0',
+                'bank_transfer_type' => [
+                    function ($attribute, $value, $fail) {
+                        $bankAmount = (float) (request()->input('bank_amount') ?? 0);
+                        if ($bankAmount > 0) {
+                            if (blank($value)) {
+                                $fail('The bank transfer type field is required when bank amount is greater than 0.');
+                            } elseif (!in_array($value, ['UPI', 'Bank Transfer', 'NEFT', 'RTGS', 'IMPS', 'Cheque', 'Other'], true)) {
+                                $fail('The selected bank transfer type is invalid.');
+                            }
+                        }
+                    },
+                ],
+            'amount'            => 'nullable|numeric|min:0',
+            'reference_number'  => 'nullable|string|max:100',
+            'notes'             => 'nullable|string|max:500',
         ]);
+
+        if ((float) $validated['cash_amount'] + (float) $validated['bank_amount'] <= 0) {
+            return back()->with('error', 'Total payment amount must be greater than zero.');
+        }
 
         try {
             $this->dayLoadPaymentService->recordDealerPayment($entry, $validated);

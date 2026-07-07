@@ -12,7 +12,7 @@ class Expense extends Model
     use HasFactory;
     use SoftDeletes;
 
-    protected $fillable = ['date', 'category', 'category_id', 'description', 'amount'];
+    protected $fillable = ['date', 'category', 'category_id', 'description', 'amount', 'payment_method'];
 
     protected $casts = [
         'date'   => 'date',

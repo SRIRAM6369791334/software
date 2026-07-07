@@ -163,18 +163,48 @@ class DealerController extends Controller
             'credit' => 0,
         ]);
 
-        $payments = $dealer->payments()->get()->map(fn($p) => [
-            'date' => $p->date,
-            'desc' => "Payment Sent ({$p->payment_mode})",
-            'debit' => 0,
-            'credit' => $p->amount,
-        ]);
+        // Old-style payments only (no day-load invoice/entry link)
+        $payments = $dealer->payments()
+            ->whereNull('invoice_id')
+            ->whereNull('day_load_entry_id')
+            ->get()->map(fn($p) => [
+                'date' => $p->date,
+                'desc' => "Payment Sent ({$p->payment_mode})",
+                'debit' => 0,
+                'credit' => $p->amount,
+            ]);
 
         $ledger = $purchases->concat($payments)->sortBy('date');
 
+        // Day-load entries (non-cancelled, date from batch.billing_date)
+        $dayLoadEntries = $dealer->dayLoadEntries()
+            ->where('status', '!=', 'Cancelled')
+            ->with('batch')
+            ->get()->map(fn($e) => [
+                'date' => optional($e->batch)->billing_date ?? $e->created_at->format('Y-m-d'),
+                'desc' => "Day-Load #{$e->id} ({$e->bird_weight} kg × Rs {$e->customer_rate}/kg)",
+                'debit' => (float) $e->amount,
+                'credit' => 0,
+            ]);
+
+        // Day-load payments (linked via invoice_id or day_load_entry_id)
+        $dayLoadPayments = $dealer->payments()
+            ->where(fn($q) => $q->whereNotNull('invoice_id')
+                ->orWhereNotNull('day_load_entry_id'))
+            ->get()->map(fn($p) => [
+                'date' => $p->date->format('Y-m-d'),
+                'desc' => "Payment — {$p->payment_mode}"
+                    . ($p->reference_number ? " ({$p->reference_number})" : ''),
+                'debit' => 0,
+                'credit' => (float) $p->amount,
+            ]);
+
+        $dayLoadLedger = $dayLoadEntries->concat($dayLoadPayments)->sortBy('date');
+
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('masters.dealers.ledger_pdf', [
             'dealer' => $dealer,
-            'ledger' => $ledger
+            'ledger' => $ledger,
+            'dayLoadLedger' => $dayLoadLedger,
         ]);
 
         return $pdf->download("ledger-{$dealer->firm_name}.pdf");

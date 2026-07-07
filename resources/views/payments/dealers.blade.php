@@ -49,7 +49,7 @@
             </form>
         </div>
         
-        <x-data-table :headers="['Dealer / Firm', 'Payout Date', 'Amount Paid', 'Payment Mode', 'Balance After', 'Actions']">
+        <x-data-table :headers="['Dealer / Firm', 'Payout Date', 'Amount Paid', 'Payment Mode', 'Cash / Bank', 'Balance After', 'Actions']">
             @forelse($payments as $p)
                 <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors group">
                     <td class="px-6 py-4">
@@ -70,6 +70,31 @@
                     </td>
                     <td class="px-6 py-4 text-center">
                         <x-badge variant="zinc">{{ $p->payment_mode }}</x-badge>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-col items-start gap-0.5">
+                            @php
+                                $hasCash = !is_null($p->cash_amount) && $p->cash_amount > 0;
+                                $hasBank = !is_null($p->bank_amount) && $p->bank_amount > 0;
+                            @endphp
+                            @if ($hasCash || $hasBank)
+                                @if ($hasCash)
+                                    <span class="text-xs font-jetbrains text-zinc-700 dark:text-zinc-300">
+                                        Cash: <x-currency :amount="$p->cash_amount" />
+                                    </span>
+                                @endif
+                                @if ($hasBank)
+                                    <span class="text-xs font-jetbrains text-zinc-700 dark:text-zinc-300">
+                                        Bank: <x-currency :amount="$p->bank_amount" />
+                                        @if ($p->bank_transfer_type)
+                                            <span class="text-[10px] text-zinc-400 ml-0.5">({{ $p->bank_transfer_type }})</span>
+                                        @endif
+                                    </span>
+                                @endif
+                            @else
+                                <span class="text-xs text-zinc-400">—</span>
+                            @endif
+                        </div>
                     </td>
                     <td class="px-6 py-4 text-right">
                         <span class="font-jetbrains font-medium text-zinc-900 dark:text-zinc-100">

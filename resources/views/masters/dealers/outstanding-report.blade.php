@@ -42,9 +42,14 @@
                 <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-amber-400/20 dark:bg-amber-600/20 rounded-full blur-2xl"></div>
                 <div class="relative z-10 text-center">
                     <div class="text-xs font-bold uppercase tracking-widest text-amber-800/80 dark:text-amber-200 mb-2">Total Payable</div>
-                    <div class="text-3xl font-extrabold tracking-tight font-jetbrains mb-6 text-amber-950 dark:text-white drop-shadow-sm">
-                        Rs {{ number_format($dealer->pending_amount, 2) }}
+                    <div class="text-3xl font-extrabold tracking-tight font-jetbrains mb-2 text-amber-950 dark:text-white drop-shadow-sm">
+                        Rs {{ number_format($dealer->displayed_outstanding, 2) }}
                     </div>
+                    @if($dealer->dayload_outstanding > 0)
+                        <div class="text-xs font-medium text-amber-700/70 dark:text-amber-300 mb-6">
+                            Old: Rs {{ number_format($dealer->pending_amount, 0) }} + Day-Load: Rs {{ number_format($dealer->dayload_outstanding, 0) }}
+                        </div>
+                    @endif
                     <div class="flex flex-col gap-3">
                         <x-button href="{{ route('payments.dealers.create', ['dealer_id' => $dealer->id]) }}" variant="secondary" icon="payments" class="w-full justify-center !text-amber-700 !bg-white/80 hover:!bg-white !border-white backdrop-blur-md shadow-sm">
                             Record Payment

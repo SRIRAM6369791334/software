@@ -18,6 +18,7 @@ class DayLoadEntry extends Model
         'paper_rate',
         'billing_rate',
         'customer_rate',
+        'amount',
         'no_of_boxes',
         'box_weight',
         'empty_weight',
@@ -44,6 +45,7 @@ class DayLoadEntry extends Model
         'farm_weight' => 'decimal:2',
         'total_weight' => 'decimal:2',
         'loss_weight' => 'decimal:2',
+        'amount' => 'decimal:2',
         'dealer_collected' => 'decimal:2',
         'vendor_paid' => 'decimal:2',
         'version' => 'integer',
@@ -84,6 +86,7 @@ class DayLoadEntry extends Model
             $entry->bird_weight = $birdWeight;
             $entry->loss_weight = round($farmWeight - $birdWeight, 2);
             $entry->total_weight = round($farmWeight - $birdWeight, 2);
+            $entry->amount = round((float) $entry->bird_weight * (float) $entry->customer_rate, 2);
         });
     }
 

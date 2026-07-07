@@ -12,12 +12,16 @@ return new class extends Migration
         $this->assertEmiTypesCanBeMapped();
         $this->normalizeEmiTypes();
 
-        DB::statement("ALTER TABLE `emis` MODIFY `emi_type` ENUM('Bank', 'Finance Company') NOT NULL DEFAULT 'Bank'");
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE `emis` MODIFY `emi_type` ENUM('Bank', 'Finance Company') NOT NULL DEFAULT 'Bank'");
+        }
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE `emis` MODIFY `emi_type` VARCHAR(255) NOT NULL DEFAULT 'Bank Loan'");
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE `emis` MODIFY `emi_type` VARCHAR(255) NOT NULL DEFAULT 'Bank Loan'");
+        }
 
         DB::table('emis')
             ->where('emi_type', 'Bank')

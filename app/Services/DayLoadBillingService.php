@@ -382,6 +382,10 @@ class DayLoadBillingService
                 $this->syncInvoice($batch);
                 $invoice = $batch->invoice;
             } else {
+                $totalAmount = (float) $batch->entries()
+                    ->where('status', '!=', 'Cancelled')
+                    ->sum('amount');
+
                 $invoice = DayLoadInvoice::create([
                     'batch_id'           => $batch->id,
                     'invoice_no'         => $this->invoiceService->generateUnique('DL', 'day_load_invoices'),
@@ -393,6 +397,7 @@ class DayLoadBillingService
                     'total_farm_weight'  => $batch->total_farm_weight,
                     'total_weight'       => $batch->total_weight,
                     'total_loss_weight'  => $batch->total_loss_weight,
+                    'total_amount'       => round($totalAmount, 2),
                     'status'             => 'Draft',
                     'version'            => 1,
                 ]);
@@ -418,6 +423,10 @@ class DayLoadBillingService
             return;
         }
 
+        $totalAmount = (float) $batch->entries()
+            ->where('status', '!=', 'Cancelled')
+            ->sum('amount');
+
         $invoice->update([
             'total_boxes'        => $batch->total_boxes,
             'total_box_weight'   => $batch->total_box_weight,
@@ -426,6 +435,7 @@ class DayLoadBillingService
             'total_farm_weight'  => $batch->total_farm_weight,
             'total_weight'       => $batch->total_weight,
             'total_loss_weight'  => $batch->total_loss_weight,
+            'total_amount'       => round($totalAmount, 2),
             'version'            => $invoice->version + 1,
         ]);
     }

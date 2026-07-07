@@ -19,7 +19,9 @@ return new class extends Migration
             $table->string('reference_number')->nullable()->after('notes');
         });
 
-        DB::statement("ALTER TABLE dealer_payments MODIFY COLUMN payment_mode VARCHAR(50) NOT NULL DEFAULT 'Cash'");
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE dealer_payments MODIFY COLUMN payment_mode VARCHAR(50) NOT NULL DEFAULT 'Cash'");
+        }
 
         Schema::table('vendor_payments', function (Blueprint $table) {
             $table->foreignId('day_load_entry_id')
@@ -32,7 +34,9 @@ return new class extends Migration
             $table->decimal('pending_balance_after', 12, 2)->default(0)->after('amount');
         });
 
-        DB::statement("ALTER TABLE vendor_payments MODIFY COLUMN payment_mode VARCHAR(50) NOT NULL DEFAULT 'Cash'");
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE vendor_payments MODIFY COLUMN payment_mode VARCHAR(50) NOT NULL DEFAULT 'Cash'");
+        }
     }
 
     public function down(): void

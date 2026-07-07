@@ -11,6 +11,7 @@ use App\Http\Controllers\Billing\DayLoadBillingController;
 use App\Http\Controllers\Purchases\PurchaseController;
 use App\Http\Controllers\Payments\CustomerPaymentController;
 use App\Http\Controllers\Payments\DealerPaymentController;
+use App\Http\Controllers\CashBankLedgerController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ProfitController;
 use App\Http\Controllers\ReportController;
@@ -188,6 +189,11 @@ Route::middleware(['auth'])->group(function () {
             Route::post('day-load/set-farm-weight', [DayLoadBillingController::class, 'setFarmWeight'])->name('day-load.set-farm-weight');
             Route::post('day-load/{entry}/dealer-payment', [DayLoadBillingController::class, 'recordDealerPayment'])->name('day-load.dealer-payment');
             Route::post('day-load/{entry}/vendor-payment', [DayLoadBillingController::class, 'recordVendorPayment'])->name('day-load.vendor-payment');
+
+            // Cash & Bank Ledger (route names are placeholders; sidebar menu placement to be finalized by project owner)
+            Route::get('cash-bank-ledger', [CashBankLedgerController::class, 'index'])->name('cash-bank-ledger.index');
+            Route::post('cash-bank-ledger/{ledger}/approve', [CashBankLedgerController::class, 'approve'])->name('cash-bank-ledger.approve');
+
             Route::post('weekly/bulk', [WeeklyBillingController::class, 'bulkStore'])->name('weekly.bulkStore');
             Route::post('weekly/purchase', [WeeklyBillingController::class, 'storePurchase'])->name('weekly.purchase.store');
             Route::post('weekly/generate', [WeeklyBillingController::class, 'generateWeekly'])->name('weekly.generate');

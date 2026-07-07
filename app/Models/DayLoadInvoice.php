@@ -22,6 +22,9 @@ class DayLoadInvoice extends Model
         'total_farm_weight',
         'total_weight',
         'total_loss_weight',
+        'total_amount',
+        'amount_paid',
+        'payment_status',
         'status',
         'version',
     ];
@@ -35,6 +38,8 @@ class DayLoadInvoice extends Model
         'total_farm_weight' => 'decimal:2',
         'total_weight' => 'decimal:2',
         'total_loss_weight' => 'decimal:2',
+        'total_amount' => 'decimal:2',
+        'amount_paid' => 'decimal:2',
         'version' => 'integer',
     ];
 

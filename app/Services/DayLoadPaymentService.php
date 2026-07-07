@@ -4,46 +4,151 @@ namespace App\Services;
 
 use App\Models\DayLoadBatch;
 use App\Models\DayLoadEntry;
+use App\Models\DayLoadInvoice;
 use App\Models\DealerPayment;
+use App\Models\PaymentAdjustmentLog;
 use App\Models\VendorPayment;
+use Illuminate\Support\Facades\DB;
 
 class DayLoadPaymentService
 {
+    public function __construct(
+        private CashBankLedgerService $cashBankLedgerService,
+    ) {}
+
     public function recordDealerPayment(DayLoadEntry $entry, array $data): DealerPayment
     {
-        $amount = (float) $data['amount'];
-        $entry->increment('dealer_collected', $amount);
+        return DB::transaction(function () use ($entry, $data) {
+            // Ensure the batch relationship is fresh (invoice_id may have been set after entry creation)
+            $entry->load('batch');
 
-        $this->refreshDealerPaymentStatus($entry);
-        $this->refreshBatchFinancials($entry->batch);
+            $cashAmount = (float) ($data['cash_amount'] ?? $data['amount']);
+            $bankAmount = (float) ($data['bank_amount'] ?? 0);
 
-        return DealerPayment::create([
-            'dealer_id'        => $entry->dealer_id,
-            'day_load_entry_id'=> $entry->id,
-            'date'             => $data['date'],
-            'amount'           => $amount,
-            'payment_mode'     => $data['payment_mode'],
-            'reference_number' => $data['reference_number'] ?? null,
-            'notes'            => $data['notes'] ?? null,
-        ]);
+            // Legacy `amount` must always equal cash + bank to prevent drift
+            $legacyAmount = round($cashAmount + $bankAmount, 2);
+
+            // Update entry-level collected
+            $entry->increment('dealer_collected', $legacyAmount);
+            $this->refreshDealerPaymentStatus($entry);
+
+            // Create payment record with split amounts
+            $payment = DealerPayment::create([
+                'dealer_id'         => $entry->dealer_id,
+                'day_load_entry_id' => $entry->id,
+                'invoice_id'        => $entry->batch?->invoice_id,
+                'date'              => $data['date'],
+                'amount'            => $legacyAmount,
+                'payment_mode'      => $data['payment_mode'],
+                'cash_amount'       => $cashAmount,
+                'bank_amount'       => $bankAmount,
+                'bank_transfer_type' => $data['bank_transfer_type'] ?? null,
+                'reference_number'  => $data['reference_number'] ?? null,
+                'notes'             => $data['notes'] ?? null,
+            ]);
+
+            // Update invoice-level aggregated payment
+            $this->refreshInvoicePayment($entry->batch?->invoice);
+
+            // Update batch-level financials
+            $this->refreshBatchFinancials($entry->batch);
+
+            // Recalculate cash/bank ledger for the payment date
+            $this->cashBankLedgerService->recalculateForDate(now());
+
+            return $payment;
+        });
+    }
+
+    public function updateDealerPayment(DealerPayment $payment, array $data, string $reason): DealerPayment
+    {
+        return DB::transaction(function () use ($payment, $data, $reason) {
+            $oldValues = $payment->toArray();
+
+            $cashAmount = (float) ($data['cash_amount'] ?? $payment->cash_amount);
+            $bankAmount = (float) ($data['bank_amount'] ?? $payment->bank_amount);
+            $legacyAmount = round($cashAmount + $bankAmount, 2);
+
+            $payment->update([
+                'date'              => $data['date'] ?? $payment->date,
+                'amount'            => $legacyAmount,
+                'payment_mode'      => $data['payment_mode'] ?? $payment->payment_mode,
+                'cash_amount'       => $cashAmount,
+                'bank_amount'       => $bankAmount,
+                'bank_transfer_type' => $data['bank_transfer_type'] ?? $payment->bank_transfer_type,
+                'reference_number'  => $data['reference_number'] ?? $payment->reference_number,
+                'notes'             => $data['notes'] ?? $payment->notes,
+            ]);
+
+            PaymentAdjustmentLog::create([
+                'payment_id'   => $payment->id,
+                'action_type'  => 'Edit',
+                'old_values'   => $oldValues,
+                'new_values'   => $payment->fresh()->toArray(),
+                'reason'       => $reason,
+                'adjusted_by'  => auth()->id(),
+            ]);
+
+            // Recalculate entry-level collected from all payments for this entry
+            $entry = $payment->dayLoadEntry;
+            if ($entry) {
+                $totalCollected = (float) $entry->dealerPayments()->sum('amount');
+                $entry->updateQuietly(['dealer_collected' => $totalCollected]);
+                $this->refreshDealerPaymentStatus($entry);
+                $this->refreshBatchFinancials($entry->batch);
+                $this->refreshInvoicePayment($entry->batch?->invoice);
+            }
+
+            $this->cashBankLedgerService->recalculateForDate(now());
+
+            return $payment->fresh();
+        });
     }
 
     public function recordVendorPayment(DayLoadEntry $entry, array $data): VendorPayment
     {
-        $amount = (float) $data['amount'];
-        $entry->increment('vendor_paid', $amount);
+        return DB::transaction(function () use ($entry, $data) {
+            $amount = (float) $data['amount'];
+            $entry->increment('vendor_paid', $amount);
 
-        $this->refreshVendorPaymentStatus($entry);
-        $this->refreshBatchFinancials($entry->batch);
+            $this->refreshVendorPaymentStatus($entry);
+            $this->refreshBatchFinancials($entry->batch);
 
-        return VendorPayment::create([
-            'vendor_id'        => $entry->vendor_id,
-            'day_load_entry_id'=> $entry->id,
-            'date'             => $data['date'],
-            'amount'           => $amount,
-            'payment_mode'     => $data['payment_mode'],
-            'reference_number' => $data['reference_number'] ?? null,
-            'notes'            => $data['notes'] ?? null,
+            return VendorPayment::create([
+                'vendor_id'        => $entry->vendor_id,
+                'day_load_entry_id'=> $entry->id,
+                'date'             => $data['date'],
+                'amount'           => $amount,
+                'payment_mode'     => $data['payment_mode'],
+                'reference_number' => $data['reference_number'] ?? null,
+                'notes'            => $data['notes'] ?? null,
+            ]);
+        });
+    }
+
+    public function refreshInvoicePayment(?DayLoadInvoice $invoice): void
+    {
+        if (!$invoice) {
+            return;
+        }
+
+        $amountPaid = (float) $invoice->dealerPayments()->sum('amount');
+        $totalAmount = (float) $invoice->total_amount;
+
+        if ($amountPaid <= 0) {
+            $paymentStatus = 'Pending';
+        } elseif ($amountPaid >= $totalAmount && $totalAmount > 0) {
+            $paymentStatus = 'Paid';
+        } elseif ($amountPaid > 0 && $amountPaid < $totalAmount) {
+            $paymentStatus = 'Partial';
+        } else {
+            // Edge case: total_amount is 0 but there's a payment
+            $paymentStatus = 'Paid';
+        }
+
+        $invoice->updateQuietly([
+            'amount_paid'    => $amountPaid,
+            'payment_status' => $paymentStatus,
         ]);
     }
 

@@ -9,6 +9,7 @@ use App\Models\CustomerPayment;
 use App\Models\Expense;
 use App\Models\WeeklyBill;
 use App\Models\DailyBill;
+use App\Models\DayLoadInvoice;
 use App\Models\PurchaseItem;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -17,16 +18,17 @@ class ReportService
 {
     public function getIndexSummary(string $month, string $year): array
     {
-        // INFLOW: Customer (DailyBill + CustomerPayment) + Dealer (WeeklyBill + DealerPayment)
+        // INFLOW: Customer (DailyBill + CustomerPayment) + Dealer (WeeklyBill + DealerPayment) + Day-load invoices
         $dailyBillRevenue  = DailyBill::whereMonth('date', $month)->whereYear('date', $year)->sum('net_amount');
         $weeklyBillRevenue = WeeklyBill::whereMonth('period_end', $month)->whereYear('period_end', $year)->sum('net_amount');
         $cPayRevenue       = CustomerPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
-        $dPayRevenue       = \App\Models\DealerPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
+        $dPayRevenue       = \App\Models\DealerPayment::whereMonth('date', $month)->whereYear('date', $year)->whereNull('invoice_id')->sum('amount');
+        $dlRevenue         = DayLoadInvoice::whereMonth('invoice_date', $month)->whereYear('invoice_date', $year)->sum('total_amount');
 
         return [
             'total_customers'       => Customer::count(),
             'total_dealers'         => Dealer::count(),
-            'total_revenue_month'   => $dailyBillRevenue + $weeklyBillRevenue + $cPayRevenue + $dPayRevenue,
+            'total_revenue_month'   => $dailyBillRevenue + $weeklyBillRevenue + $cPayRevenue + $dPayRevenue + $dlRevenue,
             'total_purchases_month' => Purchase::whereMonth('date', $month)->whereYear('date', $year)->sum('total_amount'),
             'total_expenses_month'  => Expense::whereMonth('date', $month)->whereYear('date', $year)->sum('amount'),
             'pending_receivables'   => Customer::where('balance', '>', 0)->sum('balance'),

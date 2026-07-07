@@ -19,12 +19,14 @@ return new class extends Migration
                 ->nullOnDelete();
         });
 
-        DB::statement("
-            UPDATE `expenses` e
-            INNER JOIN `expense_categories` ec
-                ON LOWER(TRIM(e.`category`)) = LOWER(TRIM(ec.`name`))
-            SET e.`category_id` = ec.`id`
-        ");
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("
+                UPDATE `expenses` e
+                INNER JOIN `expense_categories` ec
+                    ON LOWER(TRIM(e.`category`)) = LOWER(TRIM(ec.`name`))
+                SET e.`category_id` = ec.`id`
+            ");
+        }
     }
 
     public function down(): void

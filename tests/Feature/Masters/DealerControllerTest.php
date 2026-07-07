@@ -2,7 +2,11 @@
 
 namespace Tests\Feature\Masters;
 
+use App\Models\DayLoadBatch;
+use App\Models\DayLoadEntry;
 use App\Models\Dealer;
+use App\Models\DealerPayment;
+use App\Models\Purchase;
 use App\Models\Route;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -113,5 +117,77 @@ class DealerControllerTest extends TestCase
         
         $response->assertRedirect(route('masters.dealers.index'));
         $this->assertSoftDeleted('dealers', ['id' => $dealer->id]);
+    }
+
+    public function test_ledger_pdf_includes_day_load_section_running_balance_matches_accessor()
+    {
+        $dealer = Dealer::factory()->create(['pending_amount' => 10000]);
+
+        // Old-style purchase (linked via vendor_name matching firm_name)
+        Purchase::factory()->create([
+            'vendor_name' => $dealer->firm_name,
+            'date' => '2026-07-01',
+        ]);
+        // Old-style payment (no day-load link)
+        DealerPayment::factory()->create([
+            'dealer_id' => $dealer->id,
+            'date' => '2026-07-02',
+            'amount' => 2000,
+            'invoice_id' => null,
+            'day_load_entry_id' => null,
+        ]);
+
+        // Day-load batch + entry
+        $batch = DayLoadBatch::factory()->create(['billing_date' => '2026-07-03']);
+        $entry = DayLoadEntry::factory()->create([
+            'batch_id' => $batch->id,
+            'dealer_id' => $dealer->id,
+            'box_weight' => 510,
+            'empty_weight' => 10,
+            'customer_rate' => 10,
+            'status' => 'Active',
+        ]);
+
+        // Day-load payment (linked to the entry)
+        DealerPayment::factory()->create([
+            'dealer_id' => $dealer->id,
+            'day_load_entry_id' => $entry->id,
+            'date' => '2026-07-04',
+            'amount' => 3000,
+        ]);
+
+        // 1. Route returns PDF successfully
+        $response = $this->actingAs($this->admin)
+            ->get(route('masters.dealers.ledger-pdf', $dealer));
+        $response->assertStatus(200);
+
+        // 2. Verify data logic: running balance from raw queries matches accessor
+        $dlEntries = $dealer->dayLoadEntries()
+            ->where('status', '!=', 'Cancelled')
+            ->with('batch')
+            ->get()->map(fn($e) => [
+                'date' => optional($e->batch)->billing_date ?? $e->created_at->format('Y-m-d'),
+                'debit' => (float) $e->amount,
+                'credit' => 0,
+            ]);
+
+        $dlPayments = $dealer->payments()
+            ->where(fn($q) => $q->whereNotNull('invoice_id')
+                ->orWhereNotNull('day_load_entry_id'))
+            ->get()->map(fn($p) => [
+                'date' => $p->date->format('Y-m-d'),
+                'debit' => 0,
+                'credit' => (float) $p->amount,
+            ]);
+
+        $dlLedger = $dlEntries->concat($dlPayments)->sortBy('date');
+        $runningBalance = $dlLedger->sum(fn($r) => $r['debit'] - $r['credit']);
+        $expectedFinal = max(0, $runningBalance);
+
+        $this->assertEquals(
+            $dealer->dayload_outstanding,
+            $expectedFinal,
+            'Day-load running balance must match the accessor computation.'
+        );
     }
 }

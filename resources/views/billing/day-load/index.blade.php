@@ -123,7 +123,7 @@
             </form>
         </div>
 
-        <x-data-table :headers="['Date', 'Vendor', 'Dealer', 'Rates', 'Margin', 'Boxes', 'Weights', 'Dealer Payment', 'Vendor Payment', 'Status', 'Actions']">
+        <x-data-table :headers="['Date', 'Vendor', 'Dealer', 'Rates', 'Margin', 'Boxes', 'Weights', 'Amount', 'Dealer Payment', 'Vendor Payment', 'Status', 'Actions']">
             @forelse($entries as $entry)
                 <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
                     <td class="px-6 py-4">
@@ -150,6 +150,9 @@
                         <div>Bird: {{ number_format((float) $entry->bird_weight, 2) }}</div>
                         <div>Loss: {{ $entry->loss_weight === null ? '-' : number_format((float) $entry->loss_weight, 2) }}</div>
                         <div>Total: {{ $entry->total_weight === null ? '-' : number_format((float) $entry->total_weight, 2) }}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-100">Rs {{ number_format((float) $entry->amount, 0) }}</span>
                     </td>
                     <td class="px-6 py-4 text-xs">
                         @php
@@ -237,7 +240,9 @@
                                             dpEntryDealer = '{{ addslashes($entry->dealer->firm_name ?? '-') }}';
                                             dpEntryIncome = {{ $entry->dealer_income }};
                                             dpEntryCollected = {{ (float) $entry->dealer_collected }};
-                                            dpAmount = {{ round($entry->dealer_income - (float) $entry->dealer_collected, 2) }};
+                                            dpCashAmount = {{ round($entry->dealer_income - (float) $entry->dealer_collected, 2) }};
+                                            dpBankAmount = 0;
+                                            dpBankTransferType = '';
                                         });
                                     "
                                     class="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
@@ -310,7 +315,9 @@
         dpEntryDealer: '',
         dpEntryIncome: 0,
         dpEntryCollected: 0,
-        dpAmount: 0,
+        dpCashAmount: 0,
+        dpBankAmount: 0,
+        dpBankTransferType: '',
         dpDate: '{{ $date }}',
         dpMode: 'Cash',
         dpRefNo: '',
@@ -706,8 +713,19 @@
                         <input type="date" name="date" required x-model="dpDate" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Amount (Rs)</label>
-                        <input type="number" step="0.01" min="0.01" name="amount" required x-model.number="dpAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Cash Amount (Rs)</label>
+                        <input type="number" step="0.01" min="0" name="cash_amount" required x-model.number="dpCashAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Amount (Rs)</label>
+                        <input type="number" step="0.01" min="0" name="bank_amount" required x-model.number="dpBankAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Total</label>
+                        <p class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-sm font-jetbrains text-lg font-bold text-emerald-600" x-text="'Rs ' + (dpCashAmount + dpBankAmount).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
                     </div>
                 </div>
 
@@ -720,7 +738,20 @@
                             @endforeach
                         </select>
                     </div>
-                    <div>
+                    <div x-show="dpBankAmount > 0" x-transition>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Transfer Type</label>
+                        <select name="bank_transfer_type" x-model="dpBankTransferType" :required="dpBankAmount > 0" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                            <option value="">Select type...</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="NEFT">NEFT</option>
+                            <option value="RTGS">RTGS</option>
+                            <option value="IMPS">IMPS</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div x-show="dpBankAmount <= 0">
                         <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reference No</label>
                         <input type="text" name="reference_number" x-model="dpRefNo" placeholder="UPI ref / Cheque no / Tx ID" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
                     </div>
