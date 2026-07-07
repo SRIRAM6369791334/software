@@ -17,6 +17,9 @@ use App\Models\DailyBill;
 use App\Models\WeeklyBill;
 use App\Models\Purchase;
 use App\Models\DayLoadBatch;
+use App\Models\DayLoadEntry;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -221,5 +224,74 @@ class PurchaseController extends Controller
             $p->quantity . ' ' . $p->unit, $p->rate, $p->gst_amount, $p->total_amount, $p->payment_mode,
         ]);
         return $this->exporter->streamCsv('purchase-entries', ['Date','Vendor','Item','Qty','Rate','GST','Total','Mode'], $rows);
+    }
+
+    public function invoicesExport(Request $request): StreamedResponse
+    {
+        $date = $request->input('date', today()->format('Y-m-d'));
+
+        $purchases = Purchase::with(['vendor', 'items'])
+            ->whereDate('date', $date)
+            ->get();
+
+        $dayLoadEntries = DayLoadEntry::with(['vendor', 'dealer'])
+            ->whereHas('batch', fn ($q) => $q->whereDate('billing_date', $date))
+            ->where('status', '!=', 'Cancelled')
+            ->get();
+
+        $rows = collect();
+
+        foreach ($purchases as $p) {
+            foreach ($p->items as $item) {
+                $rows->push([
+                    $date, 'Purchase', $p->vendor_name, $item->item_name,
+                    $item->quantity . ' ' . ($item->unit ?? 'pcs'),
+                    $item->rate, $p->total_amount, $p->payment_mode,
+                ]);
+            }
+        }
+
+        foreach ($dayLoadEntries as $e) {
+            $rows->push([
+                $date, 'Day-Load', $e->vendor->firm_name ?? '-', $e->dealer->firm_name ?? '-',
+                $e->no_of_boxes . ' boxes', number_format((float) $e->bird_weight, 2) . ' kg',
+                number_format((float) ($e->total_weight ?? 0), 2) . ' kg', $e->status,
+            ]);
+        }
+
+        return $this->exporter->streamCsv('invoices-' . $date, [
+            'Date', 'Type', 'Vendor', 'Detail', 'Qty', 'Rate/Weight', 'Total', 'Mode',
+        ], $rows);
+    }
+
+    public function invoicesPrint(string $date): View
+    {
+        $dateObj = Carbon::parse($date);
+
+        $purchases = Purchase::with(['vendor', 'items'])
+            ->whereDate('date', $date)->get();
+
+        $dayLoadBatch = DayLoadBatch::with(['entries.vendor', 'entries.dealer'])
+            ->whereDate('billing_date', $date)->first();
+
+        $dayLoadEntries = $dayLoadBatch ? $dayLoadBatch->entries->where('status', '!=', 'Cancelled') : collect();
+
+        return view('purchases.invoices-print', compact('dateObj', 'purchases', 'dayLoadBatch', 'dayLoadEntries'));
+    }
+
+    public function invoicesPdf(string $date)
+    {
+        $dateObj = Carbon::parse($date);
+
+        $purchases = Purchase::with(['vendor', 'items'])
+            ->whereDate('date', $date)->get();
+
+        $dayLoadBatch = DayLoadBatch::with(['entries.vendor', 'entries.dealer'])
+            ->whereDate('billing_date', $date)->first();
+
+        $dayLoadEntries = $dayLoadBatch ? $dayLoadBatch->entries->where('status', '!=', 'Cancelled') : collect();
+
+        $pdf = Pdf::loadView('purchases.invoices-pdf', compact('dateObj', 'purchases', 'dayLoadBatch', 'dayLoadEntries'));
+        return $pdf->download("invoices-{$date}.pdf");
     }
 }

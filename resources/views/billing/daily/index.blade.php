@@ -167,18 +167,14 @@
             @forelse($bills as $bill)
                 <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors group">
                     <td class="px-6 py-4">
-                        <p class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 text-sm">{{ $bill->invoice_number }}</p>
-                    </td>
-                    <td class="px-6 py-4">
-                        <p class="font-medium text-zinc-900 dark:text-zinc-100">{{ $bill->date->format('d M') }}</p>
-                        <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">{{ $bill->date->format('l, Y') }}</p>
+                        <span class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 text-sm">{{ $bill->invoice_number }}</span>
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
                             <x-avatar :name="$bill->customer->name ?? '?'" size="sm" />
                             <div>
                                 <p class="font-cabinet font-bold text-zinc-900 dark:text-zinc-100">{{ $bill->customer->name ?? '-' }}</p>
-                                <p class="font-outfit text-xs text-zinc-500">{{ $bill->customer->phone ?? 'NO PHONE' }}</p>
+                                <p class="font-outfit text-xs text-zinc-500">{{ $bill->customer->phone ?? '—' }}</p>
                             </div>
                         </div>
                     </td>
@@ -190,7 +186,7 @@
                         <div class="flex items-center gap-2">
                             <x-badge variant="zinc">{{ $firstItem?->item_name }}</x-badge>
                             @if($othersCount > 0)
-                                <span class="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold text-[9px] rounded-md tracking-wider">+{{ $othersCount }} OTHERS</span>
+                                <span class="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold text-[9px] rounded-md tracking-wider">+{{ $othersCount }}</span>
                             @endif
                         </div>
                     </td>
@@ -213,6 +209,28 @@
                     </td>
                     <td class="px-6 py-4 text-center">
                         <div class="flex items-center justify-center gap-2">
+                            <button
+                                type="button"
+                                x-on:click="
+                                    $dispatch('open-modal', 'edit-sale-modal');
+                                    $nextTick(() => {
+                                        editId = {{ $bill->id }};
+                                        editFormAction = '{{ route('billing.daily.update', $bill->id) }}';
+                                        editCustomerId = {{ $bill->customer_id }};
+                                        editDate = '{{ $bill->date->format('Y-m-d') }}';
+                                        editPaymentMode = '{{ $bill->payment_mode }}';
+                                        editStatus = '{{ $bill->status }}';
+                                        editGstPercentage = {{ $bill->gst_percentage }};
+                                        editItems = [
+                                            @foreach($bill->items as $item)
+                                                { name: '{{ addslashes($item->item_name) }}', qty: {{ $item->quantity_kg }}, rate: {{ $item->rate_per_kg }} },
+                                            @endforeach
+                                        ];
+                                    });
+                                "
+                                class="text-zinc-400 hover:text-amber-600 transition-colors" title="Edit">
+                                <span class="material-symbols-rounded text-lg">edit</span>
+                            </button>
                             <a href="{{ route('billing.daily.invoice', $bill->id) }}" target="_blank" class="text-zinc-400 hover:text-emerald-600 transition-colors" title="Print Invoice">
                                 <span class="material-symbols-rounded text-lg">print</span>
                             </a>
@@ -295,6 +313,71 @@
             @endif
         </x-data-table>
     </x-card>
+    {{-- Edit Sale Modal --}}
+    <x-modal name="edit-sale-modal" title="Edit Sale" subtitle="Update customer, items, or payment details" icon="edit" maxWidth="2xl">
+        <form id="edit-sale-form" :action="editFormAction" method="POST">
+            @csrf
+            <input type="hidden" name="_method" value="PUT">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Customer</label>
+                    <select name="customer_id" required x-model.number="editCustomerId" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                        <option value="">Select customer...</option>
+                        @foreach($customers as $customer)
+                            <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Date</label>
+                    <input type="date" name="date" required x-model="editDate" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Mode</label>
+                    <select name="payment_mode" required x-model="editPaymentMode" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                        <option value="Cash">Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="NEFT">NEFT</option>
+                        <option value="Cheque(Bank Transfer)">Cheque(Bank Transfer)</option>
+                        <option value="Pay later(EMI)">Pay later(EMI)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Status</label>
+                    <select name="status" required x-model="editStatus" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                        <option value="Generated">Generated</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">GST %</label>
+                    <input type="number" name="gst_percentage" step="0.1" min="0" max="28" x-model.number="editGstPercentage" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Items</label>
+                <p class="text-xs text-zinc-500 mb-2">Edit items below (qty, rate changes are applied on save)</p>
+                <template x-for="(item, idx) in editItems" :key="idx">
+                    <div class="flex gap-2 mb-2 items-start">
+                        <input type="text" x-model="item.name" :name="'items[' + idx + '][name]'" required class="flex-1 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                        <input type="number" step="0.01" x-model="item.qty" :name="'items[' + idx + '][qty]'" required placeholder="Qty" class="w-24 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-center font-jetbrains">
+                        <input type="number" step="0.01" x-model="item.rate" :name="'items[' + idx + '][rate]'" required placeholder="Rate" class="w-24 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-center font-jetbrains">
+                    </div>
+                </template>
+            </div>
+
+            <x-slot:footer>
+                <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'edit-sale-modal')">Cancel</x-button>
+                <x-button type="submit" form="edit-sale-form" variant="primary" icon="save">Save Changes</x-button>
+            </x-slot:footer>
+        </form>
+    </x-modal>
 </div>
 
 @endsection

@@ -15,6 +15,69 @@
          <?php $__env->slot('actions', null, []); ?> 
             <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['variant' => 'outline','href' => ''.e(route('billing.day-load.export', ['date' => $date])).'','icon' => 'download']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['variant' => 'outline','href' => ''.e(route('billing.day-load.export', ['date' => $date])).'','icon' => 'download']); ?>
+                Export CSV
+             <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+            <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['variant' => 'outline','href' => ''.e(route('billing.day-load.invoice', $date)).'','icon' => 'print','target' => '_blank']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['variant' => 'outline','href' => ''.e(route('billing.day-load.invoice', $date)).'','icon' => 'print','target' => '_blank']); ?>
+                Print Invoice
+             <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+            <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['variant' => 'outline','href' => ''.e(route('billing.day-load.pdf', $date)).'','icon' => 'picture_as_pdf']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['variant' => 'outline','href' => ''.e(route('billing.day-load.pdf', $date)).'','icon' => 'picture_as_pdf']); ?>
+                Download PDF
+             <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+            <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['variant' => 'outline','href' => ''.e(route('billing.weekly.index')).'','icon' => 'receipt_long']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('button'); ?>
 <?php if ($component->shouldRender()): ?>
@@ -46,7 +109,7 @@
 <?php unset($__componentOriginalf8d4ea307ab1e58d4e472a43c8548d8e); ?>
 <?php endif; ?>
 
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-8">
         <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Billing Date','value' => ''.e(\Carbon\Carbon::parse($date)->format('d M Y')).'','icon' => 'calendar_today','color' => 'blue']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -129,14 +192,156 @@
 <?php endif; ?>
         <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Total Weight','value' => ''.e(number_format((float) ($batch?->total_weight ?? 0), 2)).' kg','icon' => 'monitor_weight','color' => 'violet']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Dealer Income','value' => 'Rs '.e(number_format($totalDealerIncome, 0)).'','icon' => 'payments','color' => 'teal']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('stat-card'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['label' => 'Total Weight','value' => ''.e(number_format((float) ($batch?->total_weight ?? 0), 2)).' kg','icon' => 'monitor_weight','color' => 'violet']); ?>
+<?php $component->withAttributes(['label' => 'Dealer Income','value' => 'Rs '.e(number_format($totalDealerIncome, 0)).'','icon' => 'payments','color' => 'teal']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+        <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Vendor Cost','value' => 'Rs '.e(number_format($totalVendorCost, 0)).'','icon' => 'shopping_cart','color' => 'rose']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['label' => 'Vendor Cost','value' => 'Rs '.e(number_format($totalVendorCost, 0)).'','icon' => 'shopping_cart','color' => 'rose']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+        <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Gross Margin','value' => 'Rs '.e(number_format($grossMargin, 0)).'','icon' => 'trending_up','color' => ''.e($grossMargin >= 0 ? 'emerald' : 'red').'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['label' => 'Gross Margin','value' => 'Rs '.e(number_format($grossMargin, 0)).'','icon' => 'trending_up','color' => ''.e($grossMargin >= 0 ? 'emerald' : 'red').'']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Dealer Collected','value' => 'Rs '.e(number_format($totalDealerCollected, 0)).'','icon' => 'account_balance','color' => 'emerald']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['label' => 'Dealer Collected','value' => 'Rs '.e(number_format($totalDealerCollected, 0)).'','icon' => 'account_balance','color' => 'emerald']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+        <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Vendor Paid','value' => 'Rs '.e(number_format($totalVendorPaid, 0)).'','icon' => 'payments','color' => 'violet']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['label' => 'Vendor Paid','value' => 'Rs '.e(number_format($totalVendorPaid, 0)).'','icon' => 'payments','color' => 'violet']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+        <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Dealer Due','value' => 'Rs '.e(number_format($totalDealerDue, 0)).'','icon' => 'pending','color' => ''.e($totalDealerDue > 0 ? 'amber' : 'emerald').'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['label' => 'Dealer Due','value' => 'Rs '.e(number_format($totalDealerDue, 0)).'','icon' => 'pending','color' => ''.e($totalDealerDue > 0 ? 'amber' : 'emerald').'']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+        <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Vendor Due','value' => 'Rs '.e(number_format($totalVendorDue, 0)).'','icon' => 'pending_actions','color' => ''.e($totalVendorDue > 0 ? 'amber' : 'emerald').'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['label' => 'Vendor Due','value' => 'Rs '.e(number_format($totalVendorDue, 0)).'','icon' => 'pending_actions','color' => ''.e($totalVendorDue > 0 ? 'amber' : 'emerald').'']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+        <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Collection %','value' => ''.e($collectionPct).'%','icon' => 'pie_chart','color' => 'indigo']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['label' => 'Collection %','value' => ''.e($collectionPct).'%','icon' => 'pie_chart','color' => 'indigo']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
@@ -552,14 +757,14 @@
 
         <?php if (isset($component)) { $__componentOriginalc8463834ba515134d5c98b88e1a9dc03 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc8463834ba515134d5c98b88e1a9dc03 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.data-table','data' => ['headers' => ['Date', 'Vendor', 'Dealer', 'Rates', 'Paper Diff', 'Boxes', 'Weights', 'Status', 'Actions']]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.data-table','data' => ['headers' => ['Date', 'Vendor', 'Dealer', 'Rates', 'Margin', 'Boxes', 'Weights', 'Dealer Payment', 'Vendor Payment', 'Status', 'Actions']]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('data-table'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['headers' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(['Date', 'Vendor', 'Dealer', 'Rates', 'Paper Diff', 'Boxes', 'Weights', 'Status', 'Actions'])]); ?>
+<?php $component->withAttributes(['headers' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(['Date', 'Vendor', 'Dealer', 'Rates', 'Margin', 'Boxes', 'Weights', 'Dealer Payment', 'Vendor Payment', 'Status', 'Actions'])]); ?>
             <?php $__empty_1 = true; $__currentLoopData = $entries; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $entry): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                 <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
                     <td class="px-6 py-4">
@@ -574,19 +779,80 @@
                         <div>Customer: <span class="font-jetbrains">Rs <?php echo e(number_format((float) $entry->customer_rate, 2)); ?></span></div>
                     </td>
                     <td class="px-6 py-4">
-                        <?php ($diff = $entry->rate_difference); ?>
-                        <span class="font-jetbrains font-bold <?php echo e($diff >= 0 ? 'text-emerald-600' : 'text-rose-600'); ?>">
-                            <?php echo e($diff >= 0 ? '+' : '-'); ?>Rs <?php echo e(number_format(abs($diff), 2)); ?>
-
+                        <?php($diff = $entry->rate_difference)
+                        <span class="font-jetbrains font-bold {{ $diff >= 0 ? 'text-emerald-600' : 'text-rose-600' }}">
+                            {{ $diff >= 0 ? '+' : '-' }}Rs {{ number_format(abs($diff), 2) }}
                         </span>
                     </td>
-                    <td class="px-6 py-4 text-center font-jetbrains font-bold"><?php echo e($entry->no_of_boxes); ?></td>
+                    <td class="px-6 py-4 text-center font-jetbrains font-bold">{{ $entry->no_of_boxes }}</td>
                     <td class="px-6 py-4 text-xs">
-                        <div>Box: <?php echo e(number_format((float) $entry->box_weight, 2)); ?></div>
-                        <div>Empty: <?php echo e(number_format((float) $entry->empty_weight, 2)); ?></div>
-                        <div>Bird: <?php echo e(number_format((float) $entry->bird_weight, 2)); ?></div>
-                        <div>Loss: <?php echo e($entry->loss_weight === null ? '-' : number_format((float) $entry->loss_weight, 2)); ?></div>
-                        <div>Total: <?php echo e($entry->total_weight === null ? '-' : number_format((float) $entry->total_weight, 2)); ?></div>
+                        <div>Box: {{ number_format((float) $entry->box_weight, 2) }}</div>
+                        <div>Empty: {{ number_format((float) $entry->empty_weight, 2) }}</div>
+                        <div>Bird: {{ number_format((float) $entry->bird_weight, 2) }}</div>
+                        <div>Loss: {{ $entry->loss_weight === null ? '-' : number_format((float) $entry->loss_weight, 2) }}</div>
+                        <div>Total: {{ $entry->total_weight === null ? '-' : number_format((float) $entry->total_weight, 2) }}</div>
+                    </td>
+                    <td class="px-6 py-4 text-xs">
+                        @php
+                            $dStatus = $entry->dealer_payment_status;
+                            $dColor = match($dStatus) { 'Paid' => 'success', 'Partial' => 'warning', 'Overpaid' => 'info', default => 'zinc' };
+                        ?>
+                        <div class="flex flex-col items-center gap-1">
+                            <?php if (isset($component)) { $__componentOriginal2ddbc40e602c342e508ac696e52f8719 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal2ddbc40e602c342e508ac696e52f8719 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.badge','data' => ['variant' => $dColor]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('badge'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['variant' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($dColor)]); ?><?php echo e($dStatus); ?> <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal2ddbc40e602c342e508ac696e52f8719)): ?>
+<?php $attributes = $__attributesOriginal2ddbc40e602c342e508ac696e52f8719; ?>
+<?php unset($__attributesOriginal2ddbc40e602c342e508ac696e52f8719); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal2ddbc40e602c342e508ac696e52f8719)): ?>
+<?php $component = $__componentOriginal2ddbc40e602c342e508ac696e52f8719; ?>
+<?php unset($__componentOriginal2ddbc40e602c342e508ac696e52f8719); ?>
+<?php endif; ?>
+                            <span class="font-jetbrains text-[11px] <?php echo e((float) $entry->dealer_collected > 0 ? 'text-emerald-600' : 'text-zinc-400'); ?>">
+                                Rs <?php echo e(number_format((float) $entry->dealer_collected, 0)); ?> / Rs <?php echo e(number_format($entry->dealer_income, 0)); ?>
+
+                            </span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-xs">
+                        <?php
+                            $vStatus = $entry->vendor_payment_status;
+                            $vColor = match($vStatus) { 'Paid' => 'success', 'Partial' => 'warning', 'Overpaid' => 'info', default => 'zinc' };
+                        ?>
+                        <div class="flex flex-col items-center gap-1">
+                            <?php if (isset($component)) { $__componentOriginal2ddbc40e602c342e508ac696e52f8719 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal2ddbc40e602c342e508ac696e52f8719 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.badge','data' => ['variant' => $vColor]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('badge'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['variant' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($vColor)]); ?><?php echo e($vStatus); ?> <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal2ddbc40e602c342e508ac696e52f8719)): ?>
+<?php $attributes = $__attributesOriginal2ddbc40e602c342e508ac696e52f8719; ?>
+<?php unset($__attributesOriginal2ddbc40e602c342e508ac696e52f8719); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal2ddbc40e602c342e508ac696e52f8719)): ?>
+<?php $component = $__componentOriginal2ddbc40e602c342e508ac696e52f8719; ?>
+<?php unset($__componentOriginal2ddbc40e602c342e508ac696e52f8719); ?>
+<?php endif; ?>
+                            <span class="font-jetbrains text-[11px] <?php echo e((float) $entry->vendor_paid > 0 ? 'text-violet-600' : 'text-zinc-400'); ?>">
+                                Rs <?php echo e(number_format((float) $entry->vendor_paid, 0)); ?> / Rs <?php echo e(number_format($entry->vendor_cost, 0)); ?>
+
+                            </span>
+                        </div>
                     </td>
                     <td class="px-6 py-4 text-center">
                         <?php if (isset($component)) { $__componentOriginal2ddbc40e602c342e508ac696e52f8719 = $component; } ?>
@@ -634,7 +900,6 @@
                                     class="inline-flex items-center gap-1 text-xs font-medium text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
                                 >
                                     <span class="material-symbols-rounded text-sm">edit</span>
-                                    Edit
                                 </button>
                                 <?php if($entry->no_of_boxes > 0): ?>
                                 <button
@@ -656,9 +921,46 @@
                                     class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                                 >
                                     <span class="material-symbols-rounded text-sm">swap_horiz</span>
-                                    Transfer
                                 </button>
                                 <?php endif; ?>
+                                <button
+                                    type="button"
+                                    x-on:click="
+                                        $dispatch('open-modal', 'dealer-payment-modal');
+                                        $nextTick(() => {
+                                            dpEntryId = <?php echo e($entry->id); ?>;
+                                            dpFormAction = '<?php echo e(route('billing.day-load.dealer-payment', $entry->id)); ?>';
+                                            dpEntryVendor = '<?php echo e(addslashes($entry->vendor->firm_name ?? '-')); ?>';
+                                            dpEntryDealer = '<?php echo e(addslashes($entry->dealer->firm_name ?? '-')); ?>';
+                                            dpEntryIncome = <?php echo e($entry->dealer_income); ?>;
+                                            dpEntryCollected = <?php echo e((float) $entry->dealer_collected); ?>;
+                                            dpAmount = <?php echo e(round($entry->dealer_income - (float) $entry->dealer_collected, 2)); ?>;
+                                        });
+                                    "
+                                    class="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
+                                    title="Record Dealer Payment"
+                                >
+                                    <span class="material-symbols-rounded text-sm">payments</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    x-on:click="
+                                        $dispatch('open-modal', 'vendor-payment-modal');
+                                        $nextTick(() => {
+                                            vpEntryId = <?php echo e($entry->id); ?>;
+                                            vpFormAction = '<?php echo e(route('billing.day-load.vendor-payment', $entry->id)); ?>';
+                                            vpEntryVendor = '<?php echo e(addslashes($entry->vendor->firm_name ?? '-')); ?>';
+                                            vpEntryDealer = '<?php echo e(addslashes($entry->dealer->firm_name ?? '-')); ?>';
+                                            vpEntryCost = <?php echo e($entry->vendor_cost); ?>;
+                                            vpEntryPaid = <?php echo e((float) $entry->vendor_paid); ?>;
+                                            vpAmount = <?php echo e(round($entry->vendor_cost - (float) $entry->vendor_paid, 2)); ?>;
+                                        });
+                                    "
+                                    class="inline-flex items-center gap-1 text-xs font-medium text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300 transition-colors"
+                                    title="Record Vendor Payment"
+                                >
+                                    <span class="material-symbols-rounded text-sm">account_balance_wallet</span>
+                                </button>
                             </div>
                         <?php endif; ?>
                     </td>
@@ -737,6 +1039,28 @@
         editEmptyWeight: 0,
         editFarmWeight: '',
         editRemarks: '',
+        dpEntryId: 0,
+        dpFormAction: '',
+        dpEntryVendor: '',
+        dpEntryDealer: '',
+        dpEntryIncome: 0,
+        dpEntryCollected: 0,
+        dpAmount: 0,
+        dpDate: '<?php echo e($date); ?>',
+        dpMode: 'Cash',
+        dpRefNo: '',
+        dpNotes: '',
+        vpEntryId: 0,
+        vpFormAction: '',
+        vpEntryVendor: '',
+        vpEntryDealer: '',
+        vpEntryCost: 0,
+        vpEntryPaid: 0,
+        vpAmount: 0,
+        vpDate: '<?php echo e($date); ?>',
+        vpMode: 'Cash',
+        vpRefNo: '',
+        vpNotes: '',
     }">
         <?php if (isset($component)) { $__componentOriginal9f64f32e90b9102968f2bc548315018c = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal9f64f32e90b9102968f2bc548315018c = $attributes; } ?>
@@ -1281,6 +1605,240 @@
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
 <?php $component->withAttributes(['type' => 'submit','form' => 'adjust-all-form','variant' => 'primary','icon' => 'save']); ?>Save All Changes <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+                 <?php $__env->endSlot(); ?>
+            </form>
+         <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9f64f32e90b9102968f2bc548315018c)): ?>
+<?php $attributes = $__attributesOriginal9f64f32e90b9102968f2bc548315018c; ?>
+<?php unset($__attributesOriginal9f64f32e90b9102968f2bc548315018c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9f64f32e90b9102968f2bc548315018c)): ?>
+<?php $component = $__componentOriginal9f64f32e90b9102968f2bc548315018c; ?>
+<?php unset($__componentOriginal9f64f32e90b9102968f2bc548315018c); ?>
+<?php endif; ?>
+
+        
+        <?php if (isset($component)) { $__componentOriginal9f64f32e90b9102968f2bc548315018c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9f64f32e90b9102968f2bc548315018c = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal','data' => ['name' => 'dealer-payment-modal','title' => 'Record Dealer Payment','subtitle' => 'Record payment received from dealer for this entry','icon' => 'payments','maxWidth' => 'lg']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('modal'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['name' => 'dealer-payment-modal','title' => 'Record Dealer Payment','subtitle' => 'Record payment received from dealer for this entry','icon' => 'payments','maxWidth' => 'lg']); ?>
+            <form id="dealer-payment-form" :action="dpFormAction" method="POST">
+                <?php echo csrf_field(); ?>
+                <div class="mb-5 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                        <div>
+                            <span class="text-xs text-zinc-500">Vendor:</span>
+                            <p class="font-bold text-zinc-900 dark:text-zinc-100" x-text="dpEntryVendor"></p>
+                        </div>
+                        <div>
+                            <span class="text-xs text-zinc-500">Dealer:</span>
+                            <p class="font-bold text-zinc-900 dark:text-zinc-100" x-text="dpEntryDealer"></p>
+                        </div>
+                        <div>
+                            <span class="text-xs text-zinc-500">Total Due:</span>
+                            <p class="font-jetbrains font-bold text-emerald-600" x-text="'Rs ' + (dpEntryIncome - dpEntryCollected).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
+                        </div>
+                        <div>
+                            <span class="text-xs text-zinc-500">Already Collected:</span>
+                            <p class="font-jetbrains font-bold" x-text="'Rs ' + dpEntryCollected.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Date</label>
+                        <input type="date" name="date" required x-model="dpDate" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Amount (Rs)</label>
+                        <input type="number" step="0.01" min="0.01" name="amount" required x-model.number="dpAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Mode</label>
+                        <select name="payment_mode" required x-model="dpMode" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                            <?php $__currentLoopData = config('payments.modes'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $mode): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($mode); ?>"><?php echo e($mode); ?></option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reference No</label>
+                        <input type="text" name="reference_number" x-model="dpRefNo" placeholder="UPI ref / Cheque no / Tx ID" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Remarks</label>
+                    <textarea name="notes" x-model="dpNotes" rows="2" placeholder="Optional notes" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"></textarea>
+                </div>
+
+                 <?php $__env->slot('footer', null, []); ?> 
+                    <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['type' => 'button','variant' => 'outline','xOn:click' => '$dispatch(\'close-modal\', \'dealer-payment-modal\')']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['type' => 'button','variant' => 'outline','x-on:click' => '$dispatch(\'close-modal\', \'dealer-payment-modal\')']); ?>Cancel <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+                    <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['type' => 'submit','form' => 'dealer-payment-form','variant' => 'primary','icon' => 'payments']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['type' => 'submit','form' => 'dealer-payment-form','variant' => 'primary','icon' => 'payments']); ?>Record Payment <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+                 <?php $__env->endSlot(); ?>
+            </form>
+         <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9f64f32e90b9102968f2bc548315018c)): ?>
+<?php $attributes = $__attributesOriginal9f64f32e90b9102968f2bc548315018c; ?>
+<?php unset($__attributesOriginal9f64f32e90b9102968f2bc548315018c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9f64f32e90b9102968f2bc548315018c)): ?>
+<?php $component = $__componentOriginal9f64f32e90b9102968f2bc548315018c; ?>
+<?php unset($__componentOriginal9f64f32e90b9102968f2bc548315018c); ?>
+<?php endif; ?>
+
+        
+        <?php if (isset($component)) { $__componentOriginal9f64f32e90b9102968f2bc548315018c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9f64f32e90b9102968f2bc548315018c = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal','data' => ['name' => 'vendor-payment-modal','title' => 'Record Vendor Payment','subtitle' => 'Record payment made to vendor for this entry','icon' => 'account_balance_wallet','maxWidth' => 'lg']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('modal'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['name' => 'vendor-payment-modal','title' => 'Record Vendor Payment','subtitle' => 'Record payment made to vendor for this entry','icon' => 'account_balance_wallet','maxWidth' => 'lg']); ?>
+            <form id="vendor-payment-form" :action="vpFormAction" method="POST">
+                <?php echo csrf_field(); ?>
+                <div class="mb-5 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                        <div>
+                            <span class="text-xs text-zinc-500">Vendor:</span>
+                            <p class="font-bold text-zinc-900 dark:text-zinc-100" x-text="vpEntryVendor"></p>
+                        </div>
+                        <div>
+                            <span class="text-xs text-zinc-500">Dealer:</span>
+                            <p class="font-bold text-zinc-900 dark:text-zinc-100" x-text="vpEntryDealer"></p>
+                        </div>
+                        <div>
+                            <span class="text-xs text-zinc-500">Total Payable:</span>
+                            <p class="font-jetbrains font-bold text-violet-600" x-text="'Rs ' + (vpEntryCost - vpEntryPaid).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
+                        </div>
+                        <div>
+                            <span class="text-xs text-zinc-500">Already Paid:</span>
+                            <p class="font-jetbrains font-bold" x-text="'Rs ' + vpEntryPaid.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Date</label>
+                        <input type="date" name="date" required x-model="vpDate" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Amount (Rs)</label>
+                        <input type="number" step="0.01" min="0.01" name="amount" required x-model.number="vpAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Mode</label>
+                        <select name="payment_mode" required x-model="vpMode" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                            <?php $__currentLoopData = config('payments.modes'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $mode): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($mode); ?>"><?php echo e($mode); ?></option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reference No</label>
+                        <input type="text" name="reference_number" x-model="vpRefNo" placeholder="UPI ref / Cheque no / Tx ID" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Remarks</label>
+                    <textarea name="notes" x-model="vpNotes" rows="2" placeholder="Optional notes" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"></textarea>
+                </div>
+
+                 <?php $__env->slot('footer', null, []); ?> 
+                    <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['type' => 'button','variant' => 'outline','xOn:click' => '$dispatch(\'close-modal\', \'vendor-payment-modal\')']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['type' => 'button','variant' => 'outline','x-on:click' => '$dispatch(\'close-modal\', \'vendor-payment-modal\')']); ?>Cancel <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+                    <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['type' => 'submit','form' => 'vendor-payment-form','variant' => 'primary','icon' => 'account_balance_wallet']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['type' => 'submit','form' => 'vendor-payment-form','variant' => 'primary','icon' => 'account_balance_wallet']); ?>Record Payment <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
 <?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>

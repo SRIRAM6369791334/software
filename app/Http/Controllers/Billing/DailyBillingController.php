@@ -34,9 +34,9 @@ class DailyBillingController extends Controller
         $customers = Customer::orderBy('name')->get();
         $items     = Item::active()->get();
 
-        $dailyTotalSale  = $bills->sum('net_amount');
-        $dailyTotalGST   = $bills->sum('gst_amount');
-        $dailyTotalCash  = $bills->where('payment_mode', 'Cash')->sum('net_amount');
+        $dailyTotalSale  = DailyBill::whereDate('date', $date)->sum('net_amount');
+        $dailyTotalGST   = DailyBill::whereDate('date', $date)->sum('gst_amount');
+        $dailyTotalCash  = DailyBill::whereDate('date', $date)->where('payment_mode', 'Cash')->sum('net_amount');
 
         $dealerDayLoads = \App\Models\DayLoadEntry::with(['dealer', 'batch'])
             ->where('status', '!=', 'Cancelled')

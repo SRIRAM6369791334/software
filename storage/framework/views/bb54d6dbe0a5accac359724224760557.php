@@ -1,7 +1,16 @@
 <?php $__env->startSection('title', 'Customer Billing'); ?>
 
 <?php $__env->startSection('content'); ?>
-<div class="animate-fade-in">
+<div class="animate-fade-in" x-data="{
+    editId: 0,
+    editFormAction: '',
+    editCustomerId: 0,
+    editDate: '',
+    editPaymentMode: 'Cash',
+    editStatus: 'Paid',
+    editGstPercentage: 18,
+    editItems: [],
+}">
     <?php if (isset($component)) { $__componentOriginalf8d4ea307ab1e58d4e472a43c8548d8e = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalf8d4ea307ab1e58d4e472a43c8548d8e = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.page-header','data' => ['title' => 'Customer Billing','subtitle' => 'Record counter sales, calculate GST automatically, and issue receipts']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -47,17 +56,17 @@
 <?php endif; ?>
 
     
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
         <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Today\'s Sales','value' => 'Rs '.e(number_format($bills->where('date', date('Y-m-d'))->sum('net_amount'), 0)).'','icon' => 'bar_chart','color' => 'emerald']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Sale Date','value' => ''.e(\Carbon\Carbon::parse($date)->format('d M Y')).'','icon' => 'calendar_today','color' => 'blue']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('stat-card'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['label' => 'Today\'s Sales','value' => 'Rs '.e(number_format($bills->where('date', date('Y-m-d'))->sum('net_amount'), 0)).'','icon' => 'bar_chart','color' => 'emerald']); ?>
+<?php $component->withAttributes(['label' => 'Sale Date','value' => ''.e(\Carbon\Carbon::parse($date)->format('d M Y')).'','icon' => 'calendar_today','color' => 'blue']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
@@ -70,14 +79,14 @@
 <?php endif; ?>
         <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Avg Ticket Size','value' => 'Rs '.e(number_format($bills->avg('net_amount') ?: 0, 0)).'','icon' => 'show_chart','color' => 'blue']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Day','value' => ''.e(\Carbon\Carbon::parse($date)->format('l')).'','icon' => 'event','color' => 'emerald']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('stat-card'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['label' => 'Avg Ticket Size','value' => 'Rs '.e(number_format($bills->avg('net_amount') ?: 0, 0)).'','icon' => 'show_chart','color' => 'blue']); ?>
+<?php $component->withAttributes(['label' => 'Day','value' => ''.e(\Carbon\Carbon::parse($date)->format('l')).'','icon' => 'event','color' => 'emerald']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
@@ -88,15 +97,66 @@
 <?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
 <?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
 <?php endif; ?>
-        <div class="rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-800 p-6 shadow-sm text-white flex items-center justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-emerald-500/20">
-            <div>
-                <p class="font-outfit text-sm font-medium text-emerald-100">Total Counter Cash</p>
-                <p class="font-jetbrains mt-2 text-3xl font-bold tracking-tight">Rs <?php echo e(number_format($bills->sum('net_amount'), 0)); ?></p>
-            </div>
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-                <span class="material-symbols-rounded text-2xl">bolt</span>
-            </div>
-        </div>
+        <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Total Sale','value' => 'Rs '.e(number_format($dailyTotalSale, 0)).'','icon' => 'payments','color' => 'indigo']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['label' => 'Total Sale','value' => 'Rs '.e(number_format($dailyTotalSale, 0)).'','icon' => 'payments','color' => 'indigo']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+        <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Total GST','value' => 'Rs '.e(number_format($dailyTotalGST, 0)).'','icon' => 'receipt','color' => 'amber']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['label' => 'Total GST','value' => 'Rs '.e(number_format($dailyTotalGST, 0)).'','icon' => 'receipt','color' => 'amber']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+        <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['label' => 'Cash Sales','value' => 'Rs '.e(number_format($dailyTotalCash, 0)).'','icon' => 'payments','color' => 'violet']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['label' => 'Cash Sales','value' => 'Rs '.e(number_format($dailyTotalCash, 0)).'','icon' => 'payments','color' => 'violet']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
     </div>
 
     <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('create bills')): ?>
@@ -158,14 +218,14 @@
 <?php endif; ?>
                     <?php if (isset($component)) { $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'date','name' => 'date','label' => 'Sale Date','required' => true,'value' => ''.e(old('date', date('Y-m-d'))).'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'date','name' => 'date','label' => 'Sale Date','required' => true,'value' => ''.e(old('date', $date)).'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('form.input'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['type' => 'date','name' => 'date','label' => 'Sale Date','required' => true,'value' => ''.e(old('date', date('Y-m-d'))).'']); ?>
+<?php $component->withAttributes(['type' => 'date','name' => 'date','label' => 'Sale Date','required' => true,'value' => ''.e(old('date', $date)).'']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b)): ?>
@@ -362,34 +422,47 @@
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
 <?php $component->withAttributes([]); ?>
-        <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">Recent Counter Sales</h2>
-            <form method="GET" class="relative max-w-sm w-full sm:w-auto">
-                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-zinc-400">
-                    <span class="material-symbols-rounded text-xl">search</span>
-                </div>
-                <input type="text" name="search" value="<?php echo e($search); ?>" class="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-xl focus:ring-emerald-500 focus:border-emerald-500 block w-full pl-10 p-2.5 transition-colors font-outfit" placeholder="Search customer, item or route...">
+        <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">Sales</h2>
+            <form method="GET" class="flex flex-col sm:flex-row gap-3">
+                <input type="date" name="date" value="<?php echo e($date); ?>" class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                <input type="text" name="search" value="<?php echo e($search); ?>" placeholder="Search customer..." class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['type' => 'submit','variant' => 'outline','icon' => 'filter_alt']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['type' => 'submit','variant' => 'outline','icon' => 'filter_alt']); ?>Filter <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
             </form>
         </div>
 
         <?php if (isset($component)) { $__componentOriginalc8463834ba515134d5c98b88e1a9dc03 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc8463834ba515134d5c98b88e1a9dc03 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.data-table','data' => ['headers' => ['Invoice', 'Sale Date', 'Customer', 'Product Breakdown', 'Total Qty', 'Net Amount', 'Status', 'Action']]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.data-table','data' => ['headers' => ['Invoice', 'Customer', 'Items', 'Qty', 'Amount', 'Status', 'Actions']]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('data-table'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['headers' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(['Invoice', 'Sale Date', 'Customer', 'Product Breakdown', 'Total Qty', 'Net Amount', 'Status', 'Action'])]); ?>
+<?php $component->withAttributes(['headers' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(['Invoice', 'Customer', 'Items', 'Qty', 'Amount', 'Status', 'Actions'])]); ?>
             <?php $__empty_1 = true; $__currentLoopData = $bills; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $bill): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                 <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors group">
                     <td class="px-6 py-4">
-                        <p class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 text-sm"><?php echo e($bill->invoice_number); ?></p>
-                    </td>
-                    <td class="px-6 py-4">
-                        <p class="font-medium text-zinc-900 dark:text-zinc-100"><?php echo e($bill->date->format('d M')); ?></p>
-                        <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider"><?php echo e($bill->date->format('l, Y')); ?></p>
+                        <span class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-100 text-sm"><?php echo e($bill->invoice_number); ?></span>
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
@@ -415,7 +488,7 @@
 <?php endif; ?>
                             <div>
                                 <p class="font-cabinet font-bold text-zinc-900 dark:text-zinc-100"><?php echo e($bill->customer->name ?? '-'); ?></p>
-                                <p class="font-outfit text-xs text-zinc-500"><?php echo e($bill->customer->phone ?? 'NO PHONE'); ?></p>
+                                <p class="font-outfit text-xs text-zinc-500"><?php echo e($bill->customer->phone ?? '—'); ?></p>
                             </div>
                         </div>
                     </td>
@@ -445,7 +518,7 @@
 <?php unset($__componentOriginal2ddbc40e602c342e508ac696e52f8719); ?>
 <?php endif; ?>
                             <?php if($othersCount > 0): ?>
-                                <span class="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold text-[9px] rounded-md tracking-wider">+<?php echo e($othersCount); ?> OTHERS</span>
+                                <span class="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold text-[9px] rounded-md tracking-wider">+<?php echo e($othersCount); ?></span>
                             <?php endif; ?>
                         </div>
                     </td>
@@ -505,6 +578,28 @@
                     </td>
                     <td class="px-6 py-4 text-center">
                         <div class="flex items-center justify-center gap-2">
+                            <button
+                                type="button"
+                                x-on:click="
+                                    $dispatch('open-modal', 'edit-sale-modal');
+                                    $nextTick(() => {
+                                        editId = <?php echo e($bill->id); ?>;
+                                        editFormAction = '<?php echo e(route('billing.daily.update', $bill->id)); ?>';
+                                        editCustomerId = <?php echo e($bill->customer_id); ?>;
+                                        editDate = '<?php echo e($bill->date->format('Y-m-d')); ?>';
+                                        editPaymentMode = '<?php echo e($bill->payment_mode); ?>';
+                                        editStatus = '<?php echo e($bill->status); ?>';
+                                        editGstPercentage = <?php echo e($bill->gst_percentage); ?>;
+                                        editItems = [
+                                            <?php $__currentLoopData = $bill->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                { name: '<?php echo e(addslashes($item->item_name)); ?>', qty: <?php echo e($item->quantity_kg); ?>, rate: <?php echo e($item->rate_per_kg); ?> },
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                        ];
+                                    });
+                                "
+                                class="text-zinc-400 hover:text-amber-600 transition-colors" title="Edit">
+                                <span class="material-symbols-rounded text-lg">edit</span>
+                            </button>
                             <a href="<?php echo e(route('billing.daily.invoice', $bill->id)); ?>" target="_blank" class="text-zinc-400 hover:text-emerald-600 transition-colors" title="Print Invoice">
                                 <span class="material-symbols-rounded text-lg">print</span>
                             </a>
@@ -678,6 +773,125 @@
 <?php if (isset($__componentOriginal53747ceb358d30c0105769f8471417f6)): ?>
 <?php $component = $__componentOriginal53747ceb358d30c0105769f8471417f6; ?>
 <?php unset($__componentOriginal53747ceb358d30c0105769f8471417f6); ?>
+<?php endif; ?>
+    
+    <?php if (isset($component)) { $__componentOriginal9f64f32e90b9102968f2bc548315018c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9f64f32e90b9102968f2bc548315018c = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal','data' => ['name' => 'edit-sale-modal','title' => 'Edit Sale','subtitle' => 'Update customer, items, or payment details','icon' => 'edit','maxWidth' => '2xl']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('modal'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['name' => 'edit-sale-modal','title' => 'Edit Sale','subtitle' => 'Update customer, items, or payment details','icon' => 'edit','maxWidth' => '2xl']); ?>
+        <form id="edit-sale-form" :action="editFormAction" method="POST">
+            <?php echo csrf_field(); ?>
+            <input type="hidden" name="_method" value="PUT">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Customer</label>
+                    <select name="customer_id" required x-model.number="editCustomerId" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                        <option value="">Select customer...</option>
+                        <?php $__currentLoopData = $customers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $customer): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($customer->id); ?>"><?php echo e($customer->name); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Date</label>
+                    <input type="date" name="date" required x-model="editDate" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Mode</label>
+                    <select name="payment_mode" required x-model="editPaymentMode" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                        <option value="Cash">Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="NEFT">NEFT</option>
+                        <option value="Cheque(Bank Transfer)">Cheque(Bank Transfer)</option>
+                        <option value="Pay later(EMI)">Pay later(EMI)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Status</label>
+                    <select name="status" required x-model="editStatus" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                        <option value="Generated">Generated</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">GST %</label>
+                    <input type="number" name="gst_percentage" step="0.1" min="0" max="28" x-model.number="editGstPercentage" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Items</label>
+                <p class="text-xs text-zinc-500 mb-2">Edit items below (qty, rate changes are applied on save)</p>
+                <template x-for="(item, idx) in editItems" :key="idx">
+                    <div class="flex gap-2 mb-2 items-start">
+                        <input type="text" x-model="item.name" :name="'items[' + idx + '][name]'" required class="flex-1 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                        <input type="number" step="0.01" x-model="item.qty" :name="'items[' + idx + '][qty]'" required placeholder="Qty" class="w-24 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-center font-jetbrains">
+                        <input type="number" step="0.01" x-model="item.rate" :name="'items[' + idx + '][rate]'" required placeholder="Rate" class="w-24 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-center font-jetbrains">
+                    </div>
+                </template>
+            </div>
+
+             <?php $__env->slot('footer', null, []); ?> 
+                <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['type' => 'button','variant' => 'outline','xOn:click' => '$dispatch(\'close-modal\', \'edit-sale-modal\')']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['type' => 'button','variant' => 'outline','x-on:click' => '$dispatch(\'close-modal\', \'edit-sale-modal\')']); ?>Cancel <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+                <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['type' => 'submit','form' => 'edit-sale-form','variant' => 'primary','icon' => 'save']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['type' => 'submit','form' => 'edit-sale-form','variant' => 'primary','icon' => 'save']); ?>Save Changes <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+             <?php $__env->endSlot(); ?>
+        </form>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9f64f32e90b9102968f2bc548315018c)): ?>
+<?php $attributes = $__attributesOriginal9f64f32e90b9102968f2bc548315018c; ?>
+<?php unset($__attributesOriginal9f64f32e90b9102968f2bc548315018c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9f64f32e90b9102968f2bc548315018c)): ?>
+<?php $component = $__componentOriginal9f64f32e90b9102968f2bc548315018c; ?>
+<?php unset($__componentOriginal9f64f32e90b9102968f2bc548315018c); ?>
 <?php endif; ?>
 </div>
 

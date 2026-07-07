@@ -129,6 +129,9 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['permission:view purchases'])->group(function () {
         Route::get('/purchases/entry', [PurchaseController::class, 'index'])->name('purchases.entry');
         Route::get('/purchases/invoices', [PurchaseController::class, 'invoices'])->name('purchases.invoices');
+        Route::get('/purchases/invoices/export', [PurchaseController::class, 'invoicesExport'])->name('purchases.invoices.export');
+        Route::get('/purchases/invoices/{date}/print', [PurchaseController::class, 'invoicesPrint'])->name('purchases.invoices.print');
+        Route::get('/purchases/invoices/{date}/pdf', [PurchaseController::class, 'invoicesPdf'])->name('purchases.invoices.pdf');
         Route::get('/purchases/export', [PurchaseController::class, 'export'])->name('purchases.export');
         Route::get('/purchases/{purchase}/print', [PurchaseController::class, 'print'])->name('purchases.print');
     });
@@ -160,6 +163,9 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('billing')->name('billing.')->group(function () {
         Route::middleware(['permission:view bills'])->group(function () {
             Route::get('day-load', [DayLoadBillingController::class, 'index'])->name('day-load.index');
+            Route::get('day-load/export/csv', [DayLoadBillingController::class, 'export'])->name('day-load.export');
+            Route::get('day-load/{date}/invoice', [DayLoadBillingController::class, 'invoice'])->name('day-load.invoice');
+            Route::get('day-load/{date}/pdf', [DayLoadBillingController::class, 'downloadPdf'])->name('day-load.pdf');
             Route::get('weekly/bulk', [WeeklyBillingController::class, 'bulk'])->name('weekly.bulk');
             Route::get('weekly/dealer-invoice', [WeeklyBillingController::class, 'dealerInvoice'])->name('weekly.dealer-invoice');
             Route::post('weekly/dealer-invoice/generate', [WeeklyBillingController::class, 'generateInvoice'])->name('weekly.generate-invoice');
@@ -180,6 +186,8 @@ Route::middleware(['auth'])->group(function () {
             Route::put('day-load/{entry}/update', [DayLoadBillingController::class, 'update'])->name('day-load.update');
             Route::put('day-load/bulk-update', [DayLoadBillingController::class, 'bulkUpdate'])->name('day-load.bulk-update');
             Route::post('day-load/set-farm-weight', [DayLoadBillingController::class, 'setFarmWeight'])->name('day-load.set-farm-weight');
+            Route::post('day-load/{entry}/dealer-payment', [DayLoadBillingController::class, 'recordDealerPayment'])->name('day-load.dealer-payment');
+            Route::post('day-load/{entry}/vendor-payment', [DayLoadBillingController::class, 'recordVendorPayment'])->name('day-load.vendor-payment');
             Route::post('weekly/bulk', [WeeklyBillingController::class, 'bulkStore'])->name('weekly.bulkStore');
             Route::post('weekly/purchase', [WeeklyBillingController::class, 'storePurchase'])->name('weekly.purchase.store');
             Route::post('weekly/generate', [WeeklyBillingController::class, 'generateWeekly'])->name('weekly.generate');

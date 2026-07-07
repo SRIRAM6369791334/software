@@ -5,18 +5,36 @@
 <div class="animate-fade-in">
     <x-page-header title="Daily Load Billing" subtitle="Track vendor loads, dealer rates, box weights, and paper-rate variance">
         <x-slot:actions>
+            <x-button variant="outline" href="{{ route('billing.day-load.export', ['date' => $date]) }}" icon="download">
+                Export CSV
+            </x-button>
+            <x-button variant="outline" href="{{ route('billing.day-load.invoice', $date) }}" icon="print" target="_blank">
+                Print Invoice
+            </x-button>
+            <x-button variant="outline" href="{{ route('billing.day-load.pdf', $date) }}" icon="picture_as_pdf">
+                Download PDF
+            </x-button>
             <x-button variant="outline" href="{{ route('billing.weekly.index') }}" icon="receipt_long">
                 Weekly Billing
             </x-button>
         </x-slot:actions>
     </x-page-header>
 
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-8">
         <x-stat-card label="Billing Date" value="{{ \Carbon\Carbon::parse($date)->format('d M Y') }}" icon="calendar_today" color="blue" />
         <x-stat-card label="Day" value="{{ \Carbon\Carbon::parse($date)->format('l') }}" icon="event" color="emerald" />
         <x-stat-card label="Total Boxes" value="{{ number_format((float) ($batch?->total_boxes ?? 0), 0) }}" icon="inventory_2" color="amber" />
         <x-stat-card label="Bird Weight" value="{{ number_format((float) ($batch?->total_bird_weight ?? 0), 2) }} kg" icon="scale" color="indigo" />
-        <x-stat-card label="Total Weight" value="{{ number_format((float) ($batch?->total_weight ?? 0), 2) }} kg" icon="monitor_weight" color="violet" />
+        <x-stat-card label="Dealer Income" value="Rs {{ number_format($totalDealerIncome, 0) }}" icon="payments" color="teal" />
+        <x-stat-card label="Vendor Cost" value="Rs {{ number_format($totalVendorCost, 0) }}" icon="shopping_cart" color="rose" />
+        <x-stat-card label="Gross Margin" value="Rs {{ number_format($grossMargin, 0) }}" icon="trending_up" color="{{ $grossMargin >= 0 ? 'emerald' : 'red' }}" />
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        <x-stat-card label="Dealer Collected" value="Rs {{ number_format($totalDealerCollected, 0) }}" icon="account_balance" color="emerald" />
+        <x-stat-card label="Vendor Paid" value="Rs {{ number_format($totalVendorPaid, 0) }}" icon="payments" color="violet" />
+        <x-stat-card label="Dealer Due" value="Rs {{ number_format($totalDealerDue, 0) }}" icon="pending" color="{{ $totalDealerDue > 0 ? 'amber' : 'emerald' }}" />
+        <x-stat-card label="Vendor Due" value="Rs {{ number_format($totalVendorDue, 0) }}" icon="pending_actions" color="{{ $totalVendorDue > 0 ? 'amber' : 'emerald' }}" />
+        <x-stat-card label="Collection %" value="{{ $collectionPct }}%" icon="pie_chart" color="indigo" />
     </div>
 
     @can('create bills')
@@ -105,7 +123,7 @@
             </form>
         </div>
 
-        <x-data-table :headers="['Date', 'Vendor', 'Dealer', 'Rates', 'Paper Diff', 'Boxes', 'Weights', 'Status', 'Actions']">
+        <x-data-table :headers="['Date', 'Vendor', 'Dealer', 'Rates', 'Margin', 'Boxes', 'Weights', 'Dealer Payment', 'Vendor Payment', 'Status', 'Actions']">
             @forelse($entries as $entry)
                 <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
                     <td class="px-6 py-4">
@@ -132,6 +150,30 @@
                         <div>Bird: {{ number_format((float) $entry->bird_weight, 2) }}</div>
                         <div>Loss: {{ $entry->loss_weight === null ? '-' : number_format((float) $entry->loss_weight, 2) }}</div>
                         <div>Total: {{ $entry->total_weight === null ? '-' : number_format((float) $entry->total_weight, 2) }}</div>
+                    </td>
+                    <td class="px-6 py-4 text-xs">
+                        @php
+                            $dStatus = $entry->dealer_payment_status;
+                            $dColor = match($dStatus) { 'Paid' => 'success', 'Partial' => 'warning', 'Overpaid' => 'info', default => 'zinc' };
+                        @endphp
+                        <div class="flex flex-col items-center gap-1">
+                            <x-badge :variant="$dColor">{{ $dStatus }}</x-badge>
+                            <span class="font-jetbrains text-[11px] {{ (float) $entry->dealer_collected > 0 ? 'text-emerald-600' : 'text-zinc-400' }}">
+                                Rs {{ number_format((float) $entry->dealer_collected, 0) }} / Rs {{ number_format($entry->dealer_income, 0) }}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-xs">
+                        @php
+                            $vStatus = $entry->vendor_payment_status;
+                            $vColor = match($vStatus) { 'Paid' => 'success', 'Partial' => 'warning', 'Overpaid' => 'info', default => 'zinc' };
+                        @endphp
+                        <div class="flex flex-col items-center gap-1">
+                            <x-badge :variant="$vColor">{{ $vStatus }}</x-badge>
+                            <span class="font-jetbrains text-[11px] {{ (float) $entry->vendor_paid > 0 ? 'text-violet-600' : 'text-zinc-400' }}">
+                                Rs {{ number_format((float) $entry->vendor_paid, 0) }} / Rs {{ number_format($entry->vendor_cost, 0) }}
+                            </span>
+                        </div>
                     </td>
                     <td class="px-6 py-4 text-center">
                         <x-badge variant="success">{{ $entry->status }}</x-badge>
@@ -161,7 +203,6 @@
                                     class="inline-flex items-center gap-1 text-xs font-medium text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
                                 >
                                     <span class="material-symbols-rounded text-sm">edit</span>
-                                    Edit
                                 </button>
                                 @if($entry->no_of_boxes > 0)
                                 <button
@@ -183,9 +224,46 @@
                                     class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                                 >
                                     <span class="material-symbols-rounded text-sm">swap_horiz</span>
-                                    Transfer
                                 </button>
                                 @endif
+                                <button
+                                    type="button"
+                                    x-on:click="
+                                        $dispatch('open-modal', 'dealer-payment-modal');
+                                        $nextTick(() => {
+                                            dpEntryId = {{ $entry->id }};
+                                            dpFormAction = '{{ route('billing.day-load.dealer-payment', $entry->id) }}';
+                                            dpEntryVendor = '{{ addslashes($entry->vendor->firm_name ?? '-') }}';
+                                            dpEntryDealer = '{{ addslashes($entry->dealer->firm_name ?? '-') }}';
+                                            dpEntryIncome = {{ $entry->dealer_income }};
+                                            dpEntryCollected = {{ (float) $entry->dealer_collected }};
+                                            dpAmount = {{ round($entry->dealer_income - (float) $entry->dealer_collected, 2) }};
+                                        });
+                                    "
+                                    class="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
+                                    title="Record Dealer Payment"
+                                >
+                                    <span class="material-symbols-rounded text-sm">payments</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    x-on:click="
+                                        $dispatch('open-modal', 'vendor-payment-modal');
+                                        $nextTick(() => {
+                                            vpEntryId = {{ $entry->id }};
+                                            vpFormAction = '{{ route('billing.day-load.vendor-payment', $entry->id) }}';
+                                            vpEntryVendor = '{{ addslashes($entry->vendor->firm_name ?? '-') }}';
+                                            vpEntryDealer = '{{ addslashes($entry->dealer->firm_name ?? '-') }}';
+                                            vpEntryCost = {{ $entry->vendor_cost }};
+                                            vpEntryPaid = {{ (float) $entry->vendor_paid }};
+                                            vpAmount = {{ round($entry->vendor_cost - (float) $entry->vendor_paid, 2) }};
+                                        });
+                                    "
+                                    class="inline-flex items-center gap-1 text-xs font-medium text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300 transition-colors"
+                                    title="Record Vendor Payment"
+                                >
+                                    <span class="material-symbols-rounded text-sm">account_balance_wallet</span>
+                                </button>
                             </div>
                         @endif
                     </td>
@@ -226,6 +304,28 @@
         editEmptyWeight: 0,
         editFarmWeight: '',
         editRemarks: '',
+        dpEntryId: 0,
+        dpFormAction: '',
+        dpEntryVendor: '',
+        dpEntryDealer: '',
+        dpEntryIncome: 0,
+        dpEntryCollected: 0,
+        dpAmount: 0,
+        dpDate: '{{ $date }}',
+        dpMode: 'Cash',
+        dpRefNo: '',
+        dpNotes: '',
+        vpEntryId: 0,
+        vpFormAction: '',
+        vpEntryVendor: '',
+        vpEntryDealer: '',
+        vpEntryCost: 0,
+        vpEntryPaid: 0,
+        vpAmount: 0,
+        vpDate: '{{ $date }}',
+        vpMode: 'Cash',
+        vpRefNo: '',
+        vpNotes: '',
     }">
         <x-modal name="edit-entry-modal" title="Edit Entry" subtitle="Adjust rates, weights, or box count" icon="edit" maxWidth="2xl">
             <form id="edit-entry-form" :action="editFormAction" method="POST">
@@ -571,6 +671,132 @@
                 <x-slot:footer>
                     <x-button type="button" variant="ghost" x-on:click="$dispatch('close-modal', 'adjust-all-modal')">Cancel</x-button>
                     <x-button type="submit" form="adjust-all-form" variant="primary" icon="save">Save All Changes</x-button>
+                </x-slot:footer>
+            </form>
+        </x-modal>
+
+        {{-- Dealer Payment Modal --}}
+        <x-modal name="dealer-payment-modal" title="Record Dealer Payment" subtitle="Record payment received from dealer for this entry" icon="payments" maxWidth="lg">
+            <form id="dealer-payment-form" :action="dpFormAction" method="POST">
+                @csrf
+                <div class="mb-5 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                        <div>
+                            <span class="text-xs text-zinc-500">Vendor:</span>
+                            <p class="font-bold text-zinc-900 dark:text-zinc-100" x-text="dpEntryVendor"></p>
+                        </div>
+                        <div>
+                            <span class="text-xs text-zinc-500">Dealer:</span>
+                            <p class="font-bold text-zinc-900 dark:text-zinc-100" x-text="dpEntryDealer"></p>
+                        </div>
+                        <div>
+                            <span class="text-xs text-zinc-500">Total Due:</span>
+                            <p class="font-jetbrains font-bold text-emerald-600" x-text="'Rs ' + (dpEntryIncome - dpEntryCollected).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
+                        </div>
+                        <div>
+                            <span class="text-xs text-zinc-500">Already Collected:</span>
+                            <p class="font-jetbrains font-bold" x-text="'Rs ' + dpEntryCollected.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Date</label>
+                        <input type="date" name="date" required x-model="dpDate" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Amount (Rs)</label>
+                        <input type="number" step="0.01" min="0.01" name="amount" required x-model.number="dpAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Mode</label>
+                        <select name="payment_mode" required x-model="dpMode" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                            @foreach(config('payments.modes') as $mode)
+                                <option value="{{ $mode }}">{{ $mode }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reference No</label>
+                        <input type="text" name="reference_number" x-model="dpRefNo" placeholder="UPI ref / Cheque no / Tx ID" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Remarks</label>
+                    <textarea name="notes" x-model="dpNotes" rows="2" placeholder="Optional notes" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"></textarea>
+                </div>
+
+                <x-slot:footer>
+                    <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'dealer-payment-modal')">Cancel</x-button>
+                    <x-button type="submit" form="dealer-payment-form" variant="primary" icon="payments">Record Payment</x-button>
+                </x-slot:footer>
+            </form>
+        </x-modal>
+
+        {{-- Vendor Payment Modal --}}
+        <x-modal name="vendor-payment-modal" title="Record Vendor Payment" subtitle="Record payment made to vendor for this entry" icon="account_balance_wallet" maxWidth="lg">
+            <form id="vendor-payment-form" :action="vpFormAction" method="POST">
+                @csrf
+                <div class="mb-5 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                        <div>
+                            <span class="text-xs text-zinc-500">Vendor:</span>
+                            <p class="font-bold text-zinc-900 dark:text-zinc-100" x-text="vpEntryVendor"></p>
+                        </div>
+                        <div>
+                            <span class="text-xs text-zinc-500">Dealer:</span>
+                            <p class="font-bold text-zinc-900 dark:text-zinc-100" x-text="vpEntryDealer"></p>
+                        </div>
+                        <div>
+                            <span class="text-xs text-zinc-500">Total Payable:</span>
+                            <p class="font-jetbrains font-bold text-violet-600" x-text="'Rs ' + (vpEntryCost - vpEntryPaid).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
+                        </div>
+                        <div>
+                            <span class="text-xs text-zinc-500">Already Paid:</span>
+                            <p class="font-jetbrains font-bold" x-text="'Rs ' + vpEntryPaid.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Date</label>
+                        <input type="date" name="date" required x-model="vpDate" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Amount (Rs)</label>
+                        <input type="number" step="0.01" min="0.01" name="amount" required x-model.number="vpAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Mode</label>
+                        <select name="payment_mode" required x-model="vpMode" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                            @foreach(config('payments.modes') as $mode)
+                                <option value="{{ $mode }}">{{ $mode }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reference No</label>
+                        <input type="text" name="reference_number" x-model="vpRefNo" placeholder="UPI ref / Cheque no / Tx ID" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Remarks</label>
+                    <textarea name="notes" x-model="vpNotes" rows="2" placeholder="Optional notes" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"></textarea>
+                </div>
+
+                <x-slot:footer>
+                    <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'vendor-payment-modal')">Cancel</x-button>
+                    <x-button type="submit" form="vendor-payment-form" variant="primary" icon="account_balance_wallet">Record Payment</x-button>
                 </x-slot:footer>
             </form>
         </x-modal>

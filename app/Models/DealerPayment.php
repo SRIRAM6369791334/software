@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class DealerPayment extends Model
 {
     use HasFactory;
-    protected $fillable = ['dealer_id', 'invoice_id', 'date', 'amount', 'payment_mode', 'notes'];
+    protected $fillable = ['dealer_id', 'invoice_id', 'day_load_entry_id', 'date', 'amount', 'payment_mode', 'reference_number', 'notes'];
 
     protected $casts = [
         'date'   => 'date',
@@ -24,6 +24,11 @@ class DealerPayment extends Model
     public function dayLoadInvoice(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(DayLoadInvoice::class, 'invoice_id');
+    }
+
+    public function dayLoadEntry(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(DayLoadEntry::class, 'day_load_entry_id');
     }
 
     public function scopeSearch($query, ?string $term)

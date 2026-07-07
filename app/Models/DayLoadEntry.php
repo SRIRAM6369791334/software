@@ -27,6 +27,10 @@ class DayLoadEntry extends Model
         'parent_entry_id',
         'version',
         'remarks',
+        'dealer_collected',
+        'vendor_paid',
+        'dealer_payment_status',
+        'vendor_payment_status',
     ];
 
     protected $casts = [
@@ -40,8 +44,35 @@ class DayLoadEntry extends Model
         'farm_weight' => 'decimal:2',
         'total_weight' => 'decimal:2',
         'loss_weight' => 'decimal:2',
+        'dealer_collected' => 'decimal:2',
+        'vendor_paid' => 'decimal:2',
         'version' => 'integer',
     ];
+
+    public function getDealerIncomeAttribute(): float
+    {
+        return round((float) $this->bird_weight * (float) $this->billing_rate, 2);
+    }
+
+    public function getVendorCostAttribute(): float
+    {
+        return round((float) $this->bird_weight * (float) $this->paper_rate, 2);
+    }
+
+    public function getGrossMarginAttribute(): float
+    {
+        return round($this->dealer_income - $this->vendor_cost, 2);
+    }
+
+    public function getDealerBalanceAttribute(): float
+    {
+        return round($this->dealer_income - (float) $this->dealer_collected, 2);
+    }
+
+    public function getVendorBalanceAttribute(): float
+    {
+        return round($this->vendor_cost - (float) $this->vendor_paid, 2);
+    }
 
     protected static function booted(): void
     {
@@ -89,5 +120,15 @@ class DayLoadEntry extends Model
     public function getRateDifferenceAttribute(): float
     {
         return round((float) $this->customer_rate - (float) $this->paper_rate, 2);
+    }
+
+    public function dealerPayments(): HasMany
+    {
+        return $this->hasMany(DealerPayment::class, 'day_load_entry_id');
+    }
+
+    public function vendorPayments(): HasMany
+    {
+        return $this->hasMany(VendorPayment::class, 'day_load_entry_id');
     }
 }

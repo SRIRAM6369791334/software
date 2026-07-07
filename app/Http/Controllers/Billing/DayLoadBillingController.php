@@ -9,14 +9,21 @@ use App\Models\Dealer;
 use App\Models\EntryAdjustmentLog;
 use App\Models\Vendor;
 use App\Services\DayLoadBillingService;
+use App\Services\DayLoadPaymentService;
+use App\Services\ExportService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DayLoadBillingController extends Controller
 {
     public function __construct(
         private DayLoadBillingService $dayLoadBillingService,
+        private DayLoadPaymentService $dayLoadPaymentService,
+        private ExportService $exporter,
     ) {}
 
     public function index(Request $request): View
@@ -40,7 +47,26 @@ class DayLoadBillingController extends Controller
         $vendors = Vendor::orderBy('firm_name')->get();
         $dealers = Dealer::orderBy('firm_name')->get();
 
-        return view('billing.day-load.index', compact('entries', 'batch', 'vendors', 'dealers', 'date', 'search'));
+        $allEntries = DayLoadEntry::with(['batch', 'vendor', 'dealer'])
+            ->whereHas('batch', fn ($q) => $q->whereDate('billing_date', $date))
+            ->where('status', '!=', 'Cancelled')
+            ->get();
+
+        $totalDealerIncome    = $allEntries->sum(fn($e) => $e->dealer_income);
+        $totalVendorCost      = $allEntries->sum(fn($e) => $e->vendor_cost);
+        $grossMargin          = round($totalDealerIncome - $totalVendorCost, 2);
+        $totalDealerCollected = $allEntries->sum(fn($e) => (float) $e->dealer_collected);
+        $totalVendorPaid      = $allEntries->sum(fn($e) => (float) $e->vendor_paid);
+        $totalDealerDue       = round($totalDealerIncome - $totalDealerCollected, 2);
+        $totalVendorDue       = round($totalVendorCost - $totalVendorPaid, 2);
+        $collectionPct        = $totalDealerIncome > 0 ? round(($totalDealerCollected / $totalDealerIncome) * 100, 1) : 0;
+
+        return view('billing.day-load.index', compact(
+            'entries', 'batch', 'vendors', 'dealers', 'date', 'search',
+            'totalDealerIncome', 'totalVendorCost', 'grossMargin',
+            'totalDealerCollected', 'totalVendorPaid',
+            'totalDealerDue', 'totalVendorDue', 'collectionPct',
+        ));
     }
 
     public function store(Request $request): RedirectResponse
@@ -182,5 +208,99 @@ class DayLoadBillingController extends Controller
         $this->dayLoadBillingService->refreshBatchTotals($batch);
 
         return back()->with('success', 'Farm weight distributed across all entries.');
+    }
+
+    public function recordDealerPayment(Request $request, DayLoadEntry $entry): RedirectResponse
+    {
+        $validated = $request->validate([
+            'date'             => 'required|date|before_or_equal:today',
+            'amount'           => 'required|numeric|min:0.01',
+            'payment_mode'     => 'required|in:' . implode(',', config('payments.modes')),
+            'reference_number' => 'nullable|string|max:100',
+            'notes'            => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $this->dayLoadPaymentService->recordDealerPayment($entry, $validated);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Could not record payment: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Dealer payment recorded successfully.');
+    }
+
+    public function recordVendorPayment(Request $request, DayLoadEntry $entry): RedirectResponse
+    {
+        $validated = $request->validate([
+            'date'             => 'required|date|before_or_equal:today',
+            'amount'           => 'required|numeric|min:0.01',
+            'payment_mode'     => 'required|in:' . implode(',', config('payments.modes')),
+            'reference_number' => 'nullable|string|max:100',
+            'notes'            => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $this->dayLoadPaymentService->recordVendorPayment($entry, $validated);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Could not record payment: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Vendor payment recorded successfully.');
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $date = $request->input('date', today()->format('Y-m-d'));
+
+        $entries = DayLoadEntry::with(['vendor', 'dealer', 'batch'])
+            ->whereHas('batch', fn ($q) => $q->whereDate('billing_date', $date))
+            ->where('status', '!=', 'Cancelled')
+            ->get();
+
+        $rows = $entries->map(fn ($e) => [
+            $e->batch->billing_date->format('Y-m-d'),
+            $e->vendor->firm_name ?? '-',
+            $e->dealer->firm_name ?? '-',
+            $e->no_of_boxes,
+            number_format((float) $e->bird_weight, 2),
+            number_format((float) ($e->farm_weight ?? 0), 2),
+            number_format((float) ($e->loss_weight ?? 0), 2),
+            number_format((float) $e->total_weight, 2),
+            $e->paper_rate,
+            $e->billing_rate,
+            $e->customer_rate,
+            $e->status,
+        ]);
+
+        $filename = 'day-load-' . $date;
+        return $this->exporter->streamCsv($filename, [
+            'Date', 'Vendor', 'Dealer', 'Boxes', 'Bird Wt', 'Farm Wt', 'Loss Wt', 'Total Wt',
+            'Paper Rate', 'Billing Rate', 'Customer Rate', 'Status',
+        ], $rows);
+    }
+
+    public function invoice(string $date): View
+    {
+        $dateObj = Carbon::parse($date);
+        $batch = DayLoadBatch::whereDate('billing_date', $date)->first();
+        $entries = DayLoadEntry::with(['vendor', 'dealer'])
+            ->whereHas('batch', fn ($q) => $q->whereDate('billing_date', $date))
+            ->where('status', '!=', 'Cancelled')
+            ->get();
+
+        return view('billing.day-load.invoice', compact('dateObj', 'batch', 'entries'));
+    }
+
+    public function downloadPdf(string $date)
+    {
+        $dateObj = Carbon::parse($date);
+        $batch = DayLoadBatch::whereDate('billing_date', $date)->first();
+        $entries = DayLoadEntry::with(['vendor', 'dealer'])
+            ->whereHas('batch', fn ($q) => $q->whereDate('billing_date', $date))
+            ->where('status', '!=', 'Cancelled')
+            ->get();
+
+        $pdf = Pdf::loadView('billing.day-load.pdf', compact('dateObj', 'batch', 'entries'));
+        return $pdf->download("day-load-{$date}.pdf");
     }
 }

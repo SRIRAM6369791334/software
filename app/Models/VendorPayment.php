@@ -12,19 +12,28 @@ class VendorPayment extends Model
 
     protected $fillable = [
         'vendor_id',
+        'day_load_entry_id',
         'date',
         'amount',
         'payment_mode',
+        'reference_number',
         'notes',
+        'pending_balance_after',
     ];
 
     protected $casts = [
         'date' => 'date',
         'amount' => 'decimal:2',
+        'pending_balance_after' => 'decimal:2',
     ];
 
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    public function dayLoadEntry(): BelongsTo
+    {
+        return $this->belongsTo(DayLoadEntry::class, 'day_load_entry_id');
     }
 }

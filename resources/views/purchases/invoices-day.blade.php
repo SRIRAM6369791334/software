@@ -14,6 +14,15 @@
 }">
     <x-page-header title="{{ \Carbon\Carbon::parse($date)->format('d M Y') }}" subtitle="{{ \Carbon\Carbon::parse($date)->format('l') }}">
         <x-slot:actions>
+            <x-button variant="outline" href="{{ route('purchases.invoices.export', ['date' => $date]) }}" icon="download">
+                Export CSV
+            </x-button>
+            <x-button variant="outline" href="{{ route('purchases.invoices.print', $date) }}" icon="print" target="_blank">
+                Print Invoice
+            </x-button>
+            <x-button variant="outline" href="{{ route('purchases.invoices.pdf', $date) }}" icon="picture_as_pdf">
+                Download PDF
+            </x-button>
             <x-button variant="outline" href="{{ route('purchases.invoices') }}" icon="arrow_back">
                 Back to All Dates
             </x-button>
@@ -172,6 +181,9 @@
                                 <div class="flex items-center justify-center gap-2">
                                     <a href="{{ route('purchases.show', $p->id) }}" class="text-zinc-400 hover:text-blue-600 transition-colors" title="View">
                                         <span class="material-symbols-rounded text-lg">visibility</span>
+                                    </a>
+                                    <a href="{{ route('purchases.print', $p->id) }}" target="_blank" class="text-zinc-400 hover:text-emerald-600 transition-colors" title="Print Invoice">
+                                        <span class="material-symbols-rounded text-lg">print</span>
                                     </a>
                                     @can('edit purchases')
                                     <button
