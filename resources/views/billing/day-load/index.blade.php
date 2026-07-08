@@ -20,22 +20,60 @@
         </x-slot:actions>
     </x-page-header>
 
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-8">
-        <x-stat-card label="Billing Date" value="{{ \Carbon\Carbon::parse($date)->format('d M Y') }}" icon="calendar_today" color="blue" />
-        <x-stat-card label="Day" value="{{ \Carbon\Carbon::parse($date)->format('l') }}" icon="event" color="emerald" />
-        <x-stat-card label="Total Boxes" value="{{ number_format((float) ($batch?->total_boxes ?? 0), 0) }}" icon="inventory_2" color="amber" />
-        <x-stat-card label="Bird Weight" value="{{ number_format((float) ($batch?->total_bird_weight ?? 0), 2) }} kg" icon="scale" color="indigo" />
-        <x-stat-card label="Dealer Income" value="Rs {{ number_format($totalDealerIncome, 0) }}" icon="payments" color="teal" />
-        <x-stat-card label="Vendor Cost" value="Rs {{ number_format($totalVendorCost, 0) }}" icon="shopping_cart" color="rose" />
-        <x-stat-card label="Gross Margin" value="Rs {{ number_format($grossMargin, 0) }}" icon="trending_up" color="{{ $grossMargin >= 0 ? 'emerald' : 'red' }}" />
-    </div>
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-        <x-stat-card label="Dealer Collected" value="Rs {{ number_format($totalDealerCollected, 0) }}" icon="account_balance" color="emerald" />
-        <x-stat-card label="Vendor Paid" value="Rs {{ number_format($totalVendorPaid, 0) }}" icon="payments" color="violet" />
-        <x-stat-card label="Dealer Due" value="Rs {{ number_format($totalDealerDue, 0) }}" icon="pending" color="{{ $totalDealerDue > 0 ? 'amber' : 'emerald' }}" />
-        <x-stat-card label="Vendor Due" value="Rs {{ number_format($totalVendorDue, 0) }}" icon="pending_actions" color="{{ $totalVendorDue > 0 ? 'amber' : 'emerald' }}" />
-        <x-stat-card label="Collection %" value="{{ $collectionPct }}%" icon="pie_chart" color="indigo" />
-    </div>
+    {{-- Collapsible Stats Panel --}}
+    <x-card class="mb-6 transition-all duration-300 hover:shadow-md" x-data="{ showStats: false }">
+        <div class="flex justify-between items-center cursor-pointer select-none" @click="showStats = !showStats">
+            <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/10">
+                    <span class="material-symbols-rounded text-lg">analytics</span>
+                </div>
+                <div>
+                    <h2 class="text-sm font-extrabold text-zinc-800 dark:text-zinc-100 tracking-tight">Billing & Financial Summary</h2>
+                    <p class="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 mt-0.5 tracking-wide uppercase">Click to view day totals and margins</p>
+                </div>
+            </div>
+            <button type="button" class="flex items-center justify-center h-8 px-3 gap-1.5 rounded-lg text-xs transition-all duration-300 font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700">
+                <span class="material-symbols-rounded text-sm" x-text="showStats ? 'expand_less' : 'expand_more'"></span>
+                <span x-text="showStats ? 'Hide Summary' : 'Show Summary'"></span>
+            </button>
+        </div>
+
+        <div x-show="showStats" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="pt-6 mt-4 border-t border-zinc-100 dark:border-zinc-800/80">
+            {{-- Combined Metrics Row --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <x-stat-card label="Billing Date" value="{{ \Carbon\Carbon::parse($date)->format('d M Y') }}" subtitle="{{ \Carbon\Carbon::parse($date)->format('l') }}" icon="calendar_today" color="blue" />
+                <x-stat-card label="Total Boxes" value="{{ number_format((float) ($batch?->total_boxes ?? 0), 0) }}" icon="inventory_2" color="amber" />
+                <x-stat-card label="Bird Weight" value="{{ number_format((float) ($batch?->total_bird_weight ?? 0), 2) }} kg" icon="scale" color="indigo" />
+                <x-stat-card label="Gross Margin" value="Rs {{ number_format($grossMargin, 0) }}" icon="trending_up" color="{{ $grossMargin >= 0 ? 'emerald' : 'rose' }}" />
+            </div>
+
+            {{-- Dealer Panel (Full Width) --}}
+            <div class="rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 bg-white/40 dark:bg-zinc-900/20 p-4 mb-6">
+                <div class="flex items-center gap-2 mb-3 px-1">
+                    <span class="material-symbols-rounded text-teal-500 text-[16px]">storefront</span>
+                    <h3 class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Dealer Summary (Receivables)</h3>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <x-stat-card label="Dealer Income" value="Rs {{ number_format($totalDealerIncome, 0) }}" icon="payments" color="teal" />
+                    <x-stat-card label="Dealer Collected" value="Rs {{ number_format($totalDealerCollected, 0) }}" subtitle="{{ $collectionPct }}% Collected" icon="account_balance" color="emerald" />
+                    <x-stat-card label="Dealer Due" value="Rs {{ number_format($totalDealerDue, 0) }}" icon="pending" color="{{ $totalDealerDue > 0 ? 'amber' : 'emerald' }}" />
+                </div>
+            </div>
+
+            {{-- Vendor Panel (Full Width) --}}
+            <div class="rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 bg-white/40 dark:bg-zinc-900/20 p-4">
+                <div class="flex items-center gap-2 mb-3 px-1">
+                    <span class="material-symbols-rounded text-rose-500 text-[16px]">local_shipping</span>
+                    <h3 class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Vendor Summary (Payables)</h3>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <x-stat-card label="Vendor Cost" value="Rs {{ number_format($totalVendorCost, 0) }}" icon="shopping_cart" color="rose" />
+                    <x-stat-card label="Vendor Paid" value="Rs {{ number_format($totalVendorPaid, 0) }}" icon="payments" color="violet" />
+                    <x-stat-card label="Vendor Due" value="Rs {{ number_format($totalVendorDue, 0) }}" icon="pending_actions" color="{{ $totalVendorDue > 0 ? 'amber' : 'emerald' }}" />
+                </div>
+            </div>
+        </div>
+    </x-card>
 
     @can('create bills')
     <x-card class="mb-8">
@@ -146,7 +184,9 @@
                         <div>Customer: <span class="font-jetbrains">Rs {{ number_format((float) $entry->customer_rate, 2) }}</span></div>
                     </td>
                     <td class="px-6 py-4">
-                        @php($diff = $entry->rate_difference)
+                        @php
+                            $diff = $entry->rate_difference;
+                        @endphp
                         <span class="font-jetbrains font-bold {{ $diff >= 0 ? 'text-emerald-600' : 'text-rose-600' }}">
                             {{ $diff >= 0 ? '+' : '-' }}Rs {{ number_format(abs($diff), 2) }}
                         </span>
@@ -297,147 +337,103 @@
         </x-data-table>
     </x-card>
 
-    <div x-data="{
-        transferSourceId: 0,
-        transferSourceBoxes: 0,
-        transferSourceVendor: '',
-        transferSourceDealer: '',
-        transferBatchId: 0,
-        transferDate: '',
-        transferMaxBoxes: 0,
-        transferBoxes: 0,
-        transferFormAction: '',
-        editEntryId: 0,
-        editFormAction: '',
-        editVendorId: 0,
-        editDealerId: 0,
-        editPaperRate: 0,
-        editBillingRate: 0,
-        editCustomerRate: 0,
-        editNoOfBoxes: 0,
-        editBoxWeight: 0,
-        editEmptyWeight: 0,
-        editFarmWeight: '',
-        editRemarks: '',
-        dpEntryId: 0,
-        dpFormAction: '',
-        dpEntryVendor: '',
-        dpEntryDealer: '',
-        dpEntryIncome: 0,
-        dpEntryCollected: 0,
-        dpCashAmount: 0,
-        dpBankAmount: 0,
-        dpBankTransferType: '',
-        dpDate: '{{ $date }}',
-        dpMode: 'Cash',
-        dpRefNo: '',
-        dpNotes: '',
-        vpEntryId: 0,
-        vpFormAction: '',
-        vpEntryVendor: '',
-        vpEntryDealer: '',
-        vpEntryCost: 0,
-        vpEntryPaid: 0,
-        vpCashAmount: 0,
-        vpBankAmount: 0,
-        vpBankTransferType: '',
-        vpDate: '{{ $date }}',
-        vpMode: 'Cash',
-        vpRefNo: '',
-        vpNotes: '',
-        lsEntriesByDealer: @json($lsEntriesByDealer),
-        lsDealerId: 0,
-        lsEntries: [],
-        lsAllocations: {},
-        lsAllocSum: 0,
-        lsCashAmount: 0,
-        lsBankAmount: 0,
-        lsTotalLump: 0,
-        lsDate: '{{ $date }}',
-        lsMode: 'Cash',
-        lsBankTransferType: '',
-        lsRefNo: '',
-        lsNotes: '',
-        initLsDealer() {
-            this.lsEntries = this.lsEntriesByDealer[this.lsDealerId] || [];
-            this.lsAllocations = {};
-            this.lsEntries.forEach(e => { this.lsAllocations[e.id] = 0; });
-            this.recalcAllocSum();
-        },
-        recalcAllocSum() {
-            let sum = 0;
-            Object.values(this.lsAllocations).forEach(v => { sum += parseFloat(v) || 0; });
-            this.lsAllocSum = Math.round(sum * 100) / 100;
-        },
-    }">
+    <div x-data="dayLoadBillingData()">
         <x-modal name="edit-entry-modal" title="Edit Entry" subtitle="Adjust rates, weights, or box count" icon="edit" maxWidth="2xl">
-            <form id="edit-entry-form" :action="editFormAction" method="POST">
+            <form id="edit-entry-form" :action="editFormAction" method="POST" class="space-y-4">
                 @csrf
                 <input type="hidden" name="_method" value="PUT">
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Vendor</label>
-                        <select name="vendor_id" required x-model="editVendorId" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
-                            <option value="">Select vendor...</option>
-                            @foreach($vendors as $vendor)
-                                <option value="{{ $vendor->id }}">{{ $vendor->firm_name }}{{ $vendor->is_shop ? ' (Shop)' : '' }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Dealer</label>
-                        <select name="dealer_id" required x-model="editDealerId" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
-                            <option value="">Select dealer...</option>
-                            @foreach($dealers as $dealer)
-                                <option value="{{ $dealer->id }}">{{ $dealer->firm_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Boxes</label>
-                        <input type="number" name="no_of_boxes" min="1" x-model.number="editNoOfBoxes" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Paper Rate</label>
-                        <input type="number" step="0.01" name="paper_rate" min="0" x-model.number="editPaperRate" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Billing Rate</label>
-                        <input type="number" step="0.01" name="billing_rate" min="0" x-model.number="editBillingRate" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Customer Rate</label>
-                        <input type="number" step="0.01" name="customer_rate" min="0" x-model.number="editCustomerRate" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains">
+                {{-- Primary Details --}}
+                <div class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
+                        <span class="material-symbols-rounded text-xs text-zinc-400">badge</span>
+                        Primary Details
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Vendor</label>
+                            <select name="vendor_id" required x-model="editVendorId" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                                <option value="">Select vendor...</option>
+                                @foreach($vendors as $vendor)
+                                    <option value="{{ $vendor->id }}">{{ $vendor->firm_name }}{{ $vendor->is_shop ? ' (Shop)' : '' }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Dealer</label>
+                            <select name="dealer_id" required x-model="editDealerId" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                                <option value="">Select dealer...</option>
+                                @foreach($dealers as $dealer)
+                                    <option value="{{ $dealer->id }}">{{ $dealer->firm_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Boxes</label>
+                            <input type="number" name="no_of_boxes" min="1" x-model.number="editNoOfBoxes" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Box Weight</label>
-                        <input type="number" step="0.01" name="box_weight" min="0" x-model.number="editBoxWeight" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Empty Weight</label>
-                        <input type="number" step="0.01" name="empty_weight" min="0" x-model.number="editEmptyWeight" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Farm Weight</label>
-                        <input type="number" step="0.01" name="farm_weight" min="0" x-model="editFarmWeight" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains">
+                {{-- Pricing Rates --}}
+                <div class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
+                        <span class="material-symbols-rounded text-xs text-zinc-400">payments</span>
+                        Pricing Rates (Rs)
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Paper Rate</label>
+                            <input type="number" step="0.01" name="paper_rate" min="0" x-model.number="editPaperRate" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Billing Rate</label>
+                            <input type="number" step="0.01" name="billing_rate" min="0" x-model.number="editBillingRate" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Customer Rate</label>
+                            <input type="number" step="0.01" name="customer_rate" min="0" x-model.number="editCustomerRate" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Remarks</label>
-                        <input type="text" name="remarks" x-model="editRemarks" placeholder="Optional" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                {{-- Weights --}}
+                <div class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
+                        <span class="material-symbols-rounded text-xs text-zinc-400">scale</span>
+                        Load Weights (Kg)
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Box Weight</label>
+                            <input type="number" step="0.01" name="box_weight" min="0" x-model.number="editBoxWeight" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Empty Weight</label>
+                            <input type="number" step="0.01" name="empty_weight" min="0" x-model.number="editEmptyWeight" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Farm Weight</label>
+                            <input type="number" step="0.01" name="farm_weight" min="0" x-model="editFarmWeight" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reason for Edit</label>
-                        <input type="text" name="reason" required placeholder="Why are you editing this entry?" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                </div>
+
+                {{-- Remarks & Audit --}}
+                <div class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
+                        <span class="material-symbols-rounded text-xs text-zinc-400">history</span>
+                        Audit & Remarks
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Remarks</label>
+                            <input type="text" name="remarks" x-model="editRemarks" placeholder="Optional notes" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reason for Edit</label>
+                            <input type="text" name="reason" required placeholder="Why are you editing this entry?" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                        </div>
                     </div>
                 </div>
 
@@ -452,28 +448,33 @@
             <form id="transfer-form" :action="transferFormAction" method="POST">
                 @csrf
 
-                <div class="mb-5 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
-                    <p class="text-xs font-bold uppercase text-zinc-500 mb-3">Source Entry</p>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                        <div>
-                            <span class="text-zinc-500">Vendor:</span>
-                            <p class="font-bold text-zinc-900 dark:text-zinc-100" x-text="transferSourceVendor"></p>
+                {{-- Source Entry Info Card --}}
+                <div class="mb-5 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/50 shadow-inner">
+                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
+                        <span class="material-symbols-rounded text-xs">info</span>
+                        Source Entry Details
+                    </p>
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-150/80 dark:border-zinc-800">
+                            <span class="text-zinc-400 font-medium block mb-0.5">Vendor</span>
+                            <p class="font-extrabold text-zinc-800 dark:text-zinc-200 truncate" x-text="transferSourceVendor || '—'"></p>
                         </div>
-                        <div>
-                            <span class="text-zinc-500">Dealer:</span>
-                            <p class="font-bold text-zinc-900 dark:text-zinc-100" x-text="transferSourceDealer"></p>
+                        <div class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-150/80 dark:border-zinc-800">
+                            <span class="text-zinc-400 font-medium block mb-0.5">Dealer</span>
+                            <p class="font-extrabold text-zinc-800 dark:text-zinc-200 truncate" x-text="transferSourceDealer || '—'"></p>
                         </div>
-                        <div>
-                            <span class="text-zinc-500">Available Boxes:</span>
-                            <p class="font-jetbrains font-bold text-lg text-zinc-900 dark:text-zinc-100" x-text="transferSourceBoxes"></p>
+                        <div class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-150/80 dark:border-zinc-800">
+                            <span class="text-zinc-400 font-medium block mb-0.5">Available Boxes</span>
+                            <p class="font-jetbrains font-extrabold text-base text-zinc-850 dark:text-zinc-150" x-text="transferSourceBoxes"></p>
                         </div>
-                        <div>
-                            <span class="text-zinc-500">Date:</span>
-                            <p class="font-bold text-zinc-900 dark:text-zinc-100" x-text="transferDate"></p>
+                        <div class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-150/80 dark:border-zinc-800">
+                            <span class="text-zinc-400 font-medium block mb-0.5">Date</span>
+                            <p class="font-extrabold text-zinc-800 dark:text-zinc-200" x-text="transferDate || '—'"></p>
                         </div>
                     </div>
                 </div>
 
+                {{-- Input Fields --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Boxes to Transfer</label>
@@ -484,15 +485,15 @@
                             :max="transferMaxBoxes"
                             x-model.number="transferBoxes"
                             required
-                            class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains"
+                            class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                         >
-                        <p class="mt-1 text-xs text-zinc-500">
-                            Remaining: <span class="font-bold" x-text="transferSourceBoxes - transferBoxes"></span> boxes
+                        <p class="mt-1.5 text-[11px] text-zinc-500">
+                            Remaining: <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="transferSourceBoxes - transferBoxes"></span> boxes
                         </p>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Target Dealer</label>
-                        <select name="target_dealer_id" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                        <select name="target_dealer_id" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
                             <option value="">Select dealer...</option>
                             @foreach($dealers as $dealer)
                                 <option value="{{ $dealer->id }}">{{ $dealer->firm_name }}</option>
@@ -504,7 +505,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Target Vendor</label>
-                        <select name="target_vendor_id" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                        <select name="target_vendor_id" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
                             <option value="">Select vendor...</option>
                             @foreach($vendors as $vendor)
                                 <option value="{{ $vendor->id }}">{{ $vendor->firm_name }}{{ $vendor->is_shop ? ' (Shop)' : '' }}</option>
@@ -518,7 +519,7 @@
                             name="reason"
                             required
                             placeholder="e.g. Reassign boxes to correct dealer"
-                            class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"
+                            class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                         >
                     </div>
                 </div>
@@ -554,17 +555,18 @@
                 @csrf
                 <input type="hidden" name="batch_id" value="{{ $batch?->id }}">
 
+                {{-- Summary Metrics & Main Input --}}
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
-                    <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-4">
-                        <p class="text-xs font-bold uppercase text-zinc-500 mb-1">Total Bird Weight</p>
-                        <p class="font-jetbrains text-2xl font-black text-indigo-600 dark:text-indigo-400" x-text="totalBirdWeight.toFixed(2)"></p>
+                    <div class="rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Total Bird Weight</p>
+                        <p class="font-jetbrains text-2xl font-black text-indigo-600 dark:text-indigo-400" x-text="totalBirdWeight.toFixed(2) + ' kg'"></p>
                     </div>
-                    <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-4">
-                        <p class="text-xs font-bold uppercase text-zinc-500 mb-1">Total Loss</p>
-                        <p class="font-jetbrains text-2xl font-black" :class="parseFloat(totalLoss) >= 0 ? 'text-rose-600' : 'text-emerald-600'" x-text="totalFarmWeight ? totalLoss : '—'"></p>
+                    <div class="rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Total Loss</p>
+                        <p class="font-jetbrains text-2xl font-black" :class="parseFloat(totalLoss) >= 0 ? 'text-rose-600' : 'text-emerald-600'" x-text="totalFarmWeight ? totalLoss + ' kg' : '—'"></p>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Enter Total Farm Weight</label>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Enter Total Farm Weight (Kg)</label>
                         <input
                             type="number"
                             step="0.01"
@@ -573,36 +575,37 @@
                             x-model="totalFarmWeight"
                             placeholder="0.00"
                             required
-                            class="w-full rounded-xl border-2 border-emerald-300 dark:border-emerald-600 bg-white dark:bg-zinc-900 px-4 py-3 text-lg font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                            class="w-full rounded-xl border-2 border-emerald-300 dark:border-emerald-600 bg-white dark:bg-zinc-900 px-4 py-2.5 text-lg font-jetbrains font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-emerald-600"
                         >
                     </div>
                 </div>
 
-                <div class="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-700 max-h-[40vh] overflow-y-auto mb-4">
+                {{-- Proportion Distribution Table --}}
+                <div class="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 max-h-[40vh] overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
                     <table class="w-full text-sm">
-                        <thead class="sticky top-0 z-10">
-                            <tr class="bg-zinc-50 dark:bg-zinc-800 text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                        <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-750">
+                            <tr class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
                                 <th class="px-4 py-3 text-left">Vendor</th>
                                 <th class="px-4 py-3 text-left">Dealer</th>
                                 <th class="px-4 py-3 text-center">Boxes</th>
-                                <th class="px-4 py-3 text-center">Bird Wt</th>
-                                <th class="px-4 py-3 text-center">Farm Wt</th>
-                                <th class="px-4 py-3 text-center">Loss</th>
-                                <th class="px-4 py-3 text-center">Total</th>
+                                <th class="px-4 py-3 text-center">Bird Wt (Kg)</th>
+                                <th class="px-4 py-3 text-center bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-600">Farm Wt (Kg)</th>
+                                <th class="px-4 py-3 text-center text-rose-600">Loss (Kg)</th>
+                                <th class="px-4 py-3 text-center">Total (Kg)</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                        <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/80 bg-white dark:bg-zinc-900">
                             <template x-for="(entry, index) in entries" :key="entry.id">
-                                <tr class="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 transition-colors">
+                                <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 transition-colors">
                                     <td class="px-4 py-3 font-bold text-zinc-900 dark:text-zinc-100 text-xs" x-text="entry.vendor"></td>
-                                    <td class="px-4 py-3 text-zinc-600 dark:text-zinc-400 text-xs" x-text="entry.dealer"></td>
-                                    <td class="px-4 py-3 text-center font-jetbrains font-bold text-xs" x-text="entry.boxes"></td>
-                                    <td class="px-4 py-3 text-center font-jetbrains text-xs" x-text="entry.birdWeight.toFixed(2)"></td>
-                                    <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold text-emerald-600"
+                                    <td class="px-4 py-3 text-zinc-550 dark:text-zinc-450 text-xs" x-text="entry.dealer"></td>
+                                    <td class="px-4 py-3 text-center font-jetbrains font-bold text-xs text-zinc-500" x-text="entry.boxes"></td>
+                                    <td class="px-4 py-3 text-center font-jetbrains text-xs font-semibold text-zinc-700 dark:text-zinc-300" x-text="entry.birdWeight.toFixed(2)"></td>
+                                    <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold text-emerald-600 bg-emerald-50/30 dark:bg-emerald-950/10"
                                         x-text="totalFarmWeight ? (totalFarmWeight * entry.proportion).toFixed(2) : '—'"></td>
                                     <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold text-rose-600"
                                         x-text="totalFarmWeight ? (entry.birdWeight - (totalFarmWeight * entry.proportion)).toFixed(2) : '—'"></td>
-                                    <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold text-zinc-900 dark:text-zinc-100"
+                                    <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold text-zinc-800 dark:text-zinc-200"
                                         x-text="totalFarmWeight ? (entry.birdWeight - (totalFarmWeight * entry.proportion)).toFixed(2) : '—'"></td>
                                 </tr>
                             </template>
@@ -610,8 +613,9 @@
                     </table>
                 </div>
 
+                {{-- Reason / Audit --}}
                 <div class="mb-4">
-                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reason</label>
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reason for setting farm weight</label>
                     <input
                         type="text"
                         name="reason"
@@ -633,24 +637,25 @@
                 @csrf
                 <input type="hidden" name="_method" value="PUT">
 
-                <div class="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-700 max-h-[55vh] overflow-y-auto">
+                {{-- Bulk Edit Table --}}
+                <div class="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 max-h-[55vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
                     <table class="w-full text-sm">
-                        <thead class="sticky top-0 z-10">
-                            <tr class="bg-zinc-50 dark:bg-zinc-800 text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                        <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-750">
+                            <tr class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
                                 <th class="px-4 py-3 text-left">Vendor</th>
                                 <th class="px-4 py-3 text-left">Dealer</th>
                                 <th class="px-4 py-3 text-center">Boxes</th>
-                                <th class="px-4 py-3 text-center">Bird Wt</th>
-                                <th class="px-4 py-3 text-center min-w-[120px]">Farm Weight</th>
-                                <th class="px-4 py-3 text-center">Loss</th>
-                                <th class="px-4 py-3 text-center">Total</th>
-                                <th class="px-4 py-3 text-left min-w-[140px]">Remarks</th>
+                                <th class="px-4 py-3 text-center">Bird Wt (Kg)</th>
+                                <th class="px-4 py-3 text-center min-w-[120px] bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-600">Farm Weight (Kg)</th>
+                                <th class="px-4 py-3 text-center text-rose-600">Loss (Kg)</th>
+                                <th class="px-4 py-3 text-center">Total (Kg)</th>
+                                <th class="px-4 py-3 text-left min-w-[160px]">Remarks</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                        <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/80 bg-white dark:bg-zinc-900">
                             @foreach($entries as $entry)
                                 @if($entry->status === 'Active')
-                                <tr class="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 transition-colors"
+                                <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 transition-colors"
                                     x-data="{
                                         farmWeight: '{{ $entry->farm_weight ?? '' }}',
                                         birdWeight: {{ (float) $entry->bird_weight }}
@@ -661,11 +666,11 @@
                                         <p class="font-bold text-zinc-900 dark:text-zinc-100 text-xs">{{ $entry->vendor->firm_name ?? '-' }}</p>
                                     </td>
                                     <td class="px-4 py-3">
-                                        <p class="text-zinc-600 dark:text-zinc-400 text-xs">{{ $entry->dealer->firm_name ?? '-' }}</p>
+                                        <p class="text-zinc-550 dark:text-zinc-450 text-xs truncate max-w-[120px]">{{ $entry->dealer->firm_name ?? '-' }}</p>
                                     </td>
-                                    <td class="px-4 py-3 text-center font-jetbrains font-bold text-xs">{{ $entry->no_of_boxes }}</td>
-                                    <td class="px-4 py-3 text-center font-jetbrains text-xs" x-text="birdWeight.toFixed(2)"></td>
-                                    <td class="px-4 py-3">
+                                    <td class="px-4 py-3 text-center font-jetbrains font-bold text-xs text-zinc-500">{{ $entry->no_of_boxes }}</td>
+                                    <td class="px-4 py-3 text-center font-jetbrains text-xs font-semibold text-zinc-700 dark:text-zinc-300" x-text="birdWeight.toFixed(2)"></td>
+                                    <td class="px-4 py-3 bg-emerald-50/20 dark:bg-emerald-950/10">
                                         <input
                                             type="number"
                                             step="0.01"
@@ -673,15 +678,14 @@
                                             name="entries[{{ $entry->id }}][farm_weight]"
                                             x-model="farmWeight"
                                             placeholder="0.00"
-                                            class="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-xs font-jetbrains text-center focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                            class="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1 text-xs font-jetbrains font-bold text-center focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-emerald-600"
                                         >
                                     </td>
                                     <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold"
                                         :class="farmWeight !== '' ? 'text-rose-600' : 'text-zinc-400'"
                                         x-text="farmWeight !== '' ? (birdWeight - parseFloat(farmWeight || 0)).toFixed(2) : '-'">
                                     </td>
-                                    <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold"
-                                        :class="farmWeight !== '' ? 'text-emerald-600' : 'text-zinc-400'"
+                                    <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold text-zinc-800 dark:text-zinc-200"
                                         x-text="farmWeight !== '' ? (birdWeight - parseFloat(farmWeight || 0)).toFixed(2) : '-'">
                                     </td>
                                     <td class="px-4 py-3">
@@ -689,8 +693,8 @@
                                             type="text"
                                             name="entries[{{ $entry->id }}][remarks]"
                                             value="{{ $entry->remarks ?? '' }}"
-                                            placeholder="Optional"
-                                            class="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                            placeholder="Optional remarks"
+                                            class="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1 text-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                                         >
                                     </td>
                                 </tr>
@@ -700,7 +704,8 @@
                     </table>
                 </div>
 
-                <div class="mt-5 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
+                {{-- Audit & Action Reason --}}
+                <div class="mt-5 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
                     <label class="block text-xs font-bold text-zinc-500 uppercase mb-2">Reason for Adjustment</label>
                     <input
                         type="text"
@@ -894,7 +899,7 @@
 
         {{-- Lump-Sum Payment Modal --}}
         <x-modal name="lump-sum-payment-modal" title="Record Lump-Sum Payment" subtitle="Allocate a single payment across multiple entries" icon="payments" maxWidth="3xl">
-            <form id="lump-sum-form" action="{{ route('billing.day-load.lumpsum-dealer-payment') }}" method="POST">
+            <form id="lump-sum-form" action="{{ route('billing.day-load.lumpsum-dealer-payment') }}" method="POST" class="space-y-4">
                 @csrf
                 <input type="hidden" name="dealer_id" :value="lsDealerId">
                 <input type="hidden" name="date" :value="lsDate">
@@ -908,9 +913,10 @@
                     <input type="hidden" :name="'allocations[' + entryId + ']'" :value="amount">
                 </template>
 
-                <div class="mb-5">
+                {{-- Dealer Select Step --}}
+                <div class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
                     <label class="block text-xs font-bold text-zinc-500 uppercase mb-2">Select Dealer</label>
-                    <select x-model="lsDealerId" @change="initLsDealer()" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm">
+                    <select x-model="lsDealerId" @change="initLsDealer()" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
                         <option value="0">Choose dealer...</option>
                         @foreach($dealers as $dealer)
                             <option value="{{ $dealer->id }}">{{ $dealer->firm_name }}</option>
@@ -918,111 +924,128 @@
                     </select>
                 </div>
 
+                {{-- Allocation Table --}}
                 <template x-if="lsEntries.length > 0">
-                    <div class="mb-5">
-                        <p class="text-xs font-bold text-zinc-500 uppercase mb-3">Allocate Payment Across Entries</p>
-                        <div class="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-700">
+                    <div class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
+                            <span class="material-symbols-rounded text-xs text-zinc-400">playlist_add_check</span>
+                            Allocate Payment Across Entries
+                        </p>
+                        <div class="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
                             <table class="w-full text-sm">
-                                <thead class="bg-zinc-50 dark:bg-zinc-800/50">
-                                    <tr>
-                                        <th class="px-3 py-2 text-left text-xs font-bold text-zinc-500">Vendor</th>
-                                        <th class="px-3 py-2 text-right text-xs font-bold text-zinc-500">Total (Rs)</th>
-                                        <th class="px-3 py-2 text-right text-xs font-bold text-zinc-500">Collected (Rs)</th>
-                                        <th class="px-3 py-2 text-right text-xs font-bold text-zinc-500">Balance (Rs)</th>
-                                        <th class="px-3 py-2 text-right text-xs font-bold text-zinc-500">Allocate Now (Rs)</th>
+                                <thead class="bg-zinc-100 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-750">
+                                    <tr class="text-xs font-bold text-zinc-500 uppercase">
+                                        <th class="px-3 py-2 text-left">Vendor</th>
+                                        <th class="px-3 py-2 text-right">Total (Rs)</th>
+                                        <th class="px-3 py-2 text-right text-emerald-600">Collected (Rs)</th>
+                                        <th class="px-3 py-2 text-right">Balance (Rs)</th>
+                                        <th class="px-3 py-2 text-right min-w-[140px]">Allocate Now (Rs)</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody class="bg-white dark:bg-zinc-900 divide-y divide-zinc-100 dark:divide-zinc-850">
                                     <template x-for="entry in lsEntries" :key="entry.id">
-                                        <tr class="border-t border-zinc-100 dark:border-zinc-800">
-                                            <td class="px-3 py-2 font-medium" x-text="entry.vendor"></td>
-                                            <td class="px-3 py-2 text-right font-jetbrains" x-text="entry.dealer_income.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
-                                            <td class="px-3 py-2 text-right font-jetbrains text-emerald-600" x-text="entry.dealer_collected.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
-                                            <td class="px-3 py-2 text-right font-jetbrains font-bold" x-text="entry.due.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
-                                            <td class="px-3 py-2 text-right">
+                                        <tr class="hover:bg-zinc-55 border-t border-zinc-100 dark:border-zinc-800">
+                                            <td class="px-3 py-2.5 font-bold text-xs" x-text="entry.vendor"></td>
+                                            <td class="px-3 py-2.5 text-right font-jetbrains text-xs" x-text="entry.dealer_income.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                            <td class="px-3 py-2.5 text-right font-jetbrains text-emerald-600 text-xs" x-text="entry.dealer_collected.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                            <td class="px-3 py-2.5 text-right font-jetbrains font-bold text-xs" x-text="entry.due.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                            <td class="px-3 py-2.5 text-right">
                                                 <input type="number" step="0.01" min="0" :max="entry.due"
                                                     x-model.number="lsAllocations[entry.id]"
                                                     @input="if (lsAllocations[entry.id] > entry.due) lsAllocations[entry.id] = entry.due; recalcAllocSum()"
-                                                    class="w-28 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1 text-right text-sm font-jetbrains">
+                                                    class="w-28 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1 text-right text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all font-bold text-emerald-600">
                                             </td>
                                         </tr>
                                     </template>
                                 </tbody>
-                                <tfoot class="bg-zinc-50 dark:bg-zinc-800/50 font-bold">
+                                <tfoot class="bg-zinc-50 dark:bg-zinc-850 font-bold border-t border-zinc-200 dark:border-zinc-750">
                                     <tr>
-                                        <td class="px-3 py-2 text-xs text-zinc-500">TOTAL</td>
-                                        <td class="px-3 py-2 text-right font-jetbrains" x-text="lsEntries.reduce((s, e) => s + e.dealer_income, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
-                                        <td class="px-3 py-2 text-right font-jetbrains text-emerald-600" x-text="lsEntries.reduce((s, e) => s + e.dealer_collected, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
-                                        <td class="px-3 py-2 text-right font-jetbrains" x-text="lsEntries.reduce((s, e) => s + e.due, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
-                                        <td class="px-3 py-2 text-right font-jetbrains" x-text="lsAllocSum.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                        <td class="px-3 py-2 text-xs text-zinc-400">TOTAL</td>
+                                        <td class="px-3 py-2 text-right font-jetbrains text-xs" x-text="lsEntries.reduce((s, e) => s + e.dealer_income, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                        <td class="px-3 py-2 text-right font-jetbrains text-emerald-600 text-xs" x-text="lsEntries.reduce((s, e) => s + e.dealer_collected, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                        <td class="px-3 py-2 text-right font-jetbrains text-xs" x-text="lsEntries.reduce((s, e) => s + e.due, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                        <td class="px-3 py-2 text-right font-jetbrains text-emerald-600 text-xs" x-text="lsAllocSum.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
                                     </tr>
                                 </tfoot>
                             </table>
                         </div>
-                        <div class="mt-2 flex items-center justify-end gap-2 text-xs text-zinc-500">
-                            <span>Allocated: <strong class="font-jetbrains" x-text="'Rs ' + lsAllocSum.toLocaleString('en-IN', {minimumFractionDigits: 2})"></strong></span>
+                        <div class="mt-2.5 flex items-center justify-end gap-2 text-xs text-zinc-400 font-medium">
+                            <span>Allocated: <strong class="font-jetbrains text-zinc-700 dark:text-zinc-300" x-text="'Rs ' + lsAllocSum.toLocaleString('en-IN', {minimumFractionDigits: 2})"></strong></span>
                             <span class="text-zinc-300 dark:text-zinc-600">/</span>
-                            <span>Lump sum entered: <strong class="font-jetbrains" x-text="'Rs ' + lsTotalLump.toLocaleString('en-IN', {minimumFractionDigits: 2})"></strong></span>
+                            <span>Lump sum: <strong class="font-jetbrains text-zinc-700 dark:text-zinc-300" x-text="'Rs ' + lsTotalLump.toLocaleString('en-IN', {minimumFractionDigits: 2})"></strong></span>
                             <template x-if="lsAllocSum > lsTotalLump">
-                                <span class="text-rose-600 font-bold">(Exceeds by Rs <span x-text="(lsAllocSum - lsTotalLump).toLocaleString('en-IN', {minimumFractionDigits: 2})"></span>)</span>
+                                <span class="text-rose-600 font-bold ml-1 flex items-center gap-0.5">
+                                    <span class="material-symbols-rounded text-sm">warning</span>
+                                    Exceeds by Rs <span x-text="(lsAllocSum - lsTotalLump).toLocaleString('en-IN', {minimumFractionDigits: 2})"></span>
+                                </span>
                             </template>
                         </div>
                     </div>
                 </template>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Date</label>
-                        <input type="date" x-model="lsDate" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                {{-- Payment Details Group --}}
+                <div class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
+                        <span class="material-symbols-rounded text-xs text-zinc-400">payments</span>
+                        Payment Details
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Date</label>
+                            <input type="date" x-model="lsDate" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Cash Amount (Rs)</label>
+                            <input type="number" step="0.01" min="0" x-model.number="lsCashAmount" @input="lsTotalLump = Math.round((lsCashAmount + lsBankAmount) * 100) / 100" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-emerald-600">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Cash Amount (Rs)</label>
-                        <input type="number" step="0.01" min="0" x-model.number="lsCashAmount" @input="lsTotalLump = Math.round((lsCashAmount + lsBankAmount) * 100) / 100" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
-                    </div>
-                </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Amount (Rs)</label>
-                        <input type="number" step="0.01" min="0" x-model.number="lsBankAmount" @input="lsTotalLump = Math.round((lsCashAmount + lsBankAmount) * 100) / 100" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Amount (Rs)</label>
+                            <input type="number" step="0.01" min="0" x-model.number="lsBankAmount" @input="lsTotalLump = Math.round((lsCashAmount + lsBankAmount) * 100) / 100" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-emerald-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Total Lump Sum</label>
+                            <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-emerald-600 dark:text-emerald-400 font-jetbrains text-lg font-extrabold flex items-center justify-between min-h-[44px]">
+                                <span class="text-xs font-bold uppercase tracking-wider">Total</span>
+                                <span x-text="'Rs ' + lsTotalLump.toLocaleString('en-IN', {minimumFractionDigits: 2})"></span>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Total Lump Sum</label>
-                        <p class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm font-jetbrains text-lg font-bold text-emerald-600" x-text="'Rs ' + lsTotalLump.toLocaleString('en-IN', {minimumFractionDigits: 2})"></p>
-                    </div>
-                </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Mode</label>
-                        <select x-model="lsMode" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
-                            @foreach(config('payments.modes') as $mode)
-                                <option value="{{ $mode }}">{{ $mode }}</option>
-                            @endforeach
-                        </select>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Mode</label>
+                            <select x-model="lsMode" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                                @foreach(config('payments.modes') as $mode)
+                                    <option value="{{ $mode }}">{{ $mode }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div x-show="lsBankAmount > 0" x-transition>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Transfer Type</label>
+                            <select x-model="lsBankTransferType" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                                <option value="">Select type...</option>
+                                <option value="UPI">UPI</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="NEFT">NEFT</option>
+                                <option value="RTGS">RTGS</option>
+                                <option value="IMPS">IMPS</option>
+                                <option value="Cheque">Cheque</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div x-show="lsBankAmount <= 0">
+                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reference No</label>
+                            <input type="text" x-model="lsRefNo" placeholder="UPI ref / Cheque no / Tx ID" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                        </div>
                     </div>
-                    <div x-show="lsBankAmount > 0" x-transition>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Transfer Type</label>
-                        <select x-model="lsBankTransferType" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
-                            <option value="">Select type...</option>
-                            <option value="UPI">UPI</option>
-                            <option value="Bank Transfer">Bank Transfer</option>
-                            <option value="NEFT">NEFT</option>
-                            <option value="RTGS">RTGS</option>
-                            <option value="IMPS">IMPS</option>
-                            <option value="Cheque">Cheque</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div x-show="lsBankAmount <= 0">
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reference No</label>
-                        <input type="text" x-model="lsRefNo" placeholder="UPI ref / Cheque no / Tx ID" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
-                    </div>
-                </div>
 
-                <div class="mb-4">
-                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Remarks</label>
-                    <textarea x-model="lsNotes" rows="2" placeholder="Optional notes" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"></textarea>
+                    <div class="mb-2">
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Remarks</label>
+                        <textarea x-model="lsNotes" rows="2" placeholder="Optional notes" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"></textarea>
+                    </div>
                 </div>
 
                 <x-slot:footer>
@@ -1033,4 +1056,82 @@
         </x-modal>
     </div>
 </div>
+
+<script>
+    function dayLoadBillingData() {
+        return {
+            transferSourceId: 0,
+            transferSourceBoxes: 0,
+            transferSourceVendor: '',
+            transferSourceDealer: '',
+            transferBatchId: 0,
+            transferDate: '',
+            transferMaxBoxes: 0,
+            transferBoxes: 0,
+            transferFormAction: '',
+            editEntryId: 0,
+            editFormAction: '',
+            editVendorId: 0,
+            editDealerId: 0,
+            editPaperRate: 0,
+            editBillingRate: 0,
+            editCustomerRate: 0,
+            editNoOfBoxes: 0,
+            editBoxWeight: 0,
+            editEmptyWeight: 0,
+            editFarmWeight: '',
+            editRemarks: '',
+            dpEntryId: 0,
+            dpFormAction: '',
+            dpEntryVendor: '',
+            dpEntryDealer: '',
+            dpEntryIncome: 0,
+            dpEntryCollected: 0,
+            dpCashAmount: 0,
+            dpBankAmount: 0,
+            dpBankTransferType: '',
+            dpDate: '{{ $date }}',
+            dpMode: 'Cash',
+            dpRefNo: '',
+            dpNotes: '',
+            vpEntryId: 0,
+            vpFormAction: '',
+            vpEntryVendor: '',
+            vpEntryDealer: '',
+            vpEntryCost: 0,
+            vpEntryPaid: 0,
+            vpCashAmount: 0,
+            vpBankAmount: 0,
+            vpBankTransferType: '',
+            vpDate: '{{ $date }}',
+            vpMode: 'Cash',
+            vpRefNo: '',
+            vpNotes: '',
+            lsEntriesByDealer: @json($lsEntriesByDealer),
+            lsDealerId: 0,
+            lsEntries: [],
+            lsAllocations: {},
+            lsAllocSum: 0,
+            lsCashAmount: 0,
+            lsBankAmount: 0,
+            lsTotalLump: 0,
+            lsDate: '{{ $date }}',
+            lsMode: 'Cash',
+            lsBankTransferType: '',
+            lsRefNo: '',
+            lsNotes: '',
+            initLsDealer() {
+                this.lsEntries = this.lsEntriesByDealer[this.lsDealerId] || [];
+                this.lsAllocations = {};
+                this.lsEntries.forEach(e => { this.lsAllocations[e.id] = 0; });
+                this.recalcAllocSum();
+            },
+            recalcAllocSum() {
+                let sum = 0;
+                Object.values(this.lsAllocations).forEach(v => { sum += parseFloat(v) || 0; });
+                this.lsAllocSum = Math.round(sum * 100) / 100;
+            }
+        };
+    }
+</script>
 @endsection

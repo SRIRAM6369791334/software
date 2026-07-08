@@ -10,6 +10,10 @@ use App\Services\ActivityLogger;
 
 class PermissionController extends Controller
 {
+    private function flushPermissionCache(): void
+    {
+        app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    }
 
 
     public function index()
@@ -39,6 +43,7 @@ class PermissionController extends Controller
         ]);
 
         ActivityLogger::log('Created Permission', 'PermissionManagement', $permission->id);
+        $this->flushPermissionCache();
 
         return redirect()->route('admin.permissions.index')->with('success', 'Permission created!');
     }
@@ -64,6 +69,7 @@ class PermissionController extends Controller
         ]);
 
         ActivityLogger::log('Updated Permission', 'PermissionManagement', $permission->id);
+        $this->flushPermissionCache();
 
         return redirect()->route('admin.permissions.index')->with('success', 'Permission updated successfully');
     }
@@ -74,6 +80,7 @@ class PermissionController extends Controller
         $permission->delete();
 
         ActivityLogger::log('Deleted Permission', 'PermissionManagement', $id);
+        $this->flushPermissionCache();
 
         return redirect()->route('admin.permissions.index')->with('success', 'Permission deleted successfully');
     }

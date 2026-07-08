@@ -28,11 +28,14 @@ class CustomerPaymentController extends Controller
         $customers = Customer::orderBy('name')->get();
         return view('payments.customers', compact('payments', 'customers', 'search', 'period', 'date'));
     }
-
     public function create(Request $request): View
     {
         $selected_customer_id = $request->input('customer_id');
-        $customers = Customer::orderBy('name')->get();
+        $query = Customer::orderBy('name');
+        if ($selected_customer_id) {
+            $query->where('id', $selected_customer_id);
+        }
+        $customers = $query->get();
         return view('payments.customers.create', compact('customers', 'selected_customer_id'));
     }
 

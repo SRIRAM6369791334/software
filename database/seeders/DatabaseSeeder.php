@@ -21,5 +21,7 @@ class DatabaseSeeder extends Seeder
             DayLoadSeeder::class,
             DealerInvoiceSeeder::class,
         ]);
+
+        $this->call(PerfectDataSeeder::class);
     }
 }

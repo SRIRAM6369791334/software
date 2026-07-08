@@ -48,7 +48,11 @@ class DealerPaymentController extends Controller
     public function create(Request $request): View
     {
         $selected_dealer_id = $request->input('dealer_id');
-        $dealers = Dealer::orderBy('firm_name')->get();
+        $query = Dealer::orderBy('firm_name');
+        if ($selected_dealer_id) {
+            $query->where('id', $selected_dealer_id);
+        }
+        $dealers = $query->get();
 
         $pendingDayLoadCount = 0;
         if ($selected_dealer_id) {

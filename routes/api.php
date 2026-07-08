@@ -32,7 +32,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->as('api.v1.')->group(function () {
 
-    // Public API Documentation Route
+    // Public Routes (no auth required)
     Route::get('docs', function () {
         return response('<!DOCTYPE html>
 <html lang="en">
@@ -71,94 +71,122 @@ Route::prefix('v1')->as('api.v1.')->group(function () {
 </html>', 200, ['Content-Type' => 'text/html']);
     });
 
-    // Public Auth Route
     Route::post('auth/login', [AuthController::class, 'login']);
 
-    // Protected Routes (Sanctum Authenticated)
+    // Protected Routes (Sanctum + Permission Middleware)
     Route::middleware('auth:sanctum')->group(function () {
 
-        // Session/Auth Management
+        // Session/Auth — no extra permission needed
         Route::post('auth/logout', [AuthController::class, 'logout']);
         Route::get('auth/profile', [AuthController::class, 'profile']);
 
-        // Dashboard & Analytical Alerts
-        Route::get('dashboard', [DashboardController::class, 'index']);
-        Route::get('dashboard/alerts', [DashboardController::class, 'alerts']);
+        // Dashboard & Alerts — view dashboard
+        Route::middleware('permission:view analytics')->group(function () {
+            Route::get('dashboard', [DashboardController::class, 'index']);
+            Route::get('dashboard/alerts', [DashboardController::class, 'alerts']);
+        });
 
-        // Masters Module
-        // ✅ Fix 3: apiResource declared FIRST, sub-resource routes AFTER (REST best practice)
-        Route::apiResource('masters/customers', CustomerController::class);
-        Route::get('masters/customers/{customer}/billing-history', [CustomerController::class, 'billingHistory']);
-        Route::get('masters/customers/{customer}/payment-history', [CustomerController::class, 'paymentHistory']);
+        // Customers — view/create/edit/delete
+        Route::middleware('permission:view customers|create customers|edit customers|delete customers')->group(function () {
+            Route::apiResource('masters/customers', CustomerController::class);
+            Route::get('masters/customers/{customer}/billing-history', [CustomerController::class, 'billingHistory']);
+            Route::get('masters/customers/{customer}/payment-history', [CustomerController::class, 'paymentHistory']);
+        });
 
-        Route::apiResource('masters/dealers', DealerController::class);
-        Route::get('masters/dealers/{dealer}/purchase-history', [DealerController::class, 'purchaseHistory']);
+        // Dealers
+        Route::middleware('permission:view dealers|create dealers|edit dealers|delete dealers')->group(function () {
+            Route::apiResource('masters/dealers', DealerController::class);
+            Route::get('masters/dealers/{dealer}/purchase-history', [DealerController::class, 'purchaseHistory']);
+        });
 
-        Route::apiResource('masters/vendors', VendorController::class);
-        Route::get('masters/vendors/{vendor}/purchase-history', [VendorController::class, 'purchaseHistory']);
+        // Vendors
+        Route::middleware('permission:view vendors|create vendors|edit vendors|delete vendors')->group(function () {
+            Route::apiResource('masters/vendors', VendorController::class);
+            Route::get('masters/vendors/{vendor}/purchase-history', [VendorController::class, 'purchaseHistory']);
+        });
 
-        Route::apiResource('masters/routes', RouteController::class);
-        Route::apiResource('masters/warehouses', WarehouseController::class);
+        // Routes & Warehouses
+        Route::middleware('permission:manage routes|view routes')->group(function () {
+            Route::apiResource('masters/routes', RouteController::class);
+            Route::apiResource('masters/warehouses', WarehouseController::class);
+        });
 
-        // Billing Module
-        Route::apiResource('billing/daily', DailyBillingController::class)->except(['update']);
-        
-        Route::post('billing/weekly/bulk', [WeeklyBillingController::class, 'bulkStore']);
-        Route::get('billing/weekly/{weekly_bill}/share-url', [WeeklyBillingController::class, 'shareUrl']);
-        Route::apiResource('billing/weekly', WeeklyBillingController::class)->except(['update']);
+        // Billing — Daily & Weekly
+        Route::middleware('permission:view bills|create bills|edit bills|delete bills')->group(function () {
+            Route::apiResource('billing/daily', DailyBillingController::class)->except(['update']);
+            Route::post('billing/weekly/bulk', [WeeklyBillingController::class, 'bulkStore']);
+            Route::get('billing/weekly/{weekly_bill}/share-url', [WeeklyBillingController::class, 'shareUrl']);
+            Route::apiResource('billing/weekly', WeeklyBillingController::class)->except(['update']);
+        });
 
-        // Procurement Module (Purchases)
-        Route::apiResource('purchases', PurchaseController::class);
+        // Purchases
+        Route::middleware('permission:view purchases|create purchases|edit purchases|delete purchases')->group(function () {
+            Route::apiResource('purchases', PurchaseController::class);
+        });
 
-        // Payments & Ledger Registry
-        Route::get('payments/customers', [PaymentController::class, 'indexCustomers']);
-        Route::post('payments/customers', [PaymentController::class, 'storeCustomerPayment']);
-        Route::get('payments/dealers', [PaymentController::class, 'indexDealers']);
-        Route::post('payments/dealers', [PaymentController::class, 'storeDealerPayment']);
-        Route::get('payments/dealers/{dealer}/ledger', [PaymentController::class, 'dealerLedger']);
+        // Payments
+        Route::middleware('permission:view payments|create payments|edit payments|delete payments')->group(function () {
+            Route::get('payments/customers', [PaymentController::class, 'indexCustomers']);
+            Route::post('payments/customers', [PaymentController::class, 'storeCustomerPayment']);
+            Route::get('payments/dealers', [PaymentController::class, 'indexDealers']);
+            Route::post('payments/dealers', [PaymentController::class, 'storeDealerPayment']);
+            Route::get('payments/dealers/{dealer}/ledger', [PaymentController::class, 'dealerLedger']);
+        });
 
         // Expenses & EMIs
-        Route::get('expenses/categories', [ExpenseController::class, 'categories']);
-        Route::get('expenses/emis', [ExpenseController::class, 'emisIndex']);
-        Route::post('expenses/emis', [ExpenseController::class, 'storeEmi']);
-        Route::delete('expenses/emis/{emi}', [ExpenseController::class, 'destroyEmi']);
-        Route::get('expenses/alerts', [ExpenseController::class, 'emisAlerts']);
-        Route::apiResource('expenses', ExpenseController::class);
+        Route::middleware('permission:view expenses|create expenses|edit expenses|delete expenses|view emis|create emis|edit emis|delete emis')->group(function () {
+            Route::get('expenses/categories', [ExpenseController::class, 'categories']);
+            Route::get('expenses/emis', [ExpenseController::class, 'emisIndex']);
+            Route::post('expenses/emis', [ExpenseController::class, 'storeEmi']);
+            Route::delete('expenses/emis/{emi}', [ExpenseController::class, 'destroyEmi']);
+            Route::get('expenses/alerts', [ExpenseController::class, 'emisAlerts']);
+            Route::apiResource('expenses', ExpenseController::class);
+        });
 
-        // Livestock Cycle & Mortality Module
-        Route::apiResource('batches', BatchController::class);
-        Route::post('bird-batches/{batch}/mortality', [BirdBatchController::class, 'recordMortality']);
-        Route::apiResource('bird-batches', BirdBatchController::class);
-        Route::apiResource('mortalities', MortalityController::class);
+        // Livestock Cycle & Mortality
+        Route::middleware('permission:view stock|create stock|edit stock|delete stock')->group(function () {
+            Route::apiResource('batches', BatchController::class);
+            Route::post('bird-batches/{batch}/mortality', [BirdBatchController::class, 'recordMortality']);
+            Route::apiResource('bird-batches', BirdBatchController::class);
+            Route::apiResource('mortalities', MortalityController::class);
+        });
 
-        // Inventory Stock & Consumption
-        Route::apiResource('items', ItemController::class);
-        Route::apiResource('consumptions', ConsumptionController::class);
-        Route::get('stock', [StockController::class, 'index']);
-        Route::get('stock/movements', [StockController::class, 'movements']);
-        Route::post('stock/adjust', [StockController::class, 'adjust']);
-        Route::get('inventory/analytics', [InventoryAnalyticsController::class, 'index']);
+        // Inventory — Items & Stock
+        Route::middleware('permission:view stock|create stock|edit stock|delete stock')->group(function () {
+            Route::apiResource('items', ItemController::class);
+            Route::apiResource('consumptions', ConsumptionController::class);
+            Route::get('stock', [StockController::class, 'index']);
+            Route::get('stock/movements', [StockController::class, 'movements']);
+            Route::post('stock/adjust', [StockController::class, 'adjust']);
+            Route::get('inventory/analytics', [InventoryAnalyticsController::class, 'index']);
+        });
 
-        // Financial Metrics & Dynamic Trends (P&L)
-        Route::get('profit', [ProfitController::class, 'index']);
-        Route::get('profit/monthly', [ProfitController::class, 'monthly']);
-        Route::get('profit/expense-vs-income', [ProfitController::class, 'expenseVsIncome']);
+        // Financial / Profit
+        Route::middleware('permission:view reports|view analytics')->group(function () {
+            Route::get('profit', [ProfitController::class, 'index']);
+            Route::get('profit/monthly', [ProfitController::class, 'monthly']);
+            Route::get('profit/expense-vs-income', [ProfitController::class, 'expenseVsIncome']);
+        });
 
-        // Analytical Reports Module
-        Route::get('reports', [ReportController::class, 'index']);
-        Route::get('reports/sales/daily', [ReportController::class, 'salesDaily']);
-        Route::get('reports/sales/weekly', [ReportController::class, 'salesWeekly']);
-        Route::get('reports/sales/monthly', [ReportController::class, 'salesMonthly']);
-        Route::get('reports/purchases/daily', [ReportController::class, 'purchasesDaily']);
-        Route::get('reports/purchases/weekly', [ReportController::class, 'purchasesWeekly']);
-        Route::get('reports/purchases/monthly', [ReportController::class, 'purchasesMonthly']);
-        Route::get('reports/purchases/vendor-analytics', [ReportController::class, 'vendorAnalytics']);
-        Route::get('reports/customers/ranking', [ReportController::class, 'customerRanking']);
-        Route::get('reports/purchases/analytics', [ReportController::class, 'purchaseAnalytics']);
+        // Reports
+        Route::middleware('permission:view reports')->group(function () {
+            Route::get('reports', [ReportController::class, 'index']);
+            Route::get('reports/sales/daily', [ReportController::class, 'salesDaily']);
+            Route::get('reports/sales/weekly', [ReportController::class, 'salesWeekly']);
+            Route::get('reports/sales/monthly', [ReportController::class, 'salesMonthly']);
+            Route::get('reports/purchases/daily', [ReportController::class, 'purchasesDaily']);
+            Route::get('reports/purchases/weekly', [ReportController::class, 'purchasesWeekly']);
+            Route::get('reports/purchases/monthly', [ReportController::class, 'purchasesMonthly']);
+            Route::get('reports/purchases/vendor-analytics', [ReportController::class, 'vendorAnalytics']);
+            Route::get('reports/customers/ranking', [ReportController::class, 'customerRanking']);
+            Route::get('reports/purchases/analytics', [ReportController::class, 'purchaseAnalytics']);
+        });
 
-        // User Management (Admin Spatie RBAC)
-        Route::post('users/{user}/toggle-status', [UserManagementController::class, 'toggleStatus']);
-        Route::apiResource('users', UserManagementController::class);
+        // User Management (Admin only)
+        Route::middleware('permission:manage users')->group(function () {
+            Route::post('users/{user}/toggle-status', [UserManagementController::class, 'toggleStatus']);
+            Route::apiResource('users', UserManagementController::class);
+        });
 
     });
 });

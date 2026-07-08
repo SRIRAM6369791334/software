@@ -5,7 +5,7 @@
 <div class="animate-fade-in max-w-4xl mx-auto">
     <x-page-header title="Record Collection" subtitle="Enter payment details to update the customer ledger">
         <x-slot:actions>
-            <x-button variant="outline" href="{{ route('payments.customers.index') }}" icon="arrow_back">
+            <x-button variant="outline" href="{{ route('masters.customers.index') }}" icon="arrow_back">
                 Back to Collections
             </x-button>
         </x-slot:actions>
@@ -26,14 +26,28 @@
                 </div>
 
                 <div class="p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 transition-all hover:border-emerald-500/30">
-                    <x-form.select name="customer_id" label="Select Customer" required>
-                        <option value="">Choose customer…</option>
-                        @foreach($customers as $c)
-                            <option value="{{ $c->id }}" {{ $selected_customer_id == $c->id ? 'selected' : '' }}>
-                                {{ $c->name }} — Pending: Rs {{ number_format($c->balance, 0) }}
-                            </option>
-                        @endforeach
-                    </x-form.select>
+                    @if($selected_customer_id && $customers->count() === 1)
+                        @php $c = $customers->first(); @endphp
+                        <input type="hidden" name="customer_id" value="{{ $c->id }}">
+                        <div>
+                            <span class="block text-xs font-bold text-zinc-500 uppercase mb-2">Customer</span>
+                            <div class="text-lg font-bold text-zinc-800 dark:text-white">
+                                {{ $c->name }}
+                            </div>
+                            <div class="text-sm font-semibold text-rose-500 mt-1">
+                                Pending Balance: Rs {{ number_format($c->balance, 2) }}
+                            </div>
+                        </div>
+                    @else
+                        <x-form.select name="customer_id" label="Select Customer" required>
+                            <option value="">Choose customer…</option>
+                            @foreach($customers as $c)
+                                <option value="{{ $c->id }}" {{ $selected_customer_id == $c->id ? 'selected' : '' }}>
+                                    {{ $c->name }} — Pending: Rs {{ number_format($c->balance, 0) }}
+                                </option>
+                            @endforeach
+                        </x-form.select>
+                    @endif
                 </div>
             </section>
 

@@ -11,6 +11,10 @@ use App\Services\ActivityLogger;
 
 class RoleController extends Controller
 {
+    private function flushPermissionCache(): void
+    {
+        app()->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    }
 
 
     public function index()
@@ -39,6 +43,7 @@ class RoleController extends Controller
         ]);
 
         ActivityLogger::log('Created Role', 'RoleManagement', $role->id);
+        $this->flushPermissionCache();
 
         return redirect()->route('admin.roles.index')->with('success', 'Role created successfully!');
     }
@@ -63,6 +68,7 @@ class RoleController extends Controller
         ]);
 
         ActivityLogger::log('Updated Role', 'RoleManagement', $role->id);
+        $this->flushPermissionCache();
 
         return redirect()->route('admin.roles.index')->with('success', 'Role updated successfully');
     }
@@ -79,6 +85,7 @@ class RoleController extends Controller
         $role->delete();
 
         ActivityLogger::log('Deleted Role', 'RoleManagement', $role->id);
+        $this->flushPermissionCache();
 
         return redirect()->route('admin.roles.index')->with('success', 'Role deleted!');
     }
@@ -110,6 +117,7 @@ class RoleController extends Controller
         $role->syncPermissions($permissions);
 
         ActivityLogger::log('Assigned Permissions to Role', 'RoleManagement', $role->id);
+        $this->flushPermissionCache();
 
         return redirect()->route('admin.roles.index')->with('success', 'Permissions assigned successfully!');
     }

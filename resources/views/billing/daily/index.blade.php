@@ -14,6 +14,9 @@
 }">
     <x-page-header title="Customer Billing" subtitle="Record counter sales, calculate GST automatically, and issue receipts">
         <x-slot:actions>
+            <x-button variant="outline" href="{{ route('masters.customers.index') }}" icon="arrow_back">
+                Customer Master
+            </x-button>
             <x-button variant="outline" href="{{ route('billing.daily.export') }}" icon="download">
                 Export
             </x-button>

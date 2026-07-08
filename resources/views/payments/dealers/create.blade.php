@@ -5,7 +5,7 @@
 <div class="animate-fade-in max-w-4xl mx-auto">
     <x-page-header title="Record Payout" subtitle="Enter payment details to clear supplier dues">
         <x-slot:actions>
-            <x-button variant="outline" href="{{ route('payments.dealers.index') }}" icon="arrow_back">
+            <x-button variant="outline" href="{{ route('masters.dealers.index') }}" icon="arrow_back">
                 Back to Payouts
             </x-button>
         </x-slot:actions>
@@ -26,14 +26,28 @@
                 </div>
 
                 <div class="p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 transition-all hover:border-blue-500/30">
-                    <x-form.select name="dealer_id" label="Select Dealer" required>
-                        <option value="">Choose dealer…</option>
-                        @foreach($dealers as $d)
-                            <option value="{{ $d->id }}" {{ $selected_dealer_id == $d->id ? 'selected' : '' }}>
-                            {{ $d->firm_name }} — Pending: Rs {{ number_format($d->displayed_outstanding, 0) }}
-                            </option>
-                        @endforeach
-                    </x-form.select>
+                    @if($selected_dealer_id && $dealers->count() === 1)
+                        @php $d = $dealers->first(); @endphp
+                        <input type="hidden" name="dealer_id" value="{{ $d->id }}">
+                        <div>
+                            <span class="block text-xs font-bold text-zinc-500 uppercase mb-2">Dealer</span>
+                            <div class="text-lg font-bold text-zinc-800 dark:text-white">
+                                {{ $d->firm_name }}
+                            </div>
+                            <div class="text-sm font-semibold text-rose-500 mt-1">
+                                Pending Balance: Rs {{ number_format($d->displayed_outstanding, 2) }}
+                            </div>
+                        </div>
+                    @else
+                        <x-form.select name="dealer_id" label="Select Dealer" required>
+                            <option value="">Choose dealer…</option>
+                            @foreach($dealers as $d)
+                                <option value="{{ $d->id }}" {{ $selected_dealer_id == $d->id ? 'selected' : '' }}>
+                                {{ $d->firm_name }} — Pending: Rs {{ number_format($d->displayed_outstanding, 0) }}
+                                </option>
+                            @endforeach
+                        </x-form.select>
+                    @endif
                 </div>
             </section>
 

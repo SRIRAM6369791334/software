@@ -8,6 +8,11 @@
         subtitle="Directory of retail buyers and wholesale partners"
     >
         <x-slot:actions>
+            @can('view bills')
+                <x-button href="{{ route('billing.daily.index') }}" variant="outline" icon="receipt_long">
+                    Daily Billing
+                </x-button>
+            @endcan
             @can('create customers')
                 <x-button href="{{ route('masters.customers.create') }}" variant="primary" icon="add">
                     Register Customer

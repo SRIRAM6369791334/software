@@ -24,7 +24,6 @@
         ['label' => 'Weekly Billing', 'icon' => 'receipt_long', 'route' => 'billing.weekly.index', 'permission' => 'view bills'],
         ['label' => 'Purchases', 'icon' => 'shopping_cart', 'route' => 'purchases.entry', 'permission' => 'view purchases'],
         ['label' => 'Purchase Invoices', 'icon' => 'receipt', 'route' => 'purchases.invoices', 'permission' => 'view purchases'],
-        ['label' => 'Sales', 'icon' => 'event_note', 'route' => 'billing.daily.index', 'permission' => 'view bills'],
 
         ['header' => 'Finance & Payments'],
         ['label' => 'Customer Payments', 'icon' => 'credit_card', 'route' => 'payments.customers.index', 'permission' => 'view payments'],

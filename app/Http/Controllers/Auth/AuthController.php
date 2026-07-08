@@ -24,23 +24,19 @@ class AuthController extends Controller
     {
         $loginField = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
         
-        $credentials = [
-            $loginField => $request->login,
-            'password' => $request->password,
-        ];
+        $user = \App\Models\User::where($loginField, $request->login)->first();
 
-        if (!Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (!$user || !\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
             return back()
                 ->withInput($request->only('login'))
                 ->withErrors(['login' => 'These credentials do not match our records.']);
         }
 
-        $user = Auth::user();
-
         if (!$user->is_active) {
-            Auth::logout();
             return back()->withErrors(['login' => 'Your account is deactivated.']);
         }
+
+        Auth::login($user, $request->boolean('remember'));
 
         $request->session()->regenerate();
         

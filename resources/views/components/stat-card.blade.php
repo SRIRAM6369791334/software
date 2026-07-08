@@ -17,6 +17,9 @@
         'amber' => 'bg-amber-500/10 text-amber-600 border border-amber-500/20 shadow-lg shadow-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400',
         'rose' => 'bg-rose-500/10 text-rose-600 border border-rose-500/20 shadow-lg shadow-rose-500/20 dark:bg-rose-500/20 dark:text-rose-400',
         'zinc' => 'bg-zinc-500/10 text-zinc-600 border border-zinc-500/20 shadow-lg shadow-zinc-500/20 dark:bg-zinc-800/50 dark:text-zinc-400',
+        'indigo' => 'bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 shadow-lg shadow-indigo-500/20 dark:bg-indigo-500/20 dark:text-indigo-400',
+        'violet' => 'bg-violet-500/10 text-violet-600 border border-violet-500/20 shadow-lg shadow-violet-500/20 dark:bg-violet-500/20 dark:text-violet-400',
+        'teal' => 'bg-teal-500/10 text-teal-600 border border-teal-500/20 shadow-lg shadow-teal-500/20 dark:bg-teal-500/20 dark:text-teal-400',
     ];
     $iconClass = $iconColors[$color] ?? $iconColors['emerald'];
 @endphp
@@ -34,6 +37,9 @@
                 @endif
                 <span class="truncate">{{ $value }}</span>
             </p>
+            @if($subtitle)
+                <p class="text-[10px] sm:text-xs font-semibold text-zinc-400 dark:text-zinc-500 mt-1 truncate">{{ $subtitle }}</p>
+            @endif
         </div>
         @if($icon)
             <div class="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl {{ $iconClass }} transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
