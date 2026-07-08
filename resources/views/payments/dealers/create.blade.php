@@ -37,6 +37,21 @@
                 </div>
             </section>
 
+            {{-- Day-Load Warning Banner --}}
+            @if($selected_dealer_id && $pendingDayLoadCount > 0)
+                <div class="p-4 rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-900/20 flex items-start gap-3">
+                    <span class="material-symbols-rounded text-amber-600 dark:text-amber-400 text-[20px] mt-0.5">warning</span>
+                    <div>
+                        <p class="text-sm font-bold text-amber-800 dark:text-amber-300">
+                            This dealer has {{ $pendingDayLoadCount }} unpaid day-load {{ Str::plural('entry', $pendingDayLoadCount) }}
+                        </p>
+                        <p class="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                            Consider recording payment from the day-load billing page for proper allocation across entries.
+                        </p>
+                    </div>
+                </div>
+            @endif
+
             {{-- Amount Section --}}
             <section class="space-y-4">
                 <div class="flex items-center gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">

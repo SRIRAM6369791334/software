@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Payments;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Payments\StoreDealerPaymentRequest;
+use App\Models\DayLoadEntry;
 use App\Models\Dealer;
 use App\Models\DealerPayment;
 use App\Services\DealerPaymentService;
@@ -48,7 +49,15 @@ class DealerPaymentController extends Controller
     {
         $selected_dealer_id = $request->input('dealer_id');
         $dealers = Dealer::orderBy('firm_name')->get();
-        return view('payments.dealers.create', compact('dealers', 'selected_dealer_id'));
+
+        $pendingDayLoadCount = 0;
+        if ($selected_dealer_id) {
+            $pendingDayLoadCount = DayLoadEntry::where('dealer_id', $selected_dealer_id)
+                ->whereIn('dealer_payment_status', ['Pending', 'Partial'])
+                ->count();
+        }
+
+        return view('payments.dealers.create', compact('dealers', 'selected_dealer_id', 'pendingDayLoadCount'));
     }
 
     public function store(StoreDealerPaymentRequest $request): RedirectResponse
@@ -71,7 +80,7 @@ class DealerPaymentController extends Controller
             ->with(['vendor', 'batch'])
             ->get();
 
-        $payments = $dealer->payments()->get();
+        $payments = $dealer->payments()->with('dayLoadEntry.vendor')->get();
 
         $rows = [];
 
@@ -83,10 +92,16 @@ class DealerPaymentController extends Controller
                 'ref' => 'DL-' . $e->id,
                 'debit' => round((float) $e->bird_weight, 2),
                 'credit' => 0,
+                'group_id' => null,
+                'sub_items' => [],
             ];
         }
 
-        foreach ($payments as $p) {
+        // Separate individual vs grouped payments
+        $individual = $payments->whereNull('payment_group_id');
+        $grouped    = $payments->whereNotNull('payment_group_id')->groupBy('payment_group_id');
+
+        foreach ($individual as $p) {
             $rows[] = [
                 'date' => $p->date,
                 'type' => 'payment',
@@ -94,6 +109,31 @@ class DealerPaymentController extends Controller
                 'ref' => 'PAY-' . str_pad($p->id, 4, '0', STR_PAD_LEFT),
                 'debit' => 0,
                 'credit' => round((float) $p->amount, 2),
+                'group_id' => null,
+                'sub_items' => [],
+            ];
+        }
+
+        foreach ($grouped as $groupId => $group) {
+            $totalAmount = $group->sum('amount');
+            $firstDate   = $group->first()->date;
+
+            $subItems = $group->map(fn($p) => [
+                'entry_label' => $p->dayLoadEntry
+                    ? 'Entry #' . $p->day_load_entry_id . ' (' . ($p->dayLoadEntry->vendor->firm_name ?? '-') . ')'
+                    : 'Unallocated / Advance',
+                'amount' => round((float) $p->amount, 2),
+            ]);
+
+            $rows[] = [
+                'date' => $firstDate,
+                'type' => 'payment',
+                'desc' => 'Lump-Sum Payment (' . $group->count() . ' allocations)',
+                'ref' => 'GRP-' . substr($groupId, 0, 8),
+                'debit' => 0,
+                'credit' => round((float) $totalAmount, 2),
+                'group_id' => $groupId,
+                'sub_items' => $subItems,
             ];
         }
 

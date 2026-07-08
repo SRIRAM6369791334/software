@@ -189,6 +189,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('day-load/set-farm-weight', [DayLoadBillingController::class, 'setFarmWeight'])->name('day-load.set-farm-weight');
             Route::post('day-load/{entry}/dealer-payment', [DayLoadBillingController::class, 'recordDealerPayment'])->name('day-load.dealer-payment');
             Route::post('day-load/{entry}/vendor-payment', [DayLoadBillingController::class, 'recordVendorPayment'])->name('day-load.vendor-payment');
+            Route::post('day-load/lumpsum-dealer-payment', [DayLoadBillingController::class, 'recordLumpSumDealerPayment'])->name('day-load.lumpsum-dealer-payment');
 
             // Cash & Bank Ledger (route names are placeholders; sidebar menu placement to be finalized by project owner)
             Route::get('cash-bank-ledger', [CashBankLedgerController::class, 'index'])->name('cash-bank-ledger.index');

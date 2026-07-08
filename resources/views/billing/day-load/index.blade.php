@@ -113,6 +113,14 @@
                         >
                             Adjust All
                         </x-button>
+                        <x-button
+                            variant="secondary"
+                            size="sm"
+                            icon="payments"
+                            x-on:click="$dispatch('open-modal', 'lump-sum-payment-modal')"
+                        >
+                            Lump Payment
+                        </x-button>
                     @endif
                 @endcan
             </div>
@@ -337,6 +345,30 @@
         vpMode: 'Cash',
         vpRefNo: '',
         vpNotes: '',
+        lsEntriesByDealer: @json($lsEntriesByDealer),
+        lsDealerId: 0,
+        lsEntries: [],
+        lsAllocations: {},
+        lsAllocSum: 0,
+        lsCashAmount: 0,
+        lsBankAmount: 0,
+        lsTotalLump: 0,
+        lsDate: '{{ $date }}',
+        lsMode: 'Cash',
+        lsBankTransferType: '',
+        lsRefNo: '',
+        lsNotes: '',
+        initLsDealer() {
+            this.lsEntries = this.lsEntriesByDealer[this.lsDealerId] || [];
+            this.lsAllocations = {};
+            this.lsEntries.forEach(e => { this.lsAllocations[e.id] = 0; });
+            this.recalcAllocSum();
+        },
+        recalcAllocSum() {
+            let sum = 0;
+            Object.values(this.lsAllocations).forEach(v => { sum += parseFloat(v) || 0; });
+            this.lsAllocSum = Math.round(sum * 100) / 100;
+        },
     }">
         <x-modal name="edit-entry-modal" title="Edit Entry" subtitle="Adjust rates, weights, or box count" icon="edit" maxWidth="2xl">
             <form id="edit-entry-form" :action="editFormAction" method="POST">
@@ -856,6 +888,146 @@
                 <x-slot:footer>
                     <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'vendor-payment-modal')">Cancel</x-button>
                     <x-button type="submit" form="vendor-payment-form" variant="primary" icon="account_balance_wallet">Record Payment</x-button>
+                </x-slot:footer>
+            </form>
+        </x-modal>
+
+        {{-- Lump-Sum Payment Modal --}}
+        <x-modal name="lump-sum-payment-modal" title="Record Lump-Sum Payment" subtitle="Allocate a single payment across multiple entries" icon="payments" maxWidth="3xl">
+            <form id="lump-sum-form" action="{{ route('billing.day-load.lumpsum-dealer-payment') }}" method="POST">
+                @csrf
+                <input type="hidden" name="dealer_id" :value="lsDealerId">
+                <input type="hidden" name="date" :value="lsDate">
+                <input type="hidden" name="cash_amount" :value="lsCashAmount">
+                <input type="hidden" name="bank_amount" :value="lsBankAmount">
+                <input type="hidden" name="payment_mode" :value="lsMode">
+                <input type="hidden" name="bank_transfer_type" :value="lsBankTransferType">
+                <input type="hidden" name="reference_number" :value="lsRefNo">
+                <input type="hidden" name="notes" :value="lsNotes">
+                <template x-for="(amount, entryId) in lsAllocations" :key="entryId">
+                    <input type="hidden" :name="'allocations[' + entryId + ']'" :value="amount">
+                </template>
+
+                <div class="mb-5">
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-2">Select Dealer</label>
+                    <select x-model="lsDealerId" @change="initLsDealer()" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm">
+                        <option value="0">Choose dealer...</option>
+                        @foreach($dealers as $dealer)
+                            <option value="{{ $dealer->id }}">{{ $dealer->firm_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <template x-if="lsEntries.length > 0">
+                    <div class="mb-5">
+                        <p class="text-xs font-bold text-zinc-500 uppercase mb-3">Allocate Payment Across Entries</p>
+                        <div class="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-700">
+                            <table class="w-full text-sm">
+                                <thead class="bg-zinc-50 dark:bg-zinc-800/50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-bold text-zinc-500">Vendor</th>
+                                        <th class="px-3 py-2 text-right text-xs font-bold text-zinc-500">Total (Rs)</th>
+                                        <th class="px-3 py-2 text-right text-xs font-bold text-zinc-500">Collected (Rs)</th>
+                                        <th class="px-3 py-2 text-right text-xs font-bold text-zinc-500">Balance (Rs)</th>
+                                        <th class="px-3 py-2 text-right text-xs font-bold text-zinc-500">Allocate Now (Rs)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="entry in lsEntries" :key="entry.id">
+                                        <tr class="border-t border-zinc-100 dark:border-zinc-800">
+                                            <td class="px-3 py-2 font-medium" x-text="entry.vendor"></td>
+                                            <td class="px-3 py-2 text-right font-jetbrains" x-text="entry.dealer_income.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                            <td class="px-3 py-2 text-right font-jetbrains text-emerald-600" x-text="entry.dealer_collected.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                            <td class="px-3 py-2 text-right font-jetbrains font-bold" x-text="entry.due.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                            <td class="px-3 py-2 text-right">
+                                                <input type="number" step="0.01" min="0" :max="entry.due"
+                                                    x-model.number="lsAllocations[entry.id]"
+                                                    @input="if (lsAllocations[entry.id] > entry.due) lsAllocations[entry.id] = entry.due; recalcAllocSum()"
+                                                    class="w-28 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1 text-right text-sm font-jetbrains">
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                                <tfoot class="bg-zinc-50 dark:bg-zinc-800/50 font-bold">
+                                    <tr>
+                                        <td class="px-3 py-2 text-xs text-zinc-500">TOTAL</td>
+                                        <td class="px-3 py-2 text-right font-jetbrains" x-text="lsEntries.reduce((s, e) => s + e.dealer_income, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                        <td class="px-3 py-2 text-right font-jetbrains text-emerald-600" x-text="lsEntries.reduce((s, e) => s + e.dealer_collected, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                        <td class="px-3 py-2 text-right font-jetbrains" x-text="lsEntries.reduce((s, e) => s + e.due, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                        <td class="px-3 py-2 text-right font-jetbrains" x-text="lsAllocSum.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <div class="mt-2 flex items-center justify-end gap-2 text-xs text-zinc-500">
+                            <span>Allocated: <strong class="font-jetbrains" x-text="'Rs ' + lsAllocSum.toLocaleString('en-IN', {minimumFractionDigits: 2})"></strong></span>
+                            <span class="text-zinc-300 dark:text-zinc-600">/</span>
+                            <span>Lump sum entered: <strong class="font-jetbrains" x-text="'Rs ' + lsTotalLump.toLocaleString('en-IN', {minimumFractionDigits: 2})"></strong></span>
+                            <template x-if="lsAllocSum > lsTotalLump">
+                                <span class="text-rose-600 font-bold">(Exceeds by Rs <span x-text="(lsAllocSum - lsTotalLump).toLocaleString('en-IN', {minimumFractionDigits: 2})"></span>)</span>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Date</label>
+                        <input type="date" x-model="lsDate" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Cash Amount (Rs)</label>
+                        <input type="number" step="0.01" min="0" x-model.number="lsCashAmount" @input="lsTotalLump = Math.round((lsCashAmount + lsBankAmount) * 100) / 100" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Amount (Rs)</label>
+                        <input type="number" step="0.01" min="0" x-model.number="lsBankAmount" @input="lsTotalLump = Math.round((lsCashAmount + lsBankAmount) * 100) / 100" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Total Lump Sum</label>
+                        <p class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm font-jetbrains text-lg font-bold text-emerald-600" x-text="'Rs ' + lsTotalLump.toLocaleString('en-IN', {minimumFractionDigits: 2})"></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Mode</label>
+                        <select x-model="lsMode" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                            @foreach(config('payments.modes') as $mode)
+                                <option value="{{ $mode }}">{{ $mode }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div x-show="lsBankAmount > 0" x-transition>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Transfer Type</label>
+                        <select x-model="lsBankTransferType" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                            <option value="">Select type...</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="NEFT">NEFT</option>
+                            <option value="RTGS">RTGS</option>
+                            <option value="IMPS">IMPS</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div x-show="lsBankAmount <= 0">
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reference No</label>
+                        <input type="text" x-model="lsRefNo" placeholder="UPI ref / Cheque no / Tx ID" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Remarks</label>
+                    <textarea x-model="lsNotes" rows="2" placeholder="Optional notes" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"></textarea>
+                </div>
+
+                <x-slot:footer>
+                    <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'lump-sum-payment-modal')">Cancel</x-button>
+                    <x-button type="submit" form="lump-sum-form" variant="primary" icon="payments" x-bind:disabled="lsAllocSum > lsTotalLump || lsAllocSum <= 0">Record Lump-Sum Payment</x-button>
                 </x-slot:footer>
             </form>
         </x-modal>

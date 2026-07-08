@@ -9,6 +9,7 @@ use App\Models\DealerPayment;
 use App\Models\PaymentAdjustmentLog;
 use App\Models\VendorPayment;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class DayLoadPaymentService
 {
@@ -58,6 +59,203 @@ class DayLoadPaymentService
 
             return $payment;
         });
+    }
+
+    public function recordLumpSumDealerPayment(array $data): array
+    {
+        $dealerId    = (int) $data['dealer_id'];
+        $date        = $data['date'];
+        $allocations = $data['allocations'];
+        $cashAmount  = (float) ($data['cash_amount'] ?? 0);
+        $bankAmount  = (float) ($data['bank_amount'] ?? 0);
+        $totalLump   = round($cashAmount + $bankAmount, 2);
+
+        if ($totalLump <= 0) {
+            throw new \InvalidArgumentException('Total payment amount must be greater than zero.');
+        }
+
+        $payments = DB::transaction(function () use (
+            $dealerId, $date, $allocations, $cashAmount, $bankAmount, $totalLump, $data
+        ) {
+            // --- 1. Parse allocations --------------------------------------------------
+            $allocSum = 0;
+            $active   = [];
+            foreach ($allocations as $entryId => $amount) {
+                $amt = round((float) $amount, 2);
+                if ($amt <= 0) {
+                    continue;
+                }
+                $active[(int) $entryId] = $amt;
+                $allocSum = round($allocSum + $amt, 2);
+            }
+
+            if (empty($active)) {
+                throw new \InvalidArgumentException('At least one entry allocation must be greater than zero.');
+            }
+
+            if ($allocSum > $totalLump) {
+                throw new \InvalidArgumentException(
+                    'Total allocation (Rs ' . number_format($allocSum, 2) . ') exceeds lump-sum amount (Rs ' . number_format($totalLump, 2) . ').'
+                );
+            }
+
+            // --- 2. Lock and load entries ----------------------------------------------
+            $entries = DayLoadEntry::with(['vendor', 'batch.invoice'])
+                ->whereIn('id', array_keys($active))
+                ->where('dealer_id', $dealerId)
+                ->where('status', '!=', 'Cancelled')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            // --- 3. Validate no overpayment per entry ----------------------------------
+            $violations = [];
+            foreach ($active as $entryId => $amount) {
+                $entry = $entries->get($entryId);
+                if (!$entry) {
+                    $violations[] = "Entry #{$entryId}: not found or does not belong to this dealer.";
+                    continue;
+                }
+                $balanceDue = round($entry->dealer_income - (float) $entry->dealer_collected, 2);
+                if ($amount > $balanceDue) {
+                    $over = number_format($amount - $balanceDue, 2);
+                    $violations[] = "Entry #{$entryId} ({$entry->vendor->firm_name}): Rs "
+                        . number_format($amount, 2) . ' allocated exceeds balance due of Rs '
+                        . number_format($balanceDue, 2) . ' by Rs ' . $over . '.';
+                }
+            }
+
+            if (!empty($violations)) {
+                throw new \InvalidArgumentException(
+                    "Overpayment blocked:\n- " . implode("\n- ", $violations)
+                );
+            }
+
+            // --- 4. Build item list (entries + optional remainder) --------------------
+            $unallocated = round($totalLump - $allocSum, 2);
+
+            $items = [];
+            foreach ($active as $entryId => $amount) {
+                $items[] = [
+                    'entry_id' => $entryId,
+                    'amount'   => round($amount, 2),
+                    'is_remainder' => false,
+                ];
+            }
+            if ($unallocated > 0) {
+                $items[] = [
+                    'entry_id' => null,
+                    'amount'   => $unallocated,
+                    'is_remainder' => true,
+                ];
+            }
+
+            // --- 5. Largest-remainder cash/bank split across all items ----------------
+            // Work in integer paise to guarantee exact sums.
+            $cashPaise   = round($cashAmount * 100);
+            $totalPaise  = round($totalLump * 100);
+
+            $itemPaise = [];
+            foreach ($items as $i => $item) {
+                $amtPaise = round($item['amount'] * 100);
+                // floor-cash in paise: floor(amtPaise * cashPaise / totalPaise)
+                $floorCash   = intdiv($amtPaise * $cashPaise, $totalPaise);
+                $idealFloat  = $amtPaise * $cashPaise / $totalPaise;
+                $remainder   = $idealFloat - $floorCash; // fractional part, 0 <= r < 1
+                $itemPaise[$i] = [
+                    'floor_cash' => $floorCash,
+                    'remainder'  => $remainder,
+                ];
+            }
+
+            $distributedPaise = array_sum(array_column($itemPaise, 'floor_cash'));
+            $remainingPaise   = $cashPaise - $distributedPaise;
+
+            if ($remainingPaise > 0) {
+                // Give 1 paisa each to rows with largest fractional remainders
+                $order = array_keys($itemPaise);
+                usort($order, function ($a, $b) use ($itemPaise) {
+                    return $itemPaise[$b]['remainder'] <=> $itemPaise[$a]['remainder'];
+                });
+                for ($i = 0; $i < $remainingPaise; $i++) {
+                    $itemPaise[$order[$i]]['floor_cash']++;
+                }
+            }
+
+            // --- 6. Create payment records -------------------------------------------
+            $paymentGroupId = (string) Str::uuid();
+            $payments = [];
+
+            foreach ($items as $i => $item) {
+                $cashPaiseForItem = $itemPaise[$i]['floor_cash'];
+                $cashForItem      = round($cashPaiseForItem / 100, 2);
+                $bankForItem      = round($item['amount'] - $cashForItem, 2);
+
+                if ($item['is_remainder']) {
+                    $payment = DealerPayment::create([
+                        'dealer_id'          => $dealerId,
+                        'day_load_entry_id'  => null,
+                        'invoice_id'         => null,
+                        'payment_group_id'   => $paymentGroupId,
+                        'date'               => $date,
+                        'amount'             => $item['amount'],
+                        'payment_mode'       => $data['payment_mode'] ?? 'Cash',
+                        'cash_amount'        => $cashForItem,
+                        'bank_amount'        => $bankForItem,
+                        'bank_transfer_type' => $data['bank_transfer_type'] ?? null,
+                        'reference_number'   => $data['reference_number'] ?? null,
+                        'notes'              => 'Unallocated advance from lump-sum payment',
+                    ]);
+                } else {
+                    $entry = $entries->get($item['entry_id']);
+
+                    $payment = DealerPayment::create([
+                        'dealer_id'          => $dealerId,
+                        'day_load_entry_id'  => $item['entry_id'],
+                        'invoice_id'         => $entry->batch?->invoice_id,
+                        'payment_group_id'   => $paymentGroupId,
+                        'date'               => $date,
+                        'amount'             => $item['amount'],
+                        'payment_mode'       => $data['payment_mode'] ?? 'Cash',
+                        'cash_amount'        => $cashForItem,
+                        'bank_amount'        => $bankForItem,
+                        'bank_transfer_type' => $data['bank_transfer_type'] ?? null,
+                        'reference_number'   => $data['reference_number'] ?? null,
+                        'notes'              => ($data['notes'] ?? '') ?: 'Lump-sum allocation to entry #' . $item['entry_id'],
+                    ]);
+
+                    $entry->increment('dealer_collected', $item['amount']);
+                    $this->refreshDealerPaymentStatus($entry);
+                }
+
+                $payments[] = $payment;
+            }
+
+            // --- 7. Refresh financials (deduplicated) --------------------------------
+            $seenBatches  = collect();
+            $seenInvoices = collect();
+            foreach ($active as $entryId => $amount) {
+                $entry = $entries->get($entryId);
+                if (!$entry || !$entry->batch) {
+                    continue;
+                }
+                if (!$seenBatches->has($entry->batch->id)) {
+                    $seenBatches->put($entry->batch->id, $entry->batch);
+                    $this->refreshBatchFinancials($entry->batch);
+                }
+                $invoice = $entry->batch->invoice;
+                if ($invoice && !$seenInvoices->has($invoice->id)) {
+                    $seenInvoices->put($invoice->id, $invoice);
+                    $this->refreshInvoicePayment($invoice);
+                }
+            }
+
+            return $payments;
+        });
+
+        $this->cashBankLedgerService->recalculateForDate(now());
+
+        return $payments;
     }
 
     public function updateDealerPayment(DealerPayment $payment, array $data, string $reason): DealerPayment

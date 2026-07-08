@@ -61,11 +61,20 @@ class DayLoadBillingController extends Controller
         $totalVendorDue       = round($totalVendorCost - $totalVendorPaid, 2);
         $collectionPct        = $totalDealerIncome > 0 ? round(($totalDealerCollected / $totalDealerIncome) * 100, 1) : 0;
 
+        $lsEntriesByDealer = $allEntries->groupBy('dealer_id')->map(fn($entries) => $entries->map(fn($e) => [
+            'id'               => $e->id,
+            'vendor'           => $e->vendor->firm_name ?? '-',
+            'dealer_income'    => (float) $e->dealer_income,
+            'dealer_collected' => (float) $e->dealer_collected,
+            'due'              => max(0, round($e->dealer_income - (float) $e->dealer_collected, 2)),
+        ]));
+
         return view('billing.day-load.index', compact(
             'entries', 'batch', 'vendors', 'dealers', 'date', 'search',
             'totalDealerIncome', 'totalVendorCost', 'grossMargin',
             'totalDealerCollected', 'totalVendorPaid',
             'totalDealerDue', 'totalVendorDue', 'collectionPct',
+            'lsEntriesByDealer',
         ));
     }
 
@@ -270,6 +279,56 @@ class DayLoadBillingController extends Controller
         }
 
         return back()->with('success', 'Vendor payment recorded successfully.');
+    }
+
+    public function recordLumpSumDealerPayment(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'dealer_id'          => 'required|exists:dealers,id',
+            'date'               => 'required|date|before_or_equal:today',
+            'cash_amount'        => 'required|numeric|min:0',
+            'bank_amount'        => 'required|numeric|min:0',
+            'payment_mode'       => 'required|in:' . implode(',', config('payments.modes')),
+            'bank_transfer_type' => [
+                'nullable',
+                function ($attribute, $value, $fail) {
+                    $bankAmount = (float) (request()->input('bank_amount') ?? 0);
+                    if ($bankAmount > 0) {
+                        if (blank($value)) {
+                            $fail('The bank transfer type field is required when bank amount is greater than 0.');
+                        } elseif (!in_array($value, ['UPI', 'Bank Transfer', 'NEFT', 'RTGS', 'IMPS', 'Cheque', 'Other'], true)) {
+                            $fail('The selected bank transfer type is invalid.');
+                        }
+                    }
+                },
+            ],
+            'allocations'        => 'required|array|min:1',
+            'allocations.*'      => 'required|numeric|min:0',
+            'reference_number'   => 'nullable|string|max:100',
+            'notes'              => 'nullable|string|max:500',
+        ]);
+
+        $totalAmount = round((float) $validated['cash_amount'] + (float) $validated['bank_amount'], 2);
+        if ($totalAmount <= 0) {
+            return back()->with('error', 'Total payment amount must be greater than zero.');
+        }
+
+        $allocSum = round(collect($validated['allocations'])->sum(fn ($v) => (float) $v), 2);
+        if ($allocSum > $totalAmount) {
+            return back()->with('error',
+                'Total allocation (Rs ' . number_format($allocSum, 2) . ') exceeds lump-sum amount (Rs ' . number_format($totalAmount, 2) . ').'
+            );
+        }
+
+        try {
+            $this->dayLoadPaymentService->recordLumpSumDealerPayment($validated);
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (\Exception $e) {
+            return back()->with('error', 'Could not record lump-sum payment: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Lump-sum dealer payment recorded successfully.');
     }
 
     public function export(Request $request): StreamedResponse

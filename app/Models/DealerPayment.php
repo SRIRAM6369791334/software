@@ -10,7 +10,7 @@ class DealerPayment extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'dealer_id', 'invoice_id', 'day_load_entry_id',
+        'dealer_id', 'invoice_id', 'day_load_entry_id', 'payment_group_id',
         'date', 'amount', 'payment_mode',
         'cash_amount', 'bank_amount', 'bank_transfer_type',
         'reference_number', 'notes',

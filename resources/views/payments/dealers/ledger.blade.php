@@ -136,42 +136,77 @@
                     </div>
 
                     <x-data-table :headers="['Date', 'Transaction Details', 'Ref #', ['label' => 'Debit (Load Kg)', 'align' => 'right'], ['label' => 'Credit (Payment Rs)', 'align' => 'right']]">
+                        @php $expandedGroups = []; @endphp
                         @forelse($paginated as $row)
-                            <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
-                                <td class="px-6 py-4 font-bold text-sm">{{ $row['date']->format('d M Y') }}</td>
-                                <td class="px-6 py-4">
-                                    @if($row['type'] === 'load')
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                                                <span class="material-symbols-rounded text-[14px]">local_shipping</span>
-                                            </div>
-                                            <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $row['desc'] }}</div>
-                                        </div>
-                                    @else
+                            @if($row['group_id'])
+                                <tr x-data="{ open: false }" class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 cursor-pointer" x-on:click="open = !open">
+                                    <td class="px-6 py-4 font-bold text-sm">{{ $row['date']->format('d M Y') }}</td>
+                                    <td class="px-6 py-4">
                                         <div class="flex items-center gap-2">
                                             <div class="w-6 h-6 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                                                 <span class="material-symbols-rounded text-[14px]">payments</span>
                                             </div>
                                             <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $row['desc'] }}</div>
+                                            <span class="material-symbols-rounded text-sm text-zinc-400 transition-transform" :class="{ 'rotate-180': open }">expand_more</span>
                                         </div>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-center font-mono text-xs text-zinc-500">{{ $row['ref'] }}</td>
-                                <td class="px-6 py-4 text-right font-jetbrains text-sm">
-                                    @if($row['debit'] > 0)
-                                        <span class="font-bold text-blue-600 dark:text-blue-400">{{ number_format($row['debit'], 1) }} kg</span>
-                                    @else
-                                        <span class="text-zinc-300 dark:text-zinc-600">—</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-right font-jetbrains text-sm">
-                                    @if($row['credit'] > 0)
+                                    </td>
+                                    <td class="px-6 py-4 text-center font-mono text-xs text-zinc-500">{{ $row['ref'] }}</td>
+                                    <td class="px-6 py-4 text-right font-jetbrains text-sm">—</td>
+                                    <td class="px-6 py-4 text-right font-jetbrains text-sm">
                                         <span class="font-bold text-emerald-600 dark:text-emerald-400">Rs {{ number_format($row['credit'], 2) }}</span>
-                                    @else
-                                        <span class="text-zinc-300 dark:text-zinc-600">—</span>
-                                    @endif
-                                </td>
-                            </tr>
+                                    </td>
+                                </tr>
+                                <template x-if="open">
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-2 bg-zinc-50/70 dark:bg-zinc-800/30">
+                                            <div class="space-y-1">
+                                                @foreach($row['sub_items'] as $sub)
+                                                    <div class="flex items-center justify-between text-sm px-4 py-1.5 rounded-lg {{ $sub['entry_label'] === 'Unallocated / Advance' ? 'bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-300' : 'text-zinc-600 dark:text-zinc-400' }}">
+                                                        <span class="text-xs">{{ $sub['entry_label'] }}</span>
+                                                        <span class="font-jetbrains font-bold">Rs {{ number_format($sub['amount'], 2) }}</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            @else
+                                <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
+                                    <td class="px-6 py-4 font-bold text-sm">{{ $row['date']->format('d M Y') }}</td>
+                                    <td class="px-6 py-4">
+                                        @if($row['type'] === 'load')
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                                    <span class="material-symbols-rounded text-[14px]">local_shipping</span>
+                                                </div>
+                                                <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $row['desc'] }}</div>
+                                            </div>
+                                        @else
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-6 h-6 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                                    <span class="material-symbols-rounded text-[14px]">payments</span>
+                                                </div>
+                                                <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $row['desc'] }}</div>
+                                            </div>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-center font-mono text-xs text-zinc-500">{{ $row['ref'] }}</td>
+                                    <td class="px-6 py-4 text-right font-jetbrains text-sm">
+                                        @if($row['debit'] > 0)
+                                            <span class="font-bold text-blue-600 dark:text-blue-400">{{ number_format($row['debit'], 1) }} kg</span>
+                                        @else
+                                            <span class="text-zinc-300 dark:text-zinc-600">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-right font-jetbrains text-sm">
+                                        @if($row['credit'] > 0)
+                                            <span class="font-bold text-emerald-600 dark:text-emerald-400">Rs {{ number_format($row['credit'], 2) }}</span>
+                                        @else
+                                            <span class="text-zinc-300 dark:text-zinc-600">—</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endif
                         @empty
                             <tr><td colspan="5" class="text-center py-8 text-zinc-500">No transactions found.</td></tr>
                         @endforelse
