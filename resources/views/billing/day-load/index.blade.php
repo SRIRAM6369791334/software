@@ -1107,7 +1107,7 @@
             vpMode: 'Cash',
             vpRefNo: '',
             vpNotes: '',
-            lsEntriesByDealer: @json($lsEntriesByDealer),
+            lsEntriesByDealer: {{ Js::from($lsEntriesByDealer) }},
             lsDealerId: 0,
             lsEntries: [],
             lsAllocations: {},
