@@ -8,6 +8,11 @@
         subtitle="Directory of retail buyers and wholesale partners"
     >
         <x-slot:actions>
+            @can('view payments')
+                <x-button href="{{ route('payments.customers.index') }}" variant="outline" icon="payments">
+                    Customer Payments
+                </x-button>
+            @endcan
             @can('view bills')
                 <x-button href="{{ route('billing.daily.index') }}" variant="outline" icon="receipt_long">
                     Daily Billing
