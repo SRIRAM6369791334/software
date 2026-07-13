@@ -258,7 +258,7 @@
                                 >
                                     <span class="material-symbols-rounded text-sm">edit</span>
                                 </button>
-                                @if($entry->no_of_boxes > 0)
+                                @if($entry->bird_weight > 0)
                                 <button
                                     type="button"
                                     x-on:click="
@@ -266,12 +266,13 @@
                                         $nextTick(() => {
                                             transferSourceId = {{ $entry->id }};
                                             transferSourceBoxes = {{ $entry->no_of_boxes }};
-                                            transferSourceVendor = '{{ $entry->vendor->firm_name ?? '-' }}';
-                                            transferSourceDealer = '{{ $entry->dealer->firm_name ?? '-' }}';
+                                            transferSourceWeight = {{ $entry->bird_weight }};
+                                            transferSourceVendor = '{{ addslashes($entry->vendor->firm_name ?? '-') }}';
+                                            transferSourceDealer = '{{ addslashes($entry->dealer->firm_name ?? '-') }}';
                                             transferBatchId = {{ $entry->batch_id }};
                                             transferDate = '{{ $entry->batch->billing_date->format('d M Y') }}';
-                                            transferMaxBoxes = {{ $entry->no_of_boxes }};
-                                            transferBoxes = {{ $entry->no_of_boxes }};
+                                            transferMaxWeight = {{ $entry->bird_weight }};
+                                            transferWeight = {{ $entry->bird_weight }};
                                             transferFormAction = '{{ route('billing.day-load.transfer', $entry->id) }}';
                                         });
                                     "
@@ -447,7 +448,7 @@
             </form>
         </x-modal>
 
-        <x-modal name="transfer-boxes-modal" title="Transfer Boxes" subtitle="Move boxes from one dealer to another" icon="swap_horiz" maxWidth="lg">
+        <x-modal name="transfer-boxes-modal" title="Transfer Weight" subtitle="Move weight of birds from one dealer/vendor to another" icon="swap_horiz" maxWidth="lg">
             <form id="transfer-form" :action="transferFormAction" method="POST">
                 @csrf
 
@@ -467,8 +468,8 @@
                             <p class="font-extrabold text-zinc-800 dark:text-zinc-200 truncate" x-text="transferSourceDealer || '—'"></p>
                         </div>
                         <div class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-150/80 dark:border-zinc-800">
-                            <span class="text-zinc-400 font-medium block mb-0.5">Available Boxes</span>
-                            <p class="font-jetbrains font-extrabold text-base text-zinc-850 dark:text-zinc-150" x-text="transferSourceBoxes"></p>
+                            <span class="text-zinc-400 font-medium block mb-0.5">Available Weight</span>
+                            <p class="font-jetbrains font-extrabold text-base text-zinc-850 dark:text-zinc-150" x-text="parseFloat(transferSourceWeight).toFixed(2) + ' kg'"></p>
                         </div>
                         <div class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-150/80 dark:border-zinc-800">
                             <span class="text-zinc-400 font-medium block mb-0.5">Date</span>
@@ -480,18 +481,19 @@
                 {{-- Input Fields --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Boxes to Transfer</label>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Weight to Transfer (kg)</label>
                         <input
                             type="number"
-                            name="transfer_boxes"
-                            min="1"
-                            :max="transferMaxBoxes"
-                            x-model.number="transferBoxes"
+                            name="transfer_weight"
+                            min="0.01"
+                            step="0.01"
+                            :max="transferMaxWeight"
+                            x-model.number="transferWeight"
                             required
                             class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                         >
                         <p class="mt-1.5 text-[11px] text-zinc-500">
-                            Remaining: <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="transferSourceBoxes - transferBoxes"></span> boxes
+                            Remaining: <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="parseFloat(transferSourceWeight - transferWeight).toFixed(2)"></span> kg
                         </p>
                     </div>
                     <div>
@@ -521,7 +523,7 @@
                             type="text"
                             name="reason"
                             required
-                            placeholder="e.g. Reassign boxes to correct dealer"
+                            placeholder="e.g. Reassign weight to correct dealer"
                             class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                         >
                     </div>
@@ -529,7 +531,7 @@
 
                 <x-slot:footer>
                     <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'transfer-boxes-modal')">Cancel</x-button>
-                    <x-button type="submit" form="transfer-form" variant="primary" icon="swap_horiz">Transfer Boxes</x-button>
+                    <x-button type="submit" form="transfer-form" variant="primary" icon="swap_horiz">Transfer Weight</x-button>
                 </x-slot:footer>
             </form>
         </x-modal>
@@ -1065,12 +1067,13 @@
         return {
             transferSourceId: 0,
             transferSourceBoxes: 0,
+            transferSourceWeight: 0,
             transferSourceVendor: '',
             transferSourceDealer: '',
             transferBatchId: 0,
             transferDate: '',
-            transferMaxBoxes: 0,
-            transferBoxes: 0,
+            transferMaxWeight: 0,
+            transferWeight: 0,
             transferFormAction: '',
             editEntryId: 0,
             editFormAction: '',

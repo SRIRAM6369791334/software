@@ -188,50 +188,73 @@ class DayLoadBillingService
     }
 
     /**
-     * Transfer boxes from one entry to a target dealer/vendor.
+     * Transfer bird weight from one entry to a target dealer/vendor.
      *
      * Shrinks the source entry proportionally and either adds to an existing
      * target entry (same vendor+dealer+batch) or creates a new one.
      *
      * @throws BatchLockedException if the batch is Locked
-     * @throws \InvalidArgumentException if transfer_boxes is invalid
+     * @throws \InvalidArgumentException if transfer_weight is invalid
      */
-    public function transferBoxes(DayLoadEntry $source, array $transferData, string $reason): array
+    public function transferWeight(DayLoadEntry $source, array $transferData, string $reason): array
     {
         return DB::transaction(function () use ($source, $transferData, $reason) {
             $batch = $source->batch;
 
             if ($batch->status === 'Locked') {
                 throw new BatchLockedException(
-                    "Cannot transfer boxes: batch for {$batch->billing_date->format('Y-m-d')} is locked."
+                    "Cannot transfer weight: batch for {$batch->billing_date->format('Y-m-d')} is locked."
                 );
             }
 
-            $transferBoxes = (int) $transferData['transfer_boxes'];
+            $transferWeight = (float) $transferData['transfer_weight'];
             $targetDealerId = (int) $transferData['target_dealer_id'];
             $targetVendorId = (int) $transferData['target_vendor_id'];
 
-            if ($transferBoxes <= 0 || $transferBoxes > (int) $source->no_of_boxes) {
+            if ($transferWeight <= 0 || $transferWeight > (float) $source->bird_weight) {
                 throw new \InvalidArgumentException(
-                    "Transfer boxes ({$transferBoxes}) must be between 1 and {$source->no_of_boxes}."
+                    "Transfer weight ({$transferWeight} kg) must be between 0.01 and {$source->bird_weight} kg."
                 );
             }
 
             $oldValues = $source->toArray();
 
-            // Calculate proportional weights to transfer
-            $ratio = $transferBoxes / (float) $source->no_of_boxes;
+            // Calculate ratio based on transferred bird_weight to total bird_weight
+            $ratio = $transferWeight / (float) $source->bird_weight;
+            if ($ratio > 1.0) {
+                $ratio = 1.0;
+            }
+
             $sourceBoxWeight = (float) $source->box_weight;
             $sourceEmptyWeight = (float) $source->empty_weight;
-            $transferBoxWeight = round($sourceBoxWeight * $ratio, 2);
-            $transferEmptyWeight = round($sourceEmptyWeight * $ratio, 2);
+
+            if (abs($transferWeight - (float) $source->bird_weight) < 0.01) {
+                $transferBoxes = (int) $source->no_of_boxes;
+                $transferBoxWeight = $sourceBoxWeight;
+                $transferEmptyWeight = $sourceEmptyWeight;
+            } else {
+                $transferBoxWeight = round($sourceBoxWeight * $ratio, 2);
+                $transferEmptyWeight = round($sourceEmptyWeight * $ratio, 2);
+                $transferBoxes = (int) round((int) $source->no_of_boxes * $ratio);
+
+                // Prevent 0 boxes if ratio > 0
+                if ($transferBoxes <= 0 && $source->no_of_boxes > 0) {
+                    $transferBoxes = 1;
+                }
+                // Cap to prevent transferring everything unless explicitly requested
+                if ($transferBoxes >= $source->no_of_boxes && $source->no_of_boxes > 1) {
+                    $transferBoxes = $source->no_of_boxes - 1;
+                }
+            }
+
+            $remainingBoxes = (int) $source->no_of_boxes - $transferBoxes;
 
             // Shrink source entry
             $source->update([
-                'no_of_boxes'  => (int) $source->no_of_boxes - $transferBoxes,
+                'no_of_boxes'  => $remainingBoxes,
                 'box_weight'   => round($sourceBoxWeight - $transferBoxWeight, 2),
                 'empty_weight' => round($sourceEmptyWeight - $transferEmptyWeight, 2),
-                'status'       => 'Adjusted',
+                'status'       => $remainingBoxes <= 0 ? 'Cancelled' : 'Adjusted',
                 'version'      => $source->version + 1,
             ]);
 
@@ -280,6 +303,7 @@ class DayLoadBillingService
                     'source_after'       => $source->fresh()->toArray(),
                     'target_entry'       => ($newEntry?->toArray() ?? $targetEntry->fresh()->toArray()),
                     'transferred_boxes'  => $transferBoxes,
+                    'transferred_weight' => $transferWeight,
                 ],
                 'resulting_entry_id' => $newEntry?->id,
                 'reason'             => $reason,

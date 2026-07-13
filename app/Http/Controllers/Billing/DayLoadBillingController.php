@@ -102,7 +102,7 @@ class DayLoadBillingController extends Controller
     public function transfer(Request $request, DayLoadEntry $entry): RedirectResponse
     {
         $validated = $request->validate([
-            'transfer_boxes'   => 'required|integer|min:1',
+            'transfer_weight'  => 'required|numeric|min:0.01',
             'target_dealer_id' => 'required|exists:dealers,id',
             'target_vendor_id' => 'required|exists:vendors,id',
             'reason'           => 'required|string|max:255',
@@ -110,9 +110,9 @@ class DayLoadBillingController extends Controller
 
         $validated['target_batch_id'] = $entry->batch_id;
 
-        $this->dayLoadBillingService->transferBoxes($entry, $validated, $validated['reason']);
+        $this->dayLoadBillingService->transferWeight($entry, $validated, $validated['reason']);
 
-        return back()->with('success', "{$validated['transfer_boxes']} box(es) transferred successfully.");
+        return back()->with('success', "{$validated['transfer_weight']} kg transferred successfully.");
     }
 
     public function update(Request $request, DayLoadEntry $entry): RedirectResponse

@@ -47,7 +47,17 @@ class StoreDealerPaymentRequest extends FormRequest
             'dealer_id'          => 'required|exists:dealers,id',
             'cash_amount'        => 'required|numeric|min:0',
             'bank_amount'        => 'required|numeric|min:0',
-            'amount'             => 'required|numeric|min:0.01',
+            'amount'             => [
+                'required',
+                'numeric',
+                'min:0.01',
+                function ($attribute, $value, $fail) {
+                    $dealer = \App\Models\Dealer::find($this->input('dealer_id'));
+                    if ($dealer && $value > $dealer->displayed_outstanding) {
+                        $fail("The payout amount cannot exceed the dealer's pending balance of Rs " . number_format($dealer->displayed_outstanding, 2) . ".");
+                    }
+                }
+            ],
             'payment_mode'       => 'required|in:Cash,UPI,NEFT,Cheque',
             'bank_transfer_type' => 'nullable|required_if:bank_amount,>0|in:UPI,Bank Transfer,NEFT,RTGS,IMPS,Cheque,Other',
             'date'               => 'required|date|before_or_equal:today',

@@ -59,7 +59,7 @@ class CustomerPaymentTest extends TestCase
 
     public function test_customer_payment_store_advance_updates_ledger()
     {
-        $customer = Customer::factory()->create(['balance' => 2000]);
+        $customer = Customer::factory()->create(['balance' => 5000]);
 
         $response = $this->post('/payments/customers', [
             'customer_id' => $customer->id,
@@ -75,11 +75,11 @@ class CustomerPaymentTest extends TestCase
             'customer_id' => $customer->id,
             'amount' => 3000,
             'payment_type' => 'Opening',
-            'balance_after' => -1000,
+            'balance_after' => 2000,
         ]);
 
         $customer->refresh();
-        $this->assertEquals(-1000, $customer->balance);
+        $this->assertEquals(2000, $customer->balance);
     }
 
     public function test_customer_payment_requires_valid_data()

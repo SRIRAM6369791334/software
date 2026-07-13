@@ -68,8 +68,17 @@ class VendorPaymentController extends Controller
             'notes'              => 'nullable|string'
         ]);
 
-        if ((float) $validated['cash_amount'] + (float) $validated['bank_amount'] <= 0) {
+        $cashAmount = (float) $validated['cash_amount'];
+        $bankAmount = (float) $validated['bank_amount'];
+        $amount = round($cashAmount + $bankAmount, 2);
+
+        if ($cashAmount + $bankAmount <= 0) {
             return back()->with('error', 'Total payment amount must be greater than zero.');
+        }
+
+        $vendor = Vendor::findOrFail($validated['vendor_id']);
+        if ($amount > $vendor->outstanding_balance) {
+            return back()->withErrors(['amount' => "The payment amount cannot exceed the vendor's outstanding balance of Rs " . number_format($vendor->outstanding_balance, 2) . "."])->withInput();
         }
 
         $this->service->record($validated);
@@ -137,12 +146,17 @@ class VendorPaymentController extends Controller
         
         $cashAmount = (float) $validated['cash_amount'];
         $bankAmount = (float) $validated['bank_amount'];
+        $amount = round($cashAmount + $bankAmount, 2);
         
         if ($cashAmount + $bankAmount <= 0) {
             return back()->with('error', 'Total payment amount must be greater than zero.');
         }
 
-        $validated['amount'] = round($cashAmount + $bankAmount, 2);
+        if ($amount > $vendor->outstanding_balance) {
+            return back()->withErrors(['amount' => "The payment amount cannot exceed the vendor's outstanding balance of Rs " . number_format($vendor->outstanding_balance, 2) . "."])->withInput();
+        }
+
+        $validated['amount'] = $amount;
         
         $vendor->vendorPayments()->create($validated);
 

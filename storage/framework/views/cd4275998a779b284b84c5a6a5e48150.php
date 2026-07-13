@@ -48,6 +48,17 @@
 
     <div class="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] rounded-3xl overflow-hidden p-6 sm:p-10">
         
+        <?php if($errors->any()): ?>
+            <div class="p-4 mb-6 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-850/30 text-red-600 dark:text-red-400 text-sm">
+                <p class="font-bold mb-1">Please fix the following errors:</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                    <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <li><?php echo e($error); ?></li>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+
         <form action="<?php echo e(route('payments.customers.store')); ?>" method="POST" class="space-y-8" x-data="{ codAmount: 0, bankTransferAmount: 0 }">
             <?php echo csrf_field(); ?>
             

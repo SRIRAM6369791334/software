@@ -27,7 +27,7 @@ class DealerPaymentTest extends TestCase
 
     public function test_dealer_payment_store_creates_record()
     {
-        $dealer = Dealer::factory()->create();
+        $dealer = Dealer::factory()->create(['pending_amount' => 10000]);
 
         $response = $this->post('/payments/dealers', [
             'dealer_id' => $dealer->id,
@@ -54,19 +54,18 @@ class DealerPaymentTest extends TestCase
         $this->assertEquals(3000, $dealer->pending_amount);
     }
 
-    public function test_dealer_payment_pending_amount_never_goes_negative()
+    public function test_dealer_payment_cannot_exceed_pending_amount()
     {
         $dealer = Dealer::factory()->create(['pending_amount' => 500]);
 
-        $this->post('/payments/dealers', [
+        $response = $this->post('/payments/dealers', [
             'dealer_id' => $dealer->id,
             'amount' => 1000,
             'date' => today()->toDateString(),
             'payment_mode' => 'Cash',
         ]);
 
-        $dealer->refresh();
-        $this->assertGreaterThanOrEqual(0, $dealer->pending_amount);
+        $response->assertSessionHasErrors('amount');
     }
 
     public function test_dealer_payment_requires_valid_data()
@@ -78,7 +77,7 @@ class DealerPaymentTest extends TestCase
 
     public function test_dealer_payment_redirects_after_success()
     {
-        $dealer = Dealer::factory()->create();
+        $dealer = Dealer::factory()->create(['pending_amount' => 5000]);
 
         $response = $this->post('/payments/dealers', [
             'dealer_id' => $dealer->id,

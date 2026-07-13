@@ -49,9 +49,19 @@ class StoreCustomerPaymentRequest extends FormRequest
             'customer_id'          => 'required|exists:customers,id',
             'cod_amount'           => 'required|numeric|min:0',
             'bank_transfer_amount' => 'required|numeric|min:0',
-            'amount'               => 'required|numeric|min:0.01',
+            'amount'               => [
+                'required',
+                'numeric',
+                'min:0.01',
+                function ($attribute, $value, $fail) {
+                    $customer = \App\Models\Customer::find($this->input('customer_id'));
+                    if ($customer && $value > $customer->balance) {
+                        $fail("The payment amount cannot exceed the customer's pending balance of Rs " . number_format($customer->balance, 2) . ".");
+                    }
+                }
+            ],
             'payment_mode'         => 'required|in:Cash,Bank Transfer',
-            'payment_type'         => 'required|in:Regular,Adjustment,Opening',
+            'payment_type'         => 'required|in:Full,Part,Advance,Regular,Adjustment,Opening',
             'date'                 => 'required|date|before_or_equal:today',
             'notes'                => 'nullable|string|max:500',
         ];

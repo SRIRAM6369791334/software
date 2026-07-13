@@ -967,7 +967,7 @@
                                 >
                                     <span class="material-symbols-rounded text-sm">edit</span>
                                 </button>
-                                <?php if($entry->no_of_boxes > 0): ?>
+                                <?php if($entry->bird_weight > 0): ?>
                                 <button
                                     type="button"
                                     x-on:click="
@@ -975,12 +975,13 @@
                                         $nextTick(() => {
                                             transferSourceId = <?php echo e($entry->id); ?>;
                                             transferSourceBoxes = <?php echo e($entry->no_of_boxes); ?>;
-                                            transferSourceVendor = '<?php echo e($entry->vendor->firm_name ?? '-'); ?>';
-                                            transferSourceDealer = '<?php echo e($entry->dealer->firm_name ?? '-'); ?>';
+                                            transferSourceWeight = <?php echo e($entry->bird_weight); ?>;
+                                            transferSourceVendor = '<?php echo e(addslashes($entry->vendor->firm_name ?? '-')); ?>';
+                                            transferSourceDealer = '<?php echo e(addslashes($entry->dealer->firm_name ?? '-')); ?>';
                                             transferBatchId = <?php echo e($entry->batch_id); ?>;
                                             transferDate = '<?php echo e($entry->batch->billing_date->format('d M Y')); ?>';
-                                            transferMaxBoxes = <?php echo e($entry->no_of_boxes); ?>;
-                                            transferBoxes = <?php echo e($entry->no_of_boxes); ?>;
+                                            transferMaxWeight = <?php echo e($entry->bird_weight); ?>;
+                                            transferWeight = <?php echo e($entry->bird_weight); ?>;
                                             transferFormAction = '<?php echo e(route('billing.day-load.transfer', $entry->id)); ?>';
                                         });
                                     "
@@ -1250,14 +1251,14 @@
 
         <?php if (isset($component)) { $__componentOriginal9f64f32e90b9102968f2bc548315018c = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal9f64f32e90b9102968f2bc548315018c = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal','data' => ['name' => 'transfer-boxes-modal','title' => 'Transfer Boxes','subtitle' => 'Move boxes from one dealer to another','icon' => 'swap_horiz','maxWidth' => 'lg']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal','data' => ['name' => 'transfer-boxes-modal','title' => 'Transfer Weight','subtitle' => 'Move weight of birds from one dealer/vendor to another','icon' => 'swap_horiz','maxWidth' => 'lg']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('modal'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['name' => 'transfer-boxes-modal','title' => 'Transfer Boxes','subtitle' => 'Move boxes from one dealer to another','icon' => 'swap_horiz','maxWidth' => 'lg']); ?>
+<?php $component->withAttributes(['name' => 'transfer-boxes-modal','title' => 'Transfer Weight','subtitle' => 'Move weight of birds from one dealer/vendor to another','icon' => 'swap_horiz','maxWidth' => 'lg']); ?>
             <form id="transfer-form" :action="transferFormAction" method="POST">
                 <?php echo csrf_field(); ?>
 
@@ -1277,8 +1278,8 @@
                             <p class="font-extrabold text-zinc-800 dark:text-zinc-200 truncate" x-text="transferSourceDealer || '—'"></p>
                         </div>
                         <div class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-150/80 dark:border-zinc-800">
-                            <span class="text-zinc-400 font-medium block mb-0.5">Available Boxes</span>
-                            <p class="font-jetbrains font-extrabold text-base text-zinc-850 dark:text-zinc-150" x-text="transferSourceBoxes"></p>
+                            <span class="text-zinc-400 font-medium block mb-0.5">Available Weight</span>
+                            <p class="font-jetbrains font-extrabold text-base text-zinc-850 dark:text-zinc-150" x-text="parseFloat(transferSourceWeight).toFixed(2) + ' kg'"></p>
                         </div>
                         <div class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-150/80 dark:border-zinc-800">
                             <span class="text-zinc-400 font-medium block mb-0.5">Date</span>
@@ -1290,18 +1291,19 @@
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Boxes to Transfer</label>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Weight to Transfer (kg)</label>
                         <input
                             type="number"
-                            name="transfer_boxes"
-                            min="1"
-                            :max="transferMaxBoxes"
-                            x-model.number="transferBoxes"
+                            name="transfer_weight"
+                            min="0.01"
+                            step="0.01"
+                            :max="transferMaxWeight"
+                            x-model.number="transferWeight"
                             required
                             class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                         >
                         <p class="mt-1.5 text-[11px] text-zinc-500">
-                            Remaining: <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="transferSourceBoxes - transferBoxes"></span> boxes
+                            Remaining: <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="parseFloat(transferSourceWeight - transferWeight).toFixed(2)"></span> kg
                         </p>
                     </div>
                     <div>
@@ -1331,7 +1333,7 @@
                             type="text"
                             name="reason"
                             required
-                            placeholder="e.g. Reassign boxes to correct dealer"
+                            placeholder="e.g. Reassign weight to correct dealer"
                             class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                         >
                     </div>
@@ -1366,7 +1368,7 @@
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['type' => 'submit','form' => 'transfer-form','variant' => 'primary','icon' => 'swap_horiz']); ?>Transfer Boxes <?php echo $__env->renderComponent(); ?>
+<?php $component->withAttributes(['type' => 'submit','form' => 'transfer-form','variant' => 'primary','icon' => 'swap_horiz']); ?>Transfer Weight <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
 <?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
@@ -2191,12 +2193,13 @@
         return {
             transferSourceId: 0,
             transferSourceBoxes: 0,
+            transferSourceWeight: 0,
             transferSourceVendor: '',
             transferSourceDealer: '',
             transferBatchId: 0,
             transferDate: '',
-            transferMaxBoxes: 0,
-            transferBoxes: 0,
+            transferMaxWeight: 0,
+            transferWeight: 0,
             transferFormAction: '',
             editEntryId: 0,
             editFormAction: '',
