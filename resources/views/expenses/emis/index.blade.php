@@ -688,27 +688,73 @@
 </div>
 
 {{-- Add Expense Modal --}}
-<x-modal name="add-expense" title="Record Expense" subtitle="Log operational expenditures" icon="receipt_long" maxWidth="md" :show="$errors->any()">
+<x-modal name="add-expense" title="Record Expense" subtitle="Log operational expenditures" icon="receipt_long" maxWidth="lg" :show="$errors->any()">
     <form id="add-expense-form" action="{{ route('expenses.store') }}" method="POST">
         @csrf
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <x-form.select name="category" label="Category" required>
-                @foreach(['Fuel','Salary','Transport','Utility','Misc'] as $c)
-                    <option value="{{ $c }}">{{ $c }}</option>
-                @endforeach
-            </x-form.select>
-            <x-form.input type="date" name="date" label="Date" required value="{{ date('Y-m-d') }}" />
-        </div>
 
-        <div class="mb-4">
-            <x-form.input name="description" label="Description" required placeholder="What was this expense for?" />
-        </div>
-
+        {{-- Category Selection --}}
         <div class="mb-6">
-            <x-form.input type="number" name="amount" label="Amount (Rs)" required step="0.01" min="0.01" placeholder="0.00" class="text-xl font-bold" />
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-3">
+                Category <span class="text-emerald-500">*</span>
+            </label>
+            <div class="grid grid-cols-5 gap-2">
+                @php $catIcons = ['Fuel' => 'local_gas_station', 'Salary' => 'payments', 'Transport' => 'local_shipping', 'Utility' => 'bolt', 'Misc' => 'more_horiz']; @endphp
+                @php $catColors = ['Fuel' => 'text-orange-500', 'Salary' => 'text-blue-500', 'Transport' => 'text-amber-500', 'Utility' => 'text-purple-500', 'Misc' => 'text-zinc-500']; @endphp
+                @foreach(['Fuel','Salary','Transport','Utility','Misc'] as $c)
+                <label class="group relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 cursor-pointer transition-all duration-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/70 dark:has-[:checked]:bg-emerald-500/10 has-[:checked]:shadow-sm border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-900/50">
+                    <input type="radio" name="category" value="{{ $c }}" class="sr-only" {{ $c === 'Fuel' ? 'checked' : '' }} required>
+                    <span class="material-symbols-rounded text-2xl {{ $catColors[$c] }}">{{ $catIcons[$c] }}</span>
+                    <span class="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 group-has-[:checked]:text-emerald-600 dark:group-has-[:checked]:text-emerald-400 transition-colors">{{ $c }}</span>
+                </label>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Date & Amount --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <x-form.input type="date" name="date" label="Date" required value="{{ date('Y-m-d') }}" icon="calendar_month" />
+            <x-form.input type="number" name="amount" label="Amount (Rs)" required step="0.01" min="0.01" placeholder="0.00" icon="currency_rupee" />
+        </div>
+
+        {{-- Description --}}
+        <div class="mb-6">
+            <x-form.textarea name="description" label="Description" required placeholder="What was this expense for?" rows="3" />
+        </div>
+
+        {{-- Payment Method --}}
+        <div class="mb-2">
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-3">
+                Payment Method <span class="text-emerald-500">*</span>
+            </label>
+            <div class="grid grid-cols-2 gap-3">
+                <label class="relative flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/70 dark:has-[:checked]:bg-emerald-500/10 has-[:checked]:shadow-sm border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-900/50">
+                    <input type="radio" name="payment_method" value="Cash" class="sr-only" checked required>
+                    <div class="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                        <span class="material-symbols-rounded">payments</span>
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Cash</div>
+                        <div class="text-xs text-zinc-500">Physical currency transaction</div>
+                    </div>
+                </label>
+                <label class="relative flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/70 dark:has-[:checked]:bg-emerald-500/10 has-[:checked]:shadow-sm border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-900/50">
+                    <input type="radio" name="payment_method" value="Bank Transfer" class="sr-only" required>
+                    <div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500">
+                        <span class="material-symbols-rounded">account_balance</span>
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Bank Transfer</div>
+                        <div class="text-xs text-zinc-500">Digital bank transaction</div>
+                    </div>
+                </label>
+            </div>
         </div>
 
         <x-slot:footer>
+            <div class="flex items-center gap-2 text-xs text-zinc-400 mr-auto">
+                <span class="material-symbols-rounded text-[16px]">info</span>
+                Fields marked with <span class="text-emerald-500 font-medium">*</span> are required
+            </div>
             <x-button type="button" variant="outline" x-on:click="show = false">Cancel</x-button>
             <x-button type="submit" form="add-expense-form" variant="primary" icon="check">Log Expense</x-button>
         </x-slot:footer>

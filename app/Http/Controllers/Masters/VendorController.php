@@ -67,10 +67,19 @@ class VendorController extends Controller
         $totalBirdWeight = $vendor->dayLoadEntries()->sum('bird_weight');
         $totalFarmWeight = $vendor->dayLoadEntries()->sum('farm_weight');
         $totalLossWeight = $vendor->dayLoadEntries()->sum('loss_weight');
-        $avgRateVariance = $vendor->dayLoadEntries()
-            ->where('paper_rate', '>', 0)
+        $rateVarianceEntries = $vendor->dayLoadEntries()
             ->where('customer_rate', '>', 0)
-            ->avg(\DB::raw('customer_rate - paper_rate'));
+            ->get(['customer_rate', 'billing_rate', 'paper_rate']);
+        $totalDiff = 0;
+        $rateVarCount = 0;
+        foreach ($rateVarianceEntries as $rve) {
+            $vRate = (float) $rve->billing_rate > 0 ? (float) $rve->billing_rate : (float) $rve->paper_rate;
+            if ($vRate > 0) {
+                $totalDiff += (float) $rve->customer_rate - $vRate;
+                $rateVarCount++;
+            }
+        }
+        $avgRateVariance = $rateVarCount > 0 ? round($totalDiff / $rateVarCount, 2) : 0;
         $loadCount = $vendor->dayLoadEntries()->count();
 
         return view('masters.vendors.show', compact(

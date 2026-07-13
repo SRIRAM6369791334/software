@@ -15,14 +15,14 @@
     <div class="flex items-center gap-2 sm:gap-4 shrink-0">
         <div class="flex items-center gap-1">
             {{-- Dark Mode Toggle --}}
-            <button 
+            <!-- <button 
                 x-data="{ isDark: document.documentElement.classList.contains('dark') }"
                 @click="isDark = !isDark; document.documentElement.classList.toggle('dark', isDark); localStorage.setItem('theme', isDark ? 'dark' : 'light')"
                 class="rounded-xl p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                 title="Toggle Dark Mode"
                 aria-label="Toggle Dark Mode">
                 <span class="material-symbols-rounded text-[22px]" x-text="isDark ? 'light_mode' : 'dark_mode'">dark_mode</span>
-            </button>
+            </button> -->
 
             {{-- Notification Bell Dropdown --}}
             <div 

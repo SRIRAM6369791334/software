@@ -53,12 +53,13 @@ class DayLoadEntry extends Model
 
     public function getDealerIncomeAttribute(): float
     {
-        return round((float) $this->bird_weight * (float) $this->billing_rate, 2);
+        return round((float) $this->bird_weight * (float) $this->customer_rate, 2);
     }
 
     public function getVendorCostAttribute(): float
     {
-        return round((float) $this->bird_weight * (float) $this->paper_rate, 2);
+        $vendorRate = (float) $this->billing_rate > 0 ? (float) $this->billing_rate : (float) $this->paper_rate;
+        return round((float) $this->bird_weight * $vendorRate, 2);
     }
 
     public function getGrossMarginAttribute(): float
@@ -122,7 +123,8 @@ class DayLoadEntry extends Model
 
     public function getRateDifferenceAttribute(): float
     {
-        return round((float) $this->customer_rate - (float) $this->paper_rate, 2);
+        $vendorRate = (float) $this->billing_rate > 0 ? (float) $this->billing_rate : (float) $this->paper_rate;
+        return round((float) $this->customer_rate - $vendorRate, 2);
     }
 
     public function dealerPayments(): HasMany

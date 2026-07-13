@@ -52,7 +52,7 @@ class DealerPaymentService
         $payment = DealerPayment::create($data);
         
         // Recalculate cash/bank ledger
-        app(CashBankLedgerService::class)->recalculateForDate(now());
+        app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($payment->date));
         
         return $payment;
     }

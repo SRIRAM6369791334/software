@@ -38,6 +38,9 @@ class CustomerPaymentService
         $payment->balance_after = $customer->fresh()->balance;
         $payment->save();
 
+        // Recalculate cash/bank ledger
+        app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($payment->date));
+
         return $payment;
     }
 

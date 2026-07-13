@@ -20,12 +20,16 @@ class ExpenseService
 
     public function createExpense(array $data): Expense
     {
-        return Expense::create($data);
+        $expense = Expense::create($data);
+        app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($expense->date));
+        return $expense;
     }
 
     public function deleteExpense(Expense $expense): void
     {
+        $date = $expense->date;
         $expense->delete();
+        app(CashBankLedgerService::class)->recalculateForDate($date);
     }
 
     public function totals(): array

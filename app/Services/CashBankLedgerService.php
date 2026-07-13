@@ -54,15 +54,25 @@ class CashBankLedgerService
 
             $dateStr = $date->format('Y-m-d');
 
-            $cashIncome = (float) DealerPayment::whereDate('date', $dateStr)
-                ->sum('cash_amount');
+            // Cash Income = Dealer payments + Customer COD payments
+            $dealerCashIncome = (float) DealerPayment::whereDate('date', $dateStr)->sum('cash_amount');
+            $customerCashIncome = (float) \App\Models\CustomerPayment::whereDate('date', $dateStr)->sum('cod_amount');
+            $cashIncome = round($dealerCashIncome + $customerCashIncome, 2);
 
-            $bankIncome = (float) DealerPayment::whereDate('date', $dateStr)
-                ->sum('bank_amount');
+            // Bank Income = Dealer bank payments + Customer bank transfer payments
+            $dealerBankIncome = (float) DealerPayment::whereDate('date', $dateStr)->sum('bank_amount');
+            $customerBankIncome = (float) \App\Models\CustomerPayment::whereDate('date', $dateStr)->sum('bank_transfer_amount');
+            $bankIncome = round($dealerBankIncome + $customerBankIncome, 2);
 
-            $cashExpense = (float) Expense::whereDate('date', $dateStr)
-                ->where('payment_method', 'Cash')
-                ->sum('amount');
+            // Cash Expense = Cash Expenses + Vendor Cash Payments
+            $expenseCash = (float) Expense::whereDate('date', $dateStr)->where('payment_method', 'Cash')->sum('amount');
+            $vendorCash = (float) \App\Models\VendorPayment::whereDate('date', $dateStr)->sum('cash_amount');
+            $cashExpense = round($expenseCash + $vendorCash, 2);
+
+            // Bank Expense = Bank Transfer Expenses + Vendor Bank Payments
+            $expenseBank = (float) Expense::whereDate('date', $dateStr)->where('payment_method', 'Bank Transfer')->sum('amount');
+            $vendorBank = (float) \App\Models\VendorPayment::whereDate('date', $dateStr)->sum('bank_amount');
+            $bankExpense = round($expenseBank + $vendorBank, 2);
 
             $ledger->update([
                 'cash_income'  => $cashIncome,
@@ -78,7 +88,7 @@ class CashBankLedgerService
                     2
                 );
                 $closingBank = round(
-                    (float) $ledger->opening_bank_balance + $bankIncome,
+                    (float) $ledger->opening_bank_balance + $bankIncome - $bankExpense,
                     2
                 );
 

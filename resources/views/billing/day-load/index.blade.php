@@ -14,6 +14,9 @@
             <x-button variant="outline" href="{{ route('billing.day-load.pdf', $date) }}" icon="picture_as_pdf">
                 Download PDF
             </x-button>
+            <x-button variant="outline" href="{{ route('billing.day-load.vendor-rates', ['vendor_id' => '', 'date' => $date]) }}" icon="price_change">
+                Set Vendor Rates
+            </x-button>
             <x-button variant="outline" href="{{ route('billing.weekly.index') }}" icon="receipt_long">
                 Weekly Billing
             </x-button>
@@ -81,7 +84,7 @@
             <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">New Load Entry</h2>
         </div>
 
-        <form action="{{ route('billing.day-load.store') }}" method="POST" x-data="{ paperRate: 0, customerRate: 0 }">
+        <form action="{{ route('billing.day-load.store') }}" method="POST" x-data="{ paperRate: 0, billingRate: 0, customerRate: 0, get activeVendorRate() { return this.billingRate > 0 ? this.billingRate : this.paperRate; } }">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
                 <x-form.select name="vendor_id" label="Vendor / Company Name" required>
@@ -104,12 +107,12 @@
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
                 <x-form.input type="number" step="0.01" name="paper_rate" label="Paper Rate" required x-model.number="paperRate" />
-                <x-form.input type="number" step="0.01" name="billing_rate" label="Billing Rate / Vendor Rate" required />
+                <x-form.input type="number" step="0.01" name="billing_rate" label="Vendor Rate (Final)" x-model.number="billingRate" />
                 <x-form.input type="number" step="0.01" name="customer_rate" label="Customer Rate" required x-model.number="customerRate" />
                 <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4">
-                    <p class="text-xs font-bold uppercase text-zinc-500">Customer vs Paper</p>
-                    <p class="mt-2 font-jetbrains text-2xl font-black" :class="(customerRate - paperRate) >= 0 ? 'text-emerald-600' : 'text-rose-600'">
-                        <span x-text="(customerRate - paperRate) >= 0 ? '+' : '-'"></span>Rs <span x-text="Math.abs(customerRate - paperRate).toFixed(2)"></span>
+                    <p class="text-xs font-bold uppercase text-zinc-500">Customer vs Vendor</p>
+                    <p class="mt-2 font-jetbrains text-2xl font-black" :class="(customerRate - activeVendorRate) >= 0 ? 'text-emerald-600' : 'text-rose-600'">
+                        <span x-text="(customerRate - activeVendorRate) >= 0 ? '+' : '-'"></span>Rs <span x-text="Math.abs(customerRate - activeVendorRate).toFixed(2)"></span>
                     </p>
                 </div>
             </div>
@@ -180,7 +183,7 @@
                     <td class="px-6 py-4">{{ $entry->dealer->firm_name ?? '-' }}</td>
                     <td class="px-6 py-4 text-xs">
                         <div>Paper: <span class="font-jetbrains">Rs {{ number_format((float) $entry->paper_rate, 2) }}</span></div>
-                        <div>Vendor: <span class="font-jetbrains">Rs {{ number_format((float) $entry->billing_rate, 2) }}</span></div>
+                        <div>Vendor: <span class="font-jetbrains">@if((float) $entry->billing_rate > 0)Rs {{ number_format((float) $entry->billing_rate, 2) }}@else<span class="text-zinc-400">—</span>@endif</span></div>
                         <div>Customer: <span class="font-jetbrains">Rs {{ number_format((float) $entry->customer_rate, 2) }}</span></div>
                     </td>
                     <td class="px-6 py-4">

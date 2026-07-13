@@ -43,4 +43,15 @@ class CashBankLedger extends Model
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
+
+    public function getBankExpenseAttribute(): float
+    {
+        $dateStr = $this->ledger_date->format('Y-m-d');
+        $expenseBank = (float) \App\Models\Expense::whereDate('date', $dateStr)
+            ->where('payment_method', 'Bank Transfer')
+            ->sum('amount');
+        $vendorBank = (float) \App\Models\VendorPayment::whereDate('date', $dateStr)
+            ->sum('bank_amount');
+        return round($expenseBank + $vendorBank, 2);
+    }
 }

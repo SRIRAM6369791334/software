@@ -99,13 +99,24 @@ class PurchaseService
                 }
             }
             
+            $paymentMethod = null;
+            if (($data['payment_mode'] ?? '') === 'Cash') {
+                $paymentMethod = 'Cash';
+            } elseif (in_array($data['payment_mode'] ?? '', ['UPI', 'NEFT', 'Cheque(Bank Transfer)'])) {
+                $paymentMethod = 'Bank Transfer';
+            }
+
             // Record direct expense for this purchase
             \App\Models\Expense::create([
-                'date'        => $purchase->date,
-                'category'    => 'Purchase',
-                'description' => "Purchase from {$purchase->vendor_name} (Inv: " . ($purchase->invoice_no ?: 'N/A') . ") [Ref: PR-{$purchase->id}]",
-                'amount'      => $purchase->total_amount,
+                'date'           => $purchase->date,
+                'category'       => 'Purchase',
+                'description'    => "Purchase from {$purchase->vendor_name} (Inv: " . ($purchase->invoice_no ?: 'N/A') . ") [Ref: PR-{$purchase->id}]",
+                'amount'         => $purchase->total_amount,
+                'payment_method' => $paymentMethod,
             ]);
+
+            // Recalculate cash/bank ledger
+            app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($purchase->date));
             
             // Create EMI schedules if payment mode is Pay later(EMI)
             if (($data['payment_mode'] ?? '') === 'Pay later(EMI)' && isset($data['emis']) && is_array($data['emis'])) {
@@ -152,6 +163,8 @@ class PurchaseService
                 $stockService->revertMovement(\App\Models\PurchaseItem::class, $item->id);
             }
 
+            $oldDate = $purchase->date;
+            
             // Find and set vendor_id
             $vendorModel = \App\Models\Vendor::where('firm_name', $data['vendor_name'] ?? '')->first();
             if ($vendorModel) {
@@ -213,12 +226,25 @@ class PurchaseService
             
             // Revert and record updated expense entry
             \App\Models\Expense::where('description', 'like', "%[Ref: PR-{$purchase->id}]%")->delete();
+
+            $paymentMethod = null;
+            if (($purchase->payment_mode ?? '') === 'Cash') {
+                $paymentMethod = 'Cash';
+            } elseif (in_array($purchase->payment_mode ?? '', ['UPI', 'NEFT', 'Cheque(Bank Transfer)'])) {
+                $paymentMethod = 'Bank Transfer';
+            }
+
             \App\Models\Expense::create([
-                'date'        => $purchase->date,
-                'category'    => 'Purchase',
-                'description' => "Purchase from {$purchase->vendor_name} (Inv: " . ($purchase->invoice_no ?: 'N/A') . ") [Ref: PR-{$purchase->id}]",
-                'amount'      => $purchase->total_amount,
+                'date'           => $purchase->date,
+                'category'       => 'Purchase',
+                'description'    => "Purchase from {$purchase->vendor_name} (Inv: " . ($purchase->invoice_no ?: 'N/A') . ") [Ref: PR-{$purchase->id}]",
+                'amount'         => $purchase->total_amount,
+                'payment_method' => $paymentMethod,
             ]);
+
+            // Recalculate cash/bank ledger for both old and new dates
+            app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($oldDate));
+            app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($purchase->date));
             
             return true;
         });
@@ -227,6 +253,7 @@ class PurchaseService
     public function delete(Purchase $purchase): bool
     {
         return DB::transaction(function () use ($purchase) {
+            $purchaseDate = $purchase->date;
             $stockService = app(StockService::class);
             foreach ($purchase->items as $item) {
                 $stockService->revertMovement(\App\Models\PurchaseItem::class, $item->id);
@@ -240,7 +267,12 @@ class PurchaseService
             // Delete corresponding expense entry
             \App\Models\Expense::where('description', 'like', "%[Ref: PR-{$purchase->id}]%")->delete();
             
-            return $purchase->delete();
+            $deleted = $purchase->delete();
+
+            // Recalculate cash/bank ledger
+            app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($purchaseDate));
+
+            return $deleted;
         });
     }
 

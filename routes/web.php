@@ -190,6 +190,8 @@ Route::middleware(['auth'])->group(function () {
             Route::post('day-load/{entry}/dealer-payment', [DayLoadBillingController::class, 'recordDealerPayment'])->name('day-load.dealer-payment');
             Route::post('day-load/{entry}/vendor-payment', [DayLoadBillingController::class, 'recordVendorPayment'])->name('day-load.vendor-payment');
             Route::post('day-load/lumpsum-dealer-payment', [DayLoadBillingController::class, 'recordLumpSumDealerPayment'])->name('day-load.lumpsum-dealer-payment');
+            Route::get('day-load/vendor-rates', [DayLoadBillingController::class, 'vendorRatesForm'])->name('day-load.vendor-rates');
+            Route::post('day-load/vendor-rates', [DayLoadBillingController::class, 'setVendorRates'])->name('day-load.set-vendor-rates');
 
             // Cash & Bank Ledger (route names are placeholders; sidebar menu placement to be finalized by project owner)
             Route::get('cash-bank-ledger', [CashBankLedgerController::class, 'index'])->name('cash-bank-ledger.index');
@@ -220,6 +222,11 @@ Route::middleware(['auth'])->group(function () {
             Route::get('dealers/{dealer}/ledger', [DealerPaymentController::class, 'ledger'])->name('dealers.ledger');
         });
         Route::middleware(['permission:view vendor payments'])->group(function () {
+            Route::get('vendors', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'index'])->name('vendors.index');
+            Route::get('vendors/create', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'create'])->name('vendors.create');
+            Route::post('vendors', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'storeGeneralPayment'])->name('vendors.storeGeneralPayment');
+            Route::get('vendors/export', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'export'])->name('vendors.export');
+
             Route::get('vendors/{vendor}/ledger', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'ledger'])->name('vendors.ledger');
             Route::post('vendors/{vendor}/payments', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'store'])->name('vendors.payments.store');
             Route::delete('vendors/{vendor}/payments/{payment}', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'destroy'])->name('vendors.payments.destroy');

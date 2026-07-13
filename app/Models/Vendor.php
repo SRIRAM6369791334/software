@@ -38,11 +38,19 @@ class Vendor extends Model
             ? (float) $this->purchases->where('payment_mode', 'Credit')->sum('total_amount')
             : (float) $this->purchases()->where('payment_mode', 'Credit')->sum('total_amount');
 
+        $dayLoadEntries = $this->relationLoaded('dayLoadEntries')
+            ? $this->dayLoadEntries->where('status', '!=', 'Cancelled')
+            : $this->dayLoadEntries()->where('status', '!=', 'Cancelled')->get();
+
+        $totalDayLoadLiabilities = (float) $dayLoadEntries->sum(function ($entry) {
+            return $entry->vendor_cost;
+        });
+
         $totalPaymentsPaid = $this->relationLoaded('vendorPayments')
             ? (float) $this->vendorPayments->sum('amount')
             : (float) $this->vendorPayments()->sum('amount');
         
-        return $totalCreditPurchases - $totalPaymentsPaid;
+        return round(($totalCreditPurchases + $totalDayLoadLiabilities) - $totalPaymentsPaid, 2);
     }
 
     public function scopeSearch($query, ?string $term)

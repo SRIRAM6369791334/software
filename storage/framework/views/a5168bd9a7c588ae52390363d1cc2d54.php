@@ -390,50 +390,67 @@
 
 <?php if (isset($component)) { $__componentOriginal9f64f32e90b9102968f2bc548315018c = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal9f64f32e90b9102968f2bc548315018c = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal','data' => ['name' => 'add-expense','title' => 'Record Expense','subtitle' => 'Log operational expenditures','icon' => 'receipt_long','maxWidth' => 'md','show' => $errors->any()]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal','data' => ['name' => 'add-expense','title' => 'Record Expense','subtitle' => 'Log operational expenditures','icon' => 'receipt_long','maxWidth' => 'lg','show' => $errors->any()]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('modal'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['name' => 'add-expense','title' => 'Record Expense','subtitle' => 'Log operational expenditures','icon' => 'receipt_long','maxWidth' => 'md','show' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($errors->any())]); ?>
+<?php $component->withAttributes(['name' => 'add-expense','title' => 'Record Expense','subtitle' => 'Log operational expenditures','icon' => 'receipt_long','maxWidth' => 'lg','show' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($errors->any())]); ?>
     <form id="add-expense-form" action="<?php echo e(route('expenses.store')); ?>" method="POST">
         <?php echo csrf_field(); ?>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <?php if (isset($component)) { $__componentOriginal8cee41e4af1fe2df52d1d5acd06eed36 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal8cee41e4af1fe2df52d1d5acd06eed36 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.select','data' => ['name' => 'category','label' => 'Category','required' => true]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('form.select'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['name' => 'category','label' => 'Category','required' => true]); ?>
+
+        
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-3">
+                Category <span class="text-emerald-500">*</span>
+            </label>
+            <div class="grid grid-cols-5 gap-2">
+                <?php $catIcons = ['Fuel' => 'local_gas_station', 'Salary' => 'payments', 'Transport' => 'local_shipping', 'Utility' => 'bolt', 'Misc' => 'more_horiz']; ?>
+                <?php $catColors = ['Fuel' => 'text-orange-500', 'Salary' => 'text-blue-500', 'Transport' => 'text-amber-500', 'Utility' => 'text-purple-500', 'Misc' => 'text-zinc-500']; ?>
                 <?php $__currentLoopData = ['Fuel','Salary','Transport','Utility','Misc']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <option value="<?php echo e($c); ?>"><?php echo e($c); ?></option>
+                <label class="group relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 cursor-pointer transition-all duration-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/70 dark:has-[:checked]:bg-emerald-500/10 has-[:checked]:shadow-sm border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-900/50">
+                    <input type="radio" name="category" value="<?php echo e($c); ?>" class="sr-only" <?php echo e($c === 'Fuel' ? 'checked' : ''); ?> required>
+                    <span class="material-symbols-rounded text-2xl <?php echo e($catColors[$c]); ?>"><?php echo e($catIcons[$c]); ?></span>
+                    <span class="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 group-has-[:checked]:text-emerald-600 dark:group-has-[:checked]:text-emerald-400 transition-colors"><?php echo e($c); ?></span>
+                </label>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-             <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal8cee41e4af1fe2df52d1d5acd06eed36)): ?>
-<?php $attributes = $__attributesOriginal8cee41e4af1fe2df52d1d5acd06eed36; ?>
-<?php unset($__attributesOriginal8cee41e4af1fe2df52d1d5acd06eed36); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal8cee41e4af1fe2df52d1d5acd06eed36)): ?>
-<?php $component = $__componentOriginal8cee41e4af1fe2df52d1d5acd06eed36; ?>
-<?php unset($__componentOriginal8cee41e4af1fe2df52d1d5acd06eed36); ?>
-<?php endif; ?>
+            </div>
+        </div>
+
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <?php if (isset($component)) { $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'date','name' => 'date','label' => 'Date','required' => true,'value' => ''.e(date('Y-m-d')).'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'date','name' => 'date','label' => 'Date','required' => true,'value' => ''.e(date('Y-m-d')).'','icon' => 'calendar_month']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('form.input'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['type' => 'date','name' => 'date','label' => 'Date','required' => true,'value' => ''.e(date('Y-m-d')).'']); ?>
+<?php $component->withAttributes(['type' => 'date','name' => 'date','label' => 'Date','required' => true,'value' => ''.e(date('Y-m-d')).'','icon' => 'calendar_month']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b)): ?>
+<?php $attributes = $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b; ?>
+<?php unset($__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5c2a97ab476b69c1189ee85d1a95204b)): ?>
+<?php $component = $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b; ?>
+<?php unset($__componentOriginal5c2a97ab476b69c1189ee85d1a95204b); ?>
+<?php endif; ?>
+            <?php if (isset($component)) { $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'number','name' => 'amount','label' => 'Amount (Rs)','required' => true,'step' => '0.01','min' => '0.01','placeholder' => '0.00','icon' => 'currency_rupee']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('form.input'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['type' => 'number','name' => 'amount','label' => 'Amount (Rs)','required' => true,'step' => '0.01','min' => '0.01','placeholder' => '0.00','icon' => 'currency_rupee']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b)): ?>
@@ -446,75 +463,64 @@
 <?php endif; ?>
         </div>
 
-        <div class="mb-4">
-            <?php if (isset($component)) { $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['name' => 'description','label' => 'Description','required' => true,'placeholder' => 'What was this expense for?']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('form.input'); ?>
+        
+        <div class="mb-6">
+            <?php if (isset($component)) { $__componentOriginalcd97a59301ba78d56b3ed60dd41409ab = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalcd97a59301ba78d56b3ed60dd41409ab = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.textarea','data' => ['name' => 'description','label' => 'Description','required' => true,'placeholder' => 'What was this expense for?','rows' => '3']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('form.textarea'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['name' => 'description','label' => 'Description','required' => true,'placeholder' => 'What was this expense for?']); ?>
+<?php $component->withAttributes(['name' => 'description','label' => 'Description','required' => true,'placeholder' => 'What was this expense for?','rows' => '3']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
-<?php if (isset($__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b)): ?>
-<?php $attributes = $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b; ?>
-<?php unset($__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b); ?>
+<?php if (isset($__attributesOriginalcd97a59301ba78d56b3ed60dd41409ab)): ?>
+<?php $attributes = $__attributesOriginalcd97a59301ba78d56b3ed60dd41409ab; ?>
+<?php unset($__attributesOriginalcd97a59301ba78d56b3ed60dd41409ab); ?>
 <?php endif; ?>
-<?php if (isset($__componentOriginal5c2a97ab476b69c1189ee85d1a95204b)): ?>
-<?php $component = $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b; ?>
-<?php unset($__componentOriginal5c2a97ab476b69c1189ee85d1a95204b); ?>
+<?php if (isset($__componentOriginalcd97a59301ba78d56b3ed60dd41409ab)): ?>
+<?php $component = $__componentOriginalcd97a59301ba78d56b3ed60dd41409ab; ?>
+<?php unset($__componentOriginalcd97a59301ba78d56b3ed60dd41409ab); ?>
 <?php endif; ?>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <?php if (isset($component)) { $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'number','name' => 'amount','label' => 'Amount (Rs)','required' => true,'step' => '0.01','min' => '0.01','placeholder' => '0.00','class' => 'text-xl font-bold']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('form.input'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['type' => 'number','name' => 'amount','label' => 'Amount (Rs)','required' => true,'step' => '0.01','min' => '0.01','placeholder' => '0.00','class' => 'text-xl font-bold']); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b)): ?>
-<?php $attributes = $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b; ?>
-<?php unset($__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal5c2a97ab476b69c1189ee85d1a95204b)): ?>
-<?php $component = $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b; ?>
-<?php unset($__componentOriginal5c2a97ab476b69c1189ee85d1a95204b); ?>
-<?php endif; ?>
-            <?php if (isset($component)) { $__componentOriginal8cee41e4af1fe2df52d1d5acd06eed36 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal8cee41e4af1fe2df52d1d5acd06eed36 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.select','data' => ['name' => 'payment_method','label' => 'Payment Method','required' => true]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('form.select'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['name' => 'payment_method','label' => 'Payment Method','required' => true]); ?>
-                <option value="Cash">Cash</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-             <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal8cee41e4af1fe2df52d1d5acd06eed36)): ?>
-<?php $attributes = $__attributesOriginal8cee41e4af1fe2df52d1d5acd06eed36; ?>
-<?php unset($__attributesOriginal8cee41e4af1fe2df52d1d5acd06eed36); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal8cee41e4af1fe2df52d1d5acd06eed36)): ?>
-<?php $component = $__componentOriginal8cee41e4af1fe2df52d1d5acd06eed36; ?>
-<?php unset($__componentOriginal8cee41e4af1fe2df52d1d5acd06eed36); ?>
-<?php endif; ?>
+        
+        <div class="mb-2">
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-3">
+                Payment Method <span class="text-emerald-500">*</span>
+            </label>
+            <div class="grid grid-cols-2 gap-3">
+                <label class="relative flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/70 dark:has-[:checked]:bg-emerald-500/10 has-[:checked]:shadow-sm border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-900/50">
+                    <input type="radio" name="payment_method" value="Cash" class="sr-only" checked required>
+                    <div class="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                        <span class="material-symbols-rounded">payments</span>
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Cash</div>
+                        <div class="text-xs text-zinc-500">Physical currency transaction</div>
+                    </div>
+                </label>
+                <label class="relative flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/70 dark:has-[:checked]:bg-emerald-500/10 has-[:checked]:shadow-sm border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-900/50">
+                    <input type="radio" name="payment_method" value="Bank Transfer" class="sr-only" required>
+                    <div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500">
+                        <span class="material-symbols-rounded">account_balance</span>
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Bank Transfer</div>
+                        <div class="text-xs text-zinc-500">Digital bank transaction</div>
+                    </div>
+                </label>
+            </div>
         </div>
 
          <?php $__env->slot('footer', null, []); ?> 
+            <div class="flex items-center gap-2 text-xs text-zinc-400 mr-auto">
+                <span class="material-symbols-rounded text-[16px]">info</span>
+                Fields marked with <span class="text-emerald-500 font-medium">*</span> are required
+            </div>
             <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['type' => 'button','variant' => 'outline','xOn:click' => 'show = false']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>

@@ -85,7 +85,7 @@ class DayLoadBillingController extends Controller
             'vendor_id'     => 'required|exists:vendors,id',
             'dealer_id'     => 'required|exists:dealers,id',
             'paper_rate'    => 'required|numeric|min:0',
-            'billing_rate'  => 'required|numeric|min:0',
+            'billing_rate'  => 'nullable|numeric|min:0',
             'customer_rate' => 'required|numeric|min:0',
             'no_of_boxes'   => 'required|integer|min:1',
             'box_weight'    => 'required|numeric|min:0',
@@ -385,5 +385,124 @@ class DayLoadBillingController extends Controller
 
         $pdf = Pdf::loadView('billing.day-load.pdf', compact('dateObj', 'batch', 'entries'));
         return $pdf->download("day-load-{$date}.pdf");
+    }
+
+    public function vendorRatesForm(Request $request): View
+    {
+        $vendors = Vendor::orderBy('firm_name')->get();
+        $groupedEntries = collect();
+        $financialSummary = null;
+        $selectedVendorId = null;
+
+        if ($request->filled('vendor_id')) {
+            $selectedVendorId = (int) $request->vendor_id;
+
+            $entries = DayLoadEntry::with(['batch', 'vendor'])
+                ->where('vendor_id', $selectedVendorId)
+                ->where('status', '!=', 'Cancelled')
+                ->whereHas('batch', fn($q) => $q->where('status', '!=', 'Locked'))
+                ->get();
+
+            $groupedEntries = $entries
+                ->groupBy(fn($e) => $e->batch->billing_date->format('Y-m-d'))
+                ->map(fn($items, $date) => [
+                    'date'          => $date,
+                    'count'         => $items->count(),
+                    'total_weight'  => round($items->sum('bird_weight'), 2),
+                    'paper_rate'    => (float) $items->first()->paper_rate,
+                    'current_rate'  => (float) ($items->first()->billing_rate ?: 0),
+                    'entry_ids'     => $items->pluck('id')->toArray(),
+                    'batch_ids'     => $items->pluck('batch_id')->unique()->values()->toArray(),
+                ])->sortKeys();
+
+            $currentVendorCost = $entries->sum(fn($e) => $e->vendor_cost);
+            $financialSummary = [
+                'current_vendor_cost' => $currentVendorCost,
+                'total_entries'       => $entries->count(),
+                'total_weight'        => round($entries->sum('bird_weight'), 2),
+            ];
+        }
+
+        return view('billing.day-load.vendor-rates', compact(
+            'vendors', 'groupedEntries', 'financialSummary', 'selectedVendorId'
+        ));
+    }
+
+    public function setVendorRates(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'vendor_id' => 'required|exists:vendors,id',
+            'rates'     => 'required|array',
+            'rates.*'   => 'required|numeric|min:0',
+            'reason'    => 'required|string|max:255',
+        ]);
+
+        $allEntries = DayLoadEntry::with('batch')
+            ->where('vendor_id', $validated['vendor_id'])
+            ->where('status', '!=', 'Cancelled')
+            ->whereHas('batch', fn($q) => $q->where('status', '!=', 'Locked'))
+            ->get()
+            ->groupBy(fn($e) => $e->batch->billing_date->format('Y-m-d'));
+
+        foreach ($validated['rates'] as $date => $rate) {
+            if (!isset($allEntries[$date]) || $allEntries[$date]->isEmpty()) {
+                return back()->with('error', "No active entries found for date: {$date}.");
+            }
+        }
+
+        $updatedCount = 0;
+        $costBefore = 0;
+        $costAfter = 0;
+        $statusChanges = ['Overpaid' => 0, 'Pending' => 0, 'Partial' => 0, 'Unchanged' => 0];
+        $skippedLocked = 0;
+
+        DB::transaction(function () use ($allEntries, $validated, &$updatedCount, &$costBefore, &$costAfter, &$statusChanges, &$skippedLocked) {
+            $refreshedBatches = collect();
+
+            foreach ($validated['rates'] as $date => $newRate) {
+                foreach ($allEntries[$date] as $entry) {
+                    $costBefore += $entry->vendor_cost;
+
+                    $oldBillingRate = $entry->billing_rate;
+                    $entry->updateQuietly(['billing_rate' => $newRate]);
+
+                    $costAfter += $entry->vendor_cost;
+
+                    EntryAdjustmentLog::create([
+                        'entry_id'    => $entry->id,
+                        'action_type' => 'Edit',
+                        'old_values'  => ['billing_rate' => (float) ($oldBillingRate ?: 0)],
+                        'new_values'  => ['billing_rate' => $newRate],
+                        'reason'      => $validated['reason'],
+                        'adjusted_by' => auth()->id(),
+                    ]);
+
+                    $oldStatus = $entry->getOriginal('vendor_payment_status');
+                    $this->dayLoadPaymentService->refreshVendorPaymentStatus($entry);
+                    $entry->refresh();
+                    $newStatus = $entry->vendor_payment_status;
+                    $statusChanges[$oldStatus === $newStatus ? 'Unchanged' : $newStatus]++;
+
+                    if (!$refreshedBatches->has($entry->batch_id)) {
+                        $refreshedBatches->put($entry->batch_id, true);
+                        $this->dayLoadPaymentService->refreshBatchFinancials($entry->batch);
+                    }
+
+                    $updatedCount++;
+                }
+            }
+        });
+
+        $difference = round($costBefore - $costAfter, 2);
+
+        return back()->with('success', 'Vendor final rates updated successfully.')
+            ->with('update_summary', [
+                'dates_updated'  => count($validated['rates']),
+                'entries_updated'=> $updatedCount,
+                'cost_before'    => round($costBefore, 2),
+                'cost_after'     => round($costAfter, 2),
+                'difference'     => $difference,
+                'status_changes' => $statusChanges,
+            ]);
     }
 }

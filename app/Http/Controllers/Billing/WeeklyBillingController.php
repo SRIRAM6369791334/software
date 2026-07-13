@@ -325,7 +325,7 @@ class WeeklyBillingController extends Controller
                 ->orderBy('batch_id')
                 ->get()
                 ->map(function ($entry) {
-                    $rate = (float) $entry->billing_rate;
+                    $rate = (float) $entry->customer_rate;
                     $kg = (float) $entry->bird_weight;
                     $total = round($kg * $rate, 2);
                     return [
@@ -379,7 +379,7 @@ class WeeklyBillingController extends Controller
 
         foreach ($entries as $entry) {
             $kg = (float) $entry->bird_weight;
-            $rate = (float) $entry->billing_rate;
+            $rate = (float) $entry->customer_rate;
             $total = round($kg * $rate, 2);
 
             $lineItems[] = [

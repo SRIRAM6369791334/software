@@ -13,7 +13,7 @@
                 </x-slot>
                 Export Report
             </x-button>
-            <x-button href="{{ route('billing.daily.index') }}" variant="primary" icon="add">
+            <x-button href="{{ route('billing.day-load.index') }}" variant="primary" icon="add">
                 <x-slot name="icon">
                     <span class="material-symbols-rounded text-[18px]">add</span>
                 </x-slot>

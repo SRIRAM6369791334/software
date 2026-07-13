@@ -55,7 +55,7 @@ class DayLoadPaymentService
             $this->refreshBatchFinancials($entry->batch);
 
             // Recalculate cash/bank ledger for the payment date
-            $this->cashBankLedgerService->recalculateForDate(now());
+            $this->cashBankLedgerService->recalculateForDate(\Carbon\Carbon::parse($payment->date));
 
             return $payment;
         });
@@ -253,7 +253,7 @@ class DayLoadPaymentService
             return $payments;
         });
 
-        $this->cashBankLedgerService->recalculateForDate(now());
+        $this->cashBankLedgerService->recalculateForDate(\Carbon\Carbon::parse($date));
 
         return $payments;
     }
@@ -297,7 +297,7 @@ class DayLoadPaymentService
                 $this->refreshInvoicePayment($entry->batch?->invoice);
             }
 
-            $this->cashBankLedgerService->recalculateForDate(now());
+            $this->cashBankLedgerService->recalculateForDate(\Carbon\Carbon::parse($payment->date));
 
             return $payment->fresh();
         });
@@ -340,7 +340,7 @@ class DayLoadPaymentService
                 'notes'            => $data['notes'] ?? null,
             ]);
 
-            $this->cashBankLedgerService->recalculateForDate(now());
+            $this->cashBankLedgerService->recalculateForDate(\Carbon\Carbon::parse($payment->date));
 
             return $payment;
         });
