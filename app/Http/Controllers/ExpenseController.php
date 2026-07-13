@@ -303,8 +303,12 @@ class ExpenseController extends Controller
             'payment_method' => 'nullable|in:Cash,Bank Transfer',
         ]);
         
+        $oldDate = $expense->date;
         $data['payment_method'] = $data['payment_method'] ?? 'Cash';
         $expense->update($data);
+        
+        app(\App\Services\CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($oldDate));
+        app(\App\Services\CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($expense->date));
         
         return back()->with('success', 'Expense updated successfully.');
     }

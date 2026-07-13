@@ -141,10 +141,21 @@ class DailyBillingController extends Controller
         return view('billing.daily.invoice', compact('bill'));
     }
 
+    public function destroy(DailyBill $daily): RedirectResponse
+    {
+        try {
+            $this->billingService->delete($daily);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Could not delete daily bill: ' . $e->getMessage());
+        }
+
+        return redirect()->route('billing.daily.index')->with('success', 'Daily bill deleted and stock reverted.');
+    }
+
     public function downloadPdf(DailyBill $bill)
     {
         $bill->load(['customer', 'items']);
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('billing.daily.pdf', compact('bill'));
-        return $pdf->download("invoice-{$bill->invoice_no}.pdf");
+        return $pdf->download("invoice-{$bill->invoice_number}.pdf");
     }
 }

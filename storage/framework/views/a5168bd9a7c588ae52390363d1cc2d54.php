@@ -387,40 +387,47 @@
     </div>
 </div>
 
+<?php $__env->stopSection(); ?>
 
+<?php $__env->startPush('modals'); ?>
 <?php if (isset($component)) { $__componentOriginal9f64f32e90b9102968f2bc548315018c = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal9f64f32e90b9102968f2bc548315018c = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal','data' => ['name' => 'add-expense','title' => 'Record Expense','subtitle' => 'Log operational expenditures','icon' => 'receipt_long','maxWidth' => 'lg','show' => $errors->any()]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal','data' => ['name' => 'add-expense','title' => 'Record Expense','subtitle' => 'Log operational expenditures','icon' => 'receipt_long','maxWidth' => '720','show' => $errors->any()]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('modal'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['name' => 'add-expense','title' => 'Record Expense','subtitle' => 'Log operational expenditures','icon' => 'receipt_long','maxWidth' => 'lg','show' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($errors->any())]); ?>
+<?php $component->withAttributes(['name' => 'add-expense','title' => 'Record Expense','subtitle' => 'Log operational expenditures','icon' => 'receipt_long','maxWidth' => '720','show' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($errors->any())]); ?>
     <form id="add-expense-form" action="<?php echo e(route('expenses.store')); ?>" method="POST">
         <?php echo csrf_field(); ?>
 
         
-        <div class="mb-6">
-            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-3">
-                Category <span class="text-emerald-500">*</span>
+        <div class="mb-8">
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-3.5">
+                Category <span class="text-zinc-400 dark:text-zinc-500 text-xs ml-0.5">*</span>
             </label>
-            <div class="grid grid-cols-5 gap-2">
+            <div class="grid grid-cols-5 gap-3">
                 <?php $catIcons = ['Fuel' => 'local_gas_station', 'Salary' => 'payments', 'Transport' => 'local_shipping', 'Utility' => 'bolt', 'Misc' => 'more_horiz']; ?>
-                <?php $catColors = ['Fuel' => 'text-orange-500', 'Salary' => 'text-blue-500', 'Transport' => 'text-amber-500', 'Utility' => 'text-purple-500', 'Misc' => 'text-zinc-500']; ?>
+                <?php $catColors = ['Fuel' => 'text-orange-500', 'Salary' => 'text-blue-500', 'Transport' => 'text-amber-500', 'Utility' => 'text-purple-500', 'Misc' => 'text-zinc-400']; ?>
                 <?php $__currentLoopData = ['Fuel','Salary','Transport','Utility','Misc']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                <label class="group relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 cursor-pointer transition-all duration-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/70 dark:has-[:checked]:bg-emerald-500/10 has-[:checked]:shadow-sm border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-900/50">
+                <label class="group relative flex flex-col items-center gap-2 py-4 px-2 rounded-2xl border-2 cursor-pointer transition-all duration-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/80 dark:has-[:checked]:bg-emerald-500/12 has-[:checked]:shadow-[0_0_0_1px_rgba(16,185,129,0.15),0_4px_12px_rgba(16,185,129,0.15)] border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-900/50">
                     <input type="radio" name="category" value="<?php echo e($c); ?>" class="sr-only" <?php echo e($c === 'Fuel' ? 'checked' : ''); ?> required>
-                    <span class="material-symbols-rounded text-2xl <?php echo e($catColors[$c]); ?>"><?php echo e($catIcons[$c]); ?></span>
-                    <span class="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 group-has-[:checked]:text-emerald-600 dark:group-has-[:checked]:text-emerald-400 transition-colors"><?php echo e($c); ?></span>
+                    <div class="relative">
+                        <span class="material-symbols-rounded text-[28px] <?php echo e($catColors[$c]); ?>"><?php echo e($catIcons[$c]); ?></span>
+                        <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center scale-0 group-has-[:checked]:scale-100 transition-transform duration-200">
+                            <span class="material-symbols-rounded text-[12px]">check</span>
+                        </span>
+                    </div>
+                    <span class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 group-has-[:checked]:text-emerald-700 dark:group-has-[:checked]:text-emerald-300 group-has-[:checked]:font-bold transition-all"><?php echo e($c); ?></span>
                 </label>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </div>
         </div>
 
         
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
             <?php if (isset($component)) { $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'date','name' => 'date','label' => 'Date','required' => true,'value' => ''.e(date('Y-m-d')).'','icon' => 'calendar_month']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -443,14 +450,14 @@
 <?php endif; ?>
             <?php if (isset($component)) { $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'number','name' => 'amount','label' => 'Amount (Rs)','required' => true,'step' => '0.01','min' => '0.01','placeholder' => '0.00','icon' => 'currency_rupee']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'number','name' => 'amount','label' => 'Amount','required' => true,'step' => '0.01','min' => '0.01','placeholder' => 'Enter amount','icon' => 'currency_rupee']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('form.input'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['type' => 'number','name' => 'amount','label' => 'Amount (Rs)','required' => true,'step' => '0.01','min' => '0.01','placeholder' => '0.00','icon' => 'currency_rupee']); ?>
+<?php $component->withAttributes(['type' => 'number','name' => 'amount','label' => 'Amount','required' => true,'step' => '0.01','min' => '0.01','placeholder' => 'Enter amount','icon' => 'currency_rupee']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b)): ?>
@@ -464,17 +471,17 @@
         </div>
 
         
-        <div class="mb-6">
+        <div class="mb-8">
             <?php if (isset($component)) { $__componentOriginalcd97a59301ba78d56b3ed60dd41409ab = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalcd97a59301ba78d56b3ed60dd41409ab = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.textarea','data' => ['name' => 'description','label' => 'Description','required' => true,'placeholder' => 'What was this expense for?','rows' => '3']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.textarea','data' => ['name' => 'description','label' => 'Description','required' => true,'placeholder' => 'e.g. Purchased poultry feed from ABC Traders','rows' => '4']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('form.textarea'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['name' => 'description','label' => 'Description','required' => true,'placeholder' => 'What was this expense for?','rows' => '3']); ?>
+<?php $component->withAttributes(['name' => 'description','label' => 'Description','required' => true,'placeholder' => 'e.g. Purchased poultry feed from ABC Traders','rows' => '4']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginalcd97a59301ba78d56b3ed60dd41409ab)): ?>
@@ -489,38 +496,24 @@
 
         
         <div class="mb-2">
-            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-3">
-                Payment Method <span class="text-emerald-500">*</span>
+            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-3.5">
+                Payment Method <span class="text-zinc-400 dark:text-zinc-500 text-xs ml-0.5">*</span>
             </label>
-            <div class="grid grid-cols-2 gap-3">
-                <label class="relative flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/70 dark:has-[:checked]:bg-emerald-500/10 has-[:checked]:shadow-sm border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-900/50">
-                    <input type="radio" name="payment_method" value="Cash" class="sr-only" checked required>
-                    <div class="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                        <span class="material-symbols-rounded">payments</span>
+            <div class="grid grid-cols-4 gap-2.5">
+                <?php $pmOptions = [['value' => 'Cash', 'icon' => 'payments', 'color' => 'text-emerald-500', 'bg' => 'bg-emerald-50'], ['value' => 'Bank Transfer', 'icon' => 'account_balance', 'color' => 'text-blue-500', 'bg' => 'bg-blue-50'], ['value' => 'UPI', 'icon' => 'smartphone', 'color' => 'text-violet-500', 'bg' => 'bg-violet-50'], ['value' => 'Card', 'icon' => 'credit_card', 'color' => 'text-rose-500', 'bg' => 'bg-rose-50']]; ?>
+                <?php $__currentLoopData = $pmOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $pm): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <label class="group relative flex flex-col items-center gap-2 py-4 px-1 rounded-2xl border-2 cursor-pointer transition-all duration-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/80 dark:has-[:checked]:bg-emerald-500/12 has-[:checked]:shadow-[0_0_0_1px_rgba(16,185,129,0.15),0_4px_12px_rgba(16,185,129,0.15)] border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-900/50">
+                    <input type="radio" name="payment_method" value="<?php echo e($pm['value']); ?>" class="sr-only" <?php echo e($loop->first ? 'checked' : ''); ?> required>
+                    <div class="w-9 h-9 rounded-full <?php echo e($pm['bg']); ?> dark:<?php echo e($pm['bg']); ?>/10 flex items-center justify-center <?php echo e($pm['color']); ?>">
+                        <span class="material-symbols-rounded text-xl"><?php echo e($pm['icon']); ?></span>
                     </div>
-                    <div>
-                        <div class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Cash</div>
-                        <div class="text-xs text-zinc-500">Physical currency transaction</div>
-                    </div>
+                    <span class="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 group-has-[:checked]:text-emerald-700 dark:group-has-[:checked]:text-emerald-300 group-has-[:checked]:font-bold transition-all text-center leading-tight"><?php echo e($pm['value']); ?></span>
                 </label>
-                <label class="relative flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/70 dark:has-[:checked]:bg-emerald-500/10 has-[:checked]:shadow-sm border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-900/50">
-                    <input type="radio" name="payment_method" value="Bank Transfer" class="sr-only" required>
-                    <div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500">
-                        <span class="material-symbols-rounded">account_balance</span>
-                    </div>
-                    <div>
-                        <div class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Bank Transfer</div>
-                        <div class="text-xs text-zinc-500">Digital bank transaction</div>
-                    </div>
-                </label>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </div>
         </div>
 
          <?php $__env->slot('footer', null, []); ?> 
-            <div class="flex items-center gap-2 text-xs text-zinc-400 mr-auto">
-                <span class="material-symbols-rounded text-[16px]">info</span>
-                Fields marked with <span class="text-emerald-500 font-medium">*</span> are required
-            </div>
             <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['type' => 'button','variant' => 'outline','xOn:click' => 'show = false']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -542,14 +535,14 @@
 <?php endif; ?>
             <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['type' => 'submit','form' => 'add-expense-form','variant' => 'primary','icon' => 'check']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['type' => 'submit','form' => 'add-expense-form','variant' => 'primary','icon' => 'check','class' => 'px-8']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('button'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['type' => 'submit','form' => 'add-expense-form','variant' => 'primary','icon' => 'check']); ?>Log Expense <?php echo $__env->renderComponent(); ?>
+<?php $component->withAttributes(['type' => 'submit','form' => 'add-expense-form','variant' => 'primary','icon' => 'check','class' => 'px-8']); ?>Log Expense <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
 <?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
@@ -571,6 +564,6 @@
 <?php $component = $__componentOriginal9f64f32e90b9102968f2bc548315018c; ?>
 <?php unset($__componentOriginal9f64f32e90b9102968f2bc548315018c); ?>
 <?php endif; ?>
-<?php $__env->stopSection(); ?>
+<?php $__env->stopPush(); ?>
 
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\Poultry Management System\flockwise-biztrack-main\flockwise-biztrack-laravel\resources\views/expenses/index.blade.php ENDPATH**/ ?>

@@ -145,19 +145,33 @@ class DailyBillingService
                 }
             }
 
+            // Revert old stock movements
+            $this->stockService->revertMovement(DailyBill::class, $bill->id);
+
             // Delete old items and recreate
             $bill->items()->delete();
             foreach ($itemsData as $item) {
                 $base = $item['qty'] * $item['rate'];
                 $tax = round($base * $gstPercent / 100, 2);
 
-                $bill->items()->create([
+                $billItem = $bill->items()->create([
                     'item_name'    => $item['name'],
                     'quantity_kg'  => $item['qty'],
                     'rate_per_kg'  => $item['rate'],
                     'tax_amount'   => $tax,
                     'total_amount' => $base + $tax,
                     'unit'         => $item['unit'] ?? 'kg',
+                ]);
+
+                // Auto-trigger new stock movement
+                $this->stockService->recordOut([
+                    'item_name'      => $billItem->item_name,
+                    'quantity'       => $billItem->quantity_kg,
+                    'rate'           => $billItem->rate_per_kg,
+                    'reference_type' => DailyBill::class,
+                    'reference_id'   => $bill->id,
+                    'date'           => $bill->date,
+                    'created_by'     => $updatedBy ?? auth()->id() ?? 1,
                 ]);
             }
 
@@ -174,11 +188,14 @@ class DailyBillingService
     public function delete(DailyBill $bill): bool
     {
         return DB::transaction(function () use ($bill) {
-            // Delete stock transactions related to this daily bill
-            DB::table('stock_transactions')
-                ->where('reference_type', DailyBill::class)
-                ->where('reference_id', $bill->id)
-                ->delete();
+            // Revert customer balance if was credit
+            $customer = Customer::find($bill->customer_id);
+            if ($customer && ($bill->payment_mode === 'Credit' || $bill->status === 'Pending')) {
+                $customer->decrement('balance', $bill->net_amount);
+            }
+
+            // Revert stock transactions and update summaries correctly via StockService
+            $this->stockService->revertMovement(DailyBill::class, $bill->id);
 
             // Delete the items
             $bill->items()->delete();

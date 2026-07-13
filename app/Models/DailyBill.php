@@ -13,7 +13,7 @@ class DailyBill extends Model
 
     protected $fillable = [
         'customer_id', 'date', 'amount', 'gst_percentage', 'gst_amount',
-        'net_amount', 'payment_mode', 'bank_method', 'status'
+        'net_amount', 'payment_mode', 'bank_method', 'status', 'invoice_no'
     ];
 
     protected $casts = [
@@ -43,7 +43,7 @@ class DailyBill extends Model
 
     public function getInvoiceNumberAttribute(): string
     {
-        return 'INV-D-' . str_pad($this->id, 4, '0', STR_PAD_LEFT);
+        return $this->invoice_no ?: 'INV-D-' . str_pad($this->id, 4, '0', STR_PAD_LEFT);
     }
 
     /*

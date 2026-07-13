@@ -14,7 +14,7 @@ class VendorTest extends TestCase
     {
         $vendor = new Vendor();
         $this->assertEquals([
-            'firm_name', 'gst_number', 'location', 'contact_person', 'phone', 'route', 'notes'
+            'firm_name', 'is_shop', 'gst_number', 'location', 'contact_person', 'phone', 'route', 'notes'
         ], $vendor->getFillable());
     }
 

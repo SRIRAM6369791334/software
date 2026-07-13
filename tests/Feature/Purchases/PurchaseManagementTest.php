@@ -38,7 +38,7 @@ class PurchaseManagementTest extends TestCase
     {
         $purchase = Purchase::factory()->create();
 
-        $response = $this->get('/purchases/invoices');
+        $response = $this->get('/purchases/invoices?date=' . $purchase->date->format('Y-m-d'));
         $response->assertStatus(200);
         $response->assertSee($purchase->vendor_name);
     }
@@ -151,7 +151,7 @@ class PurchaseManagementTest extends TestCase
         ];
 
         $response = $this->put("/purchases/{$purchase->id}", $data);
-        $response->assertRedirect('/purchases/invoices');
+        $response->assertRedirect('/purchases/invoices?date=' . today()->format('Y-m-d'));
         $this->assertDatabaseHas('purchases', [
             'id' => $purchase->id,
             'vendor_name' => 'Updated Vendor Name',

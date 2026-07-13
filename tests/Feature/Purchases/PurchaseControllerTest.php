@@ -139,7 +139,7 @@ class PurchaseControllerTest extends TestCase
 
         $response = $this->actingAs($this->user)->put(route('purchases.update', $purchase->id), $updateData);
         
-        $response->assertRedirect(route('purchases.invoices'));
+        $response->assertRedirect(route('purchases.invoices', ['date' => now()->format('Y-m-d')]));
         $response->assertSessionHas('success');
         
         // Check Purchase was updated

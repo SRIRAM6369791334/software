@@ -271,7 +271,7 @@ class WeeklyBillingController extends Controller
         $phone = preg_replace('/[^0-9]/', '', $weekly->dealer->phone ?? '');
         if (!$phone) return back()->with('error', 'Dealer phone missing.');
 
-        $text = urlencode("Hello {$weekly->dealer->firm_name}, your poultry bill for period {$weekly->period_start->format('d M')} to {$weekly->period_end->format('d M')} is ₹" . number_format($weekly->amount, 2) . ". Thank you!");
+        $text = urlencode("Hello {$weekly->dealer->firm_name}, your poultry bill for period {$weekly->period_start->format('d M')} to {$weekly->period_end->format('d M')} is ₹" . number_format($weekly->net_amount, 2) . ". Thank you!");
 
         return redirect()->away("https://wa.me/91{$phone}?text={$text}");
     }
@@ -296,6 +296,17 @@ class WeeklyBillingController extends Controller
         $weekly->load(['dealer', 'items']);
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('billing.weekly.pdf', ['bill' => $weekly]);
         return $pdf->download("invoice-{$weekly->invoice_no}.pdf");
+    }
+
+    public function destroy(WeeklyBill $weekly): RedirectResponse
+    {
+        try {
+            $this->billingService->deleteWeeklyBill($weekly);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Could not delete weekly bill: ' . $e->getMessage());
+        }
+
+        return redirect()->route('billing.weekly.index')->with('success', 'Weekly bill deleted and transactions unlinked.');
     }
 
     public function dealerInvoice(Request $request): View

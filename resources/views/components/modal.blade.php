@@ -16,13 +16,15 @@ $maxWidthClass = match($maxWidth) {
     'xl' => 'sm:max-w-xl',
     '2xl' => 'sm:max-w-2xl',
     '3xl' => 'sm:max-w-3xl',
-    default => 'sm:max-w-2xl',
+    '720' => 'sm:max-w-[720px]',
+    default => 'sm:max-w-lg',
 };
 @endphp
 
 <div
     x-data="{
         show: {{ $show ? 'true' : 'false' }},
+        previousFocus: null,
         focusables() {
             let selector = 'a, button, input:not([type=\'hidden\']), textarea, select, details, [tabindex]:not([tabindex=\'-1\'])'
             return [...$el.querySelectorAll(selector)]
@@ -37,10 +39,12 @@ $maxWidthClass = match($maxWidth) {
     }"
     x-init="$watch('show', value => {
         if (value) {
+            previousFocus = document.activeElement;
             document.body.classList.add('overflow-y-hidden');
             setTimeout(() => firstFocusable()?.focus(), 100);
         } else {
             document.body.classList.remove('overflow-y-hidden');
+            if (previousFocus) setTimeout(() => previousFocus.focus(), 50);
         }
     })"
     x-on:open-modal.window="$event.detail == '{{ $name }}' ? show = true : null"
@@ -50,67 +54,70 @@ $maxWidthClass = match($maxWidth) {
     x-on:keydown.tab.prevent="$event.shiftKey || nextFocusable().focus()"
     x-on:keydown.shift.tab.prevent="prevFocusable().focus()"
     x-show="show"
-    class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-50 flex items-center justify-center font-outfit"
-    style="display: none;"
+    x-cloak
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title-{{ $name }}"
+    class="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-8 font-outfit"
 >
     <!-- Backdrop -->
     <div
         x-show="show"
-        class="fixed inset-0 transform transition-all"
+        class="fixed inset-0"
         x-on:click="show = false"
-        x-transition:enter="ease-out duration-300 cubic-bezier(0.32, 0.72, 0, 1)"
+        x-transition:enter="ease-out duration-200"
         x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100"
-        x-transition:leave="ease-in duration-200"
+        x-transition:leave="ease-in duration-150"
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
     >
-        <div class="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"></div>
+        <div class="absolute inset-0 bg-[rgba(15,23,42,0.45)] backdrop-blur-[6px]"></div>
     </div>
 
     <!-- Modal Card -->
     <div
         x-show="show"
-        class="mb-6 bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden shadow-2xl transform transition-all sm:w-full sm:mx-auto {{ $maxWidthClass }} border border-zinc-200/50 dark:border-zinc-800/50"
-        x-transition:enter="ease-out duration-300 cubic-bezier(0.32, 0.72, 0, 1)"
-        x-transition:enter-start="opacity-0 translate-y-8 sm:translate-y-0 sm:scale-95"
-        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-        x-transition:leave="ease-in duration-200"
-        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-        x-transition:leave-end="opacity-0 translate-y-8 sm:translate-y-0 sm:scale-95"
+        class="relative w-full bg-white dark:bg-zinc-900 rounded-[20px] shadow-[0_25px_80px_rgba(15,23,42,0.2),0_8px_32px_rgba(15,23,42,0.08)] dark:shadow-[0_25px_80px_rgba(0,0,0,0.5)] max-w-[95vw] {{ $maxWidthClass }} border border-zinc-200/50 dark:border-zinc-800/50 flex flex-col max-h-[calc(100vh-64px)]"
+        x-transition:enter="ease-out duration-200"
+        x-transition:enter-start="opacity-0 scale-[0.96]"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="ease-in duration-150"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-[0.96]"
     >
-        <div class="p-6 sm:p-8">
-            <!-- Header -->
-            <div class="flex items-start justify-between mb-6">
+        <!-- Header -->
+        <div class="flex-shrink-0 px-6 sm:px-8 pt-6 sm:pt-8 pb-0">
+            <div class="flex items-start justify-between mb-7">
                 <div class="flex items-center gap-4">
                     @if($icon)
-                    <div class="flex-shrink-0 w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                    <div class="flex-shrink-0 w-11 h-11 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500 ring-1 ring-emerald-100 dark:ring-emerald-500/20">
                         <span class="material-symbols-rounded text-2xl">{{ $icon }}</span>
                     </div>
                     @endif
                     <div>
                         @if($title)
-                            <h3 class="text-xl font-bold text-zinc-900 dark:text-white font-cabinet">{{ $title }}</h3>
+                            <h3 id="modal-title-{{ $name }}" class="text-lg font-bold text-zinc-900 dark:text-white font-cabinet">{{ $title }}</h3>
                         @endif
                         @if($subtitle)
-                            <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{{ $subtitle }}</p>
+                            <p class="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">{{ $subtitle }}</p>
                         @endif
                     </div>
                 </div>
-                <button x-on:click="show = false" class="text-zinc-400 hover:text-zinc-500 dark:hover:text-zinc-300 transition-colors p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                    <span class="material-symbols-rounded">close</span>
+                <button x-on:click="show = false" class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" aria-label="Close">
+                    <span class="material-symbols-rounded text-xl">close</span>
                 </button>
-            </div>
-
-            <!-- Body -->
-            <div class="text-sm text-zinc-600 dark:text-zinc-400">
-                {{ $slot }}
             </div>
         </div>
 
-        <!-- Footer -->
+        <!-- Body (Scrollable) -->
+        <div class="flex-1 overflow-y-auto px-6 sm:px-8 pb-6 sm:pb-8 text-sm text-zinc-600 dark:text-zinc-400">
+            {{ $slot }}
+        </div>
+
+        <!-- Footer (Always Visible) -->
         @if(isset($footer))
-        <div class="px-6 py-4 bg-zinc-50 dark:bg-zinc-800/50 border-t border-zinc-200/50 dark:border-zinc-800/50 flex justify-end gap-3 rounded-b-3xl">
+        <div class="flex-shrink-0 px-6 sm:px-8 py-4 bg-zinc-50/80 dark:bg-zinc-800/30 border-t border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-end gap-3 rounded-b-[20px]">
             {{ $footer }}
         </div>
         @endif

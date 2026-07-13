@@ -228,7 +228,7 @@ class WeeklyBillingService
             ]);
 
             // Recalculate cash/bank ledger
-            app(CashBankLedgerService::class)->recalculateForDate(now());
+            app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($paymentData['date'] ?? now()));
 
             // Decrement dealer outstanding
             $dealer->decrement('pending_amount', $amount);
@@ -363,6 +363,38 @@ class WeeklyBillingService
             }
 
             return $count;
+        });
+    }
+
+    /**
+     * Delete a weekly bill.
+     */
+    public function deleteWeeklyBill(WeeklyBill $bill): void
+    {
+        DB::transaction(function () use ($bill) {
+            $hasPurchases = DealerPurchase::where('weekly_bill_id', $bill->id)->exists();
+
+            if ($hasPurchases) {
+                // Unlink daily purchases
+                DealerPurchase::where('weekly_bill_id', $bill->id)->update(['weekly_bill_id' => null]);
+            } else {
+                // If it was manually created, revert dealer balance
+                if ($bill->payment_mode === 'Credit' || $bill->status === 'Pending') {
+                    $dealer = Dealer::find($bill->dealer_id);
+                    if ($dealer) {
+                        $dealer->decrement('pending_amount', $bill->net_amount);
+                        if ($dealer->pending_amount < 0) {
+                            $dealer->update(['pending_amount' => 0]);
+                        }
+                    }
+                }
+            }
+
+            // Delete weekly bill items
+            $bill->items()->delete();
+
+            // Delete the bill itself
+            $bill->delete();
         });
     }
 }
