@@ -342,690 +342,412 @@
     </x-card>
 
     <div x-data="dayLoadBillingData()">
-        <x-modal name="edit-entry-modal" title="Edit Entry" subtitle="Adjust rates, weights, or box count" icon="edit" maxWidth="2xl">
-            <form id="edit-entry-form" :action="editFormAction" method="POST" class="space-y-4">
-                @csrf
-                <input type="hidden" name="_method" value="PUT">
+        <template x-teleport="body">
+            <x-modal name="edit-entry-modal" title="Edit Entry" subtitle="Adjust rates, weights, or box count" icon="edit" maxWidth="3xl">
+                <form id="edit-entry-form" :action="editFormAction" method="POST" class="space-y-6">
+                    @csrf
+                    <input type="hidden" name="_method" value="PUT">
 
-                {{-- Primary Details --}}
-                <div class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
-                        <span class="material-symbols-rounded text-xs text-zinc-400">badge</span>
-                        Primary Details
-                    </p>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Vendor</label>
-                            <select name="vendor_id" required x-model="editVendorId" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                    {{-- Primary Details --}}
+                    <div>
+                        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Primary Details</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                            <x-form.select name="vendor_id" label="Vendor" required x-model="editVendorId">
                                 <option value="">Select vendor...</option>
                                 @foreach($vendors as $vendor)
                                     <option value="{{ $vendor->id }}">{{ $vendor->firm_name }}{{ $vendor->is_shop ? ' (Shop)' : '' }}</option>
                                 @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Dealer</label>
-                            <select name="dealer_id" required x-model="editDealerId" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                            </x-form.select>
+
+                            <x-form.select name="dealer_id" label="Dealer" required x-model="editDealerId">
                                 <option value="">Select dealer...</option>
                                 @foreach($dealers as $dealer)
                                     <option value="{{ $dealer->id }}">{{ $dealer->firm_name }}</option>
                                 @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Boxes</label>
-                            <input type="number" name="no_of_boxes" min="1" x-model.number="editNoOfBoxes" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                            </x-form.select>
+
+                            <x-form.input type="number" name="no_of_boxes" label="Boxes" required min="1" x-model.number="editNoOfBoxes" icon="inventory_2" />
                         </div>
                     </div>
-                </div>
 
-                {{-- Pricing Rates --}}
-                <div class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
-                        <span class="material-symbols-rounded text-xs text-zinc-400">payments</span>
-                        Pricing Rates (Rs)
-                    </p>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Paper Rate</label>
-                            <input type="number" step="0.01" name="paper_rate" min="0" x-model.number="editPaperRate" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Billing Rate</label>
-                            <input type="number" step="0.01" name="billing_rate" min="0" x-model.number="editBillingRate" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Customer Rate</label>
-                            <input type="number" step="0.01" name="customer_rate" min="0" x-model.number="editCustomerRate" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Weights --}}
-                <div class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
-                        <span class="material-symbols-rounded text-xs text-zinc-400">scale</span>
-                        Load Weights (Kg)
-                    </p>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Box Weight</label>
-                            <input type="number" step="0.01" name="box_weight" min="0" x-model.number="editBoxWeight" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Empty Weight</label>
-                            <input type="number" step="0.01" name="empty_weight" min="0" x-model.number="editEmptyWeight" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Farm Weight</label>
-                            <input type="number" step="0.01" name="farm_weight" min="0" x-model="editFarmWeight" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Remarks & Audit --}}
-                <div class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
-                        <span class="material-symbols-rounded text-xs text-zinc-400">history</span>
-                        Audit & Remarks
-                    </p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Remarks</label>
-                            <input type="text" name="remarks" x-model="editRemarks" placeholder="Optional notes" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reason for Edit</label>
-                            <input type="text" name="reason" required placeholder="Why are you editing this entry?" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
-                        </div>
-                    </div>
-                </div>
-
-                <x-slot:footer>
-                    <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'edit-entry-modal')">Cancel</x-button>
-                    <x-button type="submit" form="edit-entry-form" variant="primary" icon="save">Save Changes</x-button>
-                </x-slot:footer>
-            </form>
-        </x-modal>
-
-        <x-modal name="transfer-boxes-modal" title="Transfer Weight" subtitle="Move weight of birds from one dealer/vendor to another" icon="swap_horiz" maxWidth="lg">
-            <form id="transfer-form" :action="transferFormAction" method="POST">
-                @csrf
-
-                {{-- Source Entry Info Card --}}
-                <div class="mb-5 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/50 shadow-inner">
-                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
-                        <span class="material-symbols-rounded text-xs">info</span>
-                        Source Entry Details
-                    </p>
-                    <div class="grid grid-cols-2 gap-3 text-xs">
-                        <div class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-150/80 dark:border-zinc-800">
-                            <span class="text-zinc-400 font-medium block mb-0.5">Vendor</span>
-                            <p class="font-extrabold text-zinc-800 dark:text-zinc-200 truncate" x-text="transferSourceVendor || '—'"></p>
-                        </div>
-                        <div class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-150/80 dark:border-zinc-800">
-                            <span class="text-zinc-400 font-medium block mb-0.5">Dealer</span>
-                            <p class="font-extrabold text-zinc-800 dark:text-zinc-200 truncate" x-text="transferSourceDealer || '—'"></p>
-                        </div>
-                        <div class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-150/80 dark:border-zinc-800">
-                            <span class="text-zinc-400 font-medium block mb-0.5">Available Weight</span>
-                            <p class="font-jetbrains font-extrabold text-base text-zinc-850 dark:text-zinc-150" x-text="parseFloat(transferSourceWeight).toFixed(2) + ' kg'"></p>
-                        </div>
-                        <div class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-150/80 dark:border-zinc-800">
-                            <span class="text-zinc-400 font-medium block mb-0.5">Date</span>
-                            <p class="font-extrabold text-zinc-800 dark:text-zinc-200" x-text="transferDate || '—'"></p>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Input Fields --}}
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    {{-- Pricing Rates --}}
                     <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Weight to Transfer (kg)</label>
-                        <input
-                            type="number"
-                            name="transfer_weight"
-                            min="0.01"
-                            step="0.01"
-                            :max="transferMaxWeight"
-                            x-model.number="transferWeight"
-                            required
-                            class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                        >
-                        <p class="mt-1.5 text-[11px] text-zinc-500">
-                            Remaining: <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="parseFloat(transferSourceWeight - transferWeight).toFixed(2)"></span> kg
+                        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Pricing Rates (Rs)</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                            <x-form.input type="number" step="0.01" name="paper_rate" label="Paper Rate" required min="0" x-model.number="editPaperRate" icon="currency_rupee" />
+                            <x-form.input type="number" step="0.01" name="billing_rate" label="Billing Rate" required min="0" x-model.number="editBillingRate" icon="currency_rupee" />
+                            <x-form.input type="number" step="0.01" name="customer_rate" label="Customer Rate" required min="0" x-model.number="editCustomerRate" icon="currency_rupee" />
+                        </div>
+                    </div>
+
+                    {{-- Weights --}}
+                    <div>
+                        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Load Weights (Kg)</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                            <x-form.input type="number" step="0.01" name="box_weight" label="Box Weight" required min="0" x-model.number="editBoxWeight" icon="scale" />
+                            <x-form.input type="number" step="0.01" name="empty_weight" label="Empty Weight" required min="0" x-model.number="editEmptyWeight" icon="scale" />
+                            <x-form.input type="number" step="0.01" name="farm_weight" label="Farm Weight" min="0" x-model="editFarmWeight" icon="scale" />
+                        </div>
+                    </div>
+
+                    {{-- Remarks & Audit --}}
+                    <div>
+                        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Audit & Remarks</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <x-form.input type="text" name="remarks" label="Remarks" x-model="editRemarks" placeholder="Optional notes" icon="description" />
+                            <x-form.input type="text" name="reason" label="Reason for Edit" required placeholder="Why are you editing this entry?" icon="help" />
+                        </div>
+                    </div>
+
+                    <x-slot:footer>
+                        <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'edit-entry-modal')">Cancel</x-button>
+                        <x-button type="submit" form="edit-entry-form" variant="primary" icon="check" class="px-8">Save Changes</x-button>
+                    </x-slot:footer>
+                </form>
+            </x-modal>
+        </template>
+
+        <template x-teleport="body">
+            <x-modal name="transfer-boxes-modal" title="Transfer Weight" subtitle="Move weight of birds from one dealer/vendor to another" icon="swap_horiz" maxWidth="720">
+                <form id="transfer-form" :action="transferFormAction" method="POST" class="space-y-6">
+                    @csrf
+
+                    {{-- Source Entry Details --}}
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
+                            <span class="material-symbols-rounded text-sm">info</span>
+                            Source Entry Details
                         </p>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Target Dealer</label>
-                        <select name="target_dealer_id" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
-                            <option value="">Select dealer...</option>
-                            @foreach($dealers as $dealer)
-                                <option value="{{ $dealer->id }}">{{ $dealer->firm_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Target Vendor</label>
-                        <select name="target_vendor_id" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
-                            <option value="">Select vendor...</option>
-                            @foreach($vendors as $vendor)
-                                <option value="{{ $vendor->id }}">{{ $vendor->firm_name }}{{ $vendor->is_shop ? ' (Shop)' : '' }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reason</label>
-                        <input
-                            type="text"
-                            name="reason"
-                            required
-                            placeholder="e.g. Reassign weight to correct dealer"
-                            class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                        >
-                    </div>
-                </div>
-
-                <x-slot:footer>
-                    <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'transfer-boxes-modal')">Cancel</x-button>
-                    <x-button type="submit" form="transfer-form" variant="primary" icon="swap_horiz">Transfer Weight</x-button>
-                </x-slot:footer>
-            </form>
-        </x-modal>
-
-        <x-modal name="set-farm-weight-modal" title="Set Farm Weight" subtitle="Enter total farm weight — it will be set at the batch level" icon="scale" maxWidth="4xl">
-            <form id="set-farm-weight-form" action="{{ route('billing.day-load.set-farm-weight') }}" method="POST"
-                  x-data="{
-                      totalFarmWeight: '{{ $batch?->total_farm_weight ?? '' }}',
-                      totalBirdWeight: {{ (float) ($batch?->total_bird_weight ?? 0) }},
-                      entries: [
-                          @foreach($entries->where('status', 'Active') as $entry)
-                              { id: {{ $entry->id }}, vendor: '{{ addslashes($entry->vendor->firm_name ?? '-') }}', dealer: '{{ addslashes($entry->dealer->firm_name ?? '-') }}', boxes: {{ $entry->no_of_boxes }}, birdWeight: {{ (float) $entry->bird_weight }} },
-                          @endforeach
-                      ],
-                      get totalLoss() {
-                          if (!this.totalFarmWeight || this.totalFarmWeight === '') return 0;
-                          return (parseFloat(this.totalFarmWeight) - this.totalBirdWeight).toFixed(2);
-                      }
-                  }"
-            >
-                @csrf
-                <input type="hidden" name="batch_id" value="{{ $batch?->id }}">
-
-                {{-- Note about batch-level setting --}}
-                <div class="mb-4 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 flex gap-3 text-xs text-amber-800 dark:text-amber-300">
-                    <span class="material-symbols-rounded text-lg">info</span>
-                    <div>
-                        <p class="font-bold mb-0.5">Batch-Level Weight Setting</p>
-                        <p>Setting the farm weight here applies it to the entire day's batch. Individual entries' weights will not be modified proportionally.</p>
-                    </div>
-                </div>
-
-                {{-- Summary Metrics & Main Input --}}
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
-                    <div class="rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Total Bird Weight</p>
-                        <p class="font-jetbrains text-2xl font-black text-indigo-600 dark:text-indigo-400" x-text="totalBirdWeight.toFixed(2) + ' kg'"></p>
-                    </div>
-                    <div class="rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Total Loss</p>
-                        <p class="font-jetbrains text-2xl font-black" :class="parseFloat(totalLoss) >= 0 ? 'text-emerald-600' : 'text-rose-600'" x-text="totalFarmWeight ? totalLoss + ' kg' : '—'"></p>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Enter Total Farm Weight (Kg)</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            name="total_farm_weight"
-                            x-model="totalFarmWeight"
-                            placeholder="0.00"
-                            required
-                            class="w-full rounded-xl border-2 border-emerald-300 dark:border-emerald-600 bg-white dark:bg-zinc-900 px-4 py-2.5 text-lg font-jetbrains font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-emerald-600"
-                        >
-                    </div>
-                </div>
-
-                {{-- Active Entries Table --}}
-                <div class="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 max-h-[40vh] overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-                    <table class="w-full text-sm">
-                        <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-750">
-                            <tr class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                                <th class="px-4 py-3 text-left">Vendor</th>
-                                <th class="px-4 py-3 text-left">Dealer</th>
-                                <th class="px-4 py-3 text-center">Boxes</th>
-                                <th class="px-4 py-3 text-center">Bird Wt (Kg)</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/80 bg-white dark:bg-zinc-900">
-                            <template x-for="(entry, index) in entries" :key="entry.id">
-                                <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 transition-colors">
-                                    <td class="px-4 py-3 font-bold text-zinc-900 dark:text-zinc-100 text-xs" x-text="entry.vendor"></td>
-                                    <td class="px-4 py-3 text-zinc-550 dark:text-zinc-450 text-xs" x-text="entry.dealer"></td>
-                                    <td class="px-4 py-3 text-center font-jetbrains font-bold text-xs text-zinc-500" x-text="entry.boxes"></td>
-                                    <td class="px-4 py-3 text-center font-jetbrains text-xs font-semibold text-zinc-700 dark:text-zinc-300" x-text="entry.birdWeight.toFixed(2)"></td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-
-                {{-- Reason / Audit --}}
-                <div class="mb-4">
-                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reason for setting farm weight</label>
-                    <input
-                        type="text"
-                        name="reason"
-                        required
-                        placeholder="Why are you setting farm weight?"
-                        class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                    >
-                </div>
-
-                <x-slot:footer>
-                    <x-button type="button" variant="ghost" x-on:click="$dispatch('close-modal', 'set-farm-weight-modal')">Cancel</x-button>
-                    <x-button type="submit" form="set-farm-weight-form" variant="primary" icon="save">Distribute & Save</x-button>
-                </x-slot:footer>
-            </form>
-        </x-modal>
-
-        <x-modal name="adjust-all-modal" title="Adjust All Entries" subtitle="Edit farm weight and remarks for all entries at once" icon="edit_note" maxWidth="4xl">
-            <form id="adjust-all-form" action="{{ route('billing.day-load.bulk-update') }}" method="POST">
-                @csrf
-                <input type="hidden" name="_method" value="PUT">
-
-                {{-- Bulk Edit Table --}}
-                <div class="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 max-h-[55vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-                    <table class="w-full text-sm">
-                        <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-750">
-                            <tr class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                                <th class="px-4 py-3 text-left">Vendor</th>
-                                <th class="px-4 py-3 text-left">Dealer</th>
-                                <th class="px-4 py-3 text-center">Boxes</th>
-                                <th class="px-4 py-3 text-center">Bird Wt (Kg)</th>
-                                <th class="px-4 py-3 text-center min-w-[120px] bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-600">Farm Weight (Kg)</th>
-                                <th class="px-4 py-3 text-center text-rose-600">Loss (Kg)</th>
-                                <th class="px-4 py-3 text-center">Total (Kg)</th>
-                                <th class="px-4 py-3 text-left min-w-[160px]">Remarks</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/80 bg-white dark:bg-zinc-900">
-                            @foreach($entries as $entry)
-                                @if($entry->status === 'Active')
-                                <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 transition-colors"
-                                    x-data="{
-                                        farmWeight: '{{ $entry->farm_weight ?? '' }}',
-                                        birdWeight: {{ (float) $entry->bird_weight }}
-                                    }"
-                                >
-                                    <input type="hidden" name="entries[{{ $entry->id }}][id]" value="{{ $entry->id }}">
-                                    <td class="px-4 py-3">
-                                        <p class="font-bold text-zinc-900 dark:text-zinc-100 text-xs">{{ $entry->vendor->firm_name ?? '-' }}</p>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <p class="text-zinc-550 dark:text-zinc-450 text-xs truncate max-w-[120px]">{{ $entry->dealer->firm_name ?? '-' }}</p>
-                                    </td>
-                                    <td class="px-4 py-3 text-center font-jetbrains font-bold text-xs text-zinc-500">{{ $entry->no_of_boxes }}</td>
-                                    <td class="px-4 py-3 text-center font-jetbrains text-xs font-semibold text-zinc-700 dark:text-zinc-300" x-text="birdWeight.toFixed(2)"></td>
-                                    <td class="px-4 py-3 bg-emerald-50/20 dark:bg-emerald-950/10">
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            name="entries[{{ $entry->id }}][farm_weight]"
-                                            x-model="farmWeight"
-                                            placeholder="0.00"
-                                            class="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1 text-xs font-jetbrains font-bold text-center focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-emerald-600"
-                                        >
-                                    </td>
-                                    <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold"
-                                        :class="farmWeight !== '' ? 'text-rose-600' : 'text-zinc-400'"
-                                        x-text="farmWeight !== '' ? (birdWeight - parseFloat(farmWeight || 0)).toFixed(2) : '-'">
-                                    </td>
-                                    <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold text-zinc-800 dark:text-zinc-200"
-                                        x-text="farmWeight !== '' ? (birdWeight - parseFloat(farmWeight || 0)).toFixed(2) : '-'">
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <input
-                                            type="text"
-                                            name="entries[{{ $entry->id }}][remarks]"
-                                            value="{{ $entry->remarks ?? '' }}"
-                                            placeholder="Optional remarks"
-                                            class="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1 text-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                                        >
-                                    </td>
-                                </tr>
-                                @endif
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-                {{-- Audit & Action Reason --}}
-                <div class="mt-5 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
-                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-2">Reason for Adjustment</label>
-                    <input
-                        type="text"
-                        name="reason"
-                        required
-                        placeholder="Why are you adjusting these entries?"
-                        class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                    >
-                </div>
-
-                <x-slot:footer>
-                    <x-button type="button" variant="ghost" x-on:click="$dispatch('close-modal', 'adjust-all-modal')">Cancel</x-button>
-                    <x-button type="submit" form="adjust-all-form" variant="primary" icon="save">Save All Changes</x-button>
-                </x-slot:footer>
-            </form>
-        </x-modal>
-
-        {{-- Dealer Payment Modal --}}
-        <x-modal name="dealer-payment-modal" title="Record Dealer Payment" subtitle="Record payment received from dealer for this entry" icon="payments" maxWidth="lg">
-            <form id="dealer-payment-form" :action="dpFormAction" method="POST">
-                @csrf
-                <div class="mb-5 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                        <div>
-                            <span class="text-xs text-zinc-500">Vendor:</span>
-                            <p class="font-bold text-zinc-900 dark:text-zinc-100" x-text="dpEntryVendor"></p>
-                        </div>
-                        <div>
-                            <span class="text-xs text-zinc-500">Dealer:</span>
-                            <p class="font-bold text-zinc-900 dark:text-zinc-100" x-text="dpEntryDealer"></p>
-                        </div>
-                        <div>
-                            <span class="text-xs text-zinc-500">Total Due:</span>
-                            <p class="font-jetbrains font-bold text-emerald-600" x-text="'Rs ' + (dpEntryIncome - dpEntryCollected).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
-                        </div>
-                        <div>
-                            <span class="text-xs text-zinc-500">Already Collected:</span>
-                            <p class="font-jetbrains font-bold" x-text="'Rs ' + dpEntryCollected.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Date</label>
-                        <input type="date" name="date" required x-model="dpDate" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Cash Amount (Rs)</label>
-                        <input type="number" step="0.01" min="0" name="cash_amount" required x-model.number="dpCashAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Amount (Rs)</label>
-                        <input type="number" step="0.01" min="0" name="bank_amount" required x-model.number="dpBankAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Total</label>
-                        <p class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-sm font-jetbrains text-lg font-bold text-emerald-600" x-text="'Rs ' + (dpCashAmount + dpBankAmount).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Mode</label>
-                        <select name="payment_mode" required x-model="dpMode" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
-                            @foreach(config('payments.modes') as $mode)
-                                <option value="{{ $mode }}">{{ $mode }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div x-show="dpBankAmount > 0" x-transition>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Transfer Type</label>
-                        <select name="bank_transfer_type" x-model="dpBankTransferType" :required="dpBankAmount > 0" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
-                            <option value="">Select type...</option>
-                            <option value="UPI">UPI</option>
-                            <option value="Bank Transfer">Bank Transfer</option>
-                            <option value="NEFT">NEFT</option>
-                            <option value="RTGS">RTGS</option>
-                            <option value="IMPS">IMPS</option>
-                            <option value="Cheque">Cheque</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div x-show="dpBankAmount <= 0">
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reference No</label>
-                        <input type="text" name="reference_number" x-model="dpRefNo" placeholder="UPI ref / Cheque no / Tx ID" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Remarks</label>
-                    <textarea name="notes" x-model="dpNotes" rows="2" placeholder="Optional notes" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"></textarea>
-                </div>
-
-                <x-slot:footer>
-                    <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'dealer-payment-modal')">Cancel</x-button>
-                    <x-button type="submit" form="dealer-payment-form" variant="primary" icon="payments">Record Payment</x-button>
-                </x-slot:footer>
-            </form>
-        </x-modal>
-
-        {{-- Vendor Payment Modal --}}
-        <x-modal name="vendor-payment-modal" title="Record Vendor Payment" subtitle="Record payment made to vendor for this entry" icon="account_balance_wallet" maxWidth="lg">
-            <form id="vendor-payment-form" :action="vpFormAction" method="POST">
-                @csrf
-                <div class="mb-5 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                        <div>
-                            <span class="text-xs text-zinc-500">Vendor:</span>
-                            <p class="font-bold text-zinc-900 dark:text-zinc-100" x-text="vpEntryVendor"></p>
-                        </div>
-                        <div>
-                            <span class="text-xs text-zinc-500">Dealer:</span>
-                            <p class="font-bold text-zinc-900 dark:text-zinc-100" x-text="vpEntryDealer"></p>
-                        </div>
-                        <div>
-                            <span class="text-xs text-zinc-500">Total Payable:</span>
-                            <p class="font-jetbrains font-bold text-violet-600" x-text="'Rs ' + (vpEntryCost - vpEntryPaid).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
-                        </div>
-                        <div>
-                            <span class="text-xs text-zinc-500">Already Paid:</span>
-                            <p class="font-jetbrains font-bold" x-text="'Rs ' + vpEntryPaid.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Date</label>
-                        <input type="date" name="date" required x-model="vpDate" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Cash Amount (Rs)</label>
-                        <input type="number" step="0.01" min="0" name="cash_amount" required x-model.number="vpCashAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Amount (Rs)</label>
-                        <input type="number" step="0.01" min="0" name="bank_amount" required x-model.number="vpBankAmount" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Total</label>
-                        <p class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-sm font-jetbrains text-lg font-bold text-emerald-600" x-text="'Rs ' + (vpCashAmount + vpBankAmount).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Mode</label>
-                        <select name="payment_mode" required x-model="vpMode" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
-                            @foreach(config('payments.modes') as $mode)
-                                <option value="{{ $mode }}">{{ $mode }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div x-show="vpBankAmount > 0" x-transition>
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Transfer Type</label>
-                        <select name="bank_transfer_type" x-model="vpBankTransferType" :required="vpBankAmount > 0" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
-                            <option value="">Select type...</option>
-                            <option value="UPI">UPI</option>
-                            <option value="Bank Transfer">Bank Transfer</option>
-                            <option value="NEFT">NEFT</option>
-                            <option value="RTGS">RTGS</option>
-                            <option value="IMPS">IMPS</option>
-                            <option value="Cheque">Cheque</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div x-show="vpBankAmount <= 0">
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reference No</label>
-                        <input type="text" name="reference_number" x-model="vpRefNo" placeholder="UPI ref / Cheque no / Tx ID" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Remarks</label>
-                    <textarea name="notes" x-model="vpNotes" rows="2" placeholder="Optional notes" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"></textarea>
-                </div>
-
-                <x-slot:footer>
-                    <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'vendor-payment-modal')">Cancel</x-button>
-                    <x-button type="submit" form="vendor-payment-form" variant="primary" icon="account_balance_wallet">Record Payment</x-button>
-                </x-slot:footer>
-            </form>
-        </x-modal>
-
-        {{-- Lump-Sum Payment Modal --}}
-        <x-modal name="lump-sum-payment-modal" title="Record Lump-Sum Payment" subtitle="Allocate a single payment across multiple entries" icon="payments" maxWidth="3xl">
-            <form id="lump-sum-form" action="{{ route('billing.day-load.lumpsum-dealer-payment') }}" method="POST" class="space-y-4">
-                @csrf
-                <input type="hidden" name="dealer_id" :value="lsDealerId">
-                <input type="hidden" name="date" :value="lsDate">
-                <input type="hidden" name="cash_amount" :value="lsCashAmount">
-                <input type="hidden" name="bank_amount" :value="lsBankAmount">
-                <input type="hidden" name="payment_mode" :value="lsMode">
-                <input type="hidden" name="bank_transfer_type" :value="lsBankTransferType">
-                <input type="hidden" name="reference_number" :value="lsRefNo">
-                <input type="hidden" name="notes" :value="lsNotes">
-                <template x-for="(amount, entryId) in lsAllocations" :key="entryId">
-                    <input type="hidden" :name="'allocations[' + entryId + ']'" :value="amount">
-                </template>
-
-                {{-- Dealer Select Step --}}
-                <div class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
-                    <label class="block text-xs font-bold text-zinc-500 uppercase mb-2">Select Dealer</label>
-                    <select x-model="lsDealerId" @change="initLsDealer()" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
-                        <option value="0">Choose dealer...</option>
-                        @foreach($dealers as $dealer)
-                            <option value="{{ $dealer->id }}">{{ $dealer->firm_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                {{-- Allocation Table --}}
-                <template x-if="lsEntries.length > 0">
-                    <div class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
-                            <span class="material-symbols-rounded text-xs text-zinc-400">playlist_add_check</span>
-                            Allocate Payment Across Entries
-                        </p>
-                        <div class="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
-                            <table class="w-full text-sm">
-                                <thead class="bg-zinc-100 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-750">
-                                    <tr class="text-xs font-bold text-zinc-500 uppercase">
-                                        <th class="px-3 py-2 text-left">Vendor</th>
-                                        <th class="px-3 py-2 text-right">Total (Rs)</th>
-                                        <th class="px-3 py-2 text-right text-emerald-600">Collected (Rs)</th>
-                                        <th class="px-3 py-2 text-right">Balance (Rs)</th>
-                                        <th class="px-3 py-2 text-right min-w-[140px]">Allocate Now (Rs)</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white dark:bg-zinc-900 divide-y divide-zinc-100 dark:divide-zinc-850">
-                                    <template x-for="entry in lsEntries" :key="entry.id">
-                                        <tr class="hover:bg-zinc-55 border-t border-zinc-100 dark:border-zinc-800">
-                                            <td class="px-3 py-2.5 font-bold text-xs" x-text="entry.vendor"></td>
-                                            <td class="px-3 py-2.5 text-right font-jetbrains text-xs" x-text="entry.dealer_income.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
-                                            <td class="px-3 py-2.5 text-right font-jetbrains text-emerald-600 text-xs" x-text="entry.dealer_collected.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
-                                            <td class="px-3 py-2.5 text-right font-jetbrains font-bold text-xs" x-text="entry.due.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
-                                            <td class="px-3 py-2.5 text-right">
-                                                <input type="number" step="0.01" min="0" :max="entry.due"
-                                                    x-model.number="lsAllocations[entry.id]"
-                                                    @input="if (lsAllocations[entry.id] > entry.due) lsAllocations[entry.id] = entry.due; recalcAllocSum()"
-                                                    class="w-28 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1 text-right text-sm font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all font-bold text-emerald-600">
-                                            </td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                                <tfoot class="bg-zinc-50 dark:bg-zinc-850 font-bold border-t border-zinc-200 dark:border-zinc-750">
-                                    <tr>
-                                        <td class="px-3 py-2 text-xs text-zinc-400">TOTAL</td>
-                                        <td class="px-3 py-2 text-right font-jetbrains text-xs" x-text="lsEntries.reduce((s, e) => s + e.dealer_income, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
-                                        <td class="px-3 py-2 text-right font-jetbrains text-emerald-600 text-xs" x-text="lsEntries.reduce((s, e) => s + e.dealer_collected, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
-                                        <td class="px-3 py-2 text-right font-jetbrains text-xs" x-text="lsEntries.reduce((s, e) => s + e.due, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
-                                        <td class="px-3 py-2 text-right font-jetbrains text-emerald-600 text-xs" x-text="lsAllocSum.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                        <div class="mt-2.5 flex items-center justify-end gap-2 text-xs text-zinc-400 font-medium">
-                            <span>Allocated: <strong class="font-jetbrains text-zinc-700 dark:text-zinc-300" x-text="'Rs ' + lsAllocSum.toLocaleString('en-IN', {minimumFractionDigits: 2})"></strong></span>
-                            <span class="text-zinc-300 dark:text-zinc-600">/</span>
-                            <span>Lump sum: <strong class="font-jetbrains text-zinc-700 dark:text-zinc-300" x-text="'Rs ' + lsTotalLump.toLocaleString('en-IN', {minimumFractionDigits: 2})"></strong></span>
-                            <template x-if="lsAllocSum > lsTotalLump">
-                                <span class="text-rose-600 font-bold ml-1 flex items-center gap-0.5">
-                                    <span class="material-symbols-rounded text-sm">warning</span>
-                                    Exceeds by Rs <span x-text="(lsAllocSum - lsTotalLump).toLocaleString('en-IN', {minimumFractionDigits: 2})"></span>
-                                </span>
-                            </template>
-                        </div>
-                    </div>
-                </template>
-
-                {{-- Payment Details Group --}}
-                <div class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200/50 dark:border-zinc-700/50">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-1.5">
-                        <span class="material-symbols-rounded text-xs text-zinc-400">payments</span>
-                        Payment Details
-                    </p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Date</label>
-                            <input type="date" x-model="lsDate" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Cash Amount (Rs)</label>
-                            <input type="number" step="0.01" min="0" x-model.number="lsCashAmount" @input="lsTotalLump = Math.round((lsCashAmount + lsBankAmount) * 100) / 100" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-emerald-600">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Amount (Rs)</label>
-                            <input type="number" step="0.01" min="0" x-model.number="lsBankAmount" @input="lsTotalLump = Math.round((lsCashAmount + lsBankAmount) * 100) / 100" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains text-lg font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-emerald-600">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Total Lump Sum</label>
-                            <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-emerald-600 dark:text-emerald-400 font-jetbrains text-lg font-extrabold flex items-center justify-between min-h-[44px]">
-                                <span class="text-xs font-bold uppercase tracking-wider">Total</span>
-                                <span x-text="'Rs ' + lsTotalLump.toLocaleString('en-IN', {minimumFractionDigits: 2})"></span>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div class="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm flex flex-col justify-center">
+                                <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wide block mb-0.5">Vendor</span>
+                                <p class="font-extrabold text-zinc-850 dark:text-zinc-150 text-xs truncate" x-text="transferSourceVendor || '—'"></p>
+                            </div>
+                            <div class="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm flex flex-col justify-center">
+                                <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wide block mb-0.5">Dealer</span>
+                                <p class="font-extrabold text-zinc-850 dark:text-zinc-150 text-xs truncate" x-text="transferSourceDealer || '—'"></p>
+                            </div>
+                            <div class="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm flex flex-col justify-center">
+                                <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wide block mb-0.5">Available Wt</span>
+                                <p class="font-jetbrains font-extrabold text-xs text-indigo-600 dark:text-indigo-400" x-text="parseFloat(transferSourceWeight).toFixed(2) + ' kg'"></p>
+                            </div>
+                            <div class="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm flex flex-col justify-center">
+                                <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wide block mb-0.5">Date</span>
+                                <p class="font-extrabold text-zinc-850 dark:text-zinc-150 text-xs" x-text="transferDate || '—'"></p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    {{-- Input Fields --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Payment Mode</label>
-                            <select x-model="lsMode" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
-                                @foreach(config('payments.modes') as $mode)
-                                    <option value="{{ $mode }}">{{ $mode }}</option>
-                                @endforeach
-                            </select>
+                            <x-form.input 
+                                type="number" 
+                                name="transfer_weight" 
+                                label="Weight to Transfer (kg)" 
+                                required 
+                                min="0.01" 
+                                step="0.01" 
+                                x-bind:max="transferMaxWeight" 
+                                x-model.number="transferWeight" 
+                                icon="scale"
+                            />
+                            <p class="mt-1.5 text-xs text-zinc-500">
+                                Remaining: <span class="font-bold text-zinc-800 dark:text-zinc-200" x-text="parseFloat(transferSourceWeight - transferWeight).toFixed(2)"></span> kg
+                            </p>
                         </div>
-                        <div x-show="lsBankAmount > 0" x-transition>
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Bank Transfer Type</label>
-                            <select x-model="lsBankTransferType" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+
+                        <x-form.select name="target_dealer_id" label="Target Dealer" required>
+                            <option value="">Select dealer...</option>
+                            @foreach($dealers as $dealer)
+                                <option value="{{ $dealer->id }}">{{ $dealer->firm_name }}</option>
+                            @endforeach
+                        </x-form.select>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <x-form.select name="target_vendor_id" label="Target Vendor" required>
+                            <option value="">Select vendor...</option>
+                            @foreach($vendors as $vendor)
+                                <option value="{{ $vendor->id }}">{{ $vendor->firm_name }}{{ $vendor->is_shop ? ' (Shop)' : '' }}</option>
+                            @endforeach
+                        </x-form.select>
+
+                        <x-form.input type="text" name="reason" label="Reason" required placeholder="e.g. Reassign weight to correct dealer" icon="description" />
+                    </div>
+
+                    <x-slot:footer>
+                        <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'transfer-boxes-modal')">Cancel</x-button>
+                        <x-button type="submit" form="transfer-form" variant="primary" icon="check" class="px-8">Transfer Weight</x-button>
+                    </x-slot:footer>
+                </form>
+            </x-modal>
+        </template>
+
+        <template x-teleport="body">
+            <x-modal name="set-farm-weight-modal" title="Set Farm Weight" subtitle="Enter total farm weight — it will be set at the batch level" icon="scale" maxWidth="4xl">
+                <form id="set-farm-weight-form" action="{{ route('billing.day-load.set-farm-weight') }}" method="POST"
+                      x-data="{
+                          totalFarmWeight: '{{ $batch?->total_farm_weight ?? '' }}',
+                          totalBirdWeight: {{ (float) ($batch?->total_bird_weight ?? 0) }},
+                          entries: [
+                              @foreach($entries->where('status', 'Active') as $entry)
+                                  { id: {{ $entry->id }}, vendor: '{{ addslashes($entry->vendor->firm_name ?? '-') }}', dealer: '{{ addslashes($entry->dealer->firm_name ?? '-') }}', boxes: {{ $entry->no_of_boxes }}, birdWeight: {{ (float) $entry->bird_weight }} },
+                              @endforeach
+                          ],
+                          get totalLoss() {
+                              if (!this.totalFarmWeight || this.totalFarmWeight === '') return 0;
+                              return (parseFloat(this.totalFarmWeight) - this.totalBirdWeight).toFixed(2);
+                          }
+                      }"
+                      class="space-y-6"
+                >
+                    @csrf
+                    <input type="hidden" name="batch_id" value="{{ $batch?->id }}">
+
+                    {{-- Note about batch-level setting --}}
+                    <div class="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 flex gap-3 text-xs text-amber-800 dark:text-amber-300">
+                        <span class="material-symbols-rounded text-lg">info</span>
+                        <div>
+                            <p class="font-bold mb-0.5">Batch-Level Weight Setting</p>
+                            <p>Setting the farm weight here applies it to the entire day's batch. Individual entries' weights will not be modified proportionally.</p>
+                        </div>
+                    </div>
+
+                    {{-- Summary Metrics & Main Input --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                        <div class="rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm flex flex-col justify-center">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Total Bird Weight</p>
+                            <p class="font-jetbrains text-2xl font-black text-indigo-600 dark:text-indigo-400" x-text="totalBirdWeight.toFixed(2) + ' kg'"></p>
+                        </div>
+                        <div class="rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm flex flex-col justify-center">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Total Loss</p>
+                            <p class="font-jetbrains text-2xl font-black" :class="(totalFarmWeight && parseFloat(totalFarmWeight) > 0) ? (parseFloat(totalLoss) >= 0 ? 'text-emerald-600' : 'text-rose-600') : 'text-zinc-400'" x-text="(totalFarmWeight && parseFloat(totalFarmWeight) > 0) ? totalLoss + ' kg' : '—'"></p>
+                        </div>
+                        <div>
+                            <x-form.input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                name="total_farm_weight"
+                                label="Enter Total Farm Weight (Kg)"
+                                x-model="totalFarmWeight"
+                                placeholder="0.00"
+                                required
+                                icon="scale"
+                            />
+                        </div>
+                    </div>
+
+                    {{-- Active Entries Table --}}
+                    <div class="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 max-h-[40vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+                        <table class="w-full text-sm">
+                            <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-750">
+                                <tr class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                                    <th class="px-4 py-3 text-left">Vendor</th>
+                                    <th class="px-4 py-3 text-left">Dealer</th>
+                                    <th class="px-4 py-3 text-center">Boxes</th>
+                                    <th class="px-4 py-3 text-center">Bird Wt (Kg)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/80 bg-white dark:bg-zinc-900">
+                                <template x-for="(entry, index) in entries" :key="entry.id">
+                                    <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 transition-colors">
+                                        <td class="px-4 py-3 font-bold text-zinc-900 dark:text-zinc-100 text-xs" x-text="entry.vendor"></td>
+                                        <td class="px-4 py-3 text-zinc-550 dark:text-zinc-450 text-xs" x-text="entry.dealer"></td>
+                                        <td class="px-4 py-3 text-center font-jetbrains font-bold text-xs text-zinc-500" x-text="entry.boxes"></td>
+                                        <td class="px-4 py-3 text-center font-jetbrains text-xs font-semibold text-zinc-700 dark:text-zinc-300" x-text="entry.birdWeight.toFixed(2)"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Reason / Audit --}}
+                    <div class="mb-2">
+                        <x-form.input
+                            type="text"
+                            name="reason"
+                            label="Reason for setting farm weight"
+                            required
+                            placeholder="Why are you setting farm weight?"
+                            icon="description"
+                        />
+                    </div>
+
+                    <x-slot:footer>
+                        <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'set-farm-weight-modal')">Cancel</x-button>
+                        <x-button type="submit" form="set-farm-weight-form" variant="primary" icon="check" class="px-8">Save & Set</x-button>
+                    </x-slot:footer>
+                </form>
+            </x-modal>
+        </template>
+
+        <template x-teleport="body">
+            <x-modal name="adjust-all-modal" title="Adjust All Entries" subtitle="Edit farm weight and remarks for all entries at once" icon="edit_note" maxWidth="6xl">
+                <form id="adjust-all-form" action="{{ route('billing.day-load.bulk-update') }}" method="POST" class="space-y-6">
+                    @csrf
+                    <input type="hidden" name="_method" value="PUT">
+
+                    {{-- Bulk Edit Table --}}
+                    <div class="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 max-h-[55vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+                        <table class="w-full text-sm">
+                            <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-750">
+                                <tr class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                                    <th class="px-4 py-3 text-left">Vendor</th>
+                                    <th class="px-4 py-3 text-left">Dealer</th>
+                                    <th class="px-4 py-3 text-center">Boxes</th>
+                                    <th class="px-4 py-3 text-center">Bird Wt (Kg)</th>
+                                    <th class="px-4 py-3 text-center min-w-[130px] bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-600">Farm Weight (Kg)</th>
+                                    <th class="px-4 py-3 text-center text-rose-600">Loss (Kg)</th>
+                                    <th class="px-4 py-3 text-center">Total (Kg)</th>
+                                    <th class="px-4 py-3 text-left min-w-[180px]">Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/80 bg-white dark:bg-zinc-900">
+                                @foreach($entries as $entry)
+                                    @if($entry->status === 'Active')
+                                    <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 transition-colors"
+                                        x-data="{
+                                            farmWeight: '{{ $entry->farm_weight ?? '' }}',
+                                            birdWeight: {{ (float) $entry->bird_weight }}
+                                        }"
+                                    >
+                                        <input type="hidden" name="entries[{{ $entry->id }}][id]" value="{{ $entry->id }}">
+                                        <td class="px-4 py-3">
+                                            <p class="font-bold text-zinc-900 dark:text-zinc-100 text-xs">{{ $entry->vendor->firm_name ?? '-' }}</p>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <p class="text-zinc-550 dark:text-zinc-450 text-xs truncate max-w-[120px]">{{ $entry->dealer->firm_name ?? '-' }}</p>
+                                        </td>
+                                        <td class="px-4 py-3 text-center font-jetbrains font-bold text-xs text-zinc-500">{{ $entry->no_of_boxes }}</td>
+                                        <td class="px-4 py-3 text-center font-jetbrains text-xs font-semibold text-zinc-700 dark:text-zinc-300" x-text="birdWeight.toFixed(2)"></td>
+                                        <td class="px-4 py-3 bg-emerald-50/20 dark:bg-emerald-950/10">
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                name="entries[{{ $entry->id }}][farm_weight]"
+                                                x-model="farmWeight"
+                                                placeholder="0.00"
+                                                class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-jetbrains font-bold text-center focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-emerald-600"
+                                            >
+                                        </td>
+                                        <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold"
+                                            :class="farmWeight !== '' ? 'text-rose-600' : 'text-zinc-400'"
+                                            x-text="farmWeight !== '' ? (birdWeight - parseFloat(farmWeight || 0)).toFixed(2) : '-'">
+                                        </td>
+                                        <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold text-zinc-800 dark:text-zinc-200"
+                                            x-text="farmWeight !== '' ? (birdWeight - parseFloat(farmWeight || 0)).toFixed(2) : '-'">
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <input
+                                                type="text"
+                                                name="entries[{{ $entry->id }}][remarks]"
+                                                value="{{ $entry->remarks ?? '' }}"
+                                                placeholder="Optional remarks"
+                                                class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                            >
+                                        </td>
+                                    </tr>
+                                    @endif
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Audit & Action Reason --}}
+                    <div class="mb-2">
+                        <x-form.input
+                            type="text"
+                            name="reason"
+                            label="Reason for Adjustment"
+                            required
+                            placeholder="Why are you adjusting these entries?"
+                            icon="description"
+                        />
+                    </div>
+
+                    <x-slot:footer>
+                        <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'adjust-all-modal')">Cancel</x-button>
+                        <x-button type="submit" form="adjust-all-form" variant="primary" icon="check" class="px-8">Save All Changes</x-button>
+                    </x-slot:footer>
+                </form>
+            </x-modal>
+        </template>
+
+        <template x-teleport="body">
+            <x-modal name="dealer-payment-modal" title="Record Dealer Payment" subtitle="Record payment received from dealer for this entry" icon="payments" maxWidth="720">
+                <form id="dealer-payment-form" :action="dpFormAction" method="POST" class="space-y-6">
+                    @csrf
+
+                    {{-- Due Summary Details --}}
+                    <div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div class="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm flex flex-col justify-center">
+                                <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wide block mb-0.5">Vendor</span>
+                                <p class="font-extrabold text-zinc-850 dark:text-zinc-150 text-xs truncate" x-text="dpEntryVendor"></p>
+                            </div>
+                            <div class="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm flex flex-col justify-center">
+                                <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wide block mb-0.5">Dealer</span>
+                                <p class="font-extrabold text-zinc-850 dark:text-zinc-150 text-xs truncate" x-text="dpEntryDealer"></p>
+                            </div>
+                            <div class="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm flex flex-col justify-center">
+                                <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wide block mb-0.5">Total Due</span>
+                                <p class="font-jetbrains font-extrabold text-xs text-rose-600" x-text="'Rs ' + (dpEntryIncome - dpEntryCollected).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
+                            </div>
+                            <div class="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm flex flex-col justify-center">
+                                <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wide block mb-0.5">Collected</span>
+                                <p class="font-jetbrains font-extrabold text-xs text-emerald-600" x-text="'Rs ' + dpEntryCollected.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <x-form.input type="date" name="date" label="Payment Date" required x-model="dpDate" icon="calendar_month" />
+                        <x-form.input type="number" step="0.01" min="0" name="cash_amount" label="Cash Amount (Rs)" required x-model.number="dpCashAmount" icon="payments" />
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <x-form.input type="number" step="0.01" min="0" name="bank_amount" label="Bank Amount (Rs)" required x-model.number="dpBankAmount" icon="account_balance" />
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit">Total Payment</label>
+                            <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3.5 py-2.5 text-emerald-600 dark:text-emerald-400 font-jetbrains text-lg font-extrabold flex items-center justify-between min-h-[46px]">
+                                <span class="text-xs font-bold uppercase tracking-wider text-emerald-500 font-outfit">Total</span>
+                                <span x-text="'Rs ' + (dpCashAmount + dpBankAmount).toLocaleString('en-IN', {minimumFractionDigits: 2})"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Payment Method Selection --}}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-3">
+                            Payment Mode <span class="text-emerald-500 font-bold ml-0.5">*</span>
+                        </label>
+                        <div class="grid grid-cols-4 gap-2.5">
+                            @php 
+                                $pmOptions = [
+                                    ['value' => 'Cash', 'icon' => 'payments', 'color' => 'text-emerald-500', 'bg' => 'bg-emerald-50'],
+                                    ['value' => 'Bank Transfer', 'icon' => 'account_balance', 'color' => 'text-blue-500', 'bg' => 'bg-blue-50'],
+                                    ['value' => 'UPI', 'icon' => 'smartphone', 'color' => 'text-violet-500', 'bg' => 'bg-violet-50'],
+                                    ['value' => 'Card', 'icon' => 'credit_card', 'color' => 'text-rose-500', 'bg' => 'bg-rose-50']
+                                ]; 
+                            @endphp
+                            @foreach($pmOptions as $pm)
+                            <label class="group relative flex flex-col items-center gap-2 py-4 px-1 rounded-2xl border-2 cursor-pointer transition-all duration-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/80 dark:has-[:checked]:bg-emerald-500/12 has-[:checked]:shadow-[0_0_0_1px_rgba(16,185,129,0.15),0_4px_12px_rgba(16,185,129,0.15)] border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-900/50">
+                                <input type="radio" name="payment_mode" value="{{ $pm['value'] }}" x-model="dpMode" class="sr-only" required>
+                                <div class="w-9 h-9 rounded-full {{ $pm['bg'] }} dark:{{ $pm['bg'] }}/10 flex items-center justify-center {{ $pm['color'] }}">
+                                    <span class="material-symbols-rounded text-xl">{{ $pm['icon'] }}</span>
+                                </div>
+                                <span class="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 group-has-[:checked]:text-emerald-700 dark:group-has-[:checked]:text-emerald-300 group-has-[:checked]:font-bold transition-all text-center leading-tight">{{ $pm['value'] }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div x-show="dpBankAmount > 0" x-transition class="w-full">
+                            <x-form.select name="bank_transfer_type" label="Bank Transfer Type" x-model="dpBankTransferType" x-bind:required="dpBankAmount > 0">
                                 <option value="">Select type...</option>
                                 <option value="UPI">UPI</option>
                                 <option value="Bank Transfer">Bank Transfer</option>
@@ -1034,26 +756,288 @@
                                 <option value="IMPS">IMPS</option>
                                 <option value="Cheque">Cheque</option>
                                 <option value="Other">Other</option>
-                            </select>
+                            </x-form.select>
                         </div>
-                        <div x-show="lsBankAmount <= 0">
-                            <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Reference No</label>
-                            <input type="text" x-model="lsRefNo" placeholder="UPI ref / Cheque no / Tx ID" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+
+                        <div x-show="dpBankAmount <= 0" x-transition class="w-full">
+                            <x-form.input type="text" name="reference_number" label="Reference No" x-model="dpRefNo" placeholder="UPI ref / Cheque no / Tx ID" icon="description" />
                         </div>
                     </div>
 
                     <div class="mb-2">
-                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Remarks</label>
-                        <textarea x-model="lsNotes" rows="2" placeholder="Optional notes" class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"></textarea>
+                        <x-form.textarea name="notes" label="Remarks" x-model="dpNotes" rows="2" placeholder="Optional notes" />
                     </div>
-                </div>
 
-                <x-slot:footer>
-                    <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'lump-sum-payment-modal')">Cancel</x-button>
-                    <x-button type="submit" form="lump-sum-form" variant="primary" icon="payments" x-bind:disabled="lsAllocSum > lsTotalLump || lsAllocSum <= 0">Record Lump-Sum Payment</x-button>
-                </x-slot:footer>
-            </form>
-        </x-modal>
+                    <x-slot:footer>
+                        <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'dealer-payment-modal')">Cancel</x-button>
+                        <x-button type="submit" form="dealer-payment-form" variant="primary" icon="check" class="px-8">Record Payment</x-button>
+                    </x-slot:footer>
+                </form>
+            </x-modal>
+        </template>
+
+        <template x-teleport="body">
+            <x-modal name="vendor-payment-modal" title="Record Vendor Payment" subtitle="Record payment made to vendor for this entry" icon="account_balance_wallet" maxWidth="720">
+                <form id="vendor-payment-form" :action="vpFormAction" method="POST" class="space-y-6">
+                    @csrf
+
+                    {{-- Payable Summary Details --}}
+                    <div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div class="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm flex flex-col justify-center">
+                                <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wide block mb-0.5">Vendor</span>
+                                <p class="font-extrabold text-zinc-850 dark:text-zinc-150 text-xs truncate" x-text="vpEntryVendor"></p>
+                            </div>
+                            <div class="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm flex flex-col justify-center">
+                                <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wide block mb-0.5">Dealer</span>
+                                <p class="font-extrabold text-zinc-850 dark:text-zinc-150 text-xs truncate" x-text="vpEntryDealer"></p>
+                            </div>
+                            <div class="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm flex flex-col justify-center">
+                                <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wide block mb-0.5">Total Payable</span>
+                                <p class="font-jetbrains font-extrabold text-xs text-rose-600" x-text="'Rs ' + (vpEntryCost - vpEntryPaid).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
+                            </div>
+                            <div class="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm flex flex-col justify-center">
+                                <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wide block mb-0.5">Already Paid</span>
+                                <p class="font-jetbrains font-extrabold text-xs text-emerald-600" x-text="'Rs ' + vpEntryPaid.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <x-form.input type="date" name="date" label="Payment Date" required x-model="vpDate" icon="calendar_month" />
+                        <x-form.input type="number" step="0.01" min="0" name="cash_amount" label="Cash Amount (Rs)" required x-model.number="vpCashAmount" icon="payments" />
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <x-form.input type="number" step="0.01" min="0" name="bank_amount" label="Bank Amount (Rs)" required x-model.number="vpBankAmount" icon="account_balance" />
+                        <div>
+                            <label class="block mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit">Total Payment</label>
+                            <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3.5 py-2.5 text-emerald-600 dark:text-emerald-400 font-jetbrains text-lg font-extrabold flex items-center justify-between min-h-[46px]">
+                                <span class="text-xs font-bold uppercase tracking-wider text-emerald-500 font-outfit">Total</span>
+                                <span x-text="'Rs ' + (vpCashAmount + vpBankAmount).toLocaleString('en-IN', {minimumFractionDigits: 2})"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Payment Method Selection --}}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-3">
+                            Payment Mode <span class="text-emerald-500 font-bold ml-0.5">*</span>
+                        </label>
+                        <div class="grid grid-cols-4 gap-2.5">
+                            @php 
+                                $pmOptions = [
+                                    ['value' => 'Cash', 'icon' => 'payments', 'color' => 'text-emerald-500', 'bg' => 'bg-emerald-50'],
+                                    ['value' => 'Bank Transfer', 'icon' => 'account_balance', 'color' => 'text-blue-500', 'bg' => 'bg-blue-50'],
+                                    ['value' => 'UPI', 'icon' => 'smartphone', 'color' => 'text-violet-500', 'bg' => 'bg-violet-50'],
+                                    ['value' => 'Card', 'icon' => 'credit_card', 'color' => 'text-rose-500', 'bg' => 'bg-rose-50']
+                                ]; 
+                            @endphp
+                            @foreach($pmOptions as $pm)
+                            <label class="group relative flex flex-col items-center gap-2 py-4 px-1 rounded-2xl border-2 cursor-pointer transition-all duration-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/80 dark:has-[:checked]:bg-emerald-500/12 has-[:checked]:shadow-[0_0_0_1px_rgba(16,185,129,0.15),0_4px_12px_rgba(16,185,129,0.15)] border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-900/50">
+                                <input type="radio" name="payment_mode" value="{{ $pm['value'] }}" x-model="vpMode" class="sr-only" required>
+                                <div class="w-9 h-9 rounded-full {{ $pm['bg'] }} dark:{{ $pm['bg'] }}/10 flex items-center justify-center {{ $pm['color'] }}">
+                                    <span class="material-symbols-rounded text-xl">{{ $pm['icon'] }}</span>
+                                </div>
+                                <span class="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 group-has-[:checked]:text-emerald-700 dark:group-has-[:checked]:text-emerald-300 group-has-[:checked]:font-bold transition-all text-center leading-tight">{{ $pm['value'] }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div x-show="vpBankAmount > 0" x-transition class="w-full">
+                            <x-form.select name="bank_transfer_type" label="Bank Transfer Type" x-model="vpBankTransferType" x-bind:required="vpBankAmount > 0">
+                                <option value="">Select type...</option>
+                                <option value="UPI">UPI</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="NEFT">NEFT</option>
+                                <option value="RTGS">RTGS</option>
+                                <option value="IMPS">IMPS</option>
+                                <option value="Cheque">Cheque</option>
+                                <option value="Other">Other</option>
+                            </x-form.select>
+                        </div>
+
+                        <div x-show="vpBankAmount <= 0" x-transition class="w-full">
+                            <x-form.input type="text" name="reference_number" label="Reference No" x-model="vpRefNo" placeholder="UPI ref / Cheque no / Tx ID" icon="description" />
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <x-form.textarea name="notes" label="Remarks" x-model="vpNotes" rows="2" placeholder="Optional notes" />
+                    </div>
+
+                    <x-slot:footer>
+                        <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'vendor-payment-modal')">Cancel</x-button>
+                        <x-button type="submit" form="vendor-payment-form" variant="primary" icon="check" class="px-8">Record Payment</x-button>
+                    </x-slot:footer>
+                </form>
+            </x-modal>
+        </template>
+
+        <template x-teleport="body">
+            <x-modal name="lump-sum-payment-modal" title="Record Lump-Sum Payment" subtitle="Allocate a single payment across multiple entries" icon="payments" maxWidth="3xl">
+                <form id="lump-sum-form" action="{{ route('billing.day-load.lumpsum-dealer-payment') }}" method="POST" class="space-y-6">
+                    @csrf
+                    <input type="hidden" name="dealer_id" :value="lsDealerId">
+                    <input type="hidden" name="date" :value="lsDate">
+                    <input type="hidden" name="cash_amount" :value="lsCashAmount">
+                    <input type="hidden" name="bank_amount" :value="lsBankAmount">
+                    <input type="hidden" name="payment_mode" :value="lsMode">
+                    <input type="hidden" name="bank_transfer_type" :value="lsBankTransferType">
+                    <input type="hidden" name="reference_number" :value="lsRefNo">
+                    <input type="hidden" name="notes" :value="lsNotes">
+                    <template x-for="(amount, entryId) in lsAllocations" :key="entryId">
+                        <input type="hidden" :name="'allocations[' + entryId + ']'" :value="amount">
+                    </template>
+
+                    {{-- Dealer Select Step --}}
+                    <div class="grid grid-cols-1">
+                        <x-form.select name="dealer_id" label="Select Dealer" x-model="lsDealerId" @change="initLsDealer()">
+                            <option value="0">Choose dealer...</option>
+                            @foreach($dealers as $dealer)
+                                <option value="{{ $dealer->id }}">{{ $dealer->firm_name }}</option>
+                            @endforeach
+                        </x-form.select>
+                    </div>
+
+                    {{-- Allocation Table --}}
+                    <template x-if="lsEntries.length > 0">
+                        <div class="space-y-3">
+                            <p class="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                                <span class="material-symbols-rounded text-sm text-zinc-400">playlist_add_check</span>
+                                Allocate Payment Across Entries
+                            </p>
+                            <div class="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-750">
+                                        <tr class="text-xs font-bold text-zinc-450 uppercase">
+                                            <th class="px-4 py-3 text-left">Vendor</th>
+                                            <th class="px-4 py-3 text-right">Total (Rs)</th>
+                                            <th class="px-4 py-3 text-right text-emerald-600">Collected (Rs)</th>
+                                            <th class="px-4 py-3 text-right">Balance (Rs)</th>
+                                            <th class="px-4 py-3 text-right min-w-[140px]">Allocate Now (Rs)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white dark:bg-zinc-900 divide-y divide-zinc-100 dark:divide-zinc-800/80">
+                                        <template x-for="entry in lsEntries" :key="entry.id">
+                                            <tr class="hover:bg-zinc-50/65 transition-colors border-t border-zinc-100 dark:border-zinc-800">
+                                                <td class="px-4 py-3 font-bold text-xs" x-text="entry.vendor"></td>
+                                                <td class="px-4 py-3 text-right font-jetbrains text-xs text-zinc-600 dark:text-zinc-400" x-text="entry.dealer_income.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                                <td class="px-4 py-3 text-right font-jetbrains text-emerald-600 text-xs" x-text="entry.dealer_collected.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                                <td class="px-4 py-3 text-right font-jetbrains font-bold text-xs text-zinc-850 dark:text-zinc-150" x-text="entry.due.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                                <td class="px-4 py-3 text-right">
+                                                    <input type="number" step="0.01" min="0" :max="entry.due"
+                                                        x-model.number="lsAllocations[entry.id]"
+                                                        @input="if (lsAllocations[entry.id] > entry.due) lsAllocations[entry.id] = entry.due; recalcAllocSum()"
+                                                        class="w-32 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-right text-xs font-jetbrains focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all font-bold text-emerald-600">
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                    <tfoot class="bg-zinc-50 dark:bg-zinc-850 font-bold border-t border-zinc-200 dark:border-zinc-750">
+                                        <tr>
+                                            <td class="px-4 py-3 text-xs text-zinc-400 uppercase tracking-wider font-extrabold">TOTAL</td>
+                                            <td class="px-4 py-3 text-right font-jetbrains text-xs text-zinc-600 dark:text-zinc-400" x-text="lsEntries.reduce((s, e) => s + e.dealer_income, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                            <td class="px-4 py-3 text-right font-jetbrains text-emerald-600 text-xs" x-text="lsEntries.reduce((s, e) => s + e.dealer_collected, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                            <td class="px-4 py-3 text-right font-jetbrains text-xs text-zinc-800 dark:text-zinc-200" x-text="lsEntries.reduce((s, e) => s + e.due, 0).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                            <td class="px-4 py-3 text-right font-jetbrains text-emerald-600 text-xs" x-text="lsAllocSum.toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            <div class="mt-2.5 flex items-center justify-end gap-2 text-xs text-zinc-400 font-medium">
+                                <span>Allocated: <strong class="font-jetbrains text-zinc-700 dark:text-zinc-300" x-text="'Rs ' + lsAllocSum.toLocaleString('en-IN', {minimumFractionDigits: 2})"></strong></span>
+                                <span class="text-zinc-300 dark:text-zinc-600">/</span>
+                                <span>Lump sum: <strong class="font-jetbrains text-zinc-700 dark:text-zinc-300" x-text="'Rs ' + lsTotalLump.toLocaleString('en-IN', {minimumFractionDigits: 2})"></strong></span>
+                                <template x-if="lsAllocSum > lsTotalLump">
+                                    <span class="text-rose-600 font-bold ml-1 flex items-center gap-0.5">
+                                        <span class="material-symbols-rounded text-sm">warning</span>
+                                        Exceeds by Rs <span x-text="(lsAllocSum - lsTotalLump).toLocaleString('en-IN', {minimumFractionDigits: 2})"></span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    {{-- Payment Details Group --}}
+                    <div>
+                        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Payment Details</h4>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+                            <x-form.input type="date" name="date" label="Payment Date" x-model="lsDate" icon="calendar_month" />
+                            <x-form.input type="number" step="0.01" min="0" label="Cash Amount (Rs)" x-model.number="lsCashAmount" @input="lsTotalLump = Math.round((lsCashAmount + lsBankAmount) * 100) / 100" icon="payments" />
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+                            <x-form.input type="number" step="0.01" min="0" label="Bank Amount (Rs)" x-model.number="lsBankAmount" @input="lsTotalLump = Math.round((lsCashAmount + lsBankAmount) * 100) / 100" icon="account_balance" />
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit">Total Lump Sum</label>
+                                <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3.5 py-2.5 text-emerald-600 dark:text-emerald-400 font-jetbrains text-lg font-extrabold flex items-center justify-between min-h-[46px]">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-500 font-outfit">Total</span>
+                                    <span x-text="'Rs ' + lsTotalLump.toLocaleString('en-IN', {minimumFractionDigits: 2})"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Payment Method Selection --}}
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-3">
+                                Payment Mode <span class="text-emerald-500 font-bold ml-0.5">*</span>
+                            </label>
+                            <div class="grid grid-cols-4 gap-2.5">
+                                @php 
+                                    $pmOptions = [
+                                        ['value' => 'Cash', 'icon' => 'payments', 'color' => 'text-emerald-500', 'bg' => 'bg-emerald-50'],
+                                        ['value' => 'Bank Transfer', 'icon' => 'account_balance', 'color' => 'text-blue-500', 'bg' => 'bg-blue-50'],
+                                        ['value' => 'UPI', 'icon' => 'smartphone', 'color' => 'text-violet-500', 'bg' => 'bg-violet-50'],
+                                        ['value' => 'Card', 'icon' => 'credit_card', 'color' => 'text-rose-500', 'bg' => 'bg-rose-50']
+                                    ]; 
+                                @endphp
+                                @foreach($pmOptions as $pm)
+                                <label class="group relative flex flex-col items-center gap-2 py-4 px-1 rounded-2xl border-2 cursor-pointer transition-all duration-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/80 dark:has-[:checked]:bg-emerald-500/12 has-[:checked]:shadow-[0_0_0_1px_rgba(16,185,129,0.15),0_4px_12px_rgba(16,185,129,0.15)] border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white/50 dark:bg-zinc-900/50">
+                                    <input type="radio" name="payment_mode_ls" value="{{ $pm['value'] }}" x-model="lsMode" class="sr-only" required>
+                                    <div class="w-9 h-9 rounded-full {{ $pm['bg'] }} dark:{{ $pm['bg'] }}/10 flex items-center justify-center {{ $pm['color'] }}">
+                                        <span class="material-symbols-rounded text-xl">{{ $pm['icon'] }}</span>
+                                    </div>
+                                    <span class="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 group-has-[:checked]:text-emerald-700 dark:group-has-[:checked]:text-emerald-300 group-has-[:checked]:font-bold transition-all text-center leading-tight">{{ $pm['value'] }}</span>
+                                </label>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div x-show="lsBankAmount > 0" x-transition class="w-full">
+                                <x-form.select name="bank_transfer_type" label="Bank Transfer Type" x-model="lsBankTransferType">
+                                    <option value="">Select type...</option>
+                                    <option value="UPI">UPI</option>
+                                    <option value="Bank Transfer">Bank Transfer</option>
+                                    <option value="NEFT">NEFT</option>
+                                    <option value="RTGS">RTGS</option>
+                                    <option value="IMPS">IMPS</option>
+                                    <option value="Cheque">Cheque</option>
+                                    <option value="Other">Other</option>
+                                </x-form.select>
+                            </div>
+
+                            <div x-show="lsBankAmount <= 0" x-transition class="w-full">
+                                <x-form.input type="text" name="reference_number" label="Reference No" x-model="lsRefNo" placeholder="UPI ref / Cheque no / Tx ID" icon="description" />
+                            </div>
+                        </div>
+
+                        <div class="mt-5 mb-2">
+                            <x-form.textarea name="notes" label="Remarks" x-model="lsNotes" rows="2" placeholder="Optional notes" />
+                        </div>
+                    </div>
+
+                    <x-slot:footer>
+                        <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'lump-sum-payment-modal')">Cancel</x-button>
+                        <x-button type="submit" form="lump-sum-form" variant="primary" icon="check" x-bind:disabled="lsAllocSum > lsTotalLump || lsAllocSum <= 0" class="px-8">Record Lump-Sum Payment</x-button>
+                    </x-slot:footer>
+                </form>
+            </x-modal>
+        </template>
     </div>
 </div>
 

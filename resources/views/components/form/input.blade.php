@@ -22,7 +22,7 @@
 
     <div class="relative">
         @if($icon)
-            <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-zinc-600 dark:text-zinc-400">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-zinc-600 dark:text-zinc-400 z-10">
                 <span class="material-symbols-rounded text-[22px]">{{ $icon }}</span>
             </div>
         @endif
