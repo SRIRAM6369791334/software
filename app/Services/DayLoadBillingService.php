@@ -93,14 +93,24 @@ class DayLoadBillingService
             ')
             ->first();
 
+        $totalFarmWeight = (float) $totals->total_farm_weight;
+        $totalLossWeight = (float) $totals->total_loss_weight;
+        $totalWeight = (float) $totals->total_weight;
+
+        if ($totalFarmWeight == 0 && (float) $batch->total_farm_weight > 0) {
+            $totalFarmWeight = (float) $batch->total_farm_weight;
+            $totalLossWeight = round($totalFarmWeight - (float) $totals->total_bird_weight, 2);
+            $totalWeight = $totalLossWeight;
+        }
+
         $batch->update([
             'total_boxes'        => $totals->total_boxes,
             'total_box_weight'   => $totals->total_box_weight,
             'total_empty_weight' => $totals->total_empty_weight,
             'total_bird_weight'  => $totals->total_bird_weight,
-            'total_farm_weight'  => $totals->total_farm_weight,
-            'total_weight'       => $totals->total_weight,
-            'total_loss_weight'  => $totals->total_loss_weight,
+            'total_farm_weight'  => $totalFarmWeight,
+            'total_weight'       => $totalWeight,
+            'total_loss_weight'  => $totalLossWeight,
         ]);
 
         if ($batch->invoice) {

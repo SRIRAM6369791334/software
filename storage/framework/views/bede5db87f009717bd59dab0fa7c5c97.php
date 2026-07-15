@@ -1393,36 +1393,40 @@
 
         <?php if (isset($component)) { $__componentOriginal9f64f32e90b9102968f2bc548315018c = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal9f64f32e90b9102968f2bc548315018c = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal','data' => ['name' => 'set-farm-weight-modal','title' => 'Set Farm Weight','subtitle' => 'Enter total farm weight — it will be distributed proportionally by bird weight','icon' => 'scale','maxWidth' => '4xl']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal','data' => ['name' => 'set-farm-weight-modal','title' => 'Set Farm Weight','subtitle' => 'Enter total farm weight — it will be set at the batch level','icon' => 'scale','maxWidth' => '4xl']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('modal'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['name' => 'set-farm-weight-modal','title' => 'Set Farm Weight','subtitle' => 'Enter total farm weight — it will be distributed proportionally by bird weight','icon' => 'scale','maxWidth' => '4xl']); ?>
+<?php $component->withAttributes(['name' => 'set-farm-weight-modal','title' => 'Set Farm Weight','subtitle' => 'Enter total farm weight — it will be set at the batch level','icon' => 'scale','maxWidth' => '4xl']); ?>
             <form id="set-farm-weight-form" action="<?php echo e(route('billing.day-load.set-farm-weight')); ?>" method="POST"
                   x-data="{
-                      totalFarmWeight: '',
+                      totalFarmWeight: '<?php echo e($batch?->total_farm_weight ?? ''); ?>',
                       totalBirdWeight: <?php echo e((float) ($batch?->total_bird_weight ?? 0)); ?>,
                       entries: [
                           <?php $__currentLoopData = $entries->where('status', 'Active'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $entry): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                              { id: <?php echo e($entry->id); ?>, vendor: '<?php echo e(addslashes($entry->vendor->firm_name ?? '-')); ?>', dealer: '<?php echo e(addslashes($entry->dealer->firm_name ?? '-')); ?>', boxes: <?php echo e($entry->no_of_boxes); ?>, birdWeight: <?php echo e((float) $entry->bird_weight); ?>, proportion: <?php echo e(($batch->total_bird_weight ?? 0) > 0 ? ((float) $entry->bird_weight / (float) $batch->total_bird_weight) : 0); ?> },
+                              { id: <?php echo e($entry->id); ?>, vendor: '<?php echo e(addslashes($entry->vendor->firm_name ?? '-')); ?>', dealer: '<?php echo e(addslashes($entry->dealer->firm_name ?? '-')); ?>', boxes: <?php echo e($entry->no_of_boxes); ?>, birdWeight: <?php echo e((float) $entry->bird_weight); ?> },
                           <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                       ],
-                      get distributedTotal() {
-                          if (!this.totalFarmWeight || this.totalFarmWeight === '') return 0;
-                          let sum = 0;
-                          this.entries.forEach(e => { sum += parseFloat((this.totalFarmWeight * e.proportion).toFixed(2)); });
-                          return sum;
-                      },
                       get totalLoss() {
-                          return (this.totalBirdWeight - this.distributedTotal).toFixed(2);
+                          if (!this.totalFarmWeight || this.totalFarmWeight === '') return 0;
+                          return (parseFloat(this.totalFarmWeight) - this.totalBirdWeight).toFixed(2);
                       }
                   }"
             >
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="batch_id" value="<?php echo e($batch?->id); ?>">
+
+                
+                <div class="mb-4 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 flex gap-3 text-xs text-amber-800 dark:text-amber-300">
+                    <span class="material-symbols-rounded text-lg">info</span>
+                    <div>
+                        <p class="font-bold mb-0.5">Batch-Level Weight Setting</p>
+                        <p>Setting the farm weight here applies it to the entire day's batch. Individual entries' weights will not be modified proportionally.</p>
+                    </div>
+                </div>
 
                 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
@@ -1432,7 +1436,7 @@
                     </div>
                     <div class="rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Total Loss</p>
-                        <p class="font-jetbrains text-2xl font-black" :class="parseFloat(totalLoss) >= 0 ? 'text-rose-600' : 'text-emerald-600'" x-text="totalFarmWeight ? totalLoss + ' kg' : '—'"></p>
+                        <p class="font-jetbrains text-2xl font-black" :class="parseFloat(totalLoss) >= 0 ? 'text-emerald-600' : 'text-rose-600'" x-text="totalFarmWeight ? totalLoss + ' kg' : '—'"></p>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Enter Total Farm Weight (Kg)</label>
@@ -1458,9 +1462,6 @@
                                 <th class="px-4 py-3 text-left">Dealer</th>
                                 <th class="px-4 py-3 text-center">Boxes</th>
                                 <th class="px-4 py-3 text-center">Bird Wt (Kg)</th>
-                                <th class="px-4 py-3 text-center bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-600">Farm Wt (Kg)</th>
-                                <th class="px-4 py-3 text-center text-rose-600">Loss (Kg)</th>
-                                <th class="px-4 py-3 text-center">Total (Kg)</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/80 bg-white dark:bg-zinc-900">
@@ -1470,12 +1471,6 @@
                                     <td class="px-4 py-3 text-zinc-550 dark:text-zinc-450 text-xs" x-text="entry.dealer"></td>
                                     <td class="px-4 py-3 text-center font-jetbrains font-bold text-xs text-zinc-500" x-text="entry.boxes"></td>
                                     <td class="px-4 py-3 text-center font-jetbrains text-xs font-semibold text-zinc-700 dark:text-zinc-300" x-text="entry.birdWeight.toFixed(2)"></td>
-                                    <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold text-emerald-600 bg-emerald-50/30 dark:bg-emerald-950/10"
-                                        x-text="totalFarmWeight ? (totalFarmWeight * entry.proportion).toFixed(2) : '—'"></td>
-                                    <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold text-rose-600"
-                                        x-text="totalFarmWeight ? (entry.birdWeight - (totalFarmWeight * entry.proportion)).toFixed(2) : '—'"></td>
-                                    <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold text-zinc-800 dark:text-zinc-200"
-                                        x-text="totalFarmWeight ? (entry.birdWeight - (totalFarmWeight * entry.proportion)).toFixed(2) : '—'"></td>
                                 </tr>
                             </template>
                         </tbody>

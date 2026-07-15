@@ -82,11 +82,17 @@ class DayLoadEntry extends Model
         static::saving(function (DayLoadEntry $entry): void {
             $birdWeight = round((float) $entry->box_weight - (float) $entry->empty_weight, 2);
 
-            $farmWeight = (float) ($entry->farm_weight ?? 0);
-
             $entry->bird_weight = $birdWeight;
-            $entry->loss_weight = round($farmWeight - $birdWeight, 2);
-            $entry->total_weight = round($farmWeight - $birdWeight, 2);
+
+            if ($entry->farm_weight !== null) {
+                $farmWeight = (float) $entry->farm_weight;
+                $entry->loss_weight = round($farmWeight - $birdWeight, 2);
+                $entry->total_weight = round($farmWeight - $birdWeight, 2);
+            } else {
+                $entry->loss_weight = null;
+                $entry->total_weight = null;
+            }
+
             $entry->amount = round((float) $entry->bird_weight * (float) $entry->customer_rate, 2);
         });
     }

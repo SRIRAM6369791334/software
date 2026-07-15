@@ -1,0 +1,72 @@
+<?php $attributes ??= new \Illuminate\View\ComponentAttributeBag;
+
+$__newAttributes = [];
+$__propNames = \Illuminate\View\ComponentAttributeBag::extractPropNames(([
+    'name' => '',
+    'label' => false,
+    'value' => '',
+    'placeholder' => '',
+    'required' => false,
+    'rows' => 4,
+    'error' => null,
+]));
+
+foreach ($attributes->all() as $__key => $__value) {
+    if (in_array($__key, $__propNames)) {
+        $$__key = $$__key ?? $__value;
+    } else {
+        $__newAttributes[$__key] = $__value;
+    }
+}
+
+$attributes = new \Illuminate\View\ComponentAttributeBag($__newAttributes);
+
+unset($__propNames);
+unset($__newAttributes);
+
+foreach (array_filter(([
+    'name' => '',
+    'label' => false,
+    'value' => '',
+    'placeholder' => '',
+    'required' => false,
+    'rows' => 4,
+    'error' => null,
+]), 'is_string', ARRAY_FILTER_USE_KEY) as $__key => $__value) {
+    $$__key = $$__key ?? $__value;
+}
+
+$__defined_vars = get_defined_vars();
+
+foreach ($attributes->all() as $__key => $__value) {
+    if (array_key_exists($__key, $__defined_vars)) unset($$__key);
+}
+
+unset($__defined_vars, $__key, $__value); ?>
+
+<div class="space-y-2">
+    <?php if($label): ?>
+        <label for="<?php echo e($name); ?>" class="block mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit">
+            <?php echo e($label); ?> <?php if($required): ?> <span class="text-emerald-500 font-bold ml-0.5 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">*</span> <?php endif; ?>
+        </label>
+    <?php endif; ?>
+
+    <div class="relative">
+        <textarea
+            id="<?php echo e($name); ?>"
+            name="<?php echo e($name); ?>"
+            rows="<?php echo e($rows); ?>"
+            placeholder="<?php echo e($placeholder); ?>"
+            <?php if($required): ?> required <?php endif; ?>
+            <?php echo e($attributes->merge([
+                'class' => 'block w-full px-4 py-3 text-base border border-zinc-200 dark:border-zinc-700 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] hover:border-zinc-300 dark:hover:border-zinc-600 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 sm:text-sm rounded-xl bg-white/30 dark:bg-zinc-900/30 backdrop-blur-2xl text-zinc-900 dark:text-zinc-100 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] resize-y font-outfit' . ($error ? ' border-red-500 focus:ring-red-500 focus:border-red-500' : '')
+            ])); ?>
+
+        ><?php echo e(old($name, $value)); ?></textarea>
+    </div>
+
+    <?php if($error): ?>
+        <p class="text-sm text-red-600 dark:text-red-400 font-outfit mt-1"><?php echo e($error); ?></p>
+    <?php endif; ?>
+</div>
+<?php /**PATH C:\xampp\htdocs\Poultry Management System\flockwise-biztrack-main\flockwise-biztrack-laravel\resources\views\components\form\textarea.blade.php ENDPATH**/ ?>

@@ -1,2 +1,0 @@
-<?php echo $__env->yieldContent('content'); ?>
-<?php /**PATH C:\xampp\htdocs\Poultry Management System\flockwise-biztrack-main\flockwise-biztrack-laravel\resources\views/layouts/empty.blade.php ENDPATH**/ ?>

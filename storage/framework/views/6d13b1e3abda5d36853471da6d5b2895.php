@@ -13,6 +13,8 @@
 
     $navItems = [
         ['label' => 'Dashboard', 'icon' => 'dashboard', 'route' => 'dashboard'],
+        ['label' => 'Dayload Billing', 'icon' => 'description', 'route' => 'billing.day-load.index', 'permission' => 'view bills'],
+        
 
         ['header' => 'Master Records'],
         ['label' => 'Customers', 'icon' => 'group', 'route' => 'masters.customers.index', 'permission' => 'view customers'],
@@ -20,14 +22,13 @@
         ['label' => 'Vendors', 'icon' => 'inventory_2', 'route' => 'masters.vendors.index', 'permission' => 'view vendors'],
         
         ['header' => 'Operations'],
-        ['label' => 'Billing', 'icon' => 'description', 'route' => 'billing.day-load.index', 'permission' => 'view bills'],
         ['label' => 'Weekly Billing', 'icon' => 'receipt_long', 'route' => 'billing.weekly.index', 'permission' => 'view bills'],
         ['label' => 'Purchases', 'icon' => 'shopping_cart', 'route' => 'purchases.entry', 'permission' => 'view purchases'],
         ['label' => 'Purchase Invoices', 'icon' => 'receipt', 'route' => 'purchases.invoices', 'permission' => 'view purchases'],
 
         ['header' => 'Finance & Payments'],
-        ['label' => 'Customer Payments', 'icon' => 'credit_card', 'route' => 'payments.customers.index', 'permission' => 'view payments'],
         ['label' => 'Dealer Payments', 'icon' => 'payments', 'route' => 'payments.dealers.index', 'permission' => 'view payments'],
+        ['label' => 'Vendor Payments', 'icon' => 'credit_card', 'route' => 'payments.vendors.index', 'permission' => 'view vendor payments'],
         ['label' => 'Cash & Bank Ledger', 'icon' => 'account_balance', 'route' => 'billing.cash-bank-ledger.index', 'permission' => 'create bills'],
         ['label' => 'Expenses', 'icon' => 'account_balance_wallet', 'route' => 'expenses.index', 'permission' => 'view expenses'],
         ['label' => 'EMI Records', 'icon' => 'notifications_active', 'route' => 'expenses.emis.index', 'permission' => 'view emis'],

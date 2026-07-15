@@ -192,31 +192,38 @@ class DayLoadBillingController extends Controller
             return back()->with('error', 'No active entries with bird weight found.');
         }
 
+        // Set batch-level fields first
+        $batch->update([
+            'total_farm_weight' => $totalFarmWeight,
+            'total_loss_weight' => round($totalFarmWeight - $totalBirdWeight, 2),
+            'total_weight'      => round($totalFarmWeight - $totalBirdWeight, 2),
+        ]);
+
+        // Clear farm_weight, loss_weight, and total_weight from entries so they don't have individual values.
         foreach ($entries as $entry) {
-            $birdWeight = (float) $entry->bird_weight;
-            $proportion = $birdWeight / $totalBirdWeight;
-            $distributedFarmWeight = round($totalFarmWeight * $proportion, 2);
+            if ($entry->farm_weight !== null) {
+                $oldValues = $entry->toArray();
+                $entry->update([
+                    'farm_weight' => null,
+                    'loss_weight' => null,
+                    'total_weight' => null,
+                ]);
 
-            $oldValues = $entry->toArray();
-
-            $entry->update([
-                'farm_weight' => $distributedFarmWeight,
-            ]);
-
-            EntryAdjustmentLog::create([
-                'entry_id'           => $entry->id,
-                'action_type'        => 'Edit',
-                'old_values'         => $oldValues,
-                'new_values'         => $entry->fresh()->toArray(),
-                'resulting_entry_id' => null,
-                'reason'             => $validated['reason'],
-                'adjusted_by'        => auth()->id(),
-            ]);
+                EntryAdjustmentLog::create([
+                    'entry_id'           => $entry->id,
+                    'action_type'        => 'Edit',
+                    'old_values'         => $oldValues,
+                    'new_values'         => $entry->fresh()->toArray(),
+                    'resulting_entry_id' => null,
+                    'reason'             => $validated['reason'] . ' (Clearing individual farm weight for batch-level setting)',
+                    'adjusted_by'        => auth()->id(),
+                ]);
+            }
         }
 
         $this->dayLoadBillingService->refreshBatchTotals($batch);
 
-        return back()->with('success', 'Farm weight distributed across all entries.');
+        return back()->with('success', 'Total farm weight updated at batch level.');
     }
 
     public function recordDealerPayment(Request $request, DayLoadEntry $entry): RedirectResponse
