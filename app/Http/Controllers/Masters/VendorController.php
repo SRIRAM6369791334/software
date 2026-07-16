@@ -19,23 +19,41 @@ class VendorController extends Controller
         $search  = $request->input('search');
         $routeFilter = $request->input('route');
         
-        $query = Vendor::search($search);
-        
+        $vendorsQuery = Vendor::with(['purchases', 'dayLoadEntries', 'vendorPayments'])->search($search);
         if ($routeFilter) {
-            $query->where('route', $routeFilter);
+            $vendorsQuery->where('route', $routeFilter);
         }
         
-        $vendors = $query->orderBy('firm_name')->paginate(15);
-        $routes = \App\Models\Vendor::select('route')->distinct()->whereNotNull('route')->where('route', '!=', '')->pluck('route');
+        $vendorsCollection = $vendorsQuery->orderBy('firm_name')->get();
+
+        // Calculate stats on all matching vendors
+        $totalPayable = $vendorsCollection->sum(fn($v) => $v->outstanding_balance);
+        $activeVendorsCount = $vendorsCollection->filter(fn($v) => $v->outstanding_balance > 0)->count();
+
+        // Paginate the collection manually
+        $page = (int) $request->input('page', 1);
+        $perPage = 15;
+        $sliced = $vendorsCollection->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $vendors = new \Illuminate\Pagination\LengthAwarePaginator(
+            $sliced,
+            $vendorsCollection->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        $routes = Vendor::select('route')->distinct()->whereNotNull('route')->where('route', '!=', '')->pluck('route');
         
-        $totalVendors  = \App\Models\Vendor::count();
-        $activeRoutes  = \App\Models\Vendor::distinct('route')->count('route');
-        $gstRegistered = \App\Models\Vendor::whereNotNull('gst_number')->count();
-        $unregistered  = \App\Models\Vendor::whereNull('gst_number')->count();
+        $totalVendors  = Vendor::count();
+        $activeRoutes  = Vendor::distinct('route')->count('route');
+        $gstRegistered = Vendor::whereNotNull('gst_number')->count();
+        $unregistered  = Vendor::whereNull('gst_number')->count();
         
         return view('masters.vendors.index', compact(
             'vendors', 'search', 'routeFilter', 'routes',
-            'totalVendors', 'activeRoutes', 'gstRegistered', 'unregistered'
+            'totalVendors', 'activeRoutes', 'gstRegistered', 'unregistered',
+            'totalPayable', 'activeVendorsCount'
         ));
     }
 
@@ -82,11 +100,21 @@ class VendorController extends Controller
         $avgRateVariance = $rateVarCount > 0 ? round($totalDiff / $rateVarCount, 2) : 0;
         $loadCount = $vendor->dayLoadEntries()->count();
 
+        // Calculate outstanding balance details
+        $totalCreditPurchases = (float) $vendor->purchases()->where('payment_mode', 'Credit')->sum('total_amount');
+        $dayLoadEntriesForLiab = $vendor->dayLoadEntries()->where('status', '!=', 'Cancelled')->get();
+        $totalDayLoadLiabilities = (float) $dayLoadEntriesForLiab->sum(function ($entry) {
+            return $entry->vendor_cost;
+        });
+        $totalPaymentsPaid = (float) $vendor->vendorPayments()->sum('amount');
+        $outstandingBalance = round(($totalCreditPurchases + $totalDayLoadLiabilities) - $totalPaymentsPaid, 2);
+
         return view('masters.vendors.show', compact(
             'vendor',
             'totalPurchaseAmount', 'totalPurchaseCount', 'lastPurchaseDate', 'recentPurchases',
             'totalBoxesLoaded', 'totalBirdWeight', 'totalFarmWeight', 'totalLossWeight',
-            'avgRateVariance', 'loadCount'
+            'avgRateVariance', 'loadCount',
+            'totalCreditPurchases', 'totalDayLoadLiabilities', 'totalPaymentsPaid', 'outstandingBalance'
         ));
     }
 

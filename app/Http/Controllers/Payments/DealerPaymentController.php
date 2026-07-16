@@ -29,19 +29,21 @@ class DealerPaymentController extends Controller
         $dateTo       = $request->input('date_to');
         $modeFilter   = $request->input('payment_mode');
 
-        $payments = DealerPayment::with('dealer')
+        $paymentsQuery = DealerPayment::with('dealer')
             ->search($search)
             ->when($dealerFilter, fn($q) => $q->where('dealer_id', $dealerFilter))
             ->when($dateFrom, fn($q) => $q->whereDate('date', '>=', $dateFrom))
             ->when($dateTo, fn($q) => $q->whereDate('date', '<=', $dateTo))
-            ->when($modeFilter, fn($q) => $q->where('payment_mode', $modeFilter))
-            ->latest('date')
-            ->paginate(15);
+            ->when($modeFilter, fn($q) => $q->where('payment_mode', $modeFilter));
+
+        $totalCollected = (clone $paymentsQuery)->sum('amount');
+
+        $payments = $paymentsQuery->latest('date')->paginate(15);
 
         $dealers = Dealer::orderBy('firm_name')->get();
         return view('payments.dealers', compact(
             'payments', 'dealers', 'search',
-            'dealerFilter', 'dateFrom', 'dateTo', 'modeFilter'
+            'dealerFilter', 'dateFrom', 'dateTo', 'modeFilter', 'totalCollected'
         ));
     }
 

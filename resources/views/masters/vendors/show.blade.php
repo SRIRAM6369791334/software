@@ -40,21 +40,24 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-1 space-y-6">
-            <div class="rounded-3xl p-6 bg-teal-500/40 dark:bg-teal-900/40 backdrop-blur-2xl text-teal-900 dark:text-teal-100 shadow-[0_8px_32px_rgba(20,184,166,0.15)] border border-teal-300/50 dark:border-teal-700/50 relative overflow-hidden transition-all duration-300 hover:shadow-[0_8px_32px_rgba(20,184,166,0.25)] hover:-translate-y-1">
-                <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/20 dark:bg-teal-400/10 rounded-full blur-2xl"></div>
-                <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-teal-400/20 dark:bg-teal-600/20 rounded-full blur-2xl"></div>
-                    <div class="relative z-10 text-center">
-                    <div class="text-xs font-bold uppercase tracking-widest text-teal-800/80 dark:text-teal-200 mb-2">Total Business Volume</div>
-                    <div class="text-3xl font-extrabold tracking-tight font-jetbrains mb-6 text-teal-950 dark:text-white drop-shadow-sm">
-                        Rs {{ number_format($totalPurchaseAmount, 2) }}
+            <div class="rounded-3xl p-6 bg-rose-500/40 dark:bg-rose-900/40 backdrop-blur-2xl text-rose-900 dark:text-rose-100 shadow-[0_8px_32px_rgba(244,63,94,0.15)] border border-rose-300/50 dark:border-rose-700/50 relative overflow-hidden transition-all duration-300 hover:shadow-[0_8px_32px_rgba(244,63,94,0.25)] hover:-translate-y-1">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/20 dark:bg-rose-400/10 rounded-full blur-2xl"></div>
+                <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-rose-400/20 dark:bg-rose-600/20 rounded-full blur-2xl"></div>
+                <div class="relative z-10 text-center">
+                    <div class="text-xs font-bold uppercase tracking-widest text-rose-800/80 dark:text-rose-200 mb-2">Outstanding Payable</div>
+                    <div class="text-3xl font-extrabold tracking-tight font-jetbrains mb-2 text-rose-950 dark:text-white drop-shadow-sm">
+                        Rs {{ number_format($outstandingBalance, 2) }}
                     </div>
+                    @if($totalDayLoadLiabilities > 0 || $totalCreditPurchases > 0 || $totalPaymentsPaid > 0)
+                        <div class="text-[10px] font-medium text-rose-800/80 dark:text-rose-300/80 mb-6 leading-relaxed">
+                            Purchases: Rs {{ number_format($totalCreditPurchases, 0) }} + Day-Load: Rs {{ number_format($totalDayLoadLiabilities, 0) }}<br>Paid: Rs {{ number_format($totalPaymentsPaid, 0) }}
+                        </div>
+                    @endif
                     <div class="flex flex-col gap-3">
-                        @can('create purchases')
-                            <x-button href="{{ route('purchases.create', ['vendor_name' => $vendor->firm_name]) }}" variant="secondary" icon="add_shopping_cart" class="w-full justify-center !text-teal-700 !bg-white/80 hover:!bg-white !border-white backdrop-blur-md shadow-sm">
-                                New Purchase Entry
-                            </x-button>
-                        @endcan
-                        <x-button href="{{ route('masters.vendors.purchase-history', $vendor) }}" variant="secondary" icon="history" class="w-full justify-center !bg-teal-600/20 !text-teal-900 dark:!text-teal-100 !border-teal-400/30 hover:!bg-teal-600/30 backdrop-blur-md">
+                        <x-button href="{{ route('payments.vendors.ledger', $vendor) }}" variant="secondary" icon="payments" class="w-full justify-center !text-rose-700 !bg-white/80 hover:!bg-white !border-white backdrop-blur-md shadow-sm">
+                            Record Payment
+                        </x-button>
+                        <x-button href="{{ route('masters.vendors.purchase-history', $vendor) }}" variant="secondary" icon="history" class="w-full justify-center !bg-rose-600/20 !text-rose-900 dark:!text-rose-100 !border-rose-400/30 hover:!bg-rose-600/30 backdrop-blur-md">
                             View Full History
                         </x-button>
                     </div>

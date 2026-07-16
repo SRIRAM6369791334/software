@@ -18,8 +18,8 @@
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <x-stat-card title="Total Dealers" value="{{ $dealers->total() }}" icon="group" color="emerald" />
-        <x-stat-card title="Total Payable" value="{{ number_format($totalPending, 0) }}" icon="warning" color="rose" prefix="Rs " />
-        <x-stat-card title="Active Accounts" value="{{ $activeDealers }}" icon="account_balance" color="amber" subtitle="with dues" />
+        <x-stat-card title="Total Receivable" value="{{ number_format($totalOutstanding, 0) }}" icon="warning" color="rose" prefix="Rs " />
+        <x-stat-card title="Active Accounts" value="{{ $activeDealersCount }}" icon="account_balance" color="amber" subtitle="with dues" />
     </div>
 
     <x-card padding="p-0">
@@ -66,8 +66,8 @@
                         <span class="text-sm text-zinc-600 dark:text-zinc-400">{{ $dealer->route ?: 'General' }}</span>
                     </td>
                     <td class="px-6 py-4 font-jetbrains">
-                        @if($dealer->pending_amount > 0)
-                            <span class="inline-flex items-center px-2 py-1 rounded-lg bg-rose-50 text-rose-500 dark:bg-rose-500/10 dark:text-rose-400 font-medium border border-rose-100 dark:border-rose-500/20"><x-currency :amount="$dealer->pending_amount" /></span>
+                        @if($dealer->displayed_outstanding > 0)
+                            <span class="inline-flex items-center px-2 py-1 rounded-lg bg-rose-50 text-rose-500 dark:bg-rose-500/10 dark:text-rose-400 font-medium border border-rose-100 dark:border-rose-500/20"><x-currency :amount="$dealer->displayed_outstanding" /></span>
                         @else
                             <span class="text-emerald-600 dark:text-emerald-400"><x-currency :amount="0" /></span>
                         @endif

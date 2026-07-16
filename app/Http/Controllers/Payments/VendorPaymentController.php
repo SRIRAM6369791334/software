@@ -28,12 +28,26 @@ class VendorPaymentController extends Controller
         $dateTo       = $request->input('date_to');
         $modeFilter   = $request->input('payment_mode');
 
-        $payments = $this->service->paginated($search, $vendorFilter, $dateFrom, $dateTo, $modeFilter, 15);
+        $paymentsQuery = VendorPayment::query()
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($nested) use ($search) {
+                    $nested->whereHas('vendor', fn($v) => $v->where('firm_name', 'like', "%{$search}%"))
+                           ->orWhere('reference_number', 'like', "%{$search}%");
+                });
+            })
+            ->when($vendorFilter, fn($q) => $q->where('vendor_id', $vendorFilter))
+            ->when($dateFrom, fn($q) => $q->whereDate('date', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->whereDate('date', '<=', $dateTo))
+            ->when($modeFilter, fn($q) => $q->where('payment_mode', $modeFilter));
+
+        $totalPaidOut = (clone $paymentsQuery)->sum('amount');
+
+        $payments = $paymentsQuery->with('vendor')->latest('date')->paginate(15);
         $vendors = Vendor::orderBy('firm_name')->get();
 
         return view('payments.vendors', compact(
             'payments', 'vendors', 'search',
-            'vendorFilter', 'dateFrom', 'dateTo', 'modeFilter'
+            'vendorFilter', 'dateFrom', 'dateTo', 'modeFilter', 'totalPaidOut'
         ));
     }
 
@@ -156,12 +170,10 @@ class VendorPaymentController extends Controller
             return back()->withErrors(['amount' => "The payment amount cannot exceed the vendor's outstanding balance of Rs " . number_format($vendor->outstanding_balance, 2) . "."])->withInput();
         }
 
+        $validated['vendor_id'] = $vendor->id;
         $validated['amount'] = $amount;
         
-        $vendor->vendorPayments()->create($validated);
-
-        // Recalculate cash/bank ledger for the payment date
-        app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($validated['date']));
+        $this->service->record($validated);
         
         return back()->with('success', 'Payment recorded successfully.');
     }

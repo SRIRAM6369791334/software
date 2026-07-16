@@ -2,7 +2,7 @@
 @section('title', 'Daily Load Billing')
 
 @section('content')
-<div class="animate-fade-in">
+<div class="animate-fade-in" x-data="dayLoadBillingData()">
     <x-page-header title="Daily Load Billing" subtitle="Track vendor loads, dealer rates, box weights, and paper-rate variance">
         <x-slot:actions>
             <x-button variant="outline" href="{{ route('billing.day-load.export', ['date' => $date]) }}" icon="download">
@@ -233,7 +233,7 @@
                         <x-badge variant="success">{{ $entry->status }}</x-badge>
                     </td>
                     <td class="px-6 py-4 text-center">
-                        @if($entry->status === 'Active')
+                        @if($entry->status === 'Active' || $entry->status === 'Adjusted')
                             <div class="flex items-center justify-center gap-2">
                                 <button
                                     type="button"
@@ -341,7 +341,6 @@
         </x-data-table>
     </x-card>
 
-    <div x-data="dayLoadBillingData()">
         <template x-teleport="body">
             <x-modal name="edit-entry-modal" title="Edit Entry" subtitle="Adjust rates, weights, or box count" icon="edit" maxWidth="3xl">
                 <form id="edit-entry-form" :action="editFormAction" method="POST" class="space-y-6">
@@ -375,7 +374,7 @@
                         <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Pricing Rates (Rs)</h4>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
                             <x-form.input type="number" step="0.01" name="paper_rate" label="Paper Rate" required min="0" x-model.number="editPaperRate" icon="currency_rupee" />
-                            <x-form.input type="number" step="0.01" name="billing_rate" label="Billing Rate" required min="0" x-model.number="editBillingRate" icon="currency_rupee" />
+                            <x-form.input type="number" step="0.01" name="billing_rate" label="vendor Rate" required min="0" x-model.number="editBillingRate" icon="currency_rupee" />
                             <x-form.input type="number" step="0.01" name="customer_rate" label="Customer Rate" required min="0" x-model.number="editCustomerRate" icon="currency_rupee" />
                         </div>
                     </div>
@@ -1038,7 +1037,6 @@
                 </form>
             </x-modal>
         </template>
-    </div>
 </div>
 
 <script>

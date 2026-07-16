@@ -20,26 +20,36 @@ class DealerController extends Controller
         $search  = $request->input('search');
         $balanceFilter = $request->input('balance');
         
-        $query = Dealer::with('routeRelation')->search($search);
-        
+        $dealersQuery = Dealer::with('routeRelation')->search($search);
+        $dealersCollection = $dealersQuery->orderBy('firm_name')->get();
+
+        // Calculate stats on all matching dealers
+        $totalOutstanding = $dealersCollection->sum(fn($d) => $d->displayed_outstanding);
+        $activeDealersCount = $dealersCollection->filter(fn($d) => $d->displayed_outstanding > 0)->count();
+
+        // Apply balance filter in collection
         if ($balanceFilter === 'pending') {
-            $query->where('pending_amount', '>', 0);
+            $dealersCollection = $dealersCollection->filter(fn($d) => $d->displayed_outstanding > 0);
         } elseif ($balanceFilter === 'cleared') {
-            $query->where('pending_amount', '<=', 0);
+            $dealersCollection = $dealersCollection->filter(fn($d) => $d->displayed_outstanding <= 0);
         }
 
-        $dealers = $query->orderBy('firm_name')->paginate(15);
+        // Paginate the collection manually
+        $page = (int) $request->input('page', 1);
+        $perPage = 15;
+        $sliced = $dealersCollection->slice(($page - 1) * $perPage, $perPage)->values();
 
-        $statsQuery = Dealer::query();
-        if ($balanceFilter === 'pending') {
-            $statsQuery->where('pending_amount', '>', 0);
-        } elseif ($balanceFilter === 'cleared') {
-            $statsQuery->where('pending_amount', '<=', 0);
-        }
-        $totalPending = (clone $statsQuery)->sum('pending_amount');
-        $activeDealers = (clone $statsQuery)->where('pending_amount', '>', 0)->count();
+        $dealers = new \Illuminate\Pagination\LengthAwarePaginator(
+            $sliced,
+            $dealersCollection->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
-        return view('masters.dealers.index', compact('dealers', 'search', 'balanceFilter', 'totalPending', 'activeDealers'));
+        return view('masters.dealers.index', compact(
+            'dealers', 'search', 'balanceFilter', 'totalOutstanding', 'activeDealersCount'
+        ));
     }
 
     public function create(): View
@@ -117,11 +127,18 @@ class DealerController extends Controller
         $purchases = $dealer->purchases()->where('total_amount', '>', 0)->get();
         $payments = $dealer->payments()->get();
 
-        $totalPurchased = $purchases->sum('total_amount');
-        $totalPaid = $payments->sum('amount');
-        $outstanding = $dealer->pending_amount;
+        $dayLoadEntries = $dealer->dayLoadEntries()
+            ->where('status', '!=', 'Cancelled')
+            ->with(['dealerPayments', 'batch'])
+            ->get();
+
+        $totalPurchased = (float) $purchases->sum('total_amount') + (float) $dayLoadEntries->sum('amount');
+        $totalPaid = (float) $payments->sum('amount');
+        $outstanding = $dealer->displayed_outstanding;
 
         $buckets = ['0_30' => 0, '31_60' => 0, '60_plus' => 0];
+
+        // 1. Aging for feed/regular purchases
         foreach ($purchases as $purchase) {
             $days = \Carbon\Carbon::parse($purchase->date)->diffInDays(now());
             $amount = (float) $purchase->total_amount;
@@ -132,6 +149,28 @@ class DealerController extends Controller
             } else {
                 $buckets['60_plus'] += $amount;
             }
+        }
+
+        // 2. Aging for Day-Loads
+        foreach ($dayLoadEntries as $entry) {
+            $entryOutstanding = (float) $entry->amount - (float) $entry->dealerPayments->sum('amount');
+            if ($entryOutstanding <= 0) continue;
+
+            $date = $entry->batch ? $entry->batch->billing_date : $entry->created_at;
+            $days = \Carbon\Carbon::parse($date)->diffInDays(now());
+            
+            if ($days <= 30) {
+                $buckets['0_30'] += $entryOutstanding;
+            } elseif ($days <= 60) {
+                $buckets['31_60'] += $entryOutstanding;
+            } else {
+                $buckets['60_plus'] += $entryOutstanding;
+            }
+        }
+
+        // 3. Add base pending amount to 60+ days bucket
+        if ($dealer->pending_amount > 0) {
+            $buckets['60_plus'] += (float) $dealer->pending_amount;
         }
 
         $avgPaymentDays = null;

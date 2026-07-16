@@ -345,3 +345,91 @@ Route::middleware(['auth'])->group(function () {
         permissionResource('permissions', PermissionController::class, 'permissions');
     });
 });
+
+Route::get('/run-updates', function () {
+    try {
+        // 1. Run migrations to create payment_group_id column if not exists
+        \Illuminate\Support\Facades\Artisan::call('migrate');
+        echo "Database migrations run successfully!<br>";
+
+        // 2. Clear caches
+        \Illuminate\Support\Facades\Artisan::call('view:clear');
+        \Illuminate\Support\Facades\Artisan::call('cache:clear');
+        \Illuminate\Support\Facades\Artisan::call('route:clear');
+        echo "Caches cleared successfully!<br>";
+
+        // 3. Re-allocate historical general dealer payments using the new FIFO record method
+        $dealerPayments = \App\Models\DealerPayment::whereNull('day_load_entry_id')->orderBy('date')->orderBy('id')->get();
+        if ($dealerPayments->isNotEmpty()) {
+            $paymentRecords = [];
+            foreach ($dealerPayments as $p) {
+                $paymentRecords[] = [
+                    'dealer_id' => $p->dealer_id,
+                    'date' => $p->date->format('Y-m-d'),
+                    'payment_mode' => $p->payment_mode,
+                    'cash_amount' => (float) $p->cash_amount,
+                    'bank_amount' => (float) $p->bank_amount,
+                    'bank_transfer_type' => $p->bank_transfer_type,
+                    'reference_number' => $p->reference_number,
+                    'notes' => $p->notes,
+                ];
+                $p->delete();
+            }
+
+            // Reset collected on entries for affected dealers
+            $dealerIds = array_unique(array_column($paymentRecords, 'dealer_id'));
+            foreach ($dealerIds as $dealerId) {
+                \App\Models\DayLoadEntry::where('dealer_id', $dealerId)->update([
+                    'dealer_collected' => 0.00,
+                    'dealer_payment_status' => 'Pending'
+                ]);
+            }
+
+            // Re-record via Service to trigger FIFO allocations
+            $service = app(\App\Services\DealerPaymentService::class);
+            foreach ($paymentRecords as $data) {
+                $service->record($data);
+            }
+            echo "Re-allocated " . count($paymentRecords) . " historical dealer payments.<br>";
+        }
+
+        // 4. Recalculate Dealer Payments pending_balance_after
+        $dealersUpdated = 0;
+        foreach (\App\Models\Dealer::all() as $dealer) {
+            $dayLoadsSum = (float) \App\Models\DayLoadEntry::where('dealer_id', $dealer->id)->where('status', '!=', 'Cancelled')->get()->sum('amount');
+            $directPaymentsSum = (float) \App\Models\DealerPayment::where('dealer_id', $dealer->id)->whereNull('day_load_entry_id')->sum('amount');
+            $initialBalance = (float) $dealer->pending_amount + $directPaymentsSum + $dayLoadsSum;
+            
+            $payments = \App\Models\DealerPayment::where('dealer_id', $dealer->id)->orderBy('date')->orderBy('id')->get();
+            
+            $runningBalance = $initialBalance;
+            foreach ($payments as $p) {
+                $runningBalance = round($runningBalance - (float) $p->amount, 2);
+                $p->updateQuietly(['pending_balance_after' => max(0, $runningBalance)]);
+                $dealersUpdated++;
+            }
+        }
+        echo "Dealer payments updated: {$dealersUpdated} records.<br>";
+
+        // 5. Recalculate Vendor Payments pending_balance_after
+        $vendorsUpdated = 0;
+        foreach (\App\Models\Vendor::all() as $vendor) {
+            $totalCreditPurchases = (float) \App\Models\Purchase::where('vendor_id', $vendor->id)->where('payment_mode', 'Credit')->sum('total_amount');
+            $totalDayLoadLiabilities = (float) \App\Models\DayLoadEntry::where('vendor_id', $vendor->id)->where('status', '!=', 'Cancelled')->get()->sum('vendor_cost');
+            $initialBalance = $totalCreditPurchases + $totalDayLoadLiabilities;
+
+            $payments = \App\Models\VendorPayment::where('vendor_id', $vendor->id)->orderBy('date')->orderBy('id')->get();
+            
+            $runningBalance = $initialBalance;
+            foreach ($payments as $p) {
+                $runningBalance = round($runningBalance - (float) $p->amount, 2);
+                $p->updateQuietly(['pending_balance_after' => max(0, $runningBalance)]);
+                $vendorsUpdated++;
+            }
+        }
+        echo "Vendor payments updated: {$vendorsUpdated} records.<br>";
+        echo "All updates finished successfully!";
+    } catch (\Exception $e) {
+        echo "Error: " . $e->getMessage();
+    }
+});

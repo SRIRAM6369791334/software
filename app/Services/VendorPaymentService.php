@@ -45,9 +45,13 @@ class VendorPaymentService
             $data['amount'] = $amount;
             $data['cash_amount'] = $cashAmount;
             $data['bank_amount'] = $bankAmount;
-            $data['pending_balance_after'] = round($vendor->outstanding_balance - $amount, 2);
+            $data['pending_balance_after'] = 0.00;
             
             $payment = VendorPayment::create($data);
+
+            $payment->updateQuietly([
+                'pending_balance_after' => $vendor->fresh()->outstanding_balance
+            ]);
 
             // Recalculate cash/bank ledger
             app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($payment->date));

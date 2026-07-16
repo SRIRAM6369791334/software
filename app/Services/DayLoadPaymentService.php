@@ -33,7 +33,6 @@ class DayLoadPaymentService
             $entry->increment('dealer_collected', $legacyAmount);
             $this->refreshDealerPaymentStatus($entry);
 
-            // Create payment record with split amounts
             $payment = DealerPayment::create([
                 'dealer_id'         => $entry->dealer_id,
                 'day_load_entry_id' => $entry->id,
@@ -46,6 +45,10 @@ class DayLoadPaymentService
                 'bank_transfer_type' => $data['bank_transfer_type'] ?? null,
                 'reference_number'  => $data['reference_number'] ?? null,
                 'notes'             => $data['notes'] ?? null,
+            ]);
+
+            $payment->updateQuietly([
+                'pending_balance_after' => $entry->dealer->fresh()->displayed_outstanding
             ]);
 
             // Update invoice-level aggregated payment
@@ -250,6 +253,11 @@ class DayLoadPaymentService
                 }
             }
 
+            $finalOutstanding = \App\Models\Dealer::find($dealerId)->displayed_outstanding;
+            foreach ($payments as $p) {
+                $p->updateQuietly(['pending_balance_after' => $finalOutstanding]);
+            }
+
             return $payments;
         });
 
@@ -297,6 +305,10 @@ class DayLoadPaymentService
                 $this->refreshInvoicePayment($entry->batch?->invoice);
             }
 
+            $payment->updateQuietly([
+                'pending_balance_after' => $payment->dealer->fresh()->displayed_outstanding
+            ]);
+
             $this->cashBankLedgerService->recalculateForDate(\Carbon\Carbon::parse($payment->date));
 
             return $payment->fresh();
@@ -338,6 +350,10 @@ class DayLoadPaymentService
                 'bank_transfer_type'=> $data['bank_transfer_type'] ?? null,
                 'reference_number' => $data['reference_number'] ?? null,
                 'notes'            => $data['notes'] ?? null,
+            ]);
+
+            $payment->updateQuietly([
+                'pending_balance_after' => $entry->vendor->fresh()->outstanding_balance
             ]);
 
             $this->cashBankLedgerService->recalculateForDate(\Carbon\Carbon::parse($payment->date));

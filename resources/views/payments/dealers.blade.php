@@ -4,14 +4,14 @@
 @section('content')
 
 <div class="animate-fade-in">
-    <x-page-header title="Dealer Payouts" subtitle="Track payments made to suppliers and feed dealers">
+    <x-page-header title="Dealer Payments" subtitle="Track payments collected from dealers and customers">
         <x-slot:actions>
             <x-button variant="outline" href="{{ route('payments.dealers.export') }}" icon="download">
                 Export
             </x-button>
             @can('create payments')
             <x-button variant="primary" href="{{ route('payments.dealers.create') }}" icon="add">
-                Record Payout
+                Record Payment
             </x-button>
             @endcan
         </x-slot:actions>
@@ -20,18 +20,18 @@
     {{-- Stats --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <x-stat-card 
-            label="Total Paid Out" 
-            value="Rs {{ number_format($payments->sum('amount'), 0) }}" 
+            label="Total Collected" 
+            value="Rs {{ number_format($totalCollected, 0) }}" 
             icon="payments" 
             color="blue" />
         <x-stat-card 
-            label="Payable to Dealers" 
+            label="Receivable from Dealers" 
             value="Rs {{ number_format($dealers->sum(fn($d) => $d->displayed_outstanding), 0) }}" 
             icon="error" 
             color="rose" />
         <x-stat-card 
-            label="Active Suppliers" 
-            value="{{ $dealers->where('pending_amount', '>', 0)->count() }}" 
+            label="Active Dealers" 
+            value="{{ $dealers->filter(fn($d) => $d->displayed_outstanding > 0)->count() }}" 
             icon="group" 
             color="emerald" 
             trend="with Balances" 
@@ -122,7 +122,7 @@
             <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">{{ $payments->total() }} payment{{ $payments->total() !== 1 ? 's' : '' }} found</p>
         </div>
         
-        <x-data-table :headers="['Dealer / Firm', 'Payout Date', 'Amount Paid', 'Payment Mode', 'Cash / Bank', 'Balance After', 'Actions']">
+        <x-data-table :headers="['Dealer / Firm', 'Payment Date', 'Amount Received', 'Payment Mode', 'Cash / Bank', 'Remaining Balance', 'Actions']">
             @forelse($payments as $p)
                 <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors group">
                     <td class="px-6 py-4">

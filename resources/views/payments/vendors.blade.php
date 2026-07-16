@@ -21,7 +21,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <x-stat-card 
             label="Total Paid Out" 
-            value="Rs {{ number_format($payments->sum('amount'), 0) }}" 
+            value="Rs {{ number_format($totalPaidOut, 0) }}" 
             icon="payments" 
             color="purple" />
         <x-stat-card 

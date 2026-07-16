@@ -18,9 +18,9 @@
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <x-stat-card title="Total Suppliers" value="{{ $totalVendors }}" icon="local_shipping" color="teal" />
-        <x-stat-card title="Active Routes" value="{{ $activeRoutes }}" icon="route" color="blue" />
-        <x-stat-card title="GST Registered" value="{{ $gstRegistered }}" icon="verified" color="emerald" />
-        <x-stat-card title="Unregistered" value="{{ $unregistered }}" icon="warning" color="amber" />
+        <x-stat-card title="Total Outstanding Payable" value="{{ number_format($totalPayable, 0) }}" icon="warning" color="rose" prefix="Rs " />
+        <x-stat-card title="Active Accounts" value="{{ $activeVendorsCount }}" icon="account_balance" color="amber" subtitle="with dues" />
+        <x-stat-card title="GST Registered" value="{{ $gstRegistered }}" icon="verified" color="blue" />
     </div>
 
     <x-card padding="p-0">
@@ -45,7 +45,7 @@
             </form>
         </div>
 
-        <x-data-table :headers="['Firm & Location', 'Point of Contact', 'Route', 'GSTIN', 'Actions']">
+        <x-data-table :headers="['Firm & Location', 'Point of Contact', 'Route', 'GSTIN', 'Outstanding Payable', 'Actions']">
             @forelse($vendors as $vendor)
                 <tr class="hover:bg-white/80 dark:hover:bg-zinc-800/50 transition-all duration-300 group">
                     <td class="px-6 py-4">
@@ -71,6 +71,13 @@
                             <x-badge variant="success" class="font-jetbrains">{{ $vendor->gst_number }}</x-badge>
                         @else
                             <x-badge variant="secondary">UNREGISTERED</x-badge>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4 font-jetbrains">
+                        @if($vendor->outstanding_balance > 0)
+                            <span class="inline-flex items-center px-2 py-1 rounded-lg bg-rose-50 text-rose-500 dark:bg-rose-500/10 dark:text-rose-400 font-medium border border-rose-100 dark:border-rose-500/20"><x-currency :amount="$vendor->outstanding_balance" /></span>
+                        @else
+                            <span class="text-emerald-600 dark:text-emerald-400"><x-currency :amount="0" /></span>
                         @endif
                     </td>
                     <td class="px-6 py-4">
