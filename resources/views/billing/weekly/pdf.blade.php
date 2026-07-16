@@ -4,113 +4,138 @@
 
 @push('styles')
 <style>
-    body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #111827; }
-    .header-band { background-color: #065f46; color: #fff; padding: 18px 24px; margin-bottom: 0; }
-    .header-band h1 { font-size: 18px; font-weight: bold; margin: 0; }
-    .header-band p  { font-size: 9px; margin: 3px 0 0; color: #a7f3d0; text-transform: uppercase; letter-spacing: 2px; }
-    .inv-no { text-align: right; }
-    .inv-no .no { font-size: 17px; font-weight: bold; font-family: monospace; }
-    .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 9px; font-weight: bold; text-transform: uppercase; }
-    .badge-paid    { background: #6ee7b7; color: #065f46; }
-    .badge-pending { background: #fcd34d; color: #78350f; }
+    body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #1f2937; }
+    
+    /* Header Styles */
+    .header-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+    .brand-title { font-size: 20px; font-weight: bold; color: #111827; }
+    .brand-green { color: #059669; }
+    .subtitle { font-size: 8px; font-weight: bold; color: #9ca3af; text-transform: uppercase; letter-spacing: 1.5px; }
+    
+    .invoice-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 9px; font-weight: bold; text-transform: uppercase; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .invoice-badge-pending { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+    .meta-table { width: 100%; font-size: 10px; margin-top: 5px; }
+    
+    /* Party Info Row */
+    .party-table { width: 100%; border-collapse: collapse; background: #fff; border-bottom: 2px solid #111827; margin-bottom: 15px; }
+    .party-table td { padding: 10px 0 15px 0; vertical-align: top; width: 50%; }
+    .section-label { font-size: 8px; font-weight: bold; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .party-name { font-size: 12px; font-weight: bold; color: #111827; }
+    
+    /* Financial Stats Cards */
+    .stats-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .stats-table td { width: 25%; padding: 10px; border: 1px solid #e5e7eb; text-align: center; border-radius: 6px; }
+    .stat-blue { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+    .stat-green { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+    .stat-amber { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .stat-purple { background: #f5f3ff; border-color: #ddd6fe; color: #5b21b6; }
+    .stat-lbl { font-size: 7px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .stat-val { font-size: 12px; font-weight: bold; font-family: monospace; }
 
-    /* Party row */
-    .party-row { width: 100%; border-collapse: collapse; margin: 0; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
-    .party-row td { padding: 12px 24px; vertical-align: top; width: 50%; }
-    .section-label { font-size: 8px; font-weight: bold; color: #6b7280; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px; }
-
-    /* Data table */
-    .data-table { width: 100%; border-collapse: collapse; font-size: 10px; }
-    .data-table thead tr { background-color: #ecfdf5; }
-    .data-table th { padding: 7px 14px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; border-bottom: 1px solid #d1d5db; text-align: left; }
+    /* Tables */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 15px; }
+    .data-table thead tr { background-color: #f9fafb; }
+    .data-table th { padding: 8px 12px; font-size: 8px; font-weight: bold; text-transform: uppercase; color: #4b5563; border-bottom: 1px solid #d1d5db; text-align: left; }
     .data-table th.text-right { text-align: right; }
-    .data-table td { padding: 8px 14px; border-bottom: 1px solid #f3f4f6; }
+    .data-table td { padding: 8px 12px; border-bottom: 1px solid #e5e7eb; color: #374151; }
     .data-table td.text-right { text-align: right; }
-    .data-table tfoot td { background: #f0fdf4; font-weight: bold; border-top: 2px solid #6ee7b7; }
+    .data-table tfoot td { background: #f9fafb; font-weight: bold; border-top: 1px solid #d1d5db; }
 
+    /* Split Cards */
+    .split-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+    .split-table td { padding: 0 10px 0 0; width: 50%; }
+    .split-table td:last-child { padding: 0 0 0 10px; }
+    .split-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; background: #f9fafb; }
+    .split-card.paid { border-color: #a7f3d0; background: #ecfdf5; }
+    
     /* Section header bar */
-    .section-bar { background: #f3f4f6; padding: 7px 14px; font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #374151; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; }
-    .section-bar-green  { background: #ecfdf5; color: #065f46; }
-    .section-bar-indigo { background: #eef2ff; color: #3730a3; }
-    .section-bar-amber  { background: #fffbeb; color: #78350f; }
+    .section-bar { background: #f3f4f6; padding: 6px 12px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #374151; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; margin-bottom: 10px; }
 
-    /* Summary box */
-    .summary-box { float: right; width: 240px; margin-top: 10px; }
-    .summary-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 10px; border-bottom: 1px solid #f3f4f6; }
-    .summary-total { display: flex; justify-content: space-between; padding: 8px 0 0; font-size: 13px; font-weight: bold; }
-
-    /* Split boxes */
-    .split-table { width: 100%; border-collapse: collapse; }
-    .split-table td { padding: 12px 14px; width: 50%; vertical-align: top; }
-    .split-box { border: 2px solid #d1d5db; border-radius: 6px; padding: 12px; }
-    .split-box.paid   { border-color: #6ee7b7; background: #f0fdf4; }
-    .split-box.pending { border-color: #fcd34d; background: #fffbeb; }
-
-    /* Payment history */
-    .pay-table { width: 100%; border-collapse: collapse; font-size: 10px; }
-    .pay-table th { padding: 6px 14px; font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #6b7280; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
-    .pay-table th.tr { text-align: right; }
-    .pay-table td { padding: 7px 14px; border-bottom: 1px solid #f3f4f6; }
-    .pay-table td.tr { text-align: right; font-family: monospace; }
-    .pay-footer { background: #fef3c7; padding: 10px 14px; }
-    .pay-footer.paid-bg { background: #f0fdf4; }
-    .pay-footer table { width: 100%; font-size: 10px; }
+    .pay-footer { background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; margin-top: 15px; }
+    .pay-footer table { width: 100%; font-size: 9px; }
+    .pay-footer td { padding: 3px 0; }
     .pay-footer td.tr { text-align: right; }
 
-    .footer-band { margin-top: 30px; text-align: center; font-size: 9px; color: #9ca3af; }
+    .footer-band { margin-top: 25px; text-align: center; font-size: 8px; color: #9ca3af; line-height: 1.5; }
 </style>
 @endpush
 
 @section('content')
 
 {{-- HEADER --}}
-<table style="width:100%; border-collapse:collapse;" class="header-band">
+<table class="header-table">
     <tr>
-        <td style="padding:18px 24px;">
-            <div style="font-size:18px; font-weight:bold; color:#fff;">🐔 FlockWise BizTrack</div>
-            <div style="font-size:9px; color:#a7f3d0; text-transform:uppercase; letter-spacing:2px; margin-top:3px;">Poultry Management Solutions</div>
+        <td>
+            <div class="brand-title">Poultry<span class="brand-green">Pro</span></div>
+            <div class="subtitle">Poultry Management Solutions</div>
         </td>
-        <td style="padding:18px 24px; text-align:right;">
-            <div style="font-size:9px; color:#a7f3d0; text-transform:uppercase;">Invoice</div>
-            <div style="font-size:17px; font-weight:bold; font-family:monospace; color:#fff;">
-                {{ $bill->invoice_no ?? ('INV-W-' . str_pad($bill->id, 4, '0', STR_PAD_LEFT)) }}
-            </div>
-            <div style="margin-top:4px;">
-                @if($bill->status === 'Paid')
-                    <span class="badge badge-paid">✅ PAID</span>
-                @else
-                    <span class="badge badge-pending">⏳ {{ strtoupper($bill->status) }}</span>
-                @endif
+        <td style="text-align:right; vertical-align:top;">
+            <div class="invoice-badge {{ $bill->status === 'Paid' ? '' : 'invoice-badge-pending' }}">
+                {{ $bill->status === 'Paid' ? '✅ Paid' : '⏳ ' . $bill->status }}
             </div>
         </td>
     </tr>
 </table>
 
-{{-- DEALER + PERIOD --}}
-<table class="party-row">
+{{-- PARTY + PERIOD INFO --}}
+<table class="party-table">
     <tr>
         <td>
             <div class="section-label">Bill To</div>
-            <div style="font-size:13px; font-weight:bold;">{{ $bill->dealer?->firm_name ?? 'N/A' }}</div>
-            <div style="color:#4b5563; margin-top:3px;">{{ $bill->dealer?->location ?? '' }}</div>
+            <div class="party-name">{{ $bill->dealer?->firm_name ?? 'N/A' }}</div>
+            <div style="color:#4b5563; margin-top:2px;">{{ $bill->dealer?->location ?? '' }}</div>
             <div style="color:#4b5563;">📞 {{ $bill->dealer?->phone ?? 'N/A' }}</div>
             @if($bill->dealer?->gst_number)
-                <div style="color:#9ca3af; font-size:9px; margin-top:3px;">GSTIN: {{ $bill->dealer->gst_number }}</div>
+                <div style="color:#6b7280; font-size:8px; margin-top:2px;">GSTIN: {{ $bill->dealer->gst_number }}</div>
             @endif
         </td>
         <td style="text-align:right;">
-            <div class="section-label">Billing Period</div>
-            <div style="font-size:12px; font-weight:bold;">
+            <div class="section-label">Period & Details</div>
+            <div style="font-size:11px; font-weight:bold; color:#111827;">
                 {{ $bill->period_start?->format('d M Y') }} — {{ $bill->period_end?->format('d M Y') }}
             </div>
-            <div style="color:#6b7280; font-size:10px; margin-top:4px;">Generated: {{ now()->format('d M Y') }}</div>
-            <div style="color:#6b7280; font-size:10px;">Payment Mode: {{ $bill->payment_mode ?? 'Credit' }}</div>
+            <table class="meta-table" style="float:right; width:auto;">
+                <tr>
+                    <td style="color:#6b7280; text-align:right; padding: 1px 0;">Invoice No:</td>
+                    <td style="font-weight:bold; text-align:right; padding: 1px 0 1px 8px; font-family:monospace;">{{ $bill->invoice_no ?? ('INV-W-' . str_pad($bill->id, 4, '0', STR_PAD_LEFT)) }}</td>
+                </tr>
+                <tr>
+                    <td style="color:#6b7280; text-align:right; padding: 1px 0;">Generated:</td>
+                    <td style="text-align:right; padding: 1px 0 1px 8px;">{{ now()->format('d M Y') }}</td>
+                </tr>
+                <tr>
+                    <td style="color:#6b7280; text-align:right; padding: 1px 0;">Payment Mode:</td>
+                    <td style="text-align:right; padding: 1px 0 1px 8px;">{{ $bill->payment_mode ?? 'Credit' }}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+{{-- FINANCIAL STATS CARDS --}}
+<table class="stats-table" style="width:100%;">
+    <tr>
+        <td class="stat-blue" style="padding: 8px;">
+            <div class="stat-lbl">Previous Outstanding</div>
+            <div class="stat-val">₹{{ number_format((float)($bill->previous_outstanding ?? 0), 2) }}</div>
+        </td>
+        <td class="stat-green" style="padding: 8px; border-left: 0;">
+            <div class="stat-lbl">This Week's Day-Load</div>
+            <div class="stat-val">+ ₹{{ number_format($dayLoadTotal ?? $bill->amount, 2) }}</div>
+        </td>
+        <td class="stat-amber" style="padding: 8px; border-left: 0;">
+            <div class="stat-lbl">Payments During Week</div>
+            <div class="stat-val">- ₹{{ number_format((float)($bill->payments_during_week ?? 0), 2) }}</div>
+        </td>
+        <td class="stat-purple" style="padding: 8px; border-left: 0;">
+            <div class="stat-lbl">Net Invoice Amount</div>
+            <div class="stat-val">₹{{ number_format((float)($bill->net_amount ?? $bill->amount), 2) }}</div>
         </td>
     </tr>
 </table>
 
 {{-- SECTION 2: DAY-LOAD ENTRIES --}}
-<div class="section-bar section-bar-green">📦 Day-Load Entries</div>
+<div class="section-bar">📦 Day-Load Entries</div>
 @if(isset($dayLoadEntries) && $dayLoadEntries->isNotEmpty())
 <table class="data-table">
     <thead>
@@ -136,16 +161,16 @@
                 <td>{{ $entry->vendor?->firm_name ?? '—' }}</td>
                 <td class="text-right" style="font-family:monospace;">{{ number_format($kg, 2) }} kg</td>
                 <td class="text-right" style="font-family:monospace;">₹{{ number_format($rate, 2) }}</td>
-                <td class="text-right" style="font-weight:bold; font-family:monospace; color:#065f46;">₹{{ number_format($total, 2) }}</td>
+                <td class="text-right" style="font-weight:bold; font-family:monospace; color:#047857;">₹{{ number_format($total, 2) }}</td>
             </tr>
         @endforeach
     </tbody>
     <tfoot>
         <tr>
-            <td colspan="3" style="color:#065f46; font-size:9px; text-transform:uppercase; letter-spacing:1px;">Day-Load Total</td>
-            <td class="text-right" style="font-family:monospace; color:#065f46;">{{ number_format($dayLoadEntries->sum('bird_weight'), 2) }} kg</td>
+            <td colspan="3" style="color:#4b5563; font-size:8px; text-transform:uppercase;">Day-Load Total</td>
+            <td class="text-right" style="font-family:monospace; color:#374151;">{{ number_format($dayLoadEntries->sum('bird_weight'), 2) }} kg</td>
             <td></td>
-            <td class="text-right" style="font-size:13px; font-family:monospace; color:#065f46;">₹{{ number_format($dayLoadTotal ?? 0, 2) }}</td>
+            <td class="text-right" style="font-size:11px; font-family:monospace; color:#047857;">₹{{ number_format($dayLoadTotal ?? 0, 2) }}</td>
         </tr>
     </tfoot>
 </table>
@@ -165,7 +190,7 @@
             <td style="font-weight:bold;">{{ $item->item_name }}</td>
             <td class="text-right" style="font-family:monospace;">{{ number_format($item->quantity_kg, 2) }}</td>
             <td class="text-right" style="font-family:monospace;">₹{{ number_format($item->rate_per_kg, 2) }}</td>
-            <td class="text-right" style="font-weight:bold; font-family:monospace; color:#4338ca;">₹{{ number_format($item->quantity_kg * $item->rate_per_kg, 2) }}</td>
+            <td class="text-right" style="font-weight:bold; font-family:monospace; color:#1e40af;">₹{{ number_format($item->quantity_kg * $item->rate_per_kg, 2) }}</td>
         </tr>
         @empty
         <tr><td colspan="4" style="text-align:center; color:#9ca3af; padding:12px;">No items found.</td></tr>
@@ -174,69 +199,37 @@
 </table>
 @endif
 
-{{-- SECTION 3: FINANCIAL SUMMARY --}}
-<div class="section-bar">💰 Financial Summary</div>
-<div style="padding: 10px 24px;">
-    <div class="summary-box">
-        <div class="summary-row">
-            <span style="color:#6b7280;">Previous Pending</span>
-            <span style="font-family:monospace; color:#dc2626;">₹{{ number_format((float)($bill->previous_outstanding ?? 0), 2) }}</span>
-        </div>
-        <div class="summary-row">
-            <span style="color:#6b7280;">+ This Week's Day-Load</span>
-            <span style="font-family:monospace;">₹{{ number_format($dayLoadTotal ?? $bill->amount, 2) }}</span>
-        </div>
-        @if((float)($bill->payments_during_week ?? 0) > 0)
-        <div class="summary-row">
-            <span style="color:#6b7280;">- Payments This Week</span>
-            <span style="font-family:monospace; color:#059669;">₹{{ number_format((float)($bill->payments_during_week ?? 0), 2) }}</span>
-        </div>
-        @endif
-        @if(($bill->gst_amount ?? 0) > 0)
-        <div class="summary-row">
-            <span style="color:#6b7280;">+ GST ({{ $bill->gst_percentage ?? 18 }}%)</span>
-            <span style="font-family:monospace;">₹{{ number_format((float)($bill->gst_amount ?? 0), 2) }}</span>
-        </div>
-        @endif
-        <div class="summary-total">
-            <span>Net Invoice Amount</span>
-            <span style="font-family:monospace; color:#059669;">₹{{ number_format((float)($bill->net_amount ?? $bill->amount), 2) }}</span>
-        </div>
-    </div>
-    <div style="clear:both;"></div>
-</div>
-
 {{-- SECTION 4: PAYMENT SCHEDULE --}}
-<div class="section-bar section-bar-amber">🗓️ Payment Schedule (Monday/Friday Split)</div>
+<div class="section-bar">🗓️ Payment Schedule (Monday/Friday Split)</div>
 <table class="split-table">
     <tr>
         <td>
-            <div class="split-box {{ ($bill->monday_payment_status ?? '') === 'Paid' ? 'paid' : 'pending' }}">
-                <div style="font-size:9px; font-weight:bold; text-transform:uppercase; margin-bottom:5px;">
+            <div class="split-card {{ ($bill->monday_payment_status ?? '') === 'Paid' ? 'paid' : '' }}">
+                <div style="font-size:8px; font-weight:bold; text-transform:uppercase; margin-bottom:3px; color:#4b5563;">
                     {{ ($bill->monday_payment_status ?? '') === 'Paid' ? '✅' : '⏳' }} Monday Split (50%)
                 </div>
-                <div style="font-size:14px; font-weight:bold; font-family:monospace;">
+                <div style="font-size:13px; font-weight:bold; font-family:monospace; color:#111827;">
                     ₹{{ number_format((float)($bill->monday_payment_amount ?? 0), 2) }}
                 </div>
-                <div style="font-size:9px; margin-top:4px;">Status: <strong>{{ $bill->monday_payment_status ?? 'Unpaid' }}</strong></div>
+                <div style="font-size:8px; margin-top:3px; color:#6b7280;">Status: <strong>{{ $bill->monday_payment_status ?? 'Unpaid' }}</strong></div>
             </div>
         </td>
         <td>
-            <div class="split-box {{ ($bill->friday_payment_status ?? '') === 'Paid' ? 'paid' : 'pending' }}">
-                <div style="font-size:9px; font-weight:bold; text-transform:uppercase; margin-bottom:5px;">
+            <div class="split-card {{ ($bill->friday_payment_status ?? '') === 'Paid' ? 'paid' : '' }}">
+                <div style="font-size:8px; font-weight:bold; text-transform:uppercase; margin-bottom:3px; color:#4b5563;">
                     {{ ($bill->friday_payment_status ?? '') === 'Paid' ? '✅' : '⏳' }} Friday Split (50%)
                 </div>
-                <div style="font-size:14px; font-weight:bold; font-family:monospace;">
+                <div style="font-size:13px; font-weight:bold; font-family:monospace; color:#111827;">
                     ₹{{ number_format((float)($bill->friday_payment_amount ?? 0), 2) }}
                 </div>
-                <div style="font-size:9px; margin-top:4px;">Status: <strong>{{ $bill->friday_payment_status ?? 'Unpaid' }}</strong></div>
+                <div style="font-size:8px; margin-top:3px; color:#6b7280;">Status: <strong>{{ $bill->friday_payment_status ?? 'Unpaid' }}</strong></div>
             </div>
         </td>
     </tr>
 </table>
 
 {{-- SECTION 5: PAYMENT HISTORY --}}
-<div class="section-bar section-bar-indigo">📜 Payment History</div>
+<div class="section-bar">📜 Payment History</div>
 @if(isset($allPayments) && $allPayments->isNotEmpty())
 <table class="pay-table">
     <thead>
@@ -280,13 +273,13 @@
     </tbody>
 </table>
 @else
-<div style="padding:14px 24px; color:#9ca3af; font-size:10px; text-align:center;">
+<div style="padding:14px; color:#9ca3af; font-size:9px; text-align:center; border: 1px solid #e5e7eb;">
     No payments recorded yet.
 </div>
 @endif
 
 {{-- Payment Summary Footer --}}
-<div class="pay-footer {{ ($remainingDue ?? 0) <= 0 ? 'paid-bg' : '' }}">
+<div class="pay-footer">
     <table>
         <tr>
             <td style="color:#6b7280;">Total Invoice Amount</td>
@@ -297,10 +290,10 @@
             <td class="tr" style="font-weight:bold; font-family:monospace; color:#059669;">₹{{ number_format($totalPaid ?? 0, 2) }}</td>
         </tr>
         <tr>
-            <td style="font-weight:bold; font-size:12px; padding-top:6px; border-top:1px solid #d1d5db; {{ ($remainingDue ?? 0) <= 0 ? 'color:#059669;' : 'color:#dc2626;' }}">
+            <td style="font-weight:bold; font-size:11px; padding-top:6px; border-top:1px solid #d1d5db; color:#111827;">
                 {{ ($remainingDue ?? 0) <= 0 ? '✅ Fully Paid' : '⏳ Remaining Due' }}
             </td>
-            <td class="tr" style="font-weight:bold; font-size:14px; font-family:monospace; padding-top:6px; border-top:1px solid #d1d5db; {{ ($remainingDue ?? 0) <= 0 ? 'color:#059669;' : 'color:#dc2626;' }}">
+            <td class="tr" style="font-weight:bold; font-size:12px; font-family:monospace; padding-top:6px; border-top:1px solid #d1d5db; {{ ($remainingDue ?? 0) <= 0 ? 'color:#059669;' : 'color:#dc2626;' }}">
                 ₹{{ number_format($remainingDue ?? 0, 2) }}
             </td>
         </tr>
@@ -309,9 +302,9 @@
 
 {{-- FOOTER --}}
 <div class="footer-band">
-    <div style="font-weight:bold; color:#374151; margin-bottom:4px;">Thank you for your continued partnership! 🙏</div>
-    <div>Please ensure payment is cleared within the weekly credit cycle.</div>
-    <div style="margin-top:8px;">NO SIGNATURE REQUIRED • COMPUTER GENERATED • AUTH VERIFIED</div>
+    <div style="font-weight:bold; color:#374151; margin-bottom:2px;">Thank you for your business! 🙏</div>
+    <div>Please settle the payment within the weekly credit cycle.</div>
+    <div style="margin-top:6px; font-size: 7px; color: #bdc3c7;">NO SIGNATURE REQUIRED • COMPUTER GENERATED DOCUMENT • AUTH VERIFIED</div>
 </div>
 
 @endsection
