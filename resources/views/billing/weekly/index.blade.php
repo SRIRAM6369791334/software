@@ -70,7 +70,7 @@
                 </form>
             </div>
 
-            <x-data-table :headers="['Inv No', 'Dealer', 'Period', 'Outstanding & Weekly Payments', 'Total Amount', 'Split Payments Status', 'Status', 'Actions']">
+            <x-data-table :headers="['Inv No', 'Dealer', 'Period', 'Outstanding & Weekly Payments', 'Total Amount', 'Split Payments Status', 'Payment Summary', 'Status', 'Actions']">
                 @forelse($bills as $bill)
                     <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors group">
                         <td class="px-6 py-4">
@@ -127,6 +127,34 @@
                                             <x-badge variant="warning">PENDING</x-badge>
                                             <button @click="payBillId = {{ $bill->id }}; payPart = 'friday'; payAmount = {{ $bill->friday_payment_amount }}; payCashAmount = {{ $bill->friday_payment_amount }}; payBankAmount = 0; payBankTransferType = '';" class="bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold px-2 py-1 rounded transition-all">Pay</button>
                                         </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </td>
+                        {{-- Payment Summary Column --}}
+                        @php
+                            $periodPaid = \App\Models\DealerPayment::where('dealer_id', $bill->dealer_id)
+                                ->whereBetween('date', [
+                                    $bill->period_start->format('Y-m-d'),
+                                    $bill->period_end->format('Y-m-d'),
+                                ])->sum('amount');
+                            $periodRemaining = max(0, (float)$bill->net_amount - (float)$periodPaid);
+                        @endphp
+                        <td class="px-6 py-4">
+                            <div class="space-y-1 text-xs">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                                    <span class="text-zinc-500">Paid:</span>
+                                    <span class="font-jetbrains font-bold text-emerald-600">₹{{ number_format($periodPaid, 0) }}</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    @if($periodRemaining <= 0)
+                                        <span class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></span>
+                                        <span class="font-bold text-emerald-600 text-[10px] uppercase tracking-wider">✅ Fully Paid</span>
+                                    @else
+                                        <span class="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0"></span>
+                                        <span class="text-zinc-500">Due:</span>
+                                        <span class="font-jetbrains font-bold text-rose-600">₹{{ number_format($periodRemaining, 0) }}</span>
                                     @endif
                                 </div>
                             </div>

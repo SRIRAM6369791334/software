@@ -348,8 +348,8 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/run-updates', function () {
     try {
-        // 1. Run migrations to create payment_group_id column if not exists
-        \Illuminate\Support\Facades\Artisan::call('migrate');
+        // 1. Run migrations (adds payment_group_id + bank_expense columns)
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
         echo "Database migrations run successfully!<br>";
 
         // 2. Clear caches
@@ -364,14 +364,14 @@ Route::get('/run-updates', function () {
             $paymentRecords = [];
             foreach ($dealerPayments as $p) {
                 $paymentRecords[] = [
-                    'dealer_id' => $p->dealer_id,
-                    'date' => $p->date->format('Y-m-d'),
-                    'payment_mode' => $p->payment_mode,
-                    'cash_amount' => (float) $p->cash_amount,
-                    'bank_amount' => (float) $p->bank_amount,
+                    'dealer_id'          => $p->dealer_id,
+                    'date'               => $p->date->format('Y-m-d'),
+                    'payment_mode'       => $p->payment_mode,
+                    'cash_amount'        => (float) $p->cash_amount,
+                    'bank_amount'        => (float) $p->bank_amount,
                     'bank_transfer_type' => $p->bank_transfer_type,
-                    'reference_number' => $p->reference_number,
-                    'notes' => $p->notes,
+                    'reference_number'   => $p->reference_number,
+                    'notes'              => $p->notes,
                 ];
                 $p->delete();
             }
@@ -380,7 +380,7 @@ Route::get('/run-updates', function () {
             $dealerIds = array_unique(array_column($paymentRecords, 'dealer_id'));
             foreach ($dealerIds as $dealerId) {
                 \App\Models\DayLoadEntry::where('dealer_id', $dealerId)->update([
-                    'dealer_collected' => 0.00,
+                    'dealer_collected'      => 0.00,
                     'dealer_payment_status' => 'Pending'
                 ]);
             }
@@ -396,12 +396,12 @@ Route::get('/run-updates', function () {
         // 4. Recalculate Dealer Payments pending_balance_after
         $dealersUpdated = 0;
         foreach (\App\Models\Dealer::all() as $dealer) {
-            $dayLoadsSum = (float) \App\Models\DayLoadEntry::where('dealer_id', $dealer->id)->where('status', '!=', 'Cancelled')->get()->sum('amount');
-            $directPaymentsSum = (float) \App\Models\DealerPayment::where('dealer_id', $dealer->id)->whereNull('day_load_entry_id')->sum('amount');
-            $initialBalance = (float) $dealer->pending_amount + $directPaymentsSum + $dayLoadsSum;
-            
+            $dayLoadsSum        = (float) \App\Models\DayLoadEntry::where('dealer_id', $dealer->id)->where('status', '!=', 'Cancelled')->get()->sum('amount');
+            $directPaymentsSum  = (float) \App\Models\DealerPayment::where('dealer_id', $dealer->id)->whereNull('day_load_entry_id')->sum('amount');
+            $initialBalance     = (float) $dealer->pending_amount + $directPaymentsSum + $dayLoadsSum;
+
             $payments = \App\Models\DealerPayment::where('dealer_id', $dealer->id)->orderBy('date')->orderBy('id')->get();
-            
+
             $runningBalance = $initialBalance;
             foreach ($payments as $p) {
                 $runningBalance = round($runningBalance - (float) $p->amount, 2);
@@ -414,12 +414,12 @@ Route::get('/run-updates', function () {
         // 5. Recalculate Vendor Payments pending_balance_after
         $vendorsUpdated = 0;
         foreach (\App\Models\Vendor::all() as $vendor) {
-            $totalCreditPurchases = (float) \App\Models\Purchase::where('vendor_id', $vendor->id)->where('payment_mode', 'Credit')->sum('total_amount');
+            $totalCreditPurchases    = (float) \App\Models\Purchase::where('vendor_id', $vendor->id)->where('payment_mode', 'Credit')->sum('total_amount');
             $totalDayLoadLiabilities = (float) \App\Models\DayLoadEntry::where('vendor_id', $vendor->id)->where('status', '!=', 'Cancelled')->get()->sum('vendor_cost');
-            $initialBalance = $totalCreditPurchases + $totalDayLoadLiabilities;
+            $initialBalance          = $totalCreditPurchases + $totalDayLoadLiabilities;
 
             $payments = \App\Models\VendorPayment::where('vendor_id', $vendor->id)->orderBy('date')->orderBy('id')->get();
-            
+
             $runningBalance = $initialBalance;
             foreach ($payments as $p) {
                 $runningBalance = round($runningBalance - (float) $p->amount, 2);
@@ -428,8 +428,20 @@ Route::get('/run-updates', function () {
             }
         }
         echo "Vendor payments updated: {$vendorsUpdated} records.<br>";
-        echo "All updates finished successfully!";
+
+        // 6. Recalculate all Cash/Bank Ledger rows (oldest first) to fix bank_expense + cascade balances
+        $ledgerService  = app(\App\Services\CashBankLedgerService::class);
+        $ledgerRows     = \App\Models\CashBankLedger::orderBy('ledger_date')->get();
+        $ledgerCount    = 0;
+        foreach ($ledgerRows as $row) {
+            $ledgerService->recalculateForDate(\Carbon\Carbon::parse($row->ledger_date));
+            $ledgerCount++;
+        }
+        echo "Cash/Bank Ledger recalculated: {$ledgerCount} rows.<br>";
+
+        echo "<br><strong style='color:green'>All updates finished successfully!</strong>";
     } catch (\Exception $e) {
-        echo "Error: " . $e->getMessage();
+        echo "<strong style='color:red'>Error: " . $e->getMessage() . "</strong>";
     }
 });
+

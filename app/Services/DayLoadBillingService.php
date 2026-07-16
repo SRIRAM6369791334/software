@@ -88,7 +88,7 @@ class DayLoadBillingService
                 COALESCE(SUM(empty_weight), 0) as total_empty_weight,
                 COALESCE(SUM(bird_weight), 0) as total_bird_weight,
                 COALESCE(SUM(COALESCE(farm_weight, 0)), 0) as total_farm_weight,
-                COALESCE(SUM(COALESCE(total_weight, bird_weight - COALESCE(farm_weight, 0))), 0) as total_weight,
+                COALESCE(SUM(COALESCE(total_weight, bird_weight)), 0) as total_weight,
                 COALESCE(SUM(COALESCE(loss_weight, 0)), 0) as total_loss_weight
             ')
             ->first();
@@ -100,7 +100,7 @@ class DayLoadBillingService
         if ($totalFarmWeight == 0 && (float) $batch->total_farm_weight > 0) {
             $totalFarmWeight = (float) $batch->total_farm_weight;
             $totalLossWeight = round($totalFarmWeight - (float) $totals->total_bird_weight, 2);
-            $totalWeight = $totalLossWeight;
+            $totalWeight = (float) $totals->total_bird_weight;
         }
 
         $batch->update([

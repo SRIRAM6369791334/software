@@ -257,7 +257,38 @@ class WeeklyBillingController extends Controller
     public function show(WeeklyBill $weekly): View
     {
         $weekly->load(['dealer', 'items']);
-        return view('billing.invoice', ['bill' => $weekly]);
+
+        // Day-Load entries for this bill's period (customer_rate based)
+        $dayLoadEntries = DayLoadEntry::with(['batch', 'vendor'])
+            ->where('dealer_id', $weekly->dealer_id)
+            ->where('status', '!=', 'Cancelled')
+            ->whereHas('batch', fn($q) => $q
+                ->whereDate('billing_date', '>=', $weekly->period_start->format('Y-m-d'))
+                ->whereDate('billing_date', '<=', $weekly->period_end->format('Y-m-d')))
+            ->orderBy('batch_id')
+            ->get();
+
+        // All dealer payments during this bill's period (split + ledger)
+        $allPayments = \App\Models\DealerPayment::where('dealer_id', $weekly->dealer_id)
+            ->whereBetween('date', [
+                $weekly->period_start->format('Y-m-d'),
+                $weekly->period_end->format('Y-m-d'),
+            ])
+            ->orderBy('date')
+            ->orderBy('id')
+            ->get();
+
+        // Computed totals
+        $dayLoadTotal = round($dayLoadEntries->sum(
+            fn($e) => (float) $e->bird_weight * (float) $e->customer_rate
+        ), 2);
+        $totalPaid   = round($allPayments->sum('amount'), 2);
+        $remainingDue = max(0, round((float) $weekly->net_amount - $totalPaid, 2));
+
+        return view('billing.invoice', array_merge(
+            compact('weekly', 'dayLoadEntries', 'allPayments', 'dayLoadTotal', 'totalPaid', 'remainingDue'),
+            ['bill' => $weekly]
+        ));
     }
 
     public function print(WeeklyBill $weekly): View
@@ -294,7 +325,41 @@ class WeeklyBillingController extends Controller
     public function downloadPdf(WeeklyBill $weekly)
     {
         $weekly->load(['dealer', 'items']);
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('billing.weekly.pdf', ['bill' => $weekly]);
+
+        // Day-Load entries for this bill's period (customer_rate based)
+        $dayLoadEntries = DayLoadEntry::with(['batch', 'vendor'])
+            ->where('dealer_id', $weekly->dealer_id)
+            ->where('status', '!=', 'Cancelled')
+            ->whereHas('batch', fn($q) => $q
+                ->whereDate('billing_date', '>=', $weekly->period_start->format('Y-m-d'))
+                ->whereDate('billing_date', '<=', $weekly->period_end->format('Y-m-d')))
+            ->orderBy('batch_id')
+            ->get();
+
+        // All dealer payments during this bill's period (split + ledger)
+        $allPayments = \App\Models\DealerPayment::where('dealer_id', $weekly->dealer_id)
+            ->whereBetween('date', [
+                $weekly->period_start->format('Y-m-d'),
+                $weekly->period_end->format('Y-m-d'),
+            ])
+            ->orderBy('date')
+            ->orderBy('id')
+            ->get();
+
+        $dayLoadTotal = round($dayLoadEntries->sum(
+            fn($e) => (float) $e->bird_weight * (float) $e->customer_rate
+        ), 2);
+        $totalPaid    = round($allPayments->sum('amount'), 2);
+        $remainingDue = max(0, round((float) $weekly->net_amount - $totalPaid, 2));
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('billing.weekly.pdf', [
+            'bill'           => $weekly,
+            'dayLoadEntries' => $dayLoadEntries,
+            'allPayments'    => $allPayments,
+            'dayLoadTotal'   => $dayLoadTotal,
+            'totalPaid'      => $totalPaid,
+            'remainingDue'   => $remainingDue,
+        ]);
         return $pdf->download("invoice-{$weekly->invoice_no}.pdf");
     }
 

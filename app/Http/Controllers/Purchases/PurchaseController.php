@@ -113,9 +113,14 @@ class PurchaseController extends Controller
         $date   = $request->input('date');
         $search = $request->input('search');
 
-        // Overall stats
-        $totalPurchases    = Purchase::count();
-        $totalExpenditure  = Purchase::sum('total_amount');
+        // Overall stats (including Day-Load entries as purchases)
+        $activeDayLoadEntriesCount = \App\Models\DayLoadEntry::where('status', '!=', 'Cancelled')->count();
+        $activeDayLoadExpenditure  = \App\Models\DayLoadEntry::where('status', '!=', 'Cancelled')
+            ->get()
+            ->sum(fn($e) => $e->vendor_cost);
+
+        $totalPurchases    = Purchase::count() + $activeDayLoadEntriesCount;
+        $totalExpenditure  = Purchase::sum('total_amount') + $activeDayLoadExpenditure;
         $totalTaxPaid      = Purchase::sum('gst_amount');
         $totalDayLoads     = DayLoadBatch::count();
         $totalBirdsLoaded  = \App\Models\DayLoadEntry::where('status', '!=', 'Cancelled')->sum('no_of_boxes');
@@ -132,9 +137,15 @@ class PurchaseController extends Controller
                 ->whereDate('billing_date', $date)
                 ->first();
 
+            $dayLoadEntries = \App\Models\DayLoadEntry::where('status', '!=', 'Cancelled')
+                ->whereHas('batch', fn ($q) => $q->whereDate('billing_date', $date))
+                ->get();
+
+            $dayLoadVendorCost = $dayLoadEntries->sum(fn($e) => $e->vendor_cost);
+
             $dayStats = [
-                'purchase_count' => $purchases->count(),
-                'purchase_total' => $purchases->sum('total_amount'),
+                'purchase_count' => $purchases->count() + $dayLoadEntries->count(),
+                'purchase_total' => $purchases->sum('total_amount') + $dayLoadVendorCost,
                 'purchase_gst'   => $purchases->sum('gst_amount'),
                 'dayload_count'  => $dayLoadBatch ? $dayLoadBatch->entries()->count() : 0,
                 'dayload_boxes'  => $dayLoadBatch?->total_boxes ?? 0,
@@ -161,14 +172,14 @@ class PurchaseController extends Controller
 
         $dayloadDates = DayLoadBatch::select(
                 DB::raw('billing_date as date'),
-                DB::raw('0 as purchase_count'),
-                DB::raw('0 as total_amount'),
+                DB::raw('(SELECT COUNT(*) FROM day_load_entries WHERE day_load_entries.batch_id = day_load_batches.id AND day_load_entries.status != "Cancelled") as purchase_count'),
+                DB::raw('(SELECT COALESCE(SUM(bird_weight * COALESCE(NULLIF(billing_rate, 0), paper_rate)), 0) FROM day_load_entries WHERE day_load_entries.batch_id = day_load_batches.id AND day_load_entries.status != "Cancelled") as total_amount'),
                 DB::raw('0 as gst_amount'),
                 DB::raw('COUNT(*) as dayload_count'),
                 DB::raw('SUM(total_boxes) as total_boxes'),
                 DB::raw('SUM(total_bird_weight) as total_bird_weight')
             )
-            ->groupBy('billing_date');
+            ->groupBy('billing_date', 'id');
 
         $dateGroups = DB::table($purchaseDates->unionAll($dayloadDates))
             ->selectRaw('
@@ -290,7 +301,14 @@ class PurchaseController extends Controller
 
         $dayLoadEntries = $dayLoadBatch ? $dayLoadBatch->entries->where('status', '!=', 'Cancelled') : collect();
 
-        return view('purchases.invoices-print', compact('dateObj', 'purchases', 'dayLoadBatch', 'dayLoadEntries'));
+        $dayLoadVendorCost = $dayLoadEntries->sum(fn($e) => $e->vendor_cost);
+
+        $purchaseCount = $purchases->count() + $dayLoadEntries->count();
+        $purchaseTotal = $purchases->sum('total_amount') + $dayLoadVendorCost;
+
+        return view('purchases.invoices-print', compact(
+            'dateObj', 'purchases', 'dayLoadBatch', 'dayLoadEntries', 'purchaseCount', 'purchaseTotal'
+        ));
     }
 
     public function invoicesPdf(string $date)
@@ -305,7 +323,14 @@ class PurchaseController extends Controller
 
         $dayLoadEntries = $dayLoadBatch ? $dayLoadBatch->entries->where('status', '!=', 'Cancelled') : collect();
 
-        $pdf = Pdf::loadView('purchases.invoices-pdf', compact('dateObj', 'purchases', 'dayLoadBatch', 'dayLoadEntries'));
+        $dayLoadVendorCost = $dayLoadEntries->sum(fn($e) => $e->vendor_cost);
+
+        $purchaseCount = $purchases->count() + $dayLoadEntries->count();
+        $purchaseTotal = $purchases->sum('total_amount') + $dayLoadVendorCost;
+
+        $pdf = Pdf::loadView('purchases.invoices-pdf', compact(
+            'dateObj', 'purchases', 'dayLoadBatch', 'dayLoadEntries', 'purchaseCount', 'purchaseTotal'
+        ));
         return $pdf->download("invoices-{$date}.pdf");
     }
 }

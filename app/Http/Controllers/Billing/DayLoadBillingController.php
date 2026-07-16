@@ -196,7 +196,7 @@ class DayLoadBillingController extends Controller
         $batch->update([
             'total_farm_weight' => $totalFarmWeight,
             'total_loss_weight' => round($totalFarmWeight - $totalBirdWeight, 2),
-            'total_weight'      => round($totalFarmWeight - $totalBirdWeight, 2),
+            'total_weight'      => $totalBirdWeight,
         ]);
 
         // Clear farm_weight, loss_weight, and total_weight from entries so they don't have individual values.

@@ -18,10 +18,11 @@
     </x-page-header>
 
     {{-- Summary Cards --}}
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-6 mb-8">
         <x-stat-card label="Total Cash Income" value="Rs {{ number_format($totalCashIncome, 0) }}" icon="payments" color="emerald" />
         <x-stat-card label="Total Bank Income" value="Rs {{ number_format($totalBankIncome, 0) }}" icon="account_balance" color="blue" />
         <x-stat-card label="Total Cash Expense" value="Rs {{ number_format($totalCashExpense, 0) }}" icon="money_off" color="rose" />
+        <x-stat-card label="Total Bank Expense" value="Rs {{ number_format($totalBankExpense, 0) }}" icon="account_balance" color="amber" />
         <x-stat-card label="Current Total Balance" value="Rs {{ number_format($currentTotalBalance, 0) }}" icon="account_balance_wallet" color="indigo" />
     </div>
 

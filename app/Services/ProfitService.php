@@ -59,35 +59,29 @@ class ProfitService
 
         $dPayments = DealerPayment::selectRaw($weekFormatDate . " as week_key, SUM(amount) as amount")
             ->whereDate('date', '>=', $startDate)
-            ->whereNull('invoice_id')
             ->groupByRaw($weekFormatDate)->get()->keyBy('week_key');
-
-        $dlInvoices = DayLoadInvoice::selectRaw($this->getFormat('invoice_date') . " as week_key, SUM(total_amount) as amount")
-            ->whereDate('invoice_date', '>=', $startDate)
-            ->groupByRaw($this->getFormat('invoice_date'))->get()->keyBy('week_key');
 
         $expenses = Expense::selectRaw($weekFormatDate . " as week_key, SUM(amount) as amount")
             ->whereDate('date', '>=', $startDate)
             ->groupByRaw($weekFormatDate)->get()->keyBy('week_key');
 
         $emis = Emi::selectRaw($weekFormatEmi . " as week_key, SUM(amount) as amount")
-            ->whereIn('status', ['Paid', 'Overdue'])
+            ->where('status', 'Paid')
             ->whereDate('due_date', '>=', $startDate)
             ->groupByRaw($weekFormatEmi)->get()->keyBy('week_key');
 
         $allKeys = collect([])
             ->merge($wBills->keys())->merge($dBills->keys())->merge($cPayments->keys())
             ->merge($purchases->keys())->merge($vPayments->keys())->merge($dPayments->keys())
-            ->merge($dlInvoices->keys())->merge($expenses->keys())->merge($emis->keys())
+            ->merge($expenses->keys())->merge($emis->keys())
             ->unique()->sort();
 
-        return $allKeys->map(function ($wk) use ($wBills, $dBills, $cPayments, $purchases, $vPayments, $dPayments, $dlInvoices, $expenses, $emis) {
-            // INFLOW: money we RECEIVE (customer bills + dealer bills + customer payments + dealer payments + day-load invoices)
+        return $allKeys->map(function ($wk) use ($wBills, $dBills, $cPayments, $purchases, $vPayments, $dPayments, $expenses, $emis) {
+            // INFLOW: money we RECEIVE (customer bills + dealer bills + customer payments + dealer payments)
             $inflow = (float)($wBills[$wk]->amount ?? 0)
                     + (float)($dBills[$wk]->amount ?? 0)
                     + (float)($cPayments[$wk]->amount ?? 0)
-                    + (float)($dPayments[$wk]->amount ?? 0)
-                    + (float)($dlInvoices[$wk]->amount ?? 0);
+                    + (float)($dPayments[$wk]->amount ?? 0);
 
             // OUTFLOW: money we SPEND (purchases from vendors + vendor payments + expenses + EMIs)
             $outflow = (float)($purchases[$wk]->amount ?? 0)
@@ -136,12 +130,7 @@ class ProfitService
 
         $dPayments = DealerPayment::selectRaw($monthFormatDate . " as month_key, SUM(amount) as amount")
             ->whereDate('date', '>=', $startDate)
-            ->whereNull('invoice_id')
             ->groupByRaw($monthFormatDate)->get()->keyBy('month_key');
-
-        $dlInvoices = DayLoadInvoice::selectRaw($this->getMonthFormat('invoice_date') . " as month_key, SUM(total_amount) as amount")
-            ->whereDate('invoice_date', '>=', $startDate)
-            ->groupByRaw($this->getMonthFormat('invoice_date'))->get()->keyBy('month_key');
 
         $expenses = Expense::selectRaw($monthFormatDate . " as month_key, SUM(amount) as amount")
             ->whereDate('date', '>=', $startDate)
@@ -150,16 +139,15 @@ class ProfitService
         $allKeys = collect([])
             ->merge($wBills->keys())->merge($dBills->keys())->merge($cPayments->keys())
             ->merge($purchases->keys())->merge($vPayments->keys())->merge($dPayments->keys())
-            ->merge($dlInvoices->keys())->merge($expenses->keys())
+            ->merge($expenses->keys())
             ->unique()->sort();
 
-        return $allKeys->map(function($mk) use ($wBills, $dBills, $cPayments, $purchases, $vPayments, $dPayments, $dlInvoices, $expenses) {
-            // INFLOW: Customer bills + Dealer bills + Customer payments + Dealer payments + Day-load invoices
+        return $allKeys->map(function($mk) use ($wBills, $dBills, $cPayments, $purchases, $vPayments, $dPayments, $expenses) {
+            // INFLOW: Customer bills + Dealer bills + Customer payments + Dealer payments
             $inflow = (float)($wBills[$mk]->amount ?? 0)
                     + (float)($dBills[$mk]->amount ?? 0)
                     + (float)($cPayments[$mk]->amount ?? 0)
-                    + (float)($dPayments[$mk]->amount ?? 0)
-                    + (float)($dlInvoices[$mk]->amount ?? 0);
+                    + (float)($dPayments[$mk]->amount ?? 0);
 
             // OUTFLOW: Purchases from Vendor + Vendor payments + Expenses
             $outflow = (float)($purchases[$mk]->amount ?? 0)
@@ -177,13 +165,12 @@ class ProfitService
         $month = sprintf('%02d', now()->month);
         $year  = (string)now()->year;
 
-        // INFLOW — money we RECEIVE
+        // INFLOW — money we RECEIVE (strictly cash/collections)
         $wBills    = WeeklyBill::whereMonth('period_end', $month)->whereYear('period_end', $year)->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('net_amount');
         $dBills    = DailyBill::whereMonth('date', $month)->whereYear('date', $year)->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('net_amount');
         $cPayments = CustomerPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
-        $dPayments   = DealerPayment::whereMonth('date', $month)->whereYear('date', $year)->whereNull('invoice_id')->sum('amount');
-        $dlInvoices  = DayLoadInvoice::whereMonth('invoice_date', $month)->whereYear('invoice_date', $year)->sum('total_amount');
-        $revenue     = $wBills + $dBills + $cPayments + $dPayments + $dlInvoices;
+        $dPayments = DealerPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
+        $revenue   = $wBills + $dBills + $cPayments + $dPayments;
         
         // OUTFLOW — money we SPEND
         $purchases  = Purchase::whereMonth('date', $month)->whereYear('date', $year)->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('total_amount');
@@ -191,7 +178,7 @@ class ProfitService
         $purchase   = $purchases + $vPayments;
         
         $expensesAmt = Expense::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
-        $emisAmt     = Emi::whereIn('status', ['Paid', 'Overdue'])->whereMonth('due_date', $month)->whereYear('due_date', $year)->sum('amount');
+        $emisAmt     = Emi::where('status', 'Paid')->whereMonth('due_date', $month)->whereYear('due_date', $year)->sum('amount');
         $expenses    = $expensesAmt + $emisAmt;
 
         $profit = $revenue - $purchase - $expenses;
@@ -201,9 +188,9 @@ class ProfitService
 
     public function getProfitBreakdown($startDate, $endDate): array
     {
-        // INFLOW — Total billed (all bills)
+        // INFLOW — Total billed (all bills). We exclude WeeklyBills starting with 'INV-DL-' to prevent double-counting with DayLoadInvoice.
         $totalBilled = DailyBill::whereBetween('date', [$startDate, $endDate])->sum('net_amount')
-            + WeeklyBill::whereBetween('period_end', [$startDate, $endDate])->sum('net_amount')
+            + WeeklyBill::whereBetween('period_end', [$startDate, $endDate])->where('invoice_no', 'NOT LIKE', 'INV-DL-%')->sum('net_amount')
             + DayLoadInvoice::whereBetween('invoice_date', [$startDate, $endDate])->sum('total_amount');
 
         // INFLOW — Actually collected (cash sales + customer payments + dealer payments)
@@ -221,7 +208,7 @@ class ProfitService
 
         // OUTFLOW — Expenses
         $totalExpenses = Expense::whereBetween('date', [$startDate, $endDate])->sum('amount')
-            + Emi::whereIn('status', ['Paid', 'Overdue'])->whereBetween('due_date', [$startDate, $endDate])->sum('amount');
+            + Emi::where('status', 'Paid')->whereBetween('due_date', [$startDate, $endDate])->sum('amount');
 
         $billedProfit      = $totalBilled    - ($totalPurchaseBilled + $totalExpenses);
         $collectedProfit   = $totalCollected - ($totalPurchasePaid   + $totalExpenses);

@@ -48,15 +48,15 @@ class DealerPaymentService
                 $deduct = min($remainingAmount, $pendingAmount);
                 $dealer->decrement('pending_amount', $deduct);
                 
-                // Create a payment record for the base pending amount deduction
+                // BUG 3 FIX: Guard against division by zero when splitting cash/bank
                 $paymentData = array_merge($data, [
-                    'amount' => $deduct,
-                    'cash_amount' => round($deduct * ($cashAmount / $amount), 2),
-                    'bank_amount' => round($deduct - round($deduct * ($cashAmount / $amount), 2), 2),
+                    'amount'           => $deduct,
+                    'cash_amount'      => $amount > 0 ? round($deduct * ($cashAmount / $amount), 2) : $deduct,
+                    'bank_amount'      => $amount > 0 ? round($deduct - round($deduct * ($cashAmount / $amount), 2), 2) : 0,
                     'payment_group_id' => $paymentGroupId,
                     'day_load_entry_id' => null,
-                    'invoice_id' => null,
-                    'notes' => ($data['notes'] ?? '') ?: 'Allocated to base pending balance',
+                    'invoice_id'       => null,
+                    'notes'            => ($data['notes'] ?? '') ?: 'Allocated to base pending balance',
                 ]);
                 $createdPayments[] = DealerPayment::create($paymentData);
                 
@@ -88,15 +88,15 @@ class DealerPaymentService
                     $dayLoadPaymentService->refreshBatchFinancials($entry->batch);
                     $dayLoadPaymentService->refreshInvoicePayment($entry->batch?->invoice);
                     
-                    // Create payment record for this entry allocation
+                    // BUG 3 FIX: Guard against division by zero when splitting cash/bank
                     $paymentData = array_merge($data, [
-                        'amount' => $alloc,
-                        'cash_amount' => round($alloc * ($cashAmount / $amount), 2),
-                        'bank_amount' => round($alloc - round($alloc * ($cashAmount / $amount), 2), 2),
-                        'payment_group_id' => $paymentGroupId,
+                        'amount'            => $alloc,
+                        'cash_amount'       => $amount > 0 ? round($alloc * ($cashAmount / $amount), 2) : $alloc,
+                        'bank_amount'       => $amount > 0 ? round($alloc - round($alloc * ($cashAmount / $amount), 2), 2) : 0,
+                        'payment_group_id'  => $paymentGroupId,
                         'day_load_entry_id' => $entry->id,
-                        'invoice_id' => $entry->batch?->invoice_id,
-                        'notes' => ($data['notes'] ?? '') ?: 'Auto-allocated to entry #' . $entry->id,
+                        'invoice_id'        => $entry->batch?->invoice_id,
+                        'notes'             => ($data['notes'] ?? '') ?: 'Auto-allocated to entry #' . $entry->id,
                     ]);
                     $createdPayments[] = DealerPayment::create($paymentData);
                     
@@ -110,13 +110,14 @@ class DealerPaymentService
             // 3. Any excess amount is treated as advance
             if ($remainingAmount > 0) {
                 $paymentData = array_merge($data, [
-                    'amount' => $remainingAmount,
-                    'cash_amount' => round($remainingAmount * ($cashAmount / $amount), 2),
-                    'bank_amount' => round($remainingAmount - round($remainingAmount * ($cashAmount / $amount), 2), 2),
+                    'amount'           => $remainingAmount,
+                    // BUG 3 FIX: Guard against division by zero
+                    'cash_amount'      => $amount > 0 ? round($remainingAmount * ($cashAmount / $amount), 2) : $remainingAmount,
+                    'bank_amount'      => $amount > 0 ? round($remainingAmount - round($remainingAmount * ($cashAmount / $amount), 2), 2) : 0,
                     'payment_group_id' => $paymentGroupId,
                     'day_load_entry_id' => null,
-                    'invoice_id' => null,
-                    'notes' => ($data['notes'] ?? '') ?: 'Unallocated advance',
+                    'invoice_id'        => null,
+                    'notes'             => ($data['notes'] ?? '') ?: 'Unallocated advance',
                 ]);
                 $createdPayments[] = DealerPayment::create($paymentData);
             }
@@ -141,11 +142,18 @@ class DealerPaymentService
                 ]);
             }
             
-            // Recalculate cash/bank ledger
-            $firstPayment = $createdPayments[0];
-            app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($firstPayment->date));
+            // BUG 6 FIX: Recalculate cash/bank ledger for ALL unique payment dates
+            // (in case future features allow split allocations across different dates)
+            $uniqueDates = collect($createdPayments)
+                ->pluck('date')
+                ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
+                ->unique();
+
+            foreach ($uniqueDates as $dateStr) {
+                app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($dateStr));
+            }
             
-            return $firstPayment;
+            return $createdPayments[0];
         });
     }
 

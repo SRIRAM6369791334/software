@@ -87,7 +87,7 @@ class DayLoadEntry extends Model
             if ($entry->farm_weight !== null) {
                 $farmWeight = (float) $entry->farm_weight;
                 $entry->loss_weight = round($farmWeight - $birdWeight, 2);
-                $entry->total_weight = round($farmWeight - $birdWeight, 2);
+                $entry->total_weight = $birdWeight;
             } else {
                 $entry->loss_weight = null;
                 $entry->total_weight = null;

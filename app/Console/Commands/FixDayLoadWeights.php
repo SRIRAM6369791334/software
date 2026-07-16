@@ -28,9 +28,9 @@ class FixDayLoadWeights extends Command
                 $farmWeight = null;
             }
 
-            // New logic: loss_weight = farm_weight, total_weight = bird_weight - farm_weight
-            $newLossWeight = $farmWeight === null ? null : $farmWeight;
-            $newTotalWeight = $farmWeight === null ? null : $birdWeight - $farmWeight;
+            // New logic: loss_weight = farm_weight - bird_weight, total_weight = bird_weight
+            $newLossWeight = $farmWeight === null ? null : round($farmWeight - $birdWeight, 2);
+            $newTotalWeight = $farmWeight === null ? null : $birdWeight;
 
             $entry->updateQuietly([
                 'farm_weight'  => $farmWeight,

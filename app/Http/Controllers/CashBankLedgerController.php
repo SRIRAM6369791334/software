@@ -41,6 +41,7 @@ class CashBankLedgerController extends Controller
         $totalCashIncome  = (clone $baseQuery)->sum('cash_income');
         $totalBankIncome  = (clone $baseQuery)->sum('bank_income');
         $totalCashExpense = (clone $baseQuery)->sum('cash_expense');
+        $totalBankExpense = (clone $baseQuery)->sum('bank_expense'); // BUG 4 FIX
 
         // Current total balance: date-range only (no status filter),
         // from the most recent ledger row in the range
@@ -61,7 +62,7 @@ class CashBankLedgerController extends Controller
 
         return view('billing.cash-bank-ledger.index', compact(
             'ledgers', 'startDate', 'endDate', 'status',
-            'totalCashIncome', 'totalBankIncome', 'totalCashExpense', 'currentTotalBalance'
+            'totalCashIncome', 'totalBankIncome', 'totalCashExpense', 'totalBankExpense', 'currentTotalBalance'
         ));
     }
 

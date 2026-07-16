@@ -17,6 +17,7 @@ class CashBankLedger extends Model
         'cash_income',
         'bank_income',
         'cash_expense',
+        'bank_expense',
         'closing_cash_balance',
         'closing_bank_balance',
         'is_approved',
@@ -32,6 +33,7 @@ class CashBankLedger extends Model
         'cash_income'           => 'decimal:2',
         'bank_income'           => 'decimal:2',
         'cash_expense'          => 'decimal:2',
+        'bank_expense'          => 'decimal:2',
         'closing_cash_balance'  => 'decimal:2',
         'closing_bank_balance'  => 'decimal:2',
         'is_approved'           => 'boolean',
@@ -44,14 +46,5 @@ class CashBankLedger extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    public function getBankExpenseAttribute(): float
-    {
-        $dateStr = $this->ledger_date->format('Y-m-d');
-        $expenseBank = (float) \App\Models\Expense::whereDate('date', $dateStr)
-            ->where('payment_method', 'Bank Transfer')
-            ->sum('amount');
-        $vendorBank = (float) \App\Models\VendorPayment::whereDate('date', $dateStr)
-            ->sum('bank_amount');
-        return round($expenseBank + $vendorBank, 2);
-    }
+    // bank_expense is now a real DB column, calculated and saved by CashBankLedgerService::recalculateForDate().
 }

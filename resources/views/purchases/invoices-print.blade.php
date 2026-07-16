@@ -149,15 +149,15 @@
 <div class="stats">
     <div class="stat-card sc-blue">
         <div class="s-label">Purchases</div>
-        <div class="s-value">{{ $purchases->count() }}</div>
+        <div class="s-value">{{ $purchaseCount }}</div>
     </div>
     <div class="stat-card sc-green">
         <div class="s-label">Purchase Total</div>
-        <div class="s-value">Rs {{ number_format($purchases->sum('total_amount'), 0) }}</div>
+        <div class="s-value">Rs {{ number_format($purchaseTotal, 0) }}</div>
     </div>
     <div class="stat-card sc-amber">
         <div class="s-label">Day-Load Batches</div>
-        <div class="s-value">{{ $dayLoadBatch ? $dayLoadEntries->count() : 0 }}</div>
+        <div class="s-value">{{ $dayLoadBatch ? 1 : 0 }}</div>
     </div>
     <div class="stat-card sc-violet">
         <div class="s-label">Birds Loaded</div>
@@ -238,8 +238,8 @@
             <td colspan="3" style="text-transform:uppercase;font-size:11px;">Total</td>
             <td class="text-center font-bold font-mono" style="color:#2563eb;">{{ $dayLoadEntries->sum('no_of_boxes') }}</td>
             <td class="text-right font-bold font-mono">{{ number_format((float) $dayLoadEntries->sum('bird_weight'), 2) }}</td>
-            <td class="text-right font-bold font-mono">{{ number_format((float) $dayLoadEntries->sum('farm_weight'), 2) }}</td>
-            <td class="text-right font-bold font-mono text-rose">{{ number_format((float) $dayLoadEntries->sum('loss_weight'), 2) }}</td>
+            <td class="text-right font-bold font-mono">{{ number_format((float) ($dayLoadBatch?->total_farm_weight ?? $dayLoadEntries->sum('farm_weight')), 2) }}</td>
+            <td class="text-right font-bold font-mono text-rose">{{ number_format((float) ($dayLoadBatch?->total_loss_weight ?? $dayLoadEntries->sum('loss_weight')), 2) }}</td>
         </tr>
     </tfoot>
 </table>
