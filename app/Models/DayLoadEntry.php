@@ -15,6 +15,7 @@ class DayLoadEntry extends Model
         'batch_id',
         'vendor_id',
         'dealer_id',
+        'weekly_bill_id',
         'paper_rate',
         'billing_rate',
         'customer_rate',
@@ -56,14 +57,39 @@ class DayLoadEntry extends Model
         return round((float) $this->bird_weight * (float) $this->customer_rate, 2);
     }
 
+    public function getEffectiveFarmWeightAttribute(): ?float
+    {
+        if ($this->farm_weight !== null) {
+            return (float) $this->farm_weight;
+        }
+
+        $batch = $this->batch;
+        if ($batch && (float) $batch->total_farm_weight > 0) {
+            $totalBirdWeight = (float) $batch->total_bird_weight;
+            if ($totalBirdWeight > 0) {
+                $ratio = (float) $this->bird_weight / $totalBirdWeight;
+                return round($ratio * (float) $batch->total_farm_weight, 2);
+            }
+        }
+
+        return null;
+    }
+
     public function getVendorCostAttribute(): float
     {
+        $effectiveFw = $this->effective_farm_weight;
+        if ($effectiveFw === null) {
+            return 0.0;
+        }
         $vendorRate = (float) $this->billing_rate > 0 ? (float) $this->billing_rate : (float) $this->paper_rate;
-        return round((float) $this->bird_weight * $vendorRate, 2);
+        return round($effectiveFw * $vendorRate, 2);
     }
 
     public function getGrossMarginAttribute(): float
     {
+        if ($this->effective_farm_weight === null) {
+            return 0.0;
+        }
         return round($this->dealer_income - $this->vendor_cost, 2);
     }
 
@@ -74,6 +100,9 @@ class DayLoadEntry extends Model
 
     public function getVendorBalanceAttribute(): float
     {
+        if ($this->effective_farm_weight === null) {
+            return 0.0;
+        }
         return round($this->vendor_cost - (float) $this->vendor_paid, 2);
     }
 
@@ -110,6 +139,11 @@ class DayLoadEntry extends Model
     public function dealer(): BelongsTo
     {
         return $this->belongsTo(Dealer::class, 'dealer_id');
+    }
+
+    public function weeklyBill(): BelongsTo
+    {
+        return $this->belongsTo(WeeklyBill::class, 'weekly_bill_id');
     }
 
     public function parentEntry(): BelongsTo

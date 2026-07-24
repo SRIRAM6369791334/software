@@ -19,7 +19,7 @@ class VendorController extends Controller
         $search  = $request->input('search');
         $routeFilter = $request->input('route');
         
-        $vendorsQuery = Vendor::with(['purchases', 'dayLoadEntries', 'vendorPayments'])->search($search);
+        $vendorsQuery = Vendor::with(['purchases', 'dayLoadEntries.batch', 'vendorPayments'])->search($search);
         if ($routeFilter) {
             $vendorsQuery->where('route', $routeFilter);
         }
@@ -102,7 +102,7 @@ class VendorController extends Controller
 
         // Calculate outstanding balance details
         $totalCreditPurchases = (float) $vendor->purchases()->where('payment_mode', 'Credit')->sum('total_amount');
-        $dayLoadEntriesForLiab = $vendor->dayLoadEntries()->where('status', '!=', 'Cancelled')->get();
+        $dayLoadEntriesForLiab = $vendor->dayLoadEntries()->where('status', '!=', 'Cancelled')->with('batch')->get();
         $totalDayLoadLiabilities = (float) $dayLoadEntriesForLiab->sum(function ($entry) {
             return $entry->vendor_cost;
         });

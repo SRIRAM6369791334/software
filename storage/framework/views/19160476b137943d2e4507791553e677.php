@@ -60,4 +60,4 @@ unset($__defined_vars, $__key, $__value); ?>
     </a>
     <?php endif; ?>
 </div>
-<?php /**PATH C:\xampp\htdocs\Poultry Management System\flockwise-biztrack-main\flockwise-biztrack-laravel\resources\views/components/empty-state.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\Poultry Management System\flockwise-biztrack-main\flockwise-biztrack-laravel\resources\views\components\empty-state.blade.php ENDPATH**/ ?>

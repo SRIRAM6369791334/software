@@ -218,16 +218,25 @@
                         </div>
                     </td>
                     <td class="px-6 py-4 text-xs">
-                        @php
-                            $vStatus = $entry->vendor_payment_status;
-                            $vColor = match($vStatus) { 'Paid' => 'success', 'Partial' => 'warning', 'Overpaid' => 'info', default => 'zinc' };
-                        @endphp
-                        <div class="flex flex-col items-center gap-1">
-                            <x-badge :variant="$vColor">{{ $vStatus }}</x-badge>
-                            <span class="font-jetbrains text-[11px] {{ (float) $entry->vendor_paid > 0 ? 'text-violet-600' : 'text-zinc-400' }}">
-                                Rs {{ number_format((float) $entry->vendor_paid, 0) }} / Rs {{ number_format($entry->vendor_cost, 0) }}
-                            </span>
-                        </div>
+                        @if($entry->effective_farm_weight !== null)
+                            @php
+                                $vStatus = $entry->vendor_payment_status;
+                                $vColor = match($vStatus) { 'Paid' => 'success', 'Partial' => 'warning', 'Overpaid' => 'info', default => 'zinc' };
+                            @endphp
+                            <div class="flex flex-col items-center gap-1">
+                                <x-badge :variant="$vColor">{{ $vStatus }}</x-badge>
+                                <span class="font-jetbrains text-[11px] {{ (float) $entry->vendor_paid > 0 ? 'text-violet-600' : 'text-zinc-400' }}">
+                                    Rs {{ number_format((float) $entry->vendor_paid, 0) }} / Rs {{ number_format($entry->vendor_cost, 0) }}
+                                </span>
+                            </div>
+                        @else
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="text-[10px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-0.5">
+                                    <span class="material-symbols-rounded text-[14px]">info</span>
+                                    Enter FW for price
+                                </span>
+                            </div>
+                        @endif
                     </td>
                     <td class="px-6 py-4 text-center">
                         <x-badge variant="success">{{ $entry->status }}</x-badge>
@@ -302,6 +311,7 @@
                                 >
                                     <span class="material-symbols-rounded text-sm">payments</span>
                                 </button>
+                                @if($entry->effective_farm_weight !== null)
                                 <button
                                     type="button"
                                     x-on:click="
@@ -323,6 +333,7 @@
                                 >
                                     <span class="material-symbols-rounded text-sm">account_balance_wallet</span>
                                 </button>
+                                @endif
                             </div>
                         @endif
                     </td>

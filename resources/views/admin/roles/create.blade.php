@@ -24,9 +24,13 @@
                     name="name" 
                     label="Role Name" 
                     icon="badge" 
-                    placeholder="e.g. Manager" 
+                    placeholder="e.g. Manager, Accountant, Sales Agent" 
                     required 
                 />
+                <p class="text-xs text-zinc-400 dark:text-zinc-500 -mt-4">
+                    Use lowercase with underscores for system roles (e.g. <code class="font-jetbrains">store_keeper</code>). 
+                    After creating, use <strong>Assign Permissions</strong> to configure access.
+                </p>
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">

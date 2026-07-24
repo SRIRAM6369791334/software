@@ -50,7 +50,7 @@
                             </div>
                         </div>
                     @else
-                        <x-form.select name="dealer_id" label="Select Dealer" required>
+                        <x-form.select name="dealer_id" label="Select Dealer" required onchange="if(this.value) window.location.href='{{ route('payments.dealers.create') }}?dealer_id='+this.value">
                             <option value="">Choose dealer…</option>
                             @foreach($dealers as $d)
                                 <option value="{{ $d->id }}" {{ $selected_dealer_id == $d->id ? 'selected' : '' }}>
@@ -61,6 +61,112 @@
                     @endif
                 </div>
             </section>
+
+            @if($selected_dealer_id)
+                {{-- Bill Selection or Day Load entries --}}
+                <section class="space-y-4">
+                    <div class="flex items-center gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">
+                        <div class="h-10 w-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                            <span class="material-symbols-rounded">receipt_long</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-zinc-900 dark:text-zinc-100 tracking-tight font-cabinet">
+                            @if($weeklyBills->isNotEmpty())
+                                Outstanding Weekly Bills
+                            @else
+                                Unbilled Day-Load Dues
+                            @endif
+                        </h3>
+                    </div>
+
+                    @if($weeklyBills->isNotEmpty())
+                        <div class="p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60">
+                            <label class="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2 font-cabinet tracking-wide uppercase">Select Weekly Bill Split to Pay <span class="text-rose-500">*</span></label>
+                            <select name="weekly_bill_split" id="weekly-bill-split" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm shadow-sm" onchange="onBillSplitChange(this)">
+                                <option value="" data-amount="0">Select a split part to pay...</option>
+                                @foreach($weeklyBills as $bill)
+                                    @if($bill->monday_payment_status !== 'Paid')
+                                        <option value="{{ $bill->id }}_monday" data-amount="{{ $bill->monday_payment_amount }}" data-bill-id="{{ $bill->id }}" data-part="monday">
+                                            {{ $bill->invoice_no }} (Monday Split) — Rs {{ number_format($bill->monday_payment_amount, 2) }}
+                                        </option>
+                                    @endif
+                                    @if($bill->friday_payment_status !== 'Paid')
+                                        <option value="{{ $bill->id }}_friday" data-amount="{{ $bill->friday_payment_amount }}" data-bill-id="{{ $bill->id }}" data-part="friday">
+                                            {{ $bill->invoice_no }} (Friday Split) — Rs {{ number_format($bill->friday_payment_amount, 2) }}
+                                        </option>
+                                    @endif
+                                @endforeach
+                            </select>
+                            <input type="hidden" name="weekly_bill_id" id="weekly-bill-id-input">
+                            <input type="hidden" name="payment_part" id="payment-part-input">
+                        </div>
+                    @else
+                        <div class="p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 overflow-x-auto">
+                            <table class="w-full text-left text-sm font-outfit">
+                                <thead>
+                                    <tr class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest bg-zinc-100/50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
+                                        <th class="px-4 py-3 w-12 text-center">
+                                            <input type="checkbox" id="select-all-entries" onchange="toggleAllEntries(this)" class="rounded border-zinc-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500 bg-white dark:bg-zinc-900">
+                                        </th>
+                                        <th class="px-4 py-3">Date</th>
+                                        <th class="px-4 py-3">Vendor</th>
+                                        <th class="px-4 py-3 text-right">Weight (kg)</th>
+                                        <th class="px-4 py-3 text-right">Customer Rate</th>
+                                        <th class="px-4 py-3 text-right">Total Dues</th>
+                                        <th class="px-4 py-3 text-right">Collected</th>
+                                        <th class="px-4 py-3 text-right text-blue-600 dark:text-blue-400 font-bold">Dues Remaining</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700 bg-white dark:bg-zinc-900/50">
+                                    @forelse($dayLoadEntries as $entry)
+                                        @php
+                                            $dueRemaining = round((float)$entry->amount - (float)$entry->dealer_collected, 2);
+                                        @endphp
+                                        <tr class="hover:bg-zinc-50/50 transition-colors">
+                                            <td class="px-4 py-4 text-center">
+                                                <input type="checkbox" name="selected_entry_ids[]" value="{{ $entry->id }}" data-remaining="{{ $dueRemaining }}" onchange="updateSelectedDuesTotal()" class="day-load-checkbox rounded border-zinc-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-500 bg-white dark:bg-zinc-900">
+                                            </td>
+                                            <td class="px-4 py-4 font-medium text-zinc-900 dark:text-zinc-100">
+                                                {{ $entry->batch?->billing_date?->format('d M Y') ?? '—' }}
+                                                <span class="block text-[10px] text-zinc-400">{{ $entry->batch?->billing_date?->format('l') }}</span>
+                                            </td>
+                                            <td class="px-4 py-4 text-zinc-600 dark:text-zinc-400">
+                                                {{ $entry->vendor?->firm_name ?? '—' }}
+                                            </td>
+                                            <td class="px-4 py-4 text-right font-mono text-zinc-700 dark:text-zinc-300">
+                                                {{ number_format($entry->bird_weight, 2) }} kg
+                                            </td>
+                                            <td class="px-4 py-4 text-right font-mono text-zinc-700 dark:text-zinc-300">
+                                                ₹{{ number_format($entry->customer_rate, 2) }}
+                                            </td>
+                                            <td class="px-4 py-4 text-right font-bold font-mono text-zinc-900 dark:text-zinc-100">
+                                                ₹{{ number_format($entry->amount, 2) }}
+                                            </td>
+                                            <td class="px-4 py-4 text-right font-mono text-zinc-500">
+                                                ₹{{ number_format($entry->dealer_collected, 2) }}
+                                            </td>
+                                            <td class="px-4 py-4 text-right font-bold font-mono text-blue-600 dark:text-blue-400">
+                                                ₹{{ number_format($dueRemaining, 2) }}
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="8" class="px-6 py-10 text-center text-zinc-500 dark:text-zinc-400">
+                                                No unbilled day-load entries found for this dealer.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                            @if($dayLoadEntries->isNotEmpty())
+                                <div class="flex justify-between items-center mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                                    <span class="text-xs font-bold text-zinc-500 uppercase">Selected Entries Dues:</span>
+                                    <span id="selected-dues-display" class="font-jetbrains font-black text-lg text-blue-600 dark:text-blue-400">₹0.00</span>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+                </section>
+            @endif
 
             {{-- Day-Load Warning Banner --}}
             @if($selected_dealer_id && $pendingDayLoadCount > 0)
@@ -154,3 +260,58 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function onBillSplitChange(select) {
+        const option = select.options[select.selectedIndex];
+        const amount = parseFloat(option.getAttribute('data-amount')) || 0;
+        const billId = option.getAttribute('data-bill-id') || '';
+        const part = option.getAttribute('data-part') || '';
+        
+        document.getElementById('weekly-bill-id-input').value = billId;
+        document.getElementById('payment-part-input').value = part;
+        
+        // Auto-fill cash amount in Alpine
+        const formEl = document.querySelector('form');
+        if (formEl) {
+            const alpineData = Alpine.$data(formEl);
+            if (alpineData) {
+                alpineData.cashAmount = amount;
+                alpineData.bankAmount = 0;
+            }
+        }
+    }
+
+    function toggleAllEntries(master) {
+        const checkboxes = document.querySelectorAll('.day-load-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = master.checked;
+        });
+        updateSelectedDuesTotal();
+    }
+
+    function updateSelectedDuesTotal() {
+        const checkboxes = document.querySelectorAll('.day-load-checkbox:checked');
+        let total = 0;
+        checkboxes.forEach(cb => {
+            total += parseFloat(cb.getAttribute('data-remaining')) || 0;
+        });
+        
+        const display = document.getElementById('selected-dues-display');
+        if (display) {
+            display.textContent = '₹' + total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        
+        // Auto fill cash amount in Alpine
+        const formEl = document.querySelector('form');
+        if (formEl) {
+            const alpineData = Alpine.$data(formEl);
+            if (alpineData) {
+                alpineData.cashAmount = total;
+                alpineData.bankAmount = 0;
+            }
+        }
+    }
+</script>
+@endpush

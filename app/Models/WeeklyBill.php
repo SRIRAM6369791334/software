@@ -50,6 +50,11 @@ class WeeklyBill extends Model
         return $this->hasMany(DealerPurchase::class);
     }
 
+    public function dayLoadEntries(): HasMany
+    {
+        return $this->hasMany(DayLoadEntry::class);
+    }
+
     public function scopeSearch($query, ?string $term)
     {
         if (!$term) return $query;

@@ -413,13 +413,15 @@ class DayLoadBillingController extends Controller
             $groupedEntries = $entries
                 ->groupBy(fn($e) => $e->batch->billing_date->format('Y-m-d'))
                 ->map(fn($items, $date) => [
-                    'date'          => $date,
-                    'count'         => $items->count(),
-                    'total_weight'  => round($items->sum('bird_weight'), 2),
-                    'paper_rate'    => (float) $items->first()->paper_rate,
-                    'current_rate'  => (float) ($items->first()->billing_rate ?: 0),
-                    'entry_ids'     => $items->pluck('id')->toArray(),
-                    'batch_ids'     => $items->pluck('batch_id')->unique()->values()->toArray(),
+                    'date'               => $date,
+                    'count'              => $items->count(),
+                    'total_weight'       => round($items->sum('bird_weight'), 2),
+                    'total_farm_weight'  => round($items->sum('farm_weight'), 2),
+                    'has_all_farm_weight' => $items->every(fn($e) => $e->farm_weight !== null),
+                    'paper_rate'         => (float) $items->first()->paper_rate,
+                    'current_rate'       => (float) ($items->first()->billing_rate ?: 0),
+                    'entry_ids'          => $items->pluck('id')->toArray(),
+                    'batch_ids'          => $items->pluck('batch_id')->unique()->values()->toArray(),
                 ])->sortKeys();
 
             $currentVendorCost = $entries->sum(fn($e) => $e->vendor_cost);
@@ -427,6 +429,8 @@ class DayLoadBillingController extends Controller
                 'current_vendor_cost' => $currentVendorCost,
                 'total_entries'       => $entries->count(),
                 'total_weight'        => round($entries->sum('bird_weight'), 2),
+                'total_farm_weight'   => round($entries->sum('farm_weight'), 2),
+                'entries_without_farm_weight' => $entries->filter(fn($e) => $e->farm_weight === null)->count(),
             ];
         }
 

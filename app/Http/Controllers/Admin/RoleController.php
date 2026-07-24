@@ -19,7 +19,7 @@ class RoleController extends Controller
 
     public function index()
     {
-        $roles = Role::oldest()->get();
+        $roles = Role::withCount(['permissions', 'users'])->oldest()->get();
         return view('admin.roles.index', compact('roles'));
     }
 
@@ -33,13 +33,12 @@ class RoleController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|unique:roles,name',
-            'guard_name' => 'required'
+            'name' => 'required|string|max:255|unique:roles,name',
         ]);
 
         $role = Role::create([
             'name' => $request->name,
-            'guard_name' => $request->guard_name
+            'guard_name' => 'web'
         ]);
 
         ActivityLogger::log('Created Role', 'RoleManagement', $role->id);
@@ -57,14 +56,12 @@ class RoleController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'name'       => 'required|string|max:255|unique:roles,name,' . $id,
-            'guard_name' => 'required|string',
+            'name' => 'required|string|max:255|unique:roles,name,' . $id,
         ]);
 
         $role = Role::findOrFail($id);
         $role->update([
-            'name'       => $request->name,
-            'guard_name' => $request->guard_name
+            'name' => $request->name,
         ]);
 
         ActivityLogger::log('Updated Role', 'RoleManagement', $role->id);

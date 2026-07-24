@@ -18,9 +18,10 @@ class PermissionController extends Controller
 
     public function index()
     {
-        $permissions = Permission::all();
+        $permissions = Permission::with('permissionGroup')->orderBy('permission_group_id')->orderBy('name')->paginate(50);
         $groups = PermissionGroup::pluck('name', 'id');
-        return view('admin.permissions.index', compact('permissions', 'groups'));
+        $allGroups = PermissionGroup::withCount('permissions')->orderBy('name')->get();
+        return view('admin.permissions.index', compact('permissions', 'groups', 'allGroups'));
     }
 
     public function create()

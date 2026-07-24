@@ -365,4 +365,4 @@
     </div>
 </body>
 </html>
-<?php /**PATH C:\xampp\htdocs\Poultry Management System\flockwise-biztrack-main\flockwise-biztrack-laravel\resources\views/billing/invoice.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\Poultry Management System\flockwise-biztrack-main\flockwise-biztrack-laravel\resources\views\billing\invoice.blade.php ENDPATH**/ ?>

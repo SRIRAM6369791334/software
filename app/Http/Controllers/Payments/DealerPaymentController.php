@@ -57,13 +57,34 @@ class DealerPaymentController extends Controller
         $dealers = $query->get();
 
         $pendingDayLoadCount = 0;
+        $weeklyBills = collect();
+        $dayLoadEntries = collect();
+
         if ($selected_dealer_id) {
             $pendingDayLoadCount = DayLoadEntry::where('dealer_id', $selected_dealer_id)
                 ->whereIn('dealer_payment_status', ['Pending', 'Partial'])
+                ->where('status', '!=', 'Cancelled')
                 ->count();
+
+            // Fetch pending/partial weekly bills
+            $weeklyBills = \App\Models\WeeklyBill::where('dealer_id', $selected_dealer_id)
+                ->whereIn('status', ['Generated', 'Pending'])
+                ->orderBy('period_start')
+                ->get();
+
+            // Fetch unpaid/partial day load entries that are NOT linked to any weekly bill
+            $dayLoadEntries = DayLoadEntry::where('dealer_id', $selected_dealer_id)
+                ->whereNull('weekly_bill_id')
+                ->whereIn('dealer_payment_status', ['Pending', 'Partial'])
+                ->where('status', '!=', 'Cancelled')
+                ->with('batch')
+                ->get()
+                ->sortBy(function($e) {
+                    return $e->batch ? $e->batch->billing_date->timestamp : $e->created_at->timestamp;
+                });
         }
 
-        return view('payments.dealers.create', compact('dealers', 'selected_dealer_id', 'pendingDayLoadCount'));
+        return view('payments.dealers.create', compact('dealers', 'selected_dealer_id', 'pendingDayLoadCount', 'weeklyBills', 'dayLoadEntries'));
     }
 
     public function store(StoreDealerPaymentRequest $request): RedirectResponse
@@ -118,10 +139,24 @@ class DealerPaymentController extends Controller
                 'group_id' => null,
                 'sub_items' => [],
             ];
+
+            if ((float) $p->discount_amount > 0) {
+                $rows[] = [
+                    'date' => $p->date,
+                    'type' => 'payment',
+                    'desc' => 'Discount Credit',
+                    'ref' => 'DSC-' . str_pad($p->id, 4, '0', STR_PAD_LEFT),
+                    'debit' => 0,
+                    'credit' => round((float) $p->discount_amount, 2),
+                    'group_id' => null,
+                    'sub_items' => [],
+                ];
+            }
         }
 
         foreach ($grouped as $groupId => $group) {
             $totalAmount = $group->sum('amount');
+            $totalDiscount = $group->sum('discount_amount');
             $firstDate   = $group->first()->date;
 
             $subItems = $group->map(fn($p) => [
@@ -141,6 +176,19 @@ class DealerPaymentController extends Controller
                 'group_id' => $groupId,
                 'sub_items' => $subItems,
             ];
+
+            if ($totalDiscount > 0) {
+                $rows[] = [
+                    'date' => $firstDate,
+                    'type' => 'payment',
+                    'desc' => 'Lump-Sum Discount Credit',
+                    'ref' => 'GRP-DSC-' . substr($groupId, 0, 8),
+                    'debit' => 0,
+                    'credit' => round((float) $totalDiscount, 2),
+                    'group_id' => $groupId,
+                    'sub_items' => [],
+                ];
+            }
         }
 
         usort($rows, fn($a, $b) => $a['date'] <=> $b['date']);

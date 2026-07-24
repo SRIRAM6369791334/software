@@ -57,8 +57,29 @@
         </form>
     </x-card>
 
+    @if($errors->any())
+        <div class="p-4 mb-4 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 flex items-start gap-3">
+            <span class="material-symbols-rounded text-rose-500 text-xl mt-0.5">error</span>
+            <div>
+                <p class="font-semibold text-rose-800 dark:text-rose-300">Please fix the following:</p>
+                <ul class="mt-1 list-disc list-inside text-sm text-rose-700 dark:text-rose-400">
+                    @foreach($errors->all() as $err)
+                        <li>{{ $err }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="p-4 mb-4 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 flex items-center gap-3">
+            <span class="material-symbols-rounded text-rose-500">error</span>
+            <p class="text-sm font-medium text-rose-800 dark:text-rose-300">{{ session('error') }}</p>
+        </div>
+    @endif
+
     @if($groupedEntries->isNotEmpty())
-        <form method="POST" action="{{ route('billing.day-load.set-vendor-rates') }}" @submit.prevent="confirmAndSubmit($event)">
+        <form method="POST" id="vendorRatesPostForm" action="{{ route('billing.day-load.set-vendor-rates') }}" @submit.prevent="confirmAndSubmit($event)">
             @csrf
             <input type="hidden" name="vendor_id" value="{{ $selectedVendorId }}">
 
@@ -67,7 +88,11 @@
                     <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">
                         Entries for {{ $vendors->firstWhere('id', $selectedVendorId)?->firm_name ?? 'Vendor' }}
                     </h2>
-                    <p class="text-xs text-zinc-500 mt-1">{{ $financialSummary['total_entries'] }} entries · {{ number_format($financialSummary['total_weight'], 2) }} kg total bird weight</p>
+                    <p class="text-xs text-zinc-500 mt-1">{{ $financialSummary['total_entries'] }} entries · {{ number_format($financialSummary['total_farm_weight'] ?? 0, 2) }} kg total farm weight
+                        @if(($financialSummary['entries_without_farm_weight'] ?? 0) > 0)
+                            <span class="text-amber-600 dark:text-amber-400"> · {{ $financialSummary['entries_without_farm_weight'] }} entry(ies) without farm weight</span>
+                        @endif
+                    </p>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -76,7 +101,7 @@
                             <tr class="border-b border-zinc-200 dark:border-zinc-800 text-xs font-bold uppercase text-zinc-500">
                                 <th class="px-4 py-3 text-left">Billing Date</th>
                                 <th class="px-4 py-3 text-center">Entries</th>
-                                <th class="px-4 py-3 text-right">Bird Weight</th>
+                                <th class="px-4 py-3 text-right">Farm Weight</th>
                                 <th class="px-4 py-3 text-right">Paper Rate</th>
                                 <th class="px-4 py-3 text-right">Current Final Rate</th>
                                 <th class="px-4 py-3 text-right">New Final Rate (₹/kg)</th>
@@ -90,7 +115,15 @@
                                         <span class="text-zinc-400 text-[10px] block">{{ \Carbon\Carbon::parse($date)->format('l') }}</span>
                                     </td>
                                     <td class="px-4 py-3 text-center font-jetbrains font-bold">{{ $group['count'] }}</td>
-                                    <td class="px-4 py-3 text-right font-jetbrains">{{ number_format($group['total_weight'], 2) }} kg</td>
+                                    <td class="px-4 py-3 text-right font-jetbrains">
+                                        @if($group['has_all_farm_weight'])
+                                            {{ number_format($group['total_farm_weight'], 2) }} kg
+                                        @elseif($group['total_farm_weight'] > 0)
+                                            <span class="text-amber-600 dark:text-amber-400 text-[10px]">{{ number_format($group['total_farm_weight'], 2) }} kg (partial)</span>
+                                        @else
+                                            <span class="text-zinc-400 italic text-[10px]">Enter FW</span>
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-3 text-right font-jetbrains">₹{{ number_format($group['paper_rate'], 2) }}</td>
                                     <td class="px-4 py-3 text-right font-jetbrains">
                                         @if($group['current_rate'] > 0)
@@ -102,9 +135,13 @@
                                     <td class="px-4 py-3 text-right">
                                         <input type="number" step="0.01" min="0"
                                                name="rates[{{ $date }}]"
+                                               id="rate_{{ str_replace('-','_',$date) }}"
+                                               data-farm-weight="{{ $group['total_farm_weight'] }}"
+                                               data-date="{{ $date }}"
+                                               data-old-rate="{{ $group['current_rate'] }}"
                                                value="{{ old("rates.{$date}", $group['current_rate'] > 0 ? number_format($group['current_rate'], 2, '.', '') : '') }}"
                                                placeholder="0.00"
-                                               @input.debounce="recalc()"
+                                               x-on:input="recalc()"
                                                class="w-28 text-right rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-jetbrains font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
                                     </td>
                                 </tr>
@@ -144,75 +181,7 @@
                 </div>
             </x-card>
 
-            {{-- Confirmation Modal --}}
-            <div x-show="showConfirm" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-                 x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
-                 x-transition:enter-end="opacity-100">
-                <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto"
-                     @click.away="showConfirm = false">
-                    <div class="p-6 border-b border-zinc-200 dark:border-zinc-800">
-                        <h3 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">Confirm Final Rate Update</h3>
-                        <p class="text-sm text-zinc-500 mt-1">Vendor: {{ $vendors->firstWhere('id', $selectedVendorId)?->firm_name ?? '' }}</p>
-                    </div>
 
-                    <div class="p-6 space-y-6">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="text-xs font-bold uppercase text-zinc-500 border-b border-zinc-200 dark:border-zinc-800">
-                                    <th class="px-3 py-2 text-left">Date</th>
-                                    <th class="px-3 py-2 text-center">Entries</th>
-                                    <th class="px-3 py-2 text-right">Old Final Rate</th>
-                                    <th class="px-3 py-2 text-center"></th>
-                                    <th class="px-3 py-2 text-right">New Final Rate</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="(row, idx) in confirmRows" :key="row.date">
-                                    <tr class="border-b border-zinc-100 dark:border-zinc-800/50">
-                                        <td class="px-3 py-2 font-medium" x-text="row.date"></td>
-                                        <td class="px-3 py-2 text-center font-jetbrains" x-text="row.count"></td>
-                                        <td class="px-3 py-2 text-right font-jetbrains" x-text="'₹' + row.oldRate.toFixed(2)"></td>
-                                        <td class="px-3 py-2 text-center text-zinc-400">→</td>
-                                        <td class="px-3 py-2 text-right font-jetbrains font-bold" x-text="'₹' + row.newRate.toFixed(2)" :class="row.changed ? 'text-emerald-600' : ''"></td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-
-                        <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 p-4">
-                            <h4 class="text-xs font-bold uppercase text-zinc-500 mb-3">Financial Impact</h4>
-                            <div class="grid grid-cols-3 gap-4 text-sm">
-                                <div>
-                                    <p class="text-zinc-500">Current Cost</p>
-                                    <p class="font-jetbrains font-bold mt-1" x-text="'₹' + formatNumber(currentCost)"></p>
-                                </div>
-                                <div>
-                                    <p class="text-zinc-500">New Cost</p>
-                                    <p class="font-jetbrains font-bold mt-1" :class="newCostDiff >= 0 ? 'text-emerald-600' : 'text-rose-600'" x-text="'₹' + formatNumber(newCost)"></p>
-                                </div>
-                                <div>
-                                    <p class="text-zinc-500">Difference</p>
-                                    <p class="font-jetbrains font-bold mt-1" :class="newCostDiff >= 0 ? 'text-emerald-600' : 'text-rose-600'">
-                                        <span x-text="newCostDiff >= 0 ? '−' : '+'"></span>₹<span x-text="formatNumber(Math.abs(newCostDiff))"></span>
-                                    </p>
-                                </div>
-                            </div>
-                            <p x-show="overpaidCount > 0" class="mt-3 text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
-                                ⚠ <span x-text="overpaidCount"></span> entry(ies) will become Overpaid
-                            </p>
-                        </div>
-
-                        <p class="text-sm text-zinc-500 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl px-4 py-3">
-                            Reason: <span class="font-medium text-zinc-700 dark:text-zinc-300" x-text="confirmReason"></span>
-                        </p>
-                    </div>
-
-                    <div class="p-6 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-3">
-                        <x-button variant="outline" @click="showConfirm = false" icon="close">Cancel</x-button>
-                        <x-button variant="primary" @click="doSubmit()" icon="check">Confirm & Update</x-button>
-                    </div>
-                </div>
-            </div>
         </form>
     @elseif($selectedVendorId)
         <x-card>
@@ -233,38 +202,24 @@ document.addEventListener('alpine:init', () => {
         confirmRows: [],
         confirmReason: '',
         currentCost: {{ $financialSummary['current_vendor_cost'] ?? 0 }},
-        newCost: {{ $financialSummary['current_vendor_cost'] ?? 0 }},
+        newCost: 0,
         newCostDiff: 0,
         overpaidCount: 0,
         hasChanges: true,
 
+        init() {
+            // Calculate on page load for pre-filled inputs
+            this.$nextTick(() => this.recalc());
+        },
         recalc() {
-            const form = document.querySelector('form');
-            if (!form) return;
-
-            const rates = {};
             let newTotal = 0;
-            let overpaid = 0;
-
-            @if($groupedEntries->isNotEmpty())
-                @foreach($groupedEntries as $date => $group)
-                    (() => {
-                        const input = form.querySelector('input[name="rates[{{ $date }}]"]');
-                        if (!input) return;
-                        const val = parseFloat(input.value) || 0;
-                        rates['{{ $date }}'] = val;
-                        @foreach($group['batch_ids'] as $bid)
-                            // Approximate: weight × rate per date group
-                        @endforeach
-                        // simplified: use total_weight × rate
-                        newTotal += {{ $group['total_weight'] }} * val;
-                    })();
-                @endforeach
-            @endif
-
-            // More accurate would be per-entry, but for preview we estimate
-            // In practice the controller computes exact values
-            this.newCost = Math.round(newTotal * 100) / 100;
+            // Read all rate inputs by their data-farm-weight attribute
+            document.querySelectorAll('input[data-farm-weight]').forEach(input => {
+                const farmWeight = parseFloat(input.dataset.farmWeight) || 0;
+                const rate       = parseFloat(input.value) || 0;
+                newTotal += farmWeight * rate;
+            });
+            this.newCost     = Math.round(newTotal * 100) / 100;
             this.newCostDiff = this.currentCost - this.newCost;
         },
 
@@ -279,49 +234,206 @@ document.addEventListener('alpine:init', () => {
 
             const rows = [];
             let newTotal = 0;
-            let overpaid = 0;
             let hasAnyChange = false;
 
-            @if($groupedEntries->isNotEmpty())
-                @foreach($groupedEntries as $date => $group)
-                    (() => {
-                        const input = form.querySelector('input[name="rates[{{ $date }}]"]');
-                        if (!input) return;
-                        const val = parseFloat(input.value) || 0;
-                        const oldRate = {{ $group['current_rate'] }};
-                        const changed = val !== oldRate;
-                        if (changed && val > 0) hasAnyChange = true;
-                        rows.push({
-                            date: '{{ \Carbon\Carbon::parse($date)->format('d M Y') }}',
-                            count: {{ $group['count'] }},
-                            oldRate: oldRate,
-                            newRate: val,
-                            changed: changed,
-                        });
-                        newTotal += {{ $group['total_weight'] }} * val;
-                    })();
-                @endforeach
-            @endif
+            document.querySelectorAll('input[data-farm-weight]').forEach(input => {
+                const farmWeight = parseFloat(input.dataset.farmWeight) || 0;
+                const oldRate    = parseFloat(input.dataset.oldRate)    || 0;
+                const newRate    = parseFloat(input.value)              || 0;
+                const dateRaw    = input.dataset.date;
+                const changed    = Math.abs(newRate - oldRate) > 0.001;
+
+                if (changed && newRate > 0) hasAnyChange = true;
+
+                // Format date nicely  e.g. "2026-07-13" → "13 Jul 2026"
+                const d = new Date(dateRaw + 'T00:00:00');
+                const dateLabel = d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+
+                rows.push({
+                    date:    dateLabel,
+                    count:   parseInt(input.closest('tr')?.querySelector('td:nth-child(2)')?.textContent?.trim()) || 1,
+                    oldRate: oldRate,
+                    newRate: newRate,
+                    changed: changed,
+                });
+                newTotal += farmWeight * newRate;
+            });
 
             if (!hasAnyChange) {
                 alert('No rates have been changed. Adjust at least one rate before saving.');
                 return;
             }
 
-            this.confirmRows = rows;
-            this.confirmReason = reason;
-            this.newCost = Math.round(newTotal * 100) / 100;
+            this.newCost     = Math.round(newTotal * 100) / 100;
             this.newCostDiff = Math.round((this.currentCost - this.newCost) * 100) / 100;
-            this.showConfirm = true;
+
+            // Dispatch event to body-level modal so it covers sidebar & header
+            window.dispatchEvent(new CustomEvent('open-vendor-confirm', {
+                detail: {
+                    rows: rows,
+                    reason: reason,
+                    currentCost: this.currentCost,
+                    newCost: this.newCost,
+                    newCostDiff: this.newCostDiff,
+                    overpaidCount: this.overpaidCount,
+                }
+            }));
         },
+
 
         doSubmit() {
             this.showConfirm = false;
-            const form = document.querySelector('form');
+            const form = document.getElementById('vendorRatesPostForm');
             if (form) form.submit();
         },
 
         formatNumber(num) {
+            return Number(num).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        },
+    }));
+});
+</script>
+@endpush
+
+@push('modals')
+<div
+    x-data="vendorConfirmModal()"
+    x-show="open"
+    x-cloak
+    class="fixed inset-0 z-[9999] flex items-center justify-center"
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+>
+    {{-- Full-screen backdrop that blurs everything including sidebar & topbar --}}
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-md" @click="close()"></div>
+
+    {{-- Modal panel --}}
+    <div class="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+         @click.stop>
+
+        {{-- Header --}}
+        <div class="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+            <div>
+                <h3 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">Confirm Final Rate Update</h3>
+                <p class="text-sm text-zinc-500 mt-0.5">Review the rate changes before applying them permanently.</p>
+            </div>
+            <button @click="close()" class="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors">
+                <span class="material-symbols-rounded text-xl">close</span>
+            </button>
+        </div>
+
+        {{-- Body --}}
+        <div class="p-6 space-y-6">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-xs font-bold uppercase text-zinc-500 border-b border-zinc-200 dark:border-zinc-800">
+                        <th class="px-3 py-2 text-left">Date</th>
+                        <th class="px-3 py-2 text-center">Entries</th>
+                        <th class="px-3 py-2 text-right">Old Final Rate</th>
+                        <th class="px-3 py-2 text-center"></th>
+                        <th class="px-3 py-2 text-right">New Final Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="(row, idx) in rows" :key="row.date">
+                        <tr class="border-b border-zinc-100 dark:border-zinc-800/50">
+                            <td class="px-3 py-3 font-medium text-zinc-800 dark:text-zinc-200" x-text="row.date"></td>
+                            <td class="px-3 py-3 text-center font-jetbrains text-zinc-600 dark:text-zinc-400" x-text="row.count"></td>
+                            <td class="px-3 py-3 text-right font-jetbrains text-zinc-500" x-text="'₹' + row.oldRate.toFixed(2)"></td>
+                            <td class="px-3 py-3 text-center text-zinc-300 dark:text-zinc-600">→</td>
+                            <td class="px-3 py-3 text-right font-jetbrains font-bold" x-text="'₹' + row.newRate.toFixed(2)"
+                                :class="row.changed ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-700 dark:text-zinc-300'"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+
+            {{-- Financial Impact --}}
+            <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 p-5">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-4">Financial Impact</h4>
+                <div class="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <p class="text-zinc-500 text-xs uppercase tracking-wide font-medium">Current Cost</p>
+                        <p class="font-jetbrains font-bold text-lg text-zinc-800 dark:text-zinc-100 mt-1" x-text="'₹' + fmt(currentCost)"></p>
+                    </div>
+                    <div>
+                        <p class="text-zinc-500 text-xs uppercase tracking-wide font-medium">New Cost</p>
+                        <p class="font-jetbrains font-bold text-lg mt-1" :class="newCostDiff >= 0 ? 'text-emerald-600' : 'text-rose-600'" x-text="'₹' + fmt(newCost)"></p>
+                    </div>
+                    <div>
+                        <p class="text-zinc-500 text-xs uppercase tracking-wide font-medium">Difference</p>
+                        <p class="font-jetbrains font-bold text-lg mt-1" :class="newCostDiff >= 0 ? 'text-emerald-600' : 'text-rose-600'">
+                            <span x-text="newCostDiff >= 0 ? '−' : '+'"></span>₹<span x-text="fmt(Math.abs(newCostDiff))"></span>
+                        </p>
+                    </div>
+                </div>
+                <div x-show="overpaidCount > 0" class="mt-3 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2 border border-amber-200 dark:border-amber-800/40">
+                    <span class="material-symbols-rounded text-[14px] align-middle">warning</span>
+                    <span x-text="overpaidCount"></span> entry(ies) will become Overpaid after this update.
+                </div>
+            </div>
+
+            {{-- Reason --}}
+            <div class="rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 px-4 py-3">
+                <span class="text-xs font-bold uppercase tracking-wide text-zinc-400">Reason: </span>
+                <span class="text-sm font-medium text-zinc-700 dark:text-zinc-200" x-text="reason"></span>
+            </div>
+        </div>
+
+        {{-- Footer --}}
+        <div class="p-6 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-3 bg-zinc-50/80 dark:bg-zinc-900/80 rounded-b-2xl">
+            <button @click="close()" type="button"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                <span class="material-symbols-rounded text-[18px]">close</span> Cancel
+            </button>
+            <button @click="doSubmit()" type="button"
+                class="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm transition-colors">
+                <span class="material-symbols-rounded text-[18px]">check</span> Confirm & Update
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('vendorConfirmModal', () => ({
+        open: false,
+        rows: [],
+        reason: '',
+        currentCost: 0,
+        newCost: 0,
+        newCostDiff: 0,
+        overpaidCount: 0,
+
+        init() {
+            window.addEventListener('open-vendor-confirm', (e) => {
+                this.rows = e.detail.rows;
+                this.reason = e.detail.reason;
+                this.currentCost = e.detail.currentCost;
+                this.newCost = e.detail.newCost;
+                this.newCostDiff = e.detail.newCostDiff;
+                this.overpaidCount = e.detail.overpaidCount || 0;
+                this.open = true;
+                document.body.style.overflow = 'hidden';
+            });
+        },
+
+        close() {
+            this.open = false;
+            document.body.style.overflow = '';
+        },
+
+        doSubmit() {
+            this.close();
+            const form = document.getElementById('vendorRatesPostForm');
+            if (form) form.submit();
+        },
+
+        fmt(num) {
             return Number(num).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
         },
     }));

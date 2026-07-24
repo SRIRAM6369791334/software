@@ -794,13 +794,18 @@
     <div x-show="activeTab === 'generate_invoice'">
         <?php if (isset($component)) { $__componentOriginal53747ceb358d30c0105769f8471417f6 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal53747ceb358d30c0105769f8471417f6 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.card','data' => ['class' => 'max-w-2xl mx-auto','xData' => '{ previewLoaded: false, prevOutstanding: 0, totalPurchases: 0, totalPayments: 0, netInvoice: 0, purchasesCount: 0 }','@previewUpdate.window' => '
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.card','data' => ['class' => 'max-w-2xl mx-auto','xData' => '{ previewLoaded: false, prevOutstanding: 0, totalPurchases: 0, totalPayments: 0, netInvoice: 0, purchasesCount: 0, discountAmount: 0, billExists: false, overlapExists: false, overlapStart: \'\', overlapEnd: \'\' }','@previewUpdate.window' => '
                 previewLoaded = true;
                 prevOutstanding = $event.detail.prevOutstanding;
                 totalPurchases = $event.detail.totalPurchases;
                 totalPayments = $event.detail.totalPayments;
                 netInvoice = $event.detail.netInvoice;
                 purchasesCount = $event.detail.purchasesCount;
+                discountAmount = $event.detail.discountAmount;
+                billExists = $event.detail.billExists;
+                overlapExists = $event.detail.overlapExists;
+                overlapStart = $event.detail.overlapStart;
+                overlapEnd = $event.detail.overlapEnd;
             ']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('card'); ?>
 <?php if ($component->shouldRender()): ?>
@@ -808,20 +813,25 @@
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['class' => 'max-w-2xl mx-auto','x-data' => '{ previewLoaded: false, prevOutstanding: 0, totalPurchases: 0, totalPayments: 0, netInvoice: 0, purchasesCount: 0 }','@preview-update.window' => '
+<?php $component->withAttributes(['class' => 'max-w-2xl mx-auto','x-data' => '{ previewLoaded: false, prevOutstanding: 0, totalPurchases: 0, totalPayments: 0, netInvoice: 0, purchasesCount: 0, discountAmount: 0, billExists: false, overlapExists: false, overlapStart: \'\', overlapEnd: \'\' }','@preview-update.window' => '
                 previewLoaded = true;
                 prevOutstanding = $event.detail.prevOutstanding;
                 totalPurchases = $event.detail.totalPurchases;
                 totalPayments = $event.detail.totalPayments;
                 netInvoice = $event.detail.netInvoice;
                 purchasesCount = $event.detail.purchasesCount;
+                discountAmount = $event.detail.discountAmount;
+                billExists = $event.detail.billExists;
+                overlapExists = $event.detail.overlapExists;
+                overlapStart = $event.detail.overlapStart;
+                overlapEnd = $event.detail.overlapEnd;
             ']); ?>
             <div class="border-b border-zinc-200 dark:border-zinc-800 pb-4 mb-6">
                 <h2 class="text-lg font-extrabold text-zinc-900 dark:text-zinc-50 font-cabinet">Generate Weekly Invoice</h2>
                 <p class="text-xs text-zinc-500 mt-1">Select a dealer and period. Compile purchases and payments into a weekly invoice with split payments.</p>
             </div>
 
-            <form action="<?php echo e(route('billing.weekly.generate')); ?>" method="POST" id="generate-weekly-bill-form">
+            <form action="<?php echo e(route('billing.weekly.generate')); ?>" method="POST" id="generate-weekly-bill-form" @submit.prevent="submitWeeklyBill($event)">
                 <?php echo csrf_field(); ?>
                 <div class="space-y-4 mb-6">
                     <div>
@@ -829,7 +839,7 @@
                         <select name="dealer_id" id="gen-dealer-id" required class="appearance-none block w-full pl-3 pr-10 py-2.5 min-h-[44px] text-base border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 sm:text-sm rounded-xl bg-white/30 dark:bg-zinc-900/30 text-zinc-900 dark:text-zinc-100 transition-all">
                             <option value="">Select dealer...</option>
                             <?php $__currentLoopData = $dealers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $d): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($d->id); ?>"><?php echo e($d->firm_name); ?></option>
+                                <option value="<?php echo e($d->id); ?>" data-balance="<?php echo e($d->displayed_outstanding); ?>"><?php echo e($d->firm_name); ?> — Balance: Rs <?php echo e(number_format($d->displayed_outstanding, 2)); ?></option>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </div>
@@ -843,6 +853,11 @@
                             <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-2">To Date <span class="text-red-500">*</span></label>
                             <input type="date" name="period_end" id="gen-period-end" required class="block w-full bg-white/30 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 p-3 transition-all">
                         </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 font-outfit mb-2">Discount Amount (Rs)</label>
+                        <input type="number" step="0.01" min="0" name="discount_amount" id="gen-discount-amount" value="0.00" class="block w-full bg-white/30 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-sm rounded-xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 p-3 transition-all">
                     </div>
                 </div>
 
@@ -865,6 +880,9 @@
                         
                         <div>Current Week's Payments:</div>
                         <div class="text-right font-jetbrains font-bold text-zinc-900 dark:text-white text-rose-600 dark:text-rose-400" x-text="'- ₹' + totalPayments.toLocaleString('en-IN', { minimumFractionDigits: 2 })"></div>
+
+                        <div x-show="discountAmount > 0">Discount Applied:</div>
+                        <div class="text-right font-jetbrains font-bold text-zinc-900 dark:text-white text-rose-600 dark:text-rose-400" x-show="discountAmount > 0" x-text="'- ₹' + discountAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })"></div>
                         
                         <div class="border-t border-zinc-200 dark:border-zinc-700 pt-2 font-bold text-zinc-800 dark:text-zinc-200">Net Weekly Invoice Amount:</div>
                         <div class="border-t border-zinc-200 dark:border-zinc-700 pt-2 text-right font-jetbrains font-black text-indigo-600 dark:text-indigo-400 text-lg" x-text="'₹' + netInvoice.toLocaleString('en-IN', { minimumFractionDigits: 2 })"></div>
@@ -1089,43 +1107,125 @@ function previewWeeklyBilling(btn) {
     const dealerEl = document.getElementById('gen-dealer-id') || document.querySelector('select[name="dealer_id"]');
     const startEl = document.getElementById('gen-period-start') || document.querySelector('input[name="period_start"]');
     const endEl = document.getElementById('gen-period-end') || document.querySelector('input[name="period_end"]');
+    const discountEl = document.getElementById('gen-discount-amount') || document.querySelector('input[name="discount_amount"]');
     const dealerId = dealerEl ? dealerEl.value : '';
     const start = startEl ? startEl.value : '';
     const end = endEl ? endEl.value : '';
+    const discount = discountEl ? parseFloat(discountEl.value) || 0 : 0;
 
     if (!dealerId || !start || !end) {
         alert("Please fill dealer, start date, and end date.");
         return;
     }
 
-    btn.disabled = true;
-    btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Loading...`;
+    const performPreview = () => {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="material-symbols-rounded animate-spin">sync</span> Loading...`;
 
-    fetch(`<?php echo e(route('billing.weekly.calculate-preview')); ?>?dealer_id=${dealerId}&period_start=${start}&period_end=${end}`)
-        .then(res => res.json())
-        .then(data => {
-            btn.disabled = false;
-            btn.innerHTML = `<span class="material-symbols-rounded">analytics</span> Calculate & Preview Bill`;
+        fetch(`<?php echo e(route('billing.weekly.calculate-preview')); ?>?dealer_id=${dealerId}&period_start=${start}&period_end=${end}&discount_amount=${discount}`)
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = `<span class="material-symbols-rounded">analytics</span> Calculate & Preview Bill`;
 
-            if (data.success) {
-                window.dispatchEvent(new CustomEvent('preview-update', {
-                    detail: {
-                        prevOutstanding: parseFloat(data.previous_outstanding),
-                        totalPurchases: parseFloat(data.total_purchases),
-                        totalPayments: parseFloat(data.total_payments),
-                        netInvoice: parseFloat(data.net_invoice_amount),
-                        purchasesCount: data.purchases_count,
-                    }
-                }));
-            } else {
-                alert("Error: " + data.message);
+                if (data.success) {
+                    window.dispatchEvent(new CustomEvent('preview-update', {
+                        detail: {
+                            prevOutstanding: parseFloat(data.previous_outstanding),
+                            totalPurchases: parseFloat(data.total_purchases),
+                            totalPayments: parseFloat(data.total_payments),
+                            netInvoice: parseFloat(data.net_invoice_amount),
+                            purchasesCount: data.purchases_count,
+                            discountAmount: parseFloat(data.discount_amount || 0),
+                            billExists: !!data.exists,
+                            overlapExists: !!data.overlap,
+                            overlapStart: data.overlap_start || '',
+                            overlapEnd: data.overlap_end || '',
+                        }
+                    }));
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = `<span class="material-symbols-rounded">analytics</span> Calculate & Preview Bill`;
+                alert("Calculation failed: " + err.message);
+            });
+    };
+
+    if (discount > 0) {
+        const selectedOption = dealerEl.options[dealerEl.selectedIndex];
+        const balance = parseFloat(selectedOption.getAttribute('data-balance')) || 0;
+        Swal.fire({
+            title: 'Apply Discount?',
+            text: `Are you sure you want to apply a discount of ₹${discount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}? The dealer's current outstanding balance is ₹${balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, Apply Discount',
+            cancelButtonText: 'Cancel',
+            background: document.documentElement.dataset.theme === 'dark' ? '#18181b' : '#ffffff',
+            color: document.documentElement.dataset.theme === 'dark' ? '#f4f4f5' : '#09090b'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                performPreview();
             }
-        })
-        .catch(err => {
-            btn.disabled = false;
-            btn.innerHTML = `<span class="material-symbols-rounded">analytics</span> Calculate & Preview Bill`;
-            alert("Calculation failed: " + err.message);
         });
+    } else {
+        performPreview();
+    }
+}
+
+function submitWeeklyBill(e) {
+    const form = e.target;
+    const cardEl = document.querySelector('[x-data*="previewLoaded"]');
+    const alpineData = cardEl ? Alpine.$data(cardEl) : null;
+    
+    if (alpineData && alpineData.overlapExists) {
+        Swal.fire({
+            title: 'Conflicting Dates!',
+            text: `An overlapping bill from ${alpineData.overlapStart} to ${alpineData.overlapEnd} already exists for this dealer. You cannot generate a bill for overlapping periods. Please delete the old bill first or change dates.`,
+            icon: 'error',
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'OK',
+            background: document.documentElement.dataset.theme === 'dark' ? '#18181b' : '#ffffff',
+            color: document.documentElement.dataset.theme === 'dark' ? '#f4f4f5' : '#09090b'
+        });
+        return;
+    }
+    
+    if (alpineData && alpineData.billExists) {
+        Swal.fire({
+            title: 'Weekly Bill Exists!',
+            text: "You have already generated a bill for this week. If you regenerate, the old bill data will be overwritten and replaced. Do you want to proceed?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#059669',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, Overwrite & Replace',
+            cancelButtonText: 'Cancel',
+            background: document.documentElement.dataset.theme === 'dark' ? '#18181b' : '#ffffff',
+            color: document.documentElement.dataset.theme === 'dark' ? '#f4f4f5' : '#09090b'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let replaceInput = form.querySelector('input[name="replace_existing"]');
+                if (!replaceInput) {
+                    replaceInput = document.createElement('input');
+                    replaceInput.type = 'hidden';
+                    replaceInput.name = 'replace_existing';
+                    replaceInput.value = '1';
+                    form.appendChild(replaceInput);
+                } else {
+                    replaceInput.value = '1';
+                }
+                form.submit();
+            }
+        });
+    } else {
+        form.submit();
+    }
 }
 
 // Auto-run on load
@@ -1135,6 +1235,74 @@ window.addEventListener('DOMContentLoaded', () => {
     // Auto fill date range to last week (Monday to Sunday)
     const startInput = document.getElementById('gen-period-start') || document.querySelector('input[name="period_start"]');
     const endInput = document.getElementById('gen-period-end') || document.querySelector('input[name="period_end"]');
+    
+    if (startInput && endInput) {
+        startInput.addEventListener('change', () => {
+            if (!startInput.value) return;
+            const startDate = new Date(startInput.value);
+            if (isNaN(startDate.getTime())) return;
+            
+            // Add 6 days to get a 7-day range (inclusive)
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            
+            // Format to YYYY-MM-DD
+            const year = endDate.getFullYear();
+            const month = String(endDate.getMonth() + 1).padStart(2, '0');
+            const day = String(endDate.getDate()).padStart(2, '0');
+            
+            endInput.value = `${year}-${month}-${day}`;
+        });
+    }
+
+    const dealerSelect = document.getElementById('gen-dealer-id') || document.querySelector('select[name="dealer_id"]');
+    if (dealerSelect) {
+        dealerSelect.addEventListener('change', () => {
+            const dealerId = dealerSelect.value;
+            if (!dealerId) {
+                if (startInput) {
+                    startInput.removeAttribute('readonly');
+                    startInput.value = '';
+                }
+                if (endInput) {
+                    endInput.value = '';
+                }
+                return;
+            }
+            
+            fetch(`<?php echo e(route('billing.weekly.earliest-unpaid-date')); ?>?dealer_id=${dealerId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.date) {
+                        if (startInput) {
+                            startInput.value = data.date;
+                            startInput.setAttribute('readonly', 'true');
+                            // Trigger change to update end date
+                            startInput.dispatchEvent(new Event('change'));
+                        }
+                    } else {
+                        if (startInput) {
+                            startInput.removeAttribute('readonly');
+                            // Fallback to default date range if not set
+                            const today = new Date();
+                            const dayOfWeek = today.getDay();
+                            const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                            const prevMonday = new Date(today);
+                            prevMonday.setDate(today.getDate() + mondayOffset - 7);
+                            startInput.value = prevMonday.toISOString().split('T')[0];
+                            startInput.dispatchEvent(new Event('change'));
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error("Failed to fetch earliest unpaid date", err);
+                    if (startInput) {
+                        startInput.removeAttribute('readonly');
+                    }
+                });
+        });
+    }
+
     if (startInput && endInput && !startInput.value && !endInput.value) {
         const today = new Date();
         const dayOfWeek = today.getDay(); // Sunday = 0, Monday = 1
@@ -1154,4 +1322,4 @@ window.addEventListener('DOMContentLoaded', () => {
 </script>
 <?php $__env->stopPush(); ?>
 
-<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\Poultry Management System\flockwise-biztrack-main\flockwise-biztrack-laravel\resources\views/billing/weekly/index.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\Poultry Management System\flockwise-biztrack-main\flockwise-biztrack-laravel\resources\views\billing\weekly\index.blade.php ENDPATH**/ ?>

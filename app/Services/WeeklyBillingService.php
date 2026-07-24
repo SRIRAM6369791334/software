@@ -6,6 +6,7 @@ use App\Models\Dealer;
 use App\Models\WeeklyBill;
 use App\Models\DealerPurchase;
 use App\Models\DealerPayment;
+use App\Models\DayLoadEntry;
 use App\Services\Tax\GSTCalculator;
 use App\Services\InvoiceNumberService;
 use App\Services\StockService;
@@ -79,17 +80,20 @@ class WeeklyBillingService
     /**
      * Calculate weekly billing totals for a dealer.
      */
-    public function calculateWeeklyTotals(int $dealerId, string $startDate, string $endDate): array
+    public function calculateWeeklyTotals(int $dealerId, string $startDate, string $endDate, float $discountAmount = 0.0): array
     {
         $dealer = Dealer::findOrFail($dealerId);
 
-        // 1. Sum of all uninvoiced daily purchases
-        $purchasesQuery = DealerPurchase::where('dealer_id', $dealerId)
-            ->whereBetween('date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->whereNull('weekly_bill_id');
+        // 1. Sum of all uninvoiced daily purchases from day_load_entries
+        $purchasesQuery = DayLoadEntry::where('dealer_id', $dealerId)
+            ->where('status', '!=', 'Cancelled')
+            ->whereNull('weekly_bill_id')
+            ->whereHas('batch', fn($q) => $q
+                ->whereBetween('billing_date', [$startDate, $endDate])
+            );
 
-        $totalPurchases = (float) $purchasesQuery->sum('net_amount');
-        $purchasesList = $purchasesQuery->with('items')->get();
+        $totalPurchases = (float) $purchasesQuery->sum('amount');
+        $purchasesList = $purchasesQuery->with(['batch', 'vendor'])->get();
 
         // 2. Sum of all dealer payments made during this week
         $paymentsQuery = DealerPayment::where('dealer_id', $dealerId)
@@ -103,8 +107,8 @@ class WeeklyBillingService
             $previousOutstanding = 0.0;
         }
 
-        // Net Invoice Amount = Previous Outstanding + Purchases - Payments
-        $netInvoiceAmount = $previousOutstanding + $totalPurchases - $totalPayments;
+        // Net Invoice Amount = Previous Outstanding + Purchases - Payments - Discount
+        $netInvoiceAmount = $previousOutstanding + $totalPurchases - $totalPayments - $discountAmount;
         if ($netInvoiceAmount < 0) {
             $netInvoiceAmount = 0.0;
         }
@@ -128,8 +132,33 @@ class WeeklyBillingService
             $dealerId = $data['dealer_id'];
             $startDate = $data['period_start'];
             $endDate = $data['period_end'];
+            $discountAmount = (float)($data['discount_amount'] ?? 0.0);
 
-            $totals = $this->calculateWeeklyTotals($dealerId, $startDate, $endDate);
+            $invoiceNo = null;
+            if (!empty($data['replace_existing'])) {
+                $oldBill = WeeklyBill::where('dealer_id', $dealerId)
+                    ->whereDate('period_start', $startDate)
+                    ->whereDate('period_end', $endDate)
+                    ->first();
+                if ($oldBill) {
+                    $invoiceNo = $oldBill->invoice_no;
+                    
+                    // Unlink all day load entries connected to it
+                    DayLoadEntry::where('weekly_bill_id', $oldBill->id)
+                        ->update(['weekly_bill_id' => null]);
+                    
+                    // Adjust dealer pending_amount back by the old discount amount
+                    if ($oldBill->discount_amount > 0) {
+                        $dealer = Dealer::findOrFail($dealerId);
+                        $dealer->increment('pending_amount', $oldBill->discount_amount);
+                    }
+                    
+                    $oldBill->items()->delete();
+                    $oldBill->delete();
+                }
+            }
+
+            $totals = $this->calculateWeeklyTotals($dealerId, $startDate, $endDate, $discountAmount);
             $netAmount = $totals['net_invoice_amount'];
 
             $baseAmount = round($netAmount / 1.18, 2);
@@ -143,11 +172,13 @@ class WeeklyBillingService
                 'dealer_id'             => $dealerId,
                 'period_start'          => $startDate,
                 'period_end'            => $endDate,
-                'invoice_no'            => $this->invoiceService->generateUnique('INV-W', 'weekly_bills'),
+                'invoice_no'            => $invoiceNo ?: $this->invoiceService->generateUnique('INV-W', 'weekly_bills'),
                 'amount'                => $baseAmount,
                 'gst_percentage'        => 18,
                 'gst_amount'            => $gstAmount,
                 'net_amount'            => $netAmount,
+                'discount_percentage'   => 0.00,
+                'discount_amount'       => $discountAmount,
                 'status'                => $netAmount > 0 ? 'Pending' : 'Paid',
                 'payment_mode'          => 'Credit',
                 'monday_payment_amount' => $mondayPayment,
@@ -160,15 +191,13 @@ class WeeklyBillingService
 
             // Link daily purchases to weekly bill and copy items
             foreach ($totals['purchases'] as $purchase) {
-                foreach ($purchase->items as $item) {
-                    $bill->items()->create([
-                        'item_name'    => $item->item_name,
-                        'quantity_kg'  => $item->quantity_kg,
-                        'rate_per_kg'  => $item->rate_per_kg,
-                        'tax_amount'   => $item->tax_amount,
-                        'total_amount' => $item->total_amount,
-                    ]);
-                }
+                $bill->items()->create([
+                    'item_name'    => 'Day-Load Batch #' . $purchase->batch_id . ' (' . ($purchase->vendor->firm_name ?? '-') . ')',
+                    'quantity_kg'  => $purchase->bird_weight,
+                    'rate_per_kg'  => $purchase->customer_rate,
+                    'tax_amount'   => round($purchase->amount * 0.18, 2),
+                    'total_amount' => $purchase->amount,
+                ]);
                 $purchase->update(['weekly_bill_id' => $bill->id]);
             }
 
@@ -180,6 +209,15 @@ class WeeklyBillingService
                     'tax_amount'   => $gstAmount,
                     'total_amount' => $netAmount,
                 ]);
+            }
+
+            // Decrement dealer's running pending_amount by the discount amount
+            if ($discountAmount > 0) {
+                $dealer = Dealer::findOrFail($dealerId);
+                $dealer->decrement('pending_amount', $discountAmount);
+                if ($dealer->pending_amount < 0) {
+                    $dealer->update(['pending_amount' => 0.0]);
+                }
             }
 
             return $bill;

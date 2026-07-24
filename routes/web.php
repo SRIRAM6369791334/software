@@ -174,6 +174,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('weekly/{weekly}/pdf', [WeeklyBillingController::class, 'downloadPdf'])->name('weekly.pdf');
             Route::get('weekly/export/csv', [WeeklyBillingController::class, 'export'])->name('weekly.export');
             Route::get('weekly/calculate-preview', [WeeklyBillingController::class, 'calculatePreview'])->name('weekly.calculate-preview');
+            Route::get('weekly/earliest-unpaid-date', [WeeklyBillingController::class, 'getEarliestUnpaidDate'])->name('weekly.earliest-unpaid-date');
             
             Route::get('daily/gst/view', [DailyBillingController::class, 'gst'])->name('daily.gst');
             Route::get('daily/export/csv', [DailyBillingController::class, 'export'])->name('daily.export');

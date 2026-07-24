@@ -94,18 +94,68 @@ class WeeklyBillingController extends Controller
     public function calculatePreview(Request $request): JsonResponse
     {
         $request->validate([
-            'dealer_id'    => 'required|exists:dealers,id',
-            'period_start' => 'required|date',
-            'period_end'   => 'required|date|after_or_equal:period_start',
+            'dealer_id'       => 'required|exists:dealers,id',
+            'period_start'    => 'required|date',
+            'period_end'      => 'required|date|after_or_equal:period_start',
+            'discount_amount' => 'nullable|numeric|min:0',
         ]);
 
         try {
+            $dealerId = $request->input('dealer_id');
+            $earliestEntry = DayLoadEntry::where('dealer_id', $dealerId)
+                ->whereNull('weekly_bill_id')
+                ->where('status', '!=', 'Cancelled')
+                ->whereIn('dealer_payment_status', ['Pending', 'Partial'])
+                ->whereHas('batch')
+                ->get()
+                ->sortBy(fn($e) => $e->batch->billing_date->timestamp)
+                ->first();
+
+            if ($earliestEntry && $earliestEntry->batch) {
+                $earliestDate = $earliestEntry->batch->billing_date->format('Y-m-d');
+                $requestedDate = \Carbon\Carbon::parse($request->input('period_start'))->format('Y-m-d');
+                if ($earliestDate !== $requestedDate) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "The start date must be the earliest unbilled day-load entry date: " . \Carbon\Carbon::parse($earliestDate)->format('d M Y') . "."
+                    ], 400);
+                }
+            }
+
+            $discountAmount = (float)$request->input('discount_amount', 0.0);
             $totals = $this->billingService->calculateWeeklyTotals(
                 $request->input('dealer_id'),
                 $request->input('period_start'),
-                $request->input('period_end')
+                $request->input('period_end'),
+                $discountAmount
             );
             
+            // Check for overlapping weekly bills
+            $overlappingBill = WeeklyBill::where('dealer_id', $request->input('dealer_id'))
+                ->whereDate('period_start', '<=', $request->input('period_end'))
+                ->whereDate('period_end', '>=', $request->input('period_start'))
+                ->first();
+
+            $exists = false;
+            $overlap = false;
+            $overlapStart = null;
+            $overlapEnd = null;
+
+            if ($overlappingBill) {
+                $oldStart = \Carbon\Carbon::parse($overlappingBill->period_start)->format('Y-m-d');
+                $oldEnd = \Carbon\Carbon::parse($overlappingBill->period_end)->format('Y-m-d');
+                $reqStart = \Carbon\Carbon::parse($request->input('period_start'))->format('Y-m-d');
+                $reqEnd = \Carbon\Carbon::parse($request->input('period_end'))->format('Y-m-d');
+
+                if ($oldStart === $reqStart && $oldEnd === $reqEnd) {
+                    $exists = true;
+                } else {
+                    $overlap = true;
+                    $overlapStart = \Carbon\Carbon::parse($overlappingBill->period_start)->format('d M Y');
+                    $overlapEnd = \Carbon\Carbon::parse($overlappingBill->period_end)->format('d M Y');
+                }
+            }
+
             // Format for preview response
             $purchasesCount = $totals['purchases']->count();
             
@@ -116,22 +166,44 @@ class WeeklyBillingController extends Controller
                 'total_payments' => $totals['total_payments'],
                 'net_invoice_amount' => $totals['net_invoice_amount'],
                 'purchases_count' => $purchasesCount,
+                'discount_amount' => $discountAmount,
+                'exists' => $exists,
+                'overlap' => $overlap,
+                'overlap_start' => $overlapStart,
+                'overlap_end' => $overlapEnd,
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
 
-    /**
-     * Generate weekly bill from compiled daily purchases/payments.
-     */
     public function generateWeekly(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'dealer_id'    => 'required|exists:dealers,id',
-            'period_start' => 'required|date',
-            'period_end'   => 'required|date|after_or_equal:period_start',
+            'dealer_id'        => 'required|exists:dealers,id',
+            'period_start'     => 'required|date',
+            'period_end'       => 'required|date|after_or_equal:period_start',
+            'discount_amount'  => 'nullable|numeric|min:0',
+            'replace_existing' => 'nullable|boolean',
         ]);
+
+        $dealerId = $request->input('dealer_id');
+        $earliestEntry = DayLoadEntry::where('dealer_id', $dealerId)
+            ->whereNull('weekly_bill_id')
+            ->where('status', '!=', 'Cancelled')
+            ->whereIn('dealer_payment_status', ['Pending', 'Partial'])
+            ->whereHas('batch')
+            ->get()
+            ->sortBy(fn($e) => $e->batch->billing_date->timestamp)
+            ->first();
+
+        if ($earliestEntry && $earliestEntry->batch) {
+            $earliestDate = $earliestEntry->batch->billing_date->format('Y-m-d');
+            $requestedDate = \Carbon\Carbon::parse($request->input('period_start'))->format('Y-m-d');
+            if ($earliestDate !== $requestedDate) {
+                return back()->with('error', "Could not generate weekly bill: The start date must be the earliest unbilled day-load entry date: " . \Carbon\Carbon::parse($earliestDate)->format('d M Y') . ".");
+            }
+        }
 
         try {
             $this->billingService->generateWeeklyBill($validated);
@@ -140,6 +212,35 @@ class WeeklyBillingController extends Controller
         }
 
         return back()->with('success', 'Weekly bill generated successfully.');
+    }
+
+    /**
+     * Get the earliest unpaid day-load entry date for a dealer.
+     */
+    public function getEarliestUnpaidDate(Request $request): JsonResponse
+    {
+        $request->validate([
+            'dealer_id' => 'required|exists:dealers,id',
+        ]);
+
+        $earliestEntry = DayLoadEntry::where('dealer_id', $request->input('dealer_id'))
+            ->whereNull('weekly_bill_id')
+            ->where('status', '!=', 'Cancelled')
+            ->whereIn('dealer_payment_status', ['Pending', 'Partial'])
+            ->whereHas('batch')
+            ->get()
+            ->sortBy(fn($e) => $e->batch->billing_date->timestamp)
+            ->first();
+
+        $date = null;
+        if ($earliestEntry && $earliestEntry->batch) {
+            $date = $earliestEntry->batch->billing_date->format('Y-m-d');
+        }
+
+        return response()->json([
+            'success' => true,
+            'date' => $date,
+        ]);
     }
 
     /**
