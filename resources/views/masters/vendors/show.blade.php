@@ -54,7 +54,7 @@
                         </div>
                     @endif
                     <div class="flex flex-col gap-3">
-                        <x-button href="{{ route('payments.vendors.ledger', $vendor) }}" variant="secondary" icon="payments" class="w-full justify-center !text-rose-700 !bg-white/80 hover:!bg-white !border-white backdrop-blur-md shadow-sm">
+                        <x-button href="{{ route('payments.vendors.create', ['vendor_id' => $vendor->id]) }}" variant="secondary" icon="payments" class="w-full justify-center !text-rose-700 !bg-white/80 hover:!bg-white !border-white backdrop-blur-md shadow-sm">
                             Record Payment
                         </x-button>
                         <x-button href="{{ route('masters.vendors.purchase-history', $vendor) }}" variant="secondary" icon="history" class="w-full justify-center !bg-rose-600/20 !text-rose-900 dark:!text-rose-100 !border-rose-400/30 hover:!bg-rose-600/30 backdrop-blur-md">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Payments;
 
 use App\Http\Controllers\Controller;
+use App\Models\DayLoadEntry;
 use App\Models\Vendor;
 use App\Models\VendorPayment;
 use App\Services\VendorPaymentService;
@@ -61,13 +62,24 @@ class VendorPaymentController extends Controller
         $vendors = $query->get();
 
         $pendingDayLoadCount = 0;
+        $dayLoadEntries = collect();
         if ($selected_vendor_id) {
-            $pendingDayLoadCount = \App\Models\DayLoadEntry::where('vendor_id', $selected_vendor_id)
+            $pendingDayLoadCount = DayLoadEntry::where('vendor_id', $selected_vendor_id)
                 ->whereIn('vendor_payment_status', ['Pending', 'Partial'])
+                ->where('status', '!=', 'Cancelled')
                 ->count();
+
+            $dayLoadEntries = DayLoadEntry::where('vendor_id', $selected_vendor_id)
+                ->whereIn('vendor_payment_status', ['Pending', 'Partial'])
+                ->where('status', '!=', 'Cancelled')
+                ->with(['dealer', 'batch'])
+                ->get()
+                ->sortBy(function($e) {
+                    return $e->batch ? $e->batch->billing_date->timestamp : $e->created_at->timestamp;
+                });
         }
 
-        return view('payments.vendors.create', compact('vendors', 'selected_vendor_id', 'pendingDayLoadCount'));
+        return view('payments.vendors.create', compact('vendors', 'selected_vendor_id', 'pendingDayLoadCount', 'dayLoadEntries'));
     }
 
     public function storeGeneralPayment(Request $request): RedirectResponse
@@ -79,7 +91,9 @@ class VendorPaymentController extends Controller
             'bank_amount'        => 'required|numeric|min:0',
             'payment_mode'       => 'required|in:Cash,UPI,NEFT,Cheque',
             'bank_transfer_type' => 'nullable|required_if:bank_amount,>0|in:UPI,Bank Transfer,NEFT,RTGS,IMPS,Cheque,Other',
-            'notes'              => 'nullable|string'
+            'notes'              => 'nullable|string',
+            'selected_entry_ids' => 'nullable|array',
+            'selected_entry_ids.*' => 'exists:day_load_entries,id',
         ]);
 
         $cashAmount = (float) $validated['cash_amount'];
@@ -90,12 +104,9 @@ class VendorPaymentController extends Controller
             return back()->with('error', 'Total payment amount must be greater than zero.');
         }
 
-        $vendor = Vendor::findOrFail($validated['vendor_id']);
-        if ($amount > $vendor->outstanding_balance) {
-            return back()->withErrors(['amount' => "The payment amount cannot exceed the vendor's outstanding balance of Rs " . number_format($vendor->outstanding_balance, 2) . "."])->withInput();
+        if ($amount > 0) {
+            $this->service->record($validated);
         }
-
-        $this->service->record($validated);
 
         return redirect()->route('payments.vendors.index')->with('success', 'Vendor payment recorded and balance updated.');
     }

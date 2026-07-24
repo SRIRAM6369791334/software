@@ -50,7 +50,7 @@
                             </div>
                         </div>
                     @else
-                        <x-form.select name="vendor_id" label="Select Vendor" required>
+                        <x-form.select name="vendor_id" label="Select Vendor" required onchange="if(this.value) window.location.href='{{ route('payments.vendors.create') }}?vendor_id='+this.value">
                             <option value="">Choose vendor…</option>
                             @foreach($vendors as $v)
                                 <option value="{{ $v->id }}" {{ $selected_vendor_id == $v->id ? 'selected' : '' }}>
@@ -61,6 +61,85 @@
                     @endif
                 </div>
             </section>
+
+            @if($selected_vendor_id)
+                {{-- Day-Load Outstanding Dues --}}
+                <section class="space-y-4">
+                    <div class="flex items-center gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">
+                        <div class="h-10 w-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                            <span class="material-symbols-rounded">receipt_long</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-zinc-900 dark:text-zinc-100 tracking-tight font-cabinet">
+                            Day-Load Outstanding Dues
+                        </h3>
+                    </div>
+
+                    <div class="p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 overflow-x-auto">
+                        <table class="w-full text-left text-sm font-outfit">
+                            <thead>
+                                <tr class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest bg-zinc-100/50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
+                                    <th class="px-4 py-3 w-12 text-center">
+                                        <input type="checkbox" id="select-all-entries" onchange="toggleAllEntries(this)" class="rounded border-zinc-300 dark:border-zinc-700 text-purple-600 focus:ring-purple-500 bg-white dark:bg-zinc-900">
+                                    </th>
+                                    <th class="px-4 py-3">Date</th>
+                                    <th class="px-4 py-3">Dealer</th>
+                                    <th class="px-4 py-3 text-right">Weight (kg)</th>
+                                    <th class="px-4 py-3 text-right">Rate</th>
+                                    <th class="px-4 py-3 text-right">Vendor Cost</th>
+                                    <th class="px-4 py-3 text-right">Paid</th>
+                                    <th class="px-4 py-3 text-right text-purple-600 dark:text-purple-400 font-bold">Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700 bg-white dark:bg-zinc-900/50">
+                                @forelse($dayLoadEntries as $entry)
+                                    @php
+                                        $balance = round((float)$entry->vendor_cost - (float)$entry->vendor_paid, 2);
+                                    @endphp
+                                    <tr class="hover:bg-zinc-50/50 transition-colors">
+                                        <td class="px-4 py-4 text-center">
+                                            <input type="checkbox" name="selected_entry_ids[]" value="{{ $entry->id }}" data-remaining="{{ $balance }}" onchange="updateSelectedDuesTotal()" class="day-load-checkbox rounded border-zinc-300 dark:border-zinc-700 text-purple-600 focus:ring-purple-500 bg-white dark:bg-zinc-900">
+                                        </td>
+                                        <td class="px-4 py-4 font-medium text-zinc-900 dark:text-zinc-100">
+                                            {{ $entry->batch?->billing_date?->format('d M Y') ?? '—' }}
+                                            <span class="block text-[10px] text-zinc-400">{{ $entry->batch?->billing_date?->format('l') }}</span>
+                                        </td>
+                                        <td class="px-4 py-4 text-zinc-600 dark:text-zinc-400">
+                                            {{ $entry->dealer?->firm_name ?? '—' }}
+                                        </td>
+                                        <td class="px-4 py-4 text-right font-mono text-zinc-700 dark:text-zinc-300">
+                                            {{ number_format($entry->bird_weight, 2) }} kg
+                                        </td>
+                                        <td class="px-4 py-4 text-right font-mono text-zinc-700 dark:text-zinc-300">
+                                            ₹{{ number_format($entry->billing_rate ?: $entry->paper_rate, 2) }}
+                                        </td>
+                                        <td class="px-4 py-4 text-right font-bold font-mono text-zinc-900 dark:text-zinc-100">
+                                            ₹{{ number_format($entry->vendor_cost, 2) }}
+                                        </td>
+                                        <td class="px-4 py-4 text-right font-mono text-zinc-500">
+                                            ₹{{ number_format($entry->vendor_paid, 2) }}
+                                        </td>
+                                        <td class="px-4 py-4 text-right font-bold font-mono text-purple-600 dark:text-purple-400">
+                                            ₹{{ number_format($balance, 2) }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="8" class="px-6 py-10 text-center text-zinc-500 dark:text-zinc-400">
+                                            No unbilled day-load entries found for this vendor.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                        @if($dayLoadEntries->isNotEmpty())
+                            <div class="flex justify-between items-center mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                                <span class="text-xs font-bold text-zinc-500 uppercase">Selected Entries Dues:</span>
+                                <span id="selected-dues-display" class="font-jetbrains font-black text-lg text-purple-600 dark:text-purple-400">₹0.00</span>
+                            </div>
+                        @endif
+                    </div>
+                </section>
+            @endif
 
             {{-- Day-Load Warning Banner --}}
             @if($selected_vendor_id && $pendingDayLoadCount > 0)
@@ -154,3 +233,37 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function toggleAllEntries(master) {
+        const checkboxes = document.querySelectorAll('.day-load-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = master.checked;
+        });
+        updateSelectedDuesTotal();
+    }
+
+    function updateSelectedDuesTotal() {
+        const checkboxes = document.querySelectorAll('.day-load-checkbox:checked');
+        let total = 0;
+        checkboxes.forEach(cb => {
+            total += parseFloat(cb.getAttribute('data-remaining')) || 0;
+        });
+        
+        const display = document.getElementById('selected-dues-display');
+        if (display) {
+            display.textContent = '₹' + total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        
+        const formEl = document.querySelector('form');
+        if (formEl) {
+            const alpineData = Alpine.$data(formEl);
+            if (alpineData) {
+                alpineData.cashAmount = total;
+                alpineData.bankAmount = 0;
+            }
+        }
+    }
+</script>
+@endpush

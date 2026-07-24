@@ -409,19 +409,6 @@
                         <div class="border-t border-zinc-200 dark:border-zinc-700 pt-2 text-right font-jetbrains font-black text-indigo-600 dark:text-indigo-400 text-lg" x-text="'₹' + netInvoice.toLocaleString('en-IN', { minimumFractionDigits: 2 })"></div>
                     </div>
 
-                    {{-- Split Schedule Preview --}}
-                    <div class="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3 space-y-2">
-                        <p class="text-xs font-bold text-zinc-500 uppercase tracking-wide">Split Payment Schedule</p>
-                        <div class="flex justify-between text-xs font-outfit text-zinc-600 dark:text-zinc-400">
-                            <span>Monday Part (50%):</span>
-                            <span class="font-jetbrains font-bold text-zinc-900 dark:text-white" x-text="'₹' + (netInvoice/2).toLocaleString('en-IN', { minimumFractionDigits: 2 })"></span>
-                        </div>
-                        <div class="flex justify-between text-xs font-outfit text-zinc-600 dark:text-zinc-400">
-                            <span>Friday Part (50%):</span>
-                            <span class="font-jetbrains font-bold text-zinc-900 dark:text-white" x-text="'₹' + (netInvoice - netInvoice/2).toLocaleString('en-IN', { minimumFractionDigits: 2 })"></span>
-                        </div>
-                    </div>
-
                     <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg shadow-indigo-500/20 transition-transform active:scale-95 flex items-center justify-center gap-2">
                         <span class="material-symbols-rounded">verified</span>
                         Confirm & Generate Weekly Bill
