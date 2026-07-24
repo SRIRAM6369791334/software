@@ -201,37 +201,6 @@
 <?php endif; ?>
 
 
-<div class="section-bar">🗓️ Payment Schedule (Monday/Friday Split)</div>
-<table class="split-table">
-    <tr>
-        <td>
-            <div class="split-card <?php echo e(($bill->monday_payment_status ?? '') === 'Paid' ? 'paid' : ''); ?>">
-                <div style="font-size:8px; font-weight:bold; text-transform:uppercase; margin-bottom:3px; color:#4b5563;">
-                    <?php echo e(($bill->monday_payment_status ?? '') === 'Paid' ? '✅' : '⏳'); ?> Monday Split (50%)
-                </div>
-                <div style="font-size:13px; font-weight:bold; font-family:monospace; color:#111827;">
-                    ₹<?php echo e(number_format((float)($bill->monday_payment_amount ?? 0), 2)); ?>
-
-                </div>
-                <div style="font-size:8px; margin-top:3px; color:#6b7280;">Status: <strong><?php echo e($bill->monday_payment_status ?? 'Unpaid'); ?></strong></div>
-            </div>
-        </td>
-        <td>
-            <div class="split-card <?php echo e(($bill->friday_payment_status ?? '') === 'Paid' ? 'paid' : ''); ?>">
-                <div style="font-size:8px; font-weight:bold; text-transform:uppercase; margin-bottom:3px; color:#4b5563;">
-                    <?php echo e(($bill->friday_payment_status ?? '') === 'Paid' ? '✅' : '⏳'); ?> Friday Split (50%)
-                </div>
-                <div style="font-size:13px; font-weight:bold; font-family:monospace; color:#111827;">
-                    ₹<?php echo e(number_format((float)($bill->friday_payment_amount ?? 0), 2)); ?>
-
-                </div>
-                <div style="font-size:8px; margin-top:3px; color:#6b7280;">Status: <strong><?php echo e($bill->friday_payment_status ?? 'Unpaid'); ?></strong></div>
-            </div>
-        </td>
-    </tr>
-</table>
-
-
 <div class="section-bar">📜 Payment History</div>
 <?php if(isset($allPayments) && $allPayments->isNotEmpty()): ?>
 <table class="pay-table">

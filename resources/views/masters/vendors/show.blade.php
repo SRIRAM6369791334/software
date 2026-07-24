@@ -159,53 +159,6 @@
                         </div>
                     </div>
 
-                    <div class="pt-8 border-t border-zinc-200 dark:border-zinc-800">
-                        <div class="flex items-center justify-between mb-6">
-                            <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Recent Supply Activity</h4>
-                            @can('create purchases')
-                                <x-button href="{{ route('purchases.create', ['vendor_name' => $vendor->firm_name]) }}" variant="primary" size="sm" icon="add">
-                                    Record Entry
-                                </x-button>
-                            @endcan
-                        </div>
-
-                    <x-data-table :headers="['Date', 'Item Details', ['label' => 'Quantity', 'align' => 'right'], ['label' => 'Total Bill', 'align' => 'right']]">
-                        @forelse($recentPurchases as $purchase)
-                            <tr class="hover:bg-white/80 dark:hover:bg-zinc-800/50 transition-all duration-300">
-                                <td class="px-6 py-4 font-semibold text-sm text-zinc-700 dark:text-zinc-300">
-                                    {{ $purchase->date->format('d M Y') }}
-                                </td>
-                                <td class="px-6 py-4 font-bold text-sm text-zinc-900 dark:text-zinc-100">
-                                    @if($purchase->items->isNotEmpty())
-                                        {{ $purchase->items->pluck('item_name')->join(', ') }}
-                                    @else
-                                        {{ $purchase->item }}
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-right font-mono text-sm text-zinc-600 dark:text-zinc-400">
-                                    @if($purchase->items->isNotEmpty())
-                                        {{ number_format($purchase->items->sum('quantity'), 2) }} {{ $purchase->items->first()->unit }}
-                                    @else
-                                        {{ number_format($purchase->quantity, 2) }} {{ $purchase->unit }}
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-right font-bold text-sm text-zinc-900 dark:text-zinc-100 font-jetbrains">
-                                    Rs {{ number_format($purchase->total_amount, 0) }}
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="px-6 py-12 text-center">
-                                    <x-empty-state 
-                                        icon="inventory_2" 
-                                        title="No supplies logged" 
-                                        subtitle="No recent transaction entries found for this supplier." 
-                                    />
-                                </td>
-                            </tr>
-                        @endforelse
-                    </x-data-table>
-
                     @if($loadCount > 0)
                     <div class="pt-8 border-t border-zinc-200 dark:border-zinc-800 mt-8">
                         <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider mb-6">Day-Load Activity</h4>

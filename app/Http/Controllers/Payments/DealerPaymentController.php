@@ -72,9 +72,8 @@ class DealerPaymentController extends Controller
                 ->orderBy('period_start')
                 ->get();
 
-            // Fetch unpaid/partial day load entries that are NOT linked to any weekly bill
+            // Fetch unpaid/partial day load entries
             $dayLoadEntries = DayLoadEntry::where('dealer_id', $selected_dealer_id)
-                ->whereNull('weekly_bill_id')
                 ->whereIn('dealer_payment_status', ['Pending', 'Partial'])
                 ->where('status', '!=', 'Cancelled')
                 ->with('batch')

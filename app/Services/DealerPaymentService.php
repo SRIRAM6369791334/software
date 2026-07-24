@@ -39,29 +39,6 @@ class DealerPaymentService
             
             $amount = round($cashAmount + $bankAmount, 2);
 
-            // 0. If paying a weekly bill split
-            if (!empty($data['weekly_bill_id']) && !empty($data['payment_part'])) {
-                $weeklyBillService = app(\App\Services\WeeklyBillingService::class);
-                $weeklyBillService->recordSplitPayment(
-                    (int) $data['weekly_bill_id'],
-                    $data['payment_part'],
-                    [
-                        'date'               => $data['date'] ?? now()->format('Y-m-d'),
-                        'payment_mode'       => $data['payment_mode'] ?? 'Cash',
-                        'cash_amount'        => $cashAmount,
-                        'bank_amount'        => $bankAmount,
-                        'bank_transfer_type' => $data['bank_transfer_type'] ?? null,
-                        'notes'              => $data['notes'] ?? null,
-                    ]
-                );
-                
-                // Return the created payment
-                return DealerPayment::where('dealer_id', $data['dealer_id'])
-                    ->where('date', $data['date'] ?? now()->format('Y-m-d'))
-                    ->latest('id')
-                    ->first();
-            }
-
             $totalToAllocate = round($amount + $discountAmount, 2);
             $remainingTotal = $totalToAllocate;
             

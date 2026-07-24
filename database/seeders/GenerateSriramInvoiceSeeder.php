@@ -62,10 +62,6 @@ class GenerateSriramInvoiceSeeder extends Seeder
             'payment_mode'         => 'Pending',
             'previous_outstanding' => $previousBalance,
             'payments_during_week' => 0,
-            'monday_payment_amount'=> 0,
-            'monday_payment_status'=> 'Unpaid',
-            'friday_payment_amount'=> 0,
-            'friday_payment_status'=> 'Unpaid',
         ]);
 
         foreach ($lineItems as $item) {

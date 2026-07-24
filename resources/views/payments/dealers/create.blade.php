@@ -70,37 +70,11 @@
                             <span class="material-symbols-rounded">receipt_long</span>
                         </div>
                         <h3 class="text-lg font-bold text-zinc-900 dark:text-zinc-100 tracking-tight font-cabinet">
-                            @if($weeklyBills->isNotEmpty())
-                                Outstanding Weekly Bills
-                            @else
-                                Unbilled Day-Load Dues
-                            @endif
+                            Day-Load Outstanding Dues
                         </h3>
                     </div>
 
-                    @if($weeklyBills->isNotEmpty())
-                        <div class="p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60">
-                            <label class="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2 font-cabinet tracking-wide uppercase">Select Weekly Bill Split to Pay <span class="text-rose-500">*</span></label>
-                            <select name="weekly_bill_split" id="weekly-bill-split" required class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm shadow-sm" onchange="onBillSplitChange(this)">
-                                <option value="" data-amount="0">Select a split part to pay...</option>
-                                @foreach($weeklyBills as $bill)
-                                    @if($bill->monday_payment_status !== 'Paid')
-                                        <option value="{{ $bill->id }}_monday" data-amount="{{ $bill->monday_payment_amount }}" data-bill-id="{{ $bill->id }}" data-part="monday">
-                                            {{ $bill->invoice_no }} (Monday Split) — Rs {{ number_format($bill->monday_payment_amount, 2) }}
-                                        </option>
-                                    @endif
-                                    @if($bill->friday_payment_status !== 'Paid')
-                                        <option value="{{ $bill->id }}_friday" data-amount="{{ $bill->friday_payment_amount }}" data-bill-id="{{ $bill->id }}" data-part="friday">
-                                            {{ $bill->invoice_no }} (Friday Split) — Rs {{ number_format($bill->friday_payment_amount, 2) }}
-                                        </option>
-                                    @endif
-                                @endforeach
-                            </select>
-                            <input type="hidden" name="weekly_bill_id" id="weekly-bill-id-input">
-                            <input type="hidden" name="payment_part" id="payment-part-input">
-                        </div>
-                    @else
-                        <div class="p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 overflow-x-auto">
+                    <div class="p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 overflow-x-auto">
                             <table class="w-full text-left text-sm font-outfit">
                                 <thead>
                                     <tr class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest bg-zinc-100/50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
@@ -164,7 +138,6 @@
                                 </div>
                             @endif
                         </div>
-                    @endif
                 </section>
             @endif
 
@@ -263,26 +236,6 @@
 
 @push('scripts')
 <script>
-    function onBillSplitChange(select) {
-        const option = select.options[select.selectedIndex];
-        const amount = parseFloat(option.getAttribute('data-amount')) || 0;
-        const billId = option.getAttribute('data-bill-id') || '';
-        const part = option.getAttribute('data-part') || '';
-        
-        document.getElementById('weekly-bill-id-input').value = billId;
-        document.getElementById('payment-part-input').value = part;
-        
-        // Auto-fill cash amount in Alpine
-        const formEl = document.querySelector('form');
-        if (formEl) {
-            const alpineData = Alpine.$data(formEl);
-            if (alpineData) {
-                alpineData.cashAmount = amount;
-                alpineData.bankAmount = 0;
-            }
-        }
-    }
-
     function toggleAllEntries(master) {
         const checkboxes = document.querySelectorAll('.day-load-checkbox');
         checkboxes.forEach(cb => {

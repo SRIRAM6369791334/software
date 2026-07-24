@@ -144,64 +144,6 @@
                         @endif
                     </x-data-table>
 
-                    <div class="flex items-center justify-between mt-10 mb-6">
-                        <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Purchase History</h4>
-                        <x-button href="{{ route('purchases.create', ['vendor_name' => $vendor->firm_name]) }}" variant="primary" size="sm" icon="add" class="!bg-teal-600 hover:!bg-teal-700">Record Entry</x-button>
-                    </div>
-
-                    <x-data-table :headers="['Date', 'Item Details', ['label' => 'Quantity', 'align' => 'right'], ['label' => 'Rate', 'align' => 'right'], ['label' => 'GST Amount', 'align' => 'right'], ['label' => 'Total Bill', 'align' => 'right'], ['label' => 'Mode', 'align' => 'center']]">
-                        @forelse($purchases as $purchase)
-                            <tr class="hover:bg-white/80 dark:hover:bg-zinc-800/50 transition-all duration-300">
-                                <td class="px-4 py-4 font-bold text-sm">{{ $purchase->date->format('d M Y') }}</td>
-                                <td class="px-4 py-4">
-                                    <div class="flex flex-wrap gap-1 mb-1">
-                                        @forelse($purchase->items as $item)
-                                            <span class="px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 text-xs font-medium border border-teal-100 dark:border-teal-800/50" title="{{ $item->item_name }}">
-                                                {{ $item->item_name }} ({{ number_format($item->quantity, 2) }} {{ $item->unit }} @ Rs {{ number_format($item->rate, 2) }})
-                                            </span>
-                                        @empty
-                                            @if($purchase->item)
-                                                <span class="px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 text-xs font-medium border border-teal-100 dark:border-teal-800/50">
-                                                    {{ $purchase->item }} ({{ number_format($purchase->quantity, 2) }} {{ $purchase->unit }} @ Rs {{ number_format($purchase->rate, 2) }})
-                                                </span>
-                                            @else
-                                                <span class="text-zinc-400 text-xs">—</span>
-                                            @endif
-                                        @endforelse
-                                    </div>
-                                    <div class="text-[10px] font-mono text-zinc-500">#PUR-{{ $purchase->id }}</div>
-                                </td>
-                                <td class="px-4 py-4 text-right font-mono text-sm text-zinc-600 dark:text-zinc-400">
-                                    @if($purchase->items->isNotEmpty())
-                                        {{ number_format($purchase->items->sum('quantity'), 2) }} {{ $purchase->items->first()->unit }}
-                                    @else
-                                        {{ number_format($purchase->quantity, 2) }} {{ $purchase->unit }}
-                                    @endif
-                                </td>
-                                <td class="px-4 py-4 text-right text-sm text-zinc-600 dark:text-zinc-400">
-                                    @if($purchase->items->count() === 1)
-                                        Rs {{ number_format($purchase->items->first()->rate, 2) }}
-                                    @elseif($purchase->items->count() > 1)
-                                        <span class="text-xs italic">Multiple rates</span>
-                                    @else
-                                        Rs {{ number_format($purchase->rate, 2) }}
-                                    @endif
-                                </td>
-                                <td class="px-4 py-4 text-right font-mono text-sm text-zinc-500">Rs {{ number_format($purchase->gst_amount, 2) }}</td>
-                                <td class="px-4 py-4 text-right font-bold text-sm font-jetbrains">Rs {{ number_format($purchase->total_amount, 2) }}</td>
-                                <td class="px-4 py-4 text-center">
-                                    <x-badge color="teal">{{ $purchase->payment_mode }}</x-badge>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="7" class="text-center py-8 text-zinc-500">No purchase entries found.</td></tr>
-                        @endforelse
-                        @if($purchases->hasPages())
-                            <x-slot:pagination>
-                                {{ $purchases->links() }}
-                            </x-slot:pagination>
-                        @endif
-                    </x-data-table>
                 </div>
             </div>
         </div>

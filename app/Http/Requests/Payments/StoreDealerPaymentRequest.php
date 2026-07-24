@@ -57,20 +57,8 @@ class StoreDealerPaymentRequest extends FormRequest
                 'min:0.01',
                 function ($attribute, $value, $fail) {
                     $dealer = \App\Models\Dealer::find($this->input('dealer_id'));
-                    if ($this->filled('weekly_bill_id') && $this->filled('payment_part')) {
-                        $bill = \App\Models\WeeklyBill::find($this->input('weekly_bill_id'));
-                        if ($bill) {
-                            $expected = $this->input('payment_part') === 'monday' 
-                                ? (float) $bill->monday_payment_amount 
-                                : (float) $bill->friday_payment_amount;
-                            if (abs((float)$value - $expected) > 0.01) {
-                                $fail("Total payment must equal the expected split amount of Rs " . number_format($expected, 2));
-                            }
-                        }
-                    } else {
-                        if ($dealer && $value > $dealer->displayed_outstanding) {
-                            $fail("The payout amount cannot exceed the dealer's pending balance of Rs " . number_format($dealer->displayed_outstanding, 2) . ".");
-                        }
+                    if ($dealer && $value > $dealer->displayed_outstanding) {
+                        $fail("The payout amount cannot exceed the dealer's pending balance of Rs " . number_format($dealer->displayed_outstanding, 2) . ".");
                     }
                 }
             ],

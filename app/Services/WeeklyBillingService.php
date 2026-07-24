@@ -164,10 +164,6 @@ class WeeklyBillingService
             $baseAmount = round($netAmount / 1.18, 2);
             $gstAmount = round($netAmount - $baseAmount, 2);
 
-            // Split: 50% Monday, 50% Friday
-            $mondayPayment = round($netAmount / 2, 2);
-            $fridayPayment = $netAmount - $mondayPayment;
-
             $bill = WeeklyBill::create([
                 'dealer_id'             => $dealerId,
                 'period_start'          => $startDate,
@@ -181,10 +177,6 @@ class WeeklyBillingService
                 'discount_amount'       => $discountAmount,
                 'status'                => $netAmount > 0 ? 'Pending' : 'Paid',
                 'payment_mode'          => 'Credit',
-                'monday_payment_amount' => $mondayPayment,
-                'monday_payment_status' => $mondayPayment > 0 ? 'Pending' : 'Paid',
-                'friday_payment_amount' => $fridayPayment,
-                'friday_payment_status' => $fridayPayment > 0 ? 'Pending' : 'Paid',
                 'previous_outstanding'  => $totals['previous_outstanding'],
                 'payments_during_week'  => $totals['total_payments'],
             ]);
@@ -218,60 +210,6 @@ class WeeklyBillingService
                 if ($dealer->pending_amount < 0) {
                     $dealer->update(['pending_amount' => 0.0]);
                 }
-            }
-
-            return $bill;
-        });
-    }
-
-    /**
-     * Record payment for a split part (Monday or Friday).
-     */
-    public function recordSplitPayment(int $billId, string $part, array $paymentData): WeeklyBill
-    {
-        return DB::transaction(function () use ($billId, $part, $paymentData) {
-            $bill = WeeklyBill::findOrFail($billId);
-            $dealer = Dealer::findOrFail($bill->dealer_id);
-
-            $amount = 0.0;
-            if ($part === 'monday') {
-                if ($bill->monday_payment_status === 'Paid') {
-                    throw new \Exception("Monday split payment is already paid.");
-                }
-                $amount = (float) $bill->monday_payment_amount;
-                $bill->monday_payment_status = 'Paid';
-            } elseif ($part === 'friday') {
-                if ($bill->friday_payment_status === 'Paid') {
-                    throw new \Exception("Friday split payment is already paid.");
-                }
-                $amount = (float) $bill->friday_payment_amount;
-                $bill->friday_payment_status = 'Paid';
-            }
-
-            if ($bill->monday_payment_status === 'Paid' && $bill->friday_payment_status === 'Paid') {
-                $bill->status = 'Paid';
-            }
-            $bill->save();
-
-            // Record Dealer Payment
-            DealerPayment::create([
-                'dealer_id'          => $bill->dealer_id,
-                'date'               => $paymentData['date'] ?? now()->format('Y-m-d'),
-                'amount'             => $amount,
-                'payment_mode'       => $paymentData['payment_mode'] ?? 'Cash',
-                'cash_amount'        => $paymentData['cash_amount'] ?? $amount,
-                'bank_amount'        => $paymentData['bank_amount'] ?? 0.00,
-                'bank_transfer_type' => $paymentData['bank_transfer_type'] ?? null,
-                'notes'              => $paymentData['notes'] ?? "Split payment ({$part}) for Invoice #{$bill->invoice_no}",
-            ]);
-
-            // Recalculate cash/bank ledger
-            app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($paymentData['date'] ?? now()));
-
-            // Decrement dealer outstanding
-            $dealer->decrement('pending_amount', $amount);
-            if ($dealer->pending_amount < 0) {
-                $dealer->update(['pending_amount' => 0]);
             }
 
             return $bill;

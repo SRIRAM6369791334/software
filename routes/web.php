@@ -202,7 +202,6 @@ Route::middleware(['auth'])->group(function () {
             Route::post('weekly/bulk', [WeeklyBillingController::class, 'bulkStore'])->name('weekly.bulkStore');
             Route::post('weekly/purchase', [WeeklyBillingController::class, 'storePurchase'])->name('weekly.purchase.store');
             Route::post('weekly/generate', [WeeklyBillingController::class, 'generateWeekly'])->name('weekly.generate');
-            Route::post('weekly/{weekly}/pay-split/{part}', [WeeklyBillingController::class, 'paySplit'])->name('weekly.pay-split');
         });
 
         permissionResource('weekly', WeeklyBillingController::class, 'bills');

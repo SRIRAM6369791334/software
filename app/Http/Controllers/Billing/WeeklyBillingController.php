@@ -244,64 +244,6 @@ class WeeklyBillingController extends Controller
     }
 
     /**
-     * Pay split part (Monday or Friday).
-     */
-    public function paySplit(Request $request, WeeklyBill $weekly, string $part): RedirectResponse
-    {
-        $expectedAmount = 0.0;
-        if ($part === 'monday') {
-            $expectedAmount = (float) $weekly->monday_payment_amount;
-        } elseif ($part === 'friday') {
-            $expectedAmount = (float) $weekly->friday_payment_amount;
-        }
-
-        if (!$request->has('cash_amount') && !$request->has('bank_amount')) {
-            if ($request->input('payment_mode') === 'Cash') {
-                $request->merge([
-                    'cash_amount' => $expectedAmount,
-                    'bank_amount' => 0.0,
-                ]);
-            } else {
-                $request->merge([
-                    'cash_amount' => 0.0,
-                    'bank_amount' => $expectedAmount,
-                ]);
-            }
-        }
-
-        $validated = $request->validate([
-            'cash_amount'        => 'required|numeric|min:0',
-            'bank_amount'        => 'required|numeric|min:0',
-            'payment_mode'       => 'required|in:Cash,UPI,NEFT,Cheque(Bank Transfer)',
-            'bank_transfer_type' => 'nullable|required_if:bank_amount,>0|in:UPI,Bank Transfer,NEFT,RTGS,IMPS,Cheque,Other',
-            'notes'              => 'nullable|string|max:500',
-        ]);
-
-        $cashAmount = (float) $validated['cash_amount'];
-        $bankAmount = (float) $validated['bank_amount'];
-        $totalPaid = round($cashAmount + $bankAmount, 2);
-
-        if (abs($totalPaid - $expectedAmount) > 0.01) {
-            return back()->with('error', "Total payment must equal the expected split amount of Rs " . number_format($expectedAmount, 2));
-        }
-
-        try {
-            $this->billingService->recordSplitPayment($weekly->id, $part, [
-                'payment_mode'       => $validated['payment_mode'],
-                'cash_amount'        => $cashAmount,
-                'bank_amount'        => $bankAmount,
-                'bank_transfer_type' => $validated['bank_transfer_type'] ?? null,
-                'notes'              => $validated['notes'],
-                'date'               => now()->format('Y-m-d'),
-            ]);
-        } catch (\Exception $e) {
-            return back()->with('error', 'Could not record split payment: ' . $e->getMessage());
-        }
-
-        return back()->with('success', 'Split payment recorded successfully.');
-    }
-
-    /**
      * Legacy Manual Store method.
      */
     public function store(Request $request): RedirectResponse
@@ -586,10 +528,6 @@ class WeeklyBillingController extends Controller
             'payment_mode'        => 'Pending',
             'previous_outstanding'=> $previousBalance,
             'payments_during_week'=> 0,
-            'monday_payment_amount'=> 0,
-            'monday_payment_status'=> 'Unpaid',
-            'friday_payment_amount'=> 0,
-            'friday_payment_status'=> 'Unpaid',
         ]);
 
         // Create line items

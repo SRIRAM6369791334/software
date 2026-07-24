@@ -210,46 +210,6 @@
                 @endif
             </div>
 
-            {{-- ===== PAYMENT SCHEDULE ===== --}}
-            <div>
-                <div class="px-8 py-3 bg-zinc-50 border-y border-zinc-200 flex items-center gap-2">
-                    <span class="material-symbols-rounded text-zinc-500 text-[18px]">calendar_month</span>
-                    <h3 class="font-bold text-zinc-700 text-xs uppercase tracking-wider">Payment Schedule (Monday/Friday Split)</h3>
-                </div>
-                <div class="grid grid-cols-2 gap-4 p-6 bg-white">
-                    {{-- Monday Split --}}
-                    <div class="p-4 rounded-xl border {{ ($bill->monday_payment_status ?? '') === 'Paid' ? 'border-emerald-200 bg-emerald-50/20' : 'border-zinc-200 bg-zinc-50/20' }}">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="text-base">{{ ($bill->monday_payment_status ?? '') === 'Paid' ? '✅' : '⏳' }}</span>
-                            <span class="text-[10px] font-bold uppercase tracking-wider {{ ($bill->monday_payment_status ?? '') === 'Paid' ? 'text-emerald-700' : 'text-zinc-600' }}">
-                                Monday Split (50%)
-                            </span>
-                        </div>
-                        <p class="text-lg font-black font-mono {{ ($bill->monday_payment_status ?? '') === 'Paid' ? 'text-emerald-700' : 'text-zinc-800' }}">
-                            ₹{{ number_format((float)($bill->monday_payment_amount ?? 0), 2) }}
-                        </p>
-                        <p class="text-[10px] mt-1 {{ ($bill->monday_payment_status ?? '') === 'Paid' ? 'text-emerald-600' : 'text-zinc-500' }}">
-                            Status: <strong>{{ $bill->monday_payment_status ?? 'Unpaid' }}</strong>
-                        </p>
-                    </div>
-                    {{-- Friday Split --}}
-                    <div class="p-4 rounded-xl border {{ ($bill->friday_payment_status ?? '') === 'Paid' ? 'border-emerald-200 bg-emerald-50/20' : 'border-zinc-200 bg-zinc-50/20' }}">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="text-base">{{ ($bill->friday_payment_status ?? '') === 'Paid' ? '✅' : '⏳' }}</span>
-                            <span class="text-[10px] font-bold uppercase tracking-wider {{ ($bill->friday_payment_status ?? '') === 'Paid' ? 'text-emerald-700' : 'text-zinc-600' }}">
-                                Friday Split (50%)
-                            </span>
-                        </div>
-                        <p class="text-lg font-black font-mono {{ ($bill->friday_payment_status ?? '') === 'Paid' ? 'text-emerald-700' : 'text-zinc-800' }}">
-                            ₹{{ number_format((float)($bill->friday_payment_amount ?? 0), 2) }}
-                        </p>
-                        <p class="text-[10px] mt-1 {{ ($bill->friday_payment_status ?? '') === 'Paid' ? 'text-emerald-600' : 'text-zinc-500' }}">
-                            Status: <strong>{{ $bill->friday_payment_status ?? 'Unpaid' }}</strong>
-                        </p>
-                    </div>
-                </div>
-            </div>
-
             {{-- ===== PAYMENT HISTORY ===== --}}
             <div class="border-t border-zinc-200">
                 <div class="px-8 py-3 bg-zinc-50 border-b border-zinc-200 flex items-center gap-2">

@@ -15,8 +15,6 @@ class WeeklyBill extends Model
         'dealer_id', 'period_start', 'period_end', 'invoice_no',
         'amount', 'gst_percentage', 'gst_amount', 'net_amount',
         'discount_percentage', 'discount_amount', 'status', 'payment_mode', 'bank_method',
-        'monday_payment_amount', 'monday_payment_status',
-        'friday_payment_amount', 'friday_payment_status',
         'previous_outstanding', 'payments_during_week'
     ];
 
@@ -29,8 +27,6 @@ class WeeklyBill extends Model
         'net_amount'            => 'decimal:2',
         'discount_percentage'   => 'decimal:2',
         'discount_amount'       => 'decimal:2',
-        'monday_payment_amount' => 'decimal:2',
-        'friday_payment_amount' => 'decimal:2',
         'previous_outstanding'  => 'decimal:2',
         'payments_during_week'  => 'decimal:2',
     ];

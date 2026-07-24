@@ -79,8 +79,6 @@ class VendorController extends Controller
         $totalPurchaseAmount = $vendor->purchases()->sum('total_amount');
         $totalPurchaseCount = $vendor->purchases()->count();
         $lastPurchaseDate = $vendor->purchases()->latest('date')->first()?->date;
-        $recentPurchases = $vendor->purchases()->with('items')->latest()->take(5)->get();
-
         $totalBoxesLoaded = $vendor->dayLoadEntries()->sum('no_of_boxes');
         $totalBirdWeight = $vendor->dayLoadEntries()->sum('bird_weight');
         $totalFarmWeight = $vendor->dayLoadEntries()->sum('farm_weight');
@@ -111,7 +109,7 @@ class VendorController extends Controller
 
         return view('masters.vendors.show', compact(
             'vendor',
-            'totalPurchaseAmount', 'totalPurchaseCount', 'lastPurchaseDate', 'recentPurchases',
+            'totalPurchaseAmount', 'totalPurchaseCount', 'lastPurchaseDate',
             'totalBoxesLoaded', 'totalBirdWeight', 'totalFarmWeight', 'totalLossWeight',
             'avgRateVariance', 'loadCount',
             'totalCreditPurchases', 'totalDayLoadLiabilities', 'totalPaymentsPaid', 'outstandingBalance'
@@ -131,8 +129,6 @@ class VendorController extends Controller
 
     public function purchaseHistory(Vendor $vendor): View
     {
-        $purchases = $vendor->purchases()->with('items')->latest()->paginate(15);
-
         $dayLoadEntries = $vendor->dayLoadEntries()
             ->with(['dealer', 'batch'])
             ->latest()
@@ -144,7 +140,7 @@ class VendorController extends Controller
         $totalLossWeight = $vendor->dayLoadEntries()->sum('loss_weight');
 
         return view('masters.vendors.purchase-history', compact(
-            'vendor', 'purchases', 'dayLoadEntries',
+            'vendor', 'dayLoadEntries',
             'totalBoxes', 'totalBirdWeight', 'totalFarmWeight', 'totalLossWeight'
         ));
     }
