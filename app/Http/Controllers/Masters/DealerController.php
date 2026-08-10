@@ -24,7 +24,7 @@ class DealerController extends Controller
         $dealersCollection = $dealersQuery->orderBy('firm_name')->get();
 
         // Calculate stats on all matching dealers
-        $totalOutstanding = $dealersCollection->sum(fn($d) => $d->displayed_outstanding);
+        $totalOutstanding = $dealersCollection->filter(fn($d) => $d->displayed_outstanding > 0)->sum(fn($d) => $d->displayed_outstanding);
         $activeDealersCount = $dealersCollection->filter(fn($d) => $d->displayed_outstanding > 0)->count();
 
         // Apply balance filter in collection

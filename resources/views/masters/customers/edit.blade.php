@@ -30,10 +30,15 @@
                 />
 
                 <x-form.input 
+                    type="tel"
                     name="phone" 
                     label="Phone Number" 
                     icon="call" 
                     :value="$customer->phone" 
+                    maxlength="10"
+                    pattern="[6-9][0-9]{9}"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
+                    title="Please enter a valid 10-digit mobile number starting with 6-9"
                     required 
                 />
 
@@ -99,4 +104,54 @@
         </form>
     </x-card>
 </div>
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector('form[action="{{ route('masters.customers.update', $customer) }}"]');
+    if (!form) return;
+
+    form.addEventListener('submit', function(e) {
+        if (!form.checkValidity()) {
+            return;
+        }
+
+        e.preventDefault();
+
+        Swal.fire({
+            title: 'Update Customer?',
+            text: 'Are you sure you want to update this customer details?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, Update',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            background: document.documentElement.classList.contains('dark') ? '#18181b' : '#ffffff',
+            color: document.documentElement.classList.contains('dark') ? '#f4f4f5' : '#18181b',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Updating Customer...',
+                    text: 'Please wait while the customer details are being updated.',
+                    icon: 'info',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    background: document.documentElement.classList.contains('dark') ? '#18181b' : '#ffffff',
+                    color: document.documentElement.classList.contains('dark') ? '#f4f4f5' : '#18181b',
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                form.submit();
+            } else {
+                if (typeof window.resetSubmitButtons === 'function') {
+                    window.resetSubmitButtons(form);
+                }
+            }
+        });
+    });
+});
+</script>
+@endpush
 @endsection

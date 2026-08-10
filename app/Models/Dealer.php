@@ -73,23 +73,34 @@ class Dealer extends Model
     {
         $entries = $this->dayLoadEntries()
             ->where('status', '!=', 'Cancelled')
-            ->with(['dealerPayments' => fn($q) => $q->where('dealer_id', $this->id)])
             ->get();
 
         $outstanding = $entries->sum(function ($entry) {
-            return (float) $entry->amount - (float) $entry->dealerPayments->sum('amount');
+            return max(0, (float) $entry->amount - (float) $entry->dealer_collected);
         });
 
         return max(0, $outstanding);
     }
 
     /**
+     * Pending EMI dues for this dealer (Upcoming / Overdue)
+     */
+    public function getEmiOutstandingAttribute(): float
+    {
+        return (float) \App\Models\Emi::where('emi_type', 'Dealer')
+            ->where('entity_id', $this->id)
+            ->where('status', '!=', 'Paid')
+            ->get()
+            ->sum('remaining_amount');
+    }
+
+    /**
      * Merged outstanding displayed in dealer detail views:
-     * old-system pending_amount + day-load outstanding.
+     * old-system pending_amount + day-load outstanding + pending EMIs.
      */
     public function getDisplayedOutstandingAttribute(): float
     {
-        return (float) $this->pending_amount + $this->dayload_outstanding;
+        return (float) $this->pending_amount + $this->dayload_outstanding + $this->emi_outstanding;
     }
 
     protected static function booted()

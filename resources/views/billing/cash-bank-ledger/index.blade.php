@@ -95,7 +95,7 @@
             </form>
         </div>
 
-        <x-data-table :headers="['Date', 'Cash Income', 'Bank Income', 'Cash Expense', 'Opening Cash', 'Closing Cash', 'Opening Bank', 'Closing Bank', 'Total Balance', 'Actions', 'Status', '']">
+        <x-data-table :headers="['Date', 'Cash Income', 'Bank Income', 'Cash Expense', 'Bank Expense', 'Opening Cash', 'Closing Cash', 'Opening Bank', 'Closing Bank', 'Total Balance', 'Actions', 'Status', '']">
             @forelse($ledgers as $ledger)
                 @php
                     $totalBalance = (float) $ledger->closing_cash_balance + (float) $ledger->closing_bank_balance;
@@ -115,6 +115,9 @@
                     </td>
                     <td class="px-6 py-4">
                         <span class="font-jetbrains font-bold text-rose-600">Rs {{ number_format((float) $ledger->cash_expense, 0) }}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="font-jetbrains font-bold text-amber-600">Rs {{ number_format((float) $ledger->bank_expense, 0) }}</span>
                     </td>
                     <td class="px-6 py-4">
                         <span class="font-jetbrains text-zinc-600 dark:text-zinc-400">Rs {{ number_format((float) $ledger->opening_cash_balance, 0) }}</span>

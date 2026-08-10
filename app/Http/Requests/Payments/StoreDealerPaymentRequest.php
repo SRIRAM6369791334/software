@@ -34,10 +34,17 @@ class StoreDealerPaymentRequest extends FormRequest
             $amount = round($cashAmount + $bankAmount, 2);
         }
 
+        if (!$paymentMode || $paymentMode === 'Bank Transfer') {
+            $paymentMode = ((float) ($bankAmount ?? 0) > 0)
+                ? ($this->input('bank_transfer_type') ?: 'Bank Transfer')
+                : 'Cash';
+        }
+
         $this->merge([
-            'cash_amount' => $cashAmount,
-            'bank_amount' => $bankAmount,
-            'amount'      => $amount,
+            'cash_amount'  => $cashAmount,
+            'bank_amount'  => $bankAmount,
+            'amount'       => $amount,
+            'payment_mode' => $paymentMode,
         ]);
     }
 
@@ -49,6 +56,8 @@ class StoreDealerPaymentRequest extends FormRequest
             'payment_part'       => 'nullable|in:monday,friday',
             'selected_entry_ids' => 'nullable|array',
             'selected_entry_ids.*' => 'exists:day_load_entries,id',
+            'selected_emi_ids'   => 'nullable|array',
+            'selected_emi_ids.*' => 'exists:emis,id',
             'cash_amount'        => 'required|numeric|min:0',
             'bank_amount'        => 'required|numeric|min:0',
             'amount'             => [
@@ -57,12 +66,15 @@ class StoreDealerPaymentRequest extends FormRequest
                 'min:0.01',
                 function ($attribute, $value, $fail) {
                     $dealer = \App\Models\Dealer::find($this->input('dealer_id'));
-                    if ($dealer && $value > $dealer->displayed_outstanding) {
-                        $fail("The payout amount cannot exceed the dealer's pending balance of Rs " . number_format($dealer->displayed_outstanding, 2) . ".");
+                    if ($dealer && empty($this->input('selected_emi_ids'))) {
+                        $allowedMax = $dealer->displayed_outstanding;
+                        if ($allowedMax > 0 && $value > $allowedMax) {
+                            $fail("The payout amount cannot exceed the dealer's pending balance of Rs " . number_format($allowedMax, 2) . ".");
+                        }
                     }
                 }
             ],
-            'payment_mode'       => 'required|in:Cash,UPI,NEFT,Cheque',
+            'payment_mode'       => 'required|in:Cash,Bank Transfer,UPI,NEFT,RTGS,IMPS,Cheque,Other',
             'bank_transfer_type' => 'nullable|required_if:bank_amount,>0|in:UPI,Bank Transfer,NEFT,RTGS,IMPS,Cheque,Other',
             'date'               => 'required|date|before_or_equal:today',
             'notes'              => 'nullable|string|max:500',

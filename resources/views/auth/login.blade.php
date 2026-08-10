@@ -9,7 +9,7 @@
             <div class="absolute inset-0 rounded-3xl bg-white/40 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100"></div>
         </div>
         <div class="text-center">
-            <h1 class="text-3xl font-black tracking-tight text-zinc-900 drop-shadow-sm">PoultryPro</h1>
+            <h1 class="text-3xl font-black tracking-tight text-zinc-900 drop-shadow-sm">POULTRY</h1>
             <p class="text-sm font-medium tracking-wide text-zinc-500">Management System</p>
         </div>
     </div>
@@ -71,7 +71,7 @@
         </form>
     </div>
 
-    <p class="mt-8 text-center text-xs font-semibold tracking-wide text-zinc-400">PoultryPro v1.0 &copy; {{ date('Y') }}</p>
+    <p class="mt-8 text-center text-xs font-semibold tracking-wide text-zinc-400">POULTRY v1.0 &copy; {{ date('Y') }}</p>
 </div>
 
 <!-- Custom Scripts for Antigravity & Magic Spells -->

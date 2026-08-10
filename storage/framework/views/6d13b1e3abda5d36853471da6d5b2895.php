@@ -22,6 +22,7 @@
         ['label' => 'Vendors', 'icon' => 'inventory_2', 'route' => 'masters.vendors.index', 'permission' => 'view vendors'],
         
         ['header' => 'Operations'],
+        ['label' => 'Daily Billing', 'icon' => 'receipt', 'route' => 'billing.daily.index', 'permission' => 'view bills'],
         ['label' => 'Weekly Billing', 'icon' => 'receipt_long', 'route' => 'billing.weekly.index', 'permission' => 'view bills'],
         ['label' => 'Purchases', 'icon' => 'shopping_cart', 'route' => 'purchases.entry', 'permission' => 'view purchases'],
         ['label' => 'Purchase Invoices', 'icon' => 'receipt', 'route' => 'purchases.invoices', 'permission' => 'view purchases'],
@@ -79,7 +80,7 @@
             <span class="material-symbols-rounded text-[24px]">egg</span>
         </div>
         <div class="flex min-w-0 flex-col justify-center">
-            <span class="text-xl font-cabinet font-bold tracking-tight text-zinc-900 dark:text-white leading-none">PoultryPro</span>
+            <span class="text-xl font-cabinet font-bold tracking-tight text-zinc-900 dark:text-white leading-none">POULTRY</span>
             <span class="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Management</span>
         </div>
         <button class="ml-auto rounded-xl p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white lg:hidden focus:outline-none focus:ring-2 focus:ring-emerald-500/20"

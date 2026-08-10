@@ -25,11 +25,36 @@
     {{-- Stats Grid (Bento Box) --}}
     <section class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 mb-8">
         @php
+            $pb = $stats['profitBreakdown'] ?? [];
             $statCards = [
-                ['label' => 'Total Birds', 'value' => number_format($stats['totalBirds'], 0), 'meta' => 'MTD Inventory', 'icon' => 'egg_alt', 'color' => 'emerald', 'trend' => '+4.2%'],
-                ['label' => 'Mortality', 'value' => number_format($stats['mortalityMTD'], 0), 'meta' => 'Loss Analytics', 'icon' => 'trending_down', 'color' => 'rose', 'trend' => '-1.5%'],
-                ['label' => 'Today\'s Revenue', 'value' => '₹' . number_format($stats['todayRevenue'], 0), 'meta' => 'Daily Inflow', 'icon' => 'payments', 'color' => 'blue', 'trend' => '+12%'],
-                ['label' => 'Purchase Cost', 'value' => '₹' . number_format($stats['monthlyPurchase'], 0), 'meta' => 'Supply Cost', 'icon' => 'shopping_cart', 'color' => 'amber', 'trend' => '+2.1%'],
+                [
+                    'label'    => 'Total Billed Amount', 
+                    'value'    => '₹' . number_format($pb['total_billed'] ?? 0, 2), 
+                    'subtitle' => 'MTD Total Billed Sales', 
+                    'icon'     => 'receipt_long', 
+                    'color'    => 'emerald'
+                ],
+                [
+                    'label'    => 'Total Vendor Cost', 
+                    'value'    => '₹' . number_format($pb['vendor_cost'] ?? 0, 2), 
+                    'subtitle' => 'MTD Feed & Supply Cost', 
+                    'icon'     => 'inventory_2', 
+                    'color'    => 'indigo'
+                ],
+                [
+                    'label'    => 'Total Expenses', 
+                    'value'    => '₹' . number_format($pb['total_expenses'] ?? 0, 2), 
+                    'subtitle' => 'MTD Operating Burn & EMIs', 
+                    'icon'     => 'trending_up', 
+                    'color'    => 'rose'
+                ],
+                [
+                    'label'    => 'Net Profit / Loss', 
+                    'value'    => '₹' . number_format($pb['net_profit'] ?? 0, 2), 
+                    'subtitle' => 'MTD Net Profit Margin', 
+                    'icon'     => 'account_balance_wallet', 
+                    'color'    => ($pb['net_profit'] ?? 0) >= 0 ? 'emerald' : 'rose'
+                ],
             ];
         @endphp
 
@@ -42,16 +67,14 @@
                 <x-stat-card 
                     label="{{ $card['label'] }}" 
                     value="{{ $card['value'] }}" 
-                    trend="{{ trim($card['trend'], '+-') }}%" 
-                    trendUp="{{ str_contains($card['trend'], '+') }}"
+                    subtitle="{{ $card['subtitle'] }}" 
+                    icon="{{ $card['icon'] }}" 
                     color="{{ $card['color'] }}">
-                    <x-slot name="icon">
-                        <span class="material-symbols-rounded text-2xl">{{ $card['icon'] }}</span>
-                    </x-slot>
                 </x-stat-card>
             </div>
         @endforeach
     </section>
+
 
     {{-- Bottom Grid --}}
     <div class="grid grid-cols-1 gap-8 xl:grid-cols-3" 

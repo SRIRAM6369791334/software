@@ -22,7 +22,7 @@
             icon="receipt_long" 
             color="indigo" />
         <x-stat-card 
-            label="Outstanding Dues" 
+            label="Pending Dues" 
             value="Rs {{ number_format($outstandingDuesTotal, 0) }}" 
             icon="pending_actions" 
             color="amber" />
@@ -105,12 +105,17 @@
                         </td>
                         {{-- Payment Summary Column --}}
                         @php
-                            $periodPaid = \App\Models\DealerPayment::where('dealer_id', $bill->dealer_id)
-                                ->whereBetween('date', [
-                                    $bill->period_start->format('Y-m-d'),
-                                    $bill->period_end->format('Y-m-d'),
-                                ])->sum('amount');
-                            $periodRemaining = max(0, (float)$bill->net_amount - (float)$periodPaid);
+                            $entryIds = $bill->dayLoadEntries->pluck('id')->toArray();
+                            $periodPaid = (float) \App\Models\DealerPayment::where('dealer_id', $bill->dealer_id)
+                                ->where(function($q) use ($bill, $entryIds) {
+                                    $q->whereBetween('date', [
+                                        $bill->period_start->format('Y-m-d'),
+                                        $bill->period_end->format('Y-m-d'),
+                                    ])
+                                    ->orWhereIn('day_load_entry_id', $entryIds)
+                                    ->orWhere('invoice_id', $bill->id);
+                                })->sum('amount');
+                            $periodRemaining = max(0, (float)$bill->net_amount - $periodPaid);
                         @endphp
                         <td class="px-6 py-4">
                             <div class="space-y-1 text-xs">
@@ -333,13 +338,14 @@
 
     {{-- Tab 4: Generate Weekly Invoice --}}
     <div x-show="activeTab === 'generate_invoice'">
-        <x-card class="max-w-2xl mx-auto" x-data="{ previewLoaded: false, prevOutstanding: 0, totalPurchases: 0, totalPayments: 0, netInvoice: 0, purchasesCount: 0, discountAmount: 0, billExists: false, overlapExists: false, overlapStart: '', overlapEnd: '' }"
+        <x-card class="max-w-2xl mx-auto" x-data="{ previewLoaded: false, prevOutstanding: 0, totalPurchases: 0, totalPayments: 0, netInvoice: 0, balanceDue: 0, purchasesCount: 0, discountAmount: 0, billExists: false, overlapExists: false, overlapStart: '', overlapEnd: '' }"
             @preview-update.window="
                 previewLoaded = true;
                 prevOutstanding = $event.detail.prevOutstanding;
                 totalPurchases = $event.detail.totalPurchases;
                 totalPayments = $event.detail.totalPayments;
                 netInvoice = $event.detail.netInvoice;
+                balanceDue = $event.detail.balanceDue;
                 purchasesCount = $event.detail.purchasesCount;
                 discountAmount = $event.detail.discountAmount;
                 billExists = $event.detail.billExists;
@@ -405,8 +411,11 @@
                         <div x-show="discountAmount > 0">Discount Applied:</div>
                         <div class="text-right font-jetbrains font-bold text-zinc-900 dark:text-white text-rose-600 dark:text-rose-400" x-show="discountAmount > 0" x-text="'- ₹' + discountAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })"></div>
                         
-                        <div class="border-t border-zinc-200 dark:border-zinc-700 pt-2 font-bold text-zinc-800 dark:text-zinc-200">Net Weekly Invoice Amount:</div>
+                        <div class="border-t border-zinc-200 dark:border-zinc-700 pt-2 font-bold text-zinc-800 dark:text-zinc-200">Gross Billed Amount:</div>
                         <div class="border-t border-zinc-200 dark:border-zinc-700 pt-2 text-right font-jetbrains font-black text-indigo-600 dark:text-indigo-400 text-lg" x-text="'₹' + netInvoice.toLocaleString('en-IN', { minimumFractionDigits: 2 })"></div>
+
+                        <div class="border-t border-zinc-200 dark:border-zinc-700 pt-2 font-bold text-zinc-800 dark:text-zinc-200">Balance Due:</div>
+                        <div class="border-t border-zinc-200 dark:border-zinc-700 pt-2 text-right font-jetbrains font-black text-emerald-600 dark:text-emerald-400 text-xl" x-text="'₹' + balanceDue.toLocaleString('en-IN', { minimumFractionDigits: 2 })"></div>
                     </div>
 
                     <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg shadow-indigo-500/20 transition-transform active:scale-95 flex items-center justify-center gap-2">
@@ -490,7 +499,12 @@ function previewWeeklyBilling(btn) {
     const discount = discountEl ? parseFloat(discountEl.value) || 0 : 0;
 
     if (!dealerId || !start || !end) {
-        alert("Please fill dealer, start date, and end date.");
+        Swal.fire({
+            title: 'Missing Fields',
+            text: 'Please select dealer, start date, and end date.',
+            icon: 'warning',
+            confirmButtonColor: '#4f46e5'
+        });
         return;
     }
 
@@ -511,6 +525,7 @@ function previewWeeklyBilling(btn) {
                             totalPurchases: parseFloat(data.total_purchases),
                             totalPayments: parseFloat(data.total_payments),
                             netInvoice: parseFloat(data.net_invoice_amount),
+                            balanceDue: parseFloat(data.balance_due),
                             purchasesCount: data.purchases_count,
                             discountAmount: parseFloat(data.discount_amount || 0),
                             billExists: !!data.exists,
@@ -520,13 +535,23 @@ function previewWeeklyBilling(btn) {
                         }
                     }));
                 } else {
-                    alert("Error: " + data.message);
+                    Swal.fire({
+                        title: 'Calculation Error',
+                        text: data.message || "Failed to calculate preview.",
+                        icon: 'error',
+                        confirmButtonColor: '#ef4444'
+                    });
                 }
             })
             .catch(err => {
                 btn.disabled = false;
                 btn.innerHTML = `<span class="material-symbols-rounded">analytics</span> Calculate & Preview Bill`;
-                alert("Calculation failed: " + err.message);
+                Swal.fire({
+                    title: 'Network Error',
+                    text: "Calculation failed: " + err.message,
+                    icon: 'error',
+                    confirmButtonColor: '#ef4444'
+                });
             });
     };
 

@@ -13,7 +13,15 @@
     editDate: '',
     editDescription: '',
     editAmount: '',
-    editAction: ''
+    editAction: '',
+    payModalOpen: false,
+    payEmiId: null,
+    payEmiName: '',
+    payEmiRemaining: 0,
+    payEmiAction: '',
+    payCashAmount: 0,
+    payBankAmount: 0,
+    payPaymentMode: 'Cash'
 }">
     <x-page-header title="EMI & Loan Installments" subtitle="Manage fixed monthly business repayments">
         <x-slot:actions>
@@ -143,12 +151,9 @@
                                 <span class="font-jetbrains font-bold text-rose-600 dark:text-rose-400"><x-currency :amount="$emi->amount" /></span>
                             </div>
                             @can('edit emis')
-                            <form action="{{ route('expenses.emis.pay', $emi) }}" method="POST" class="inline" onsubmit="return confirm('Mark this installment as Paid?')">
-                                @csrf
-                                <button type="submit" class="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm">
-                                    Mark Paid
+                            <button type="button" class="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm" @click="$dispatch('open-pay-modal', { id: {{ $emi->id }}, name: {{ json_encode($emi->loan_name ?: 'EMI Installment', JSON_HEX_APOS | JSON_HEX_QUOT) }}, remaining: {{ $emi->amount - $emi->paid_amount }}, action: 'pay', cash: {{ $emi->amount - $emi->paid_amount }} })">
+                                    <span class="material-symbols-rounded text-[17px]">payments</span>
                                 </button>
-                            </form>
                             @endcan
                         </div>
                     </div>
@@ -176,12 +181,9 @@
                                 <span class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-50"><x-currency :amount="$emi->amount" /></span>
                             </div>
                             @can('edit emis')
-                            <form action="{{ route('expenses.emis.pay', $emi) }}" method="POST" class="inline" onsubmit="return confirm('Mark this installment as Paid?')">
-                                @csrf
-                                <button type="submit" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm">
-                                    Mark Paid
+                            <button type="button" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm" @click="$dispatch('open-pay-modal', { id: {{ $emi->id }}, name: {{ json_encode($emi->loan_name ?: 'EMI Installment', JSON_HEX_APOS | JSON_HEX_QUOT) }}, remaining: {{ $emi->amount - $emi->paid_amount }}, action: 'pay', cash: {{ $emi->amount - $emi->paid_amount }} })">
+                                    <span class="material-symbols-rounded text-[17px]">payments</span>
                                 </button>
-                            </form>
                             @endcan
                         </div>
                     </div>
@@ -309,19 +311,14 @@
                                                         <div class="flex justify-center items-center gap-3">
                                                             @if($emi->status !== 'Paid')
                                                                 @can('edit emis')
-                                                                <form action="{{ route('expenses.emis.pay', $emi) }}" method="POST" class="inline" onsubmit="return confirm('Mark this EMI installment as Paid?')">
-                                                                    @csrf
-                                                                    <button type="submit" class="text-emerald-500 hover:text-emerald-700 transition-colors" title="Mark as Paid">
-                                                                        <span class="material-symbols-rounded text-lg">check_circle</span>
-                                                                    </button>
-                                                                </form>
+                                                                <button type="button" class="text-emerald-500 hover:text-emerald-700 transition-colors" title="Mark as Paid" @click="$dispatch('open-pay-modal', { id: {{ $emi->id }}, name: {{ json_encode($emi->loan_name ?: 'EMI Installment', JSON_HEX_APOS | JSON_HEX_QUOT) }}, remaining: {{ $emi->amount - $emi->paid_amount }}, action: 'pay', cash: {{ $emi->amount - $emi->paid_amount }} })">
+                                    <span class="material-symbols-rounded text-[17px]">payments</span>
+                                </button>
 
-                                                                <form action="{{ route('expenses.emis.close-full', $emi) }}" method="POST" class="inline" onsubmit="return confirm('Close the entire loan group ({{ $emi->loan_name }}) and mark all remaining installments as Paid?')">
-                                                                    @csrf
-                                                                    <button type="submit" class="text-blue-500 hover:text-blue-700 transition-colors" title="Close Entire Loan (Pay Full)">
-                                                                        <span class="material-symbols-rounded text-lg">assignment_turned_in</span>
-                                                                    </button>
-                                                                </form>
+                                                                <button type="button" class="text-blue-500 hover:text-blue-700 transition-colors" title="Close Entire Loan (Pay Full)" @click="$dispatch('open-pay-modal', { id: {{ $emi->id }}, name: {{ json_encode(($emi->loan_name ?: 'EMI Installment') . ' (Full Loan)', JSON_HEX_APOS | JSON_HEX_QUOT) }}, remaining: {{ \App\Models\Emi::where('loan_name', $emi->loan_name)->where('status', '!=', 'Paid')->get()->sum('remaining_amount') }}, action: 'closeFull', cash: {{ \App\Models\Emi::where('loan_name', $emi->loan_name)->where('status', '!=', 'Paid')->get()->sum('remaining_amount') }} })">
+                                    <span class="material-symbols-rounded text-sm mr-1.5">task_alt</span>
+                                    Fully Close
+                                </button>
                                                                 @endcan
                                                             @endif
 
@@ -396,12 +393,9 @@
                                 <span class="font-jetbrains font-bold text-rose-600 dark:text-rose-400"><x-currency :amount="$emi->amount" /></span>
                             </div>
                             @can('edit emis')
-                            <form action="{{ route('expenses.emis.pay', $emi) }}" method="POST" class="inline" onsubmit="return confirm('Mark this installment as Paid?')">
-                                @csrf
-                                <button type="submit" class="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm">
-                                    Mark Paid
+                            <button type="button" class="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm" @click="$dispatch('open-pay-modal', { id: {{ $emi->id }}, name: {{ json_encode($emi->loan_name ?: 'EMI Installment', JSON_HEX_APOS | JSON_HEX_QUOT) }}, remaining: {{ $emi->amount - $emi->paid_amount }}, action: 'pay', cash: {{ $emi->amount - $emi->paid_amount }} })">
+                                    <span class="material-symbols-rounded text-[17px]">payments</span>
                                 </button>
-                            </form>
                             @endcan
                         </div>
                     </div>
@@ -429,12 +423,9 @@
                                 <span class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-50"><x-currency :amount="$emi->amount" /></span>
                             </div>
                             @can('edit emis')
-                            <form action="{{ route('expenses.emis.pay', $emi) }}" method="POST" class="inline" onsubmit="return confirm('Mark this installment as Paid?')">
-                                @csrf
-                                <button type="submit" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm">
-                                    Mark Paid
+                            <button type="button" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm" @click="$dispatch('open-pay-modal', { id: {{ $emi->id }}, name: {{ json_encode($emi->loan_name ?: 'EMI Installment', JSON_HEX_APOS | JSON_HEX_QUOT) }}, remaining: {{ $emi->amount - $emi->paid_amount }}, action: 'pay', cash: {{ $emi->amount - $emi->paid_amount }} })">
+                                    <span class="material-symbols-rounded text-[17px]">payments</span>
                                 </button>
-                            </form>
                             @endcan
                         </div>
                     </div>
@@ -562,19 +553,14 @@
                                                         <div class="flex justify-center items-center gap-3">
                                                             @if($emi->status !== 'Paid')
                                                                 @can('edit emis')
-                                                                <form action="{{ route('expenses.emis.pay', $emi) }}" method="POST" class="inline" onsubmit="return confirm('Mark this EMI installment as Paid?')">
-                                                                    @csrf
-                                                                    <button type="submit" class="text-emerald-500 hover:text-emerald-700 transition-colors" title="Mark as Paid">
-                                                                        <span class="material-symbols-rounded text-lg">check_circle</span>
-                                                                    </button>
-                                                                </form>
+                                                                <button type="button" class="text-emerald-500 hover:text-emerald-700 transition-colors" title="Mark as Paid" @click="$dispatch('open-pay-modal', { id: {{ $emi->id }}, name: {{ json_encode($emi->loan_name ?: 'EMI Installment', JSON_HEX_APOS | JSON_HEX_QUOT) }}, remaining: {{ $emi->amount - $emi->paid_amount }}, action: 'pay', cash: {{ $emi->amount - $emi->paid_amount }} })">
+                                    <span class="material-symbols-rounded text-[17px]">payments</span>
+                                </button>
 
-                                                                <form action="{{ route('expenses.emis.close-full', $emi) }}" method="POST" class="inline" onsubmit="return confirm('Close the entire loan group ({{ $emi->loan_name }}) and mark all remaining installments as Paid?')">
-                                                                    @csrf
-                                                                    <button type="submit" class="text-blue-500 hover:text-blue-700 transition-colors" title="Close Entire Loan (Pay Full)">
-                                                                        <span class="material-symbols-rounded text-lg">assignment_turned_in</span>
-                                                                    </button>
-                                                                </form>
+                                                                <button type="button" class="text-blue-500 hover:text-blue-700 transition-colors" title="Close Entire Loan (Pay Full)" @click="$dispatch('open-pay-modal', { id: {{ $emi->id }}, name: {{ json_encode(($emi->loan_name ?: 'EMI Installment') . ' (Full Loan)', JSON_HEX_APOS | JSON_HEX_QUOT) }}, remaining: {{ \App\Models\Emi::where('loan_name', $emi->loan_name)->where('status', '!=', 'Paid')->get()->sum('remaining_amount') }}, action: 'closeFull', cash: {{ \App\Models\Emi::where('loan_name', $emi->loan_name)->where('status', '!=', 'Paid')->get()->sum('remaining_amount') }} })">
+                                    <span class="material-symbols-rounded text-sm mr-1.5">task_alt</span>
+                                    Fully Close
+                                </button>
                                                                 @endcan
                                                             @endif
 
@@ -645,13 +631,15 @@
                             <div class="flex items-center gap-3">
                                 @can('edit expenses')
                                 <button type="button" @click="
-                                    editId = {{ $e->id }};
-                                    editCategory = '{{ $e->category }}';
-                                    editDate = '{{ $e->date->format('Y-m-d') }}';
-                                    editDescription = '{{ addslashes($e->description) }}';
-                                    editAmount = '{{ $e->amount }}';
-                                    editAction = '{{ route('expenses.update', $e) }}';
-                                    $dispatch('open-modal', 'edit-expense');
+                                    $dispatch('open-edit-expense', {
+                                        id: {{ $e->id }},
+                                        category: '{{ $e->category }}',
+                                        date: '{{ $e->date->format('Y-m-d') }}',
+                                        description: {{ json_encode($e->description, JSON_HEX_APOS | JSON_HEX_QUOT) }},
+                                        amount: '{{ $e->amount }}',
+                                        action: '{{ route('expenses.update', $e) }}',
+                                        paymentMethod: '{{ $e->payment_method }}'
+                                    })
                                 " class="text-zinc-400 hover:text-amber-600 transition-colors" title="Edit">
                                     <span class="material-symbols-rounded text-lg">edit</span>
                                 </button>
@@ -754,8 +742,19 @@
     </form>
 </x-modal>
 
+<div x-data="{ editId: null, editCategory: '', editDate: '', editDescription: '', editAmount: '', editAction: '', editPaymentMethod: '' }"
+     @open-edit-expense.window="
+        editId = $event.detail.id;
+        editCategory = $event.detail.category;
+        editDate = $event.detail.date;
+        editDescription = $event.detail.description;
+        editAmount = $event.detail.amount;
+        editAction = $event.detail.action;
+        editPaymentMethod = $event.detail.paymentMethod;
+        $dispatch('open-modal', 'edit-expense');
+     ">
 <x-modal name="edit-expense" title="Edit Expense" subtitle="Update operational expenditure details" icon="edit" maxWidth="720">
-    <form :action="editAction" method="POST">
+    <form :action="editAction" method="POST" id="edit-expense-form">
         @csrf
         @method('PUT')
 
@@ -814,8 +813,59 @@
 
         <x-slot:footer>
             <x-button type="button" variant="outline" x-on:click="show = false">Cancel</x-button>
-            <x-button type="submit" variant="primary" icon="check" class="px-8">Save Changes</x-button>
+            <x-button type="submit" form="edit-expense-form" variant="primary" icon="check" class="px-8">Save Changes</x-button>
         </x-slot:footer>
     </form>
 </x-modal>
+
+{{-- Payment Modal --}}
+<div x-data="{ payEmiId: null, payEmiName: '', payEmiRemaining: 0, payEmiAction: '', payCashAmount: 0, payBankAmount: 0 }" 
+     @open-pay-modal.window="
+        payEmiId = $event.detail.id; 
+        payEmiName = $event.detail.name; 
+        payEmiRemaining = $event.detail.remaining; 
+        payEmiAction = $event.detail.action; 
+        payCashAmount = $event.detail.cash; 
+        payBankAmount = 0; 
+        $dispatch('open-modal', 'payModalOpen');
+     ">
+<x-modal name="payModalOpen" title="Record EMI Payment" width="max-w-md">
+    <form id="pay-emi-form" method="POST" :action="payEmiAction === 'closeFull' ? '{{ url('expenses/emis') }}/' + payEmiId + '/close-full' : '{{ url('expenses/emis') }}/' + payEmiId + '/pay'">
+        @csrf
+        
+        <div class="mb-4">
+            <h4 class="text-sm font-bold text-zinc-800 dark:text-zinc-200" x-text="payEmiName"></h4>
+            <p class="text-xs text-zinc-500 mt-1">Remaining Due: <span class="font-bold text-red-600" x-text="'₹' + Number(payEmiRemaining).toFixed(2)"></span></p>
+        </div>
+
+        <div class="space-y-4 mb-6">
+            <x-form.input type="number" name="cash_amount" label="Cash Amount" step="0.01" min="0" placeholder="0.00" icon="payments" x-model.number="payCashAmount" />
+            <x-form.input type="number" name="bank_amount" label="Bank Amount" step="0.01" min="0" placeholder="0.00" icon="account_balance" x-model.number="payBankAmount" />
+            
+            <div x-show="payBankAmount > 0" x-transition>
+                <x-form.select name="payment_mode" label="Bank Transfer Type">
+                    <option value="UPI">UPI</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Card">Card</option>
+                    <option value="Cheque">Cheque</option>
+                </x-form.select>
+            </div>
+            
+            <div class="bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Total Paying:</span>
+                    <span class="text-lg font-bold text-emerald-600" x-text="'₹' + (Number(payCashAmount) + Number(payBankAmount)).toFixed(2)"></span>
+                </div>
+                <p x-show="(Number(payCashAmount) + Number(payBankAmount)) > payEmiRemaining" class="text-xs text-amber-600 mt-1">Warning: Paying more than remaining amount.</p>
+                <p x-show="(Number(payCashAmount) + Number(payBankAmount)) <= 0" class="text-xs text-red-500 mt-1">Please enter an amount greater than zero.</p>
+            </div>
+        </div>
+
+        <x-slot:footer>
+            <x-button type="button" variant="outline" x-on:click="show = false">Cancel</x-button>
+            <x-button type="submit" form="pay-emi-form" variant="primary" icon="check" x-bind:disabled="(Number(payCashAmount) + Number(payBankAmount)) <= 0">Record Payment</x-button>
+        </x-slot:footer>
+    </form>
+</x-modal>
+</div>
 @endpush

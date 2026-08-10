@@ -34,6 +34,43 @@
         </div>
     </div>
 
+    @if(isset($pendingWeightLossBatches) && $pendingWeightLossBatches->isNotEmpty())
+        <div class="mb-8 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-900/20 p-5 shadow-sm">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-rounded text-amber-600 dark:text-amber-400">scale</span>
+                <h3 class="font-cabinet text-base font-bold text-amber-900 dark:text-amber-100">Pending Weight Loss Approvals</h3>
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
+                    {{ $pendingWeightLossBatches->count() }} Pending
+                </span>
+            </div>
+            <div class="space-y-3">
+                @foreach($pendingWeightLossBatches as $pBatch)
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-amber-200/70 dark:border-amber-800/40 gap-3 shadow-xs">
+                        <div>
+                            <p class="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+                                Day-Load Batch #{{ $pBatch->id }} — {{ $pBatch->billing_date->format('d M Y (l)') }}
+                            </p>
+                            <p class="text-xs text-zinc-500 font-jetbrains mt-1">
+                                Loss Weight: <span class="font-bold text-amber-700 dark:text-amber-400">{{ number_format((float)$pBatch->total_loss_weight, 2) }} kg</span>
+                                · Financial Amount: <span class="font-bold text-rose-600 dark:text-rose-400">Rs {{ number_format((float)$pBatch->weight_loss_amount, 2) }}</span>
+                            </p>
+                        </div>
+                        <div>
+                            @can('create expenses')
+                            <form method="POST" action="{{ route('billing.day-load.approve-weight-loss', $pBatch) }}" onsubmit="return confirm('Approve Weight Loss Expense of Rs {{ number_format((float)$pBatch->weight_loss_amount, 2) }} for {{ $pBatch->billing_date->format('d M Y') }}?')">
+                                @csrf
+                                <x-button type="submit" variant="primary" size="sm" icon="check_circle">
+                                    Approve Weight Loss (Rs {{ number_format((float)$pBatch->weight_loss_amount, 0) }})
+                                </x-button>
+                            </form>
+                            @endcan
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     {{-- Main Grid --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
@@ -51,7 +88,7 @@
                                 {{ $e->date->format('M d, Y') }}
                             </td>
                             <td class="px-6 py-4">
-                                <x-badge variant="zinc">{{ $e->category }}</x-badge>
+                                <x-badge :variant="$e->category === 'Weight Loss' ? 'rose' : 'zinc'">{{ $e->category }}</x-badge>
                             </td>
                             <td class="px-6 py-4 text-zinc-600 dark:text-zinc-400">
                                 {{ $e->description }}

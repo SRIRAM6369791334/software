@@ -84,10 +84,20 @@ class WeeklyBillingService
     {
         $dealer = Dealer::findOrFail($dealerId);
 
-        // 1. Sum of all uninvoiced daily purchases from day_load_entries
+        // 1. Sum of all daily purchases from day_load_entries (including existing weekly bill if re-generating)
+        $existingBill = WeeklyBill::where('dealer_id', $dealerId)
+            ->whereDate('period_start', $startDate)
+            ->whereDate('period_end', $endDate)
+            ->first();
+
         $purchasesQuery = DayLoadEntry::where('dealer_id', $dealerId)
             ->where('status', '!=', 'Cancelled')
-            ->whereNull('weekly_bill_id')
+            ->where(function ($q) use ($existingBill) {
+                $q->whereNull('weekly_bill_id');
+                if ($existingBill) {
+                    $q->orWhere('weekly_bill_id', $existingBill->id);
+                }
+            })
             ->whereHas('batch', fn($q) => $q
                 ->whereBetween('billing_date', [$startDate, $endDate])
             );
@@ -101,17 +111,12 @@ class WeeklyBillingService
         $totalPayments = (float) $paymentsQuery->sum('amount');
 
         // 3. Outstanding balance before this week
-        $currentPending = (float) $dealer->pending_amount;
+        $currentPending = (float) $dealer->displayed_outstanding;
         $previousOutstanding = $currentPending - $totalPurchases + $totalPayments;
-        if ($previousOutstanding < 0) {
-            $previousOutstanding = 0.0;
-        }
 
-        // Net Invoice Amount = Previous Outstanding + Purchases - Payments - Discount
-        $netInvoiceAmount = $previousOutstanding + $totalPurchases - $totalPayments - $discountAmount;
-        if ($netInvoiceAmount < 0) {
-            $netInvoiceAmount = 0.0;
-        }
+        // Net Invoice Amount = Previous Outstanding + Purchases - Discount (Gross Billed Amount)
+        $netInvoiceAmount = $previousOutstanding + $totalPurchases - $discountAmount;
+        $balanceDue = max(0, $netInvoiceAmount - $totalPayments);
 
         return [
             'dealer' => $dealer,
@@ -119,6 +124,7 @@ class WeeklyBillingService
             'total_purchases' => $totalPurchases,
             'total_payments' => $totalPayments,
             'net_invoice_amount' => $netInvoiceAmount,
+            'balance_due' => $balanceDue,
             'purchases' => $purchasesList,
         ];
     }
@@ -207,9 +213,6 @@ class WeeklyBillingService
             if ($discountAmount > 0) {
                 $dealer = Dealer::findOrFail($dealerId);
                 $dealer->decrement('pending_amount', $discountAmount);
-                if ($dealer->pending_amount < 0) {
-                    $dealer->update(['pending_amount' => 0.0]);
-                }
             }
 
             return $bill;

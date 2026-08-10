@@ -42,12 +42,14 @@
                     <x-form.input type="date" name="due_date" label="Due Date" required />
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-                    <x-form.select name="status" label="Current Status" required>
-                        <option value="Upcoming">Upcoming</option>
-                        <option value="Paid">Already Paid</option>
-                        <option value="Overdue">Overdue</option>
-                    </x-form.select>
+                <div class="grid grid-cols-1 gap-5 mb-6">
+                    <div class="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-xl p-4 flex gap-3">
+                        <span class="material-symbols-rounded text-blue-500 mt-0.5">info</span>
+                        <div>
+                            <p class="text-sm text-blue-800 dark:text-blue-300 font-medium">Status is calculated automatically</p>
+                            <p class="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">When creating a new EMI, it starts as <b>Upcoming</b> (or <b>Overdue</b> if the date has passed). After creation, use the <b>Record Payment</b> button to pay it.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="pt-5 border-t border-zinc-200/50 dark:border-zinc-800/50 flex justify-end gap-3">
@@ -108,7 +110,54 @@
         }
     }
     
-    document.addEventListener('DOMContentLoaded', toggleEntitySelect);
+    document.addEventListener('DOMContentLoaded', () => {
+        toggleEntitySelect();
+
+        const form = document.querySelector('form[action="{{ route('expenses.emis.store') }}"]');
+        if (!form) return;
+
+        form.addEventListener('submit', function(e) {
+            if (!form.checkValidity()) {
+                return;
+            }
+
+            e.preventDefault();
+
+            Swal.fire({
+                title: 'Save EMI Schedule?',
+                text: 'Are you sure you want to setup this new EMI installment schedule?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, Save',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true,
+                background: document.documentElement.classList.contains('dark') ? '#18181b' : '#ffffff',
+                color: document.documentElement.classList.contains('dark') ? '#f4f4f5' : '#18181b',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Saving EMI...',
+                        text: 'Please wait while the EMI schedule is being created.',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        background: document.documentElement.classList.contains('dark') ? '#18181b' : '#ffffff',
+                        color: document.documentElement.classList.contains('dark') ? '#f4f4f5' : '#18181b',
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    form.submit();
+                } else {
+                    if (typeof window.resetSubmitButtons === 'function') {
+                        window.resetSubmitButtons(form);
+                    }
+                }
+            });
+        });
+    });
 </script>
 @endpush
 @endsection

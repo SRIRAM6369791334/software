@@ -23,25 +23,31 @@
             <p class="text-xs text-zinc-400 font-bold uppercase tracking-widest">Invoice Number</p>
             <p class="text-lg font-black text-zinc-950 font-mono">{{ $bill->invoice_number }}</p>
             <div class="mt-4">
-                <p class="text-xs text-zinc-400 font-bold uppercase tracking-widest">Date of Issue</p>
-                <p class="text-sm font-bold text-zinc-950">{{ $bill->date->format('d F, Y') }}</p>
+                <p class="text-xs text-zinc-400 font-bold uppercase tracking-widest">
+                    @if($bill->date_from && $bill->date_to && $bill->date_from->ne($bill->date_to))
+                        Billing Period
+                    @else
+                        Date of Issue
+                    @endif
+                </p>
+                <p class="text-sm font-bold text-zinc-950">
+                    @if($bill->date_from && $bill->date_to && $bill->date_from->ne($bill->date_to))
+                        {{ $bill->date_from->format('d M Y') }} — {{ $bill->date_to->format('d M Y') }}
+                    @else
+                        {{ $bill->date->format('d F, Y') }}
+                    @endif
+                </p>
             </div>
         </div>
     </div>
 
     <div class="grid grid-cols-2 gap-16 mb-12">
         <div>
-            <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3 border-b border-emerald-100 pb-1 inline-block">Bill To Customer</p>
-            <h3 class="text-2xl font-black text-zinc-950">{{ $bill->customer->name ?? 'N/A' }}</h3>
+            <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3 border-b border-emerald-100 pb-1 inline-block">Bill To Dealer / Client</p>
+            <h3 class="text-2xl font-black text-zinc-950">{{ $bill->dealer->firm_name ?? $bill->customer->name ?? 'N/A' }}</h3>
             <div class="mt-3 text-sm text-zinc-600 leading-relaxed space-y-1">
-                <p>{{ $bill->customer->address ?? 'No address provided' }}</p>
-                <p class="font-bold text-zinc-950"> {{ $bill->customer->phone ?? 'N/A' }}</p>
-                @if($bill->customer->gst_number)
-                    <div class="mt-4 pt-4 border-t border-zinc-100">
-                        <p class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Customer GSTIN</p>
-                        <p class="text-sm font-mono font-bold text-zinc-700">{{ $bill->customer->gst_number }}</p>
-                    </div>
-                @endif
+                <p>{{ $bill->dealer->address ?? $bill->customer->address ?? 'No address provided' }}</p>
+                <p class="font-bold text-zinc-950"> {{ $bill->dealer->phone ?? $bill->customer->phone ?? 'N/A' }}</p>
             </div>
         </div>
         <div class="bg-emerald-50 rounded-2xl p-6 border border-zinc-200">
@@ -52,13 +58,34 @@
                     <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest">{{ $bill->status }}</span>
                 </div>
                 <div class="flex justify-between items-center">
-                    <span class="text-xs text-zinc-500">Billing Type</span>
-                    <span class="text-xs font-bold text-zinc-950">Daily Retail Sale</span>
+                    <span class="text-xs text-zinc-500">Previous Outstanding</span>
+                    <span class="text-xs font-mono font-bold text-zinc-950">Rs {{ number_format((float)$bill->previous_outstanding, 2) }}</span>
                 </div>
-                <div class="flex justify-between items-center pt-3 border-t border-zinc-200">
-                    <span class="text-xs font-bold text-zinc-950">Currency</span>
-                    <span class="text-xs font-bold text-zinc-950 italic">Indian Rupee (INR)</span>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-zinc-500">Payments Received</span>
+                    <span class="text-xs font-mono font-bold text-emerald-700">- Rs {{ number_format((float)$bill->payments_during_day, 2) }}</span>
                 </div>
+                @if($bill->dealer_id)
+                    @php
+                        $startDate = $bill->date_from ? $bill->date_from->format('Y-m-d') : $bill->date->format('Y-m-d');
+                        $endDate = $bill->date_to ? $bill->date_to->format('Y-m-d') : $bill->date->format('Y-m-d');
+                        $itemizedPayments = \App\Models\DealerPayment::where('dealer_id', $bill->dealer_id)
+                            ->whereBetween('date', [$startDate, $endDate])
+                            ->orderBy('date', 'asc')
+                            ->get();
+                    @endphp
+                    @if($itemizedPayments->isNotEmpty())
+                        <div class="pt-2 border-t border-zinc-200/80 space-y-1 text-[11px]">
+                            <p class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">Received Payment Dates:</p>
+                            @foreach($itemizedPayments as $pay)
+                                <div class="flex justify-between text-zinc-600 font-mono">
+                                    <span>{{ \Carbon\Carbon::parse($pay->date)->format('d M Y') }} ({{ $pay->payment_mode ?? 'Cash' }}):</span>
+                                    <span class="font-bold text-emerald-700">Rs {{ number_format((float)$pay->amount, 2) }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                @endif
             </div>
         </div>
     </div>
@@ -85,6 +112,23 @@
                     <td class="px-8 py-6 text-right font-mono font-black text-zinc-950">Rs {{ number_format($item->quantity_kg * $item->rate_per_kg, 2) }}</td>
                 </tr>
                 @endforeach
+
+                @if($bill->date_from && $bill->date_to && $bill->date_from->ne($bill->date_to))
+                    @php
+                        $startDate = \Carbon\Carbon::parse($bill->date_from);
+                        $endDate = \Carbon\Carbon::parse($bill->date_to);
+                        $loadDates = $bill->dayLoadEntries->map(fn($e) => $e->batch ? \Carbon\Carbon::parse($e->batch->billing_date)->format('Y-m-d') : null)->filter()->unique()->toArray();
+                    @endphp
+                    @for($dt = $startDate->copy(); $dt->lte($endDate); $dt->addDay())
+                        @if(!in_array($dt->format('Y-m-d'), $loadDates))
+                            <tr class="text-zinc-500 bg-zinc-50/70 border-t border-zinc-100">
+                                <td class="px-8 py-3.5 italic font-outfit text-xs" colspan="4">
+                                    <span class="font-bold text-zinc-700 not-italic">{{ $dt->format('d M Y (l)') }}</span> — <span class="text-amber-700 font-semibold">No Load Entries Recorded</span>
+                                </td>
+                            </tr>
+                        @endif
+                    @endfor
+                @endif
             </tbody>
         </table>
     </div>

@@ -25,7 +25,14 @@ class ExpenseController extends Controller
         $expenses = $this->service->paginatedExpenses(15);
         $emis     = $this->service->allEmis();
         $totals   = $this->service->totals();
-        return view('expenses.index', compact('expenses', 'emis', 'totals'));
+
+        $pendingWeightLossBatches = \App\Models\DayLoadBatch::where('total_loss_weight', '>', 0)
+            ->where('weight_loss_amount', '>', 0)
+            ->where('is_weight_loss_approved', false)
+            ->orderBy('billing_date', 'desc')
+            ->get();
+
+        return view('expenses.index', compact('expenses', 'emis', 'totals', 'pendingWeightLossBatches'));
     }
 
     public function store(StoreExpenseRequest $request): RedirectResponse
@@ -216,10 +223,33 @@ class ExpenseController extends Controller
             'bank_name' => 'nullable|string',
             'amount' => 'required|numeric',
             'due_date' => 'required|date',
-            'status' => 'required|in:Upcoming,Paid,Overdue',
+            'status' => 'nullable|string',
         ]);
+
+        $data['paid_amount'] = 0;
+        if (now()->startOfDay()->greaterThan(\Carbon\Carbon::parse($data['due_date'])->startOfDay())) {
+            $data['status'] = 'Overdue';
+        } else {
+            $data['status'] = 'Upcoming';
+        }
+
+        if (empty($data['loan_name'])) {
+            if ($data['emi_type'] === 'Customer') {
+                $customer = \App\Models\Customer::find($data['entity_id'] ?? 0);
+                $data['loan_name'] = 'Customer EMI' . ($customer ? " - {$customer->name}" : '');
+            } elseif ($data['emi_type'] === 'Dealer') {
+                $dealer = \App\Models\Dealer::find($data['entity_id'] ?? 0);
+                $data['loan_name'] = 'Dealer EMI' . ($dealer ? " - {$dealer->firm_name}" : '');
+            } elseif ($data['emi_type'] === 'Vendor') {
+                $vendor = \App\Models\Vendor::find($data['entity_id'] ?? 0);
+                $data['loan_name'] = 'Vendor EMI' . ($vendor ? " - {$vendor->firm_name}" : '');
+            } else {
+                $data['loan_name'] = 'Bank Loan EMI';
+            }
+        }
+
         Emi::create($data);
-        return redirect()->route('expenses.emis.index')->with('success', 'EMI recorded.');
+        return redirect()->route('expenses.emis.index')->with('success', 'EMI recorded successfully.');
     }
 
     public function destroyEmi(Emi $emi): RedirectResponse
@@ -272,25 +302,190 @@ class ExpenseController extends Controller
         $data = $request->validate([
             'amount' => 'required|numeric',
             'due_date' => 'required|date',
-            'status' => 'required|in:Upcoming,Paid,Overdue',
+            'status' => 'nullable|string',
         ]);
-        $emi->update($data);
-        return redirect()->route('expenses.emis.index')->with('success', 'EMI updated successfully.');
+        
+        $emi->amount = $data['amount'];
+        $emi->due_date = $data['due_date'];
+        
+        // Auto-calculate status to prevent breaking ledger consistency
+        if ($emi->paid_amount >= $emi->amount) {
+            $emi->status = 'Paid';
+        } elseif ($emi->paid_amount > 0) {
+            $emi->status = 'Partial';
+        } elseif (now()->startOfDay()->greaterThan(\Carbon\Carbon::parse($emi->due_date)->startOfDay())) {
+            $emi->status = 'Overdue';
+        } else {
+            $emi->status = 'Upcoming';
+        }
+        
+        $emi->save();
+        return back()->with('success', 'EMI updated successfully. (Status is auto-calculated based on payments)');
     }
 
-    public function payEmi(Emi $emi): RedirectResponse
+    public function payEmi(Request $request, Emi $emi): RedirectResponse
     {
-        $emi->update(['status' => 'Paid']);
-        return back()->with('success', 'EMI marked as paid.');
+        $data = $request->validate([
+            'cash_amount' => 'required|numeric|min:0',
+            'bank_amount' => 'required|numeric|min:0',
+            'payment_mode' => 'nullable|string'
+        ]);
+        
+        $totalPaying = $data['cash_amount'] + $data['bank_amount'];
+        if ($totalPaying <= 0) {
+            return back()->with('error', 'Payment amount must be greater than zero.');
+        }
+        
+        $this->processEmiPayment($emi, $data['cash_amount'], $data['bank_amount'], $data['payment_mode'] ?? 'Cash');
+
+        return back()->with('success', 'EMI payment recorded successfully.');
     }
 
-    public function closeFullEmi(Emi $emi): RedirectResponse
+    public function closeFullEmi(Request $request, Emi $emi): RedirectResponse
     {
-        Emi::where('loan_name', $emi->loan_name)
+        $data = $request->validate([
+            'cash_amount' => 'required|numeric|min:0',
+            'bank_amount' => 'required|numeric|min:0',
+            'payment_mode' => 'nullable|string'
+        ]);
+        
+        $totalPaying = $data['cash_amount'] + $data['bank_amount'];
+        if ($totalPaying <= 0) {
+            return back()->with('error', 'Payment amount must be greater than zero.');
+        }
+
+        // Fetch all pending EMIs for this loan group
+        $pendingEmis = Emi::where('loan_name', $emi->loan_name)
             ->where('status', '!=', 'Paid')
-            ->update(['status' => 'Paid']);
+            ->orderBy('due_date')
+            ->get();
             
-        return back()->with('success', 'Entire loan closed and all EMIs marked as paid.');
+        $remainingPayment = $totalPaying;
+        $remainingCash = (float) $data['cash_amount'];
+        $remainingBank = (float) $data['bank_amount'];
+
+        foreach ($pendingEmis as $pendingEmi) {
+            $due = max(0, $pendingEmi->amount - $pendingEmi->paid_amount);
+            if ($due <= 0) continue;
+            
+            $allocTotal = min($remainingPayment, $due);
+            if ($allocTotal <= 0) break;
+            
+            $allocCash = $totalPaying > 0 ? round($allocTotal * ($data['cash_amount'] / $totalPaying), 2) : 0;
+            $allocBank = round($allocTotal - $allocCash, 2);
+            
+            // Adjust if cash/bank runs out
+            if ($allocCash > $remainingCash) {
+                $allocCash = $remainingCash;
+                $allocBank = $allocTotal - $allocCash;
+            }
+            if ($allocBank > $remainingBank) {
+                $allocBank = $remainingBank;
+                $allocCash = $allocTotal - $allocBank;
+            }
+            
+            $this->processEmiPayment($pendingEmi, $allocCash, $allocBank, $data['payment_mode'] ?? 'Cash');
+            
+            $remainingPayment -= $allocTotal;
+            $remainingCash -= $allocCash;
+            $remainingBank -= $allocBank;
+        }
+
+        return back()->with('success', 'EMI loan closed successfully.');
+    }
+    
+    private function processEmiPayment(Emi $emi, float $cashAmount, float $bankAmount, string $paymentMode)
+    {
+        $totalAmount = $cashAmount + $bankAmount;
+        if ($totalAmount <= 0) return;
+        
+        // If it's a Vendor EMI, we route it through the service so it acts like a normal payment
+        if ($emi->emi_type === 'Vendor' && $emi->entity_id) {
+            $vendor = \App\Models\Vendor::find($emi->entity_id);
+            if ($vendor) {
+                app(\App\Services\VendorPaymentService::class)->record([
+                    'vendor_id' => $vendor->id,
+                    'amount' => $totalAmount,
+                    'cash_amount' => $cashAmount,
+                    'bank_amount' => $bankAmount,
+                    'payment_mode' => $paymentMode,
+                    'date' => today()->toDateString(),
+                    'selected_emi_ids' => [$emi->id],
+                    'selected_entry_ids' => [],
+                ]);
+                return;
+            }
+        }
+        
+        // If it's a Dealer EMI, route through DealerPaymentService
+        if ($emi->emi_type === 'Dealer' && $emi->entity_id) {
+            $dealer = \App\Models\Dealer::find($emi->entity_id);
+            if ($dealer) {
+                app(\App\Services\DealerPaymentService::class)->record([
+                    'dealer_id' => $dealer->id,
+                    'amount' => $totalAmount,
+                    'cash_amount' => $cashAmount,
+                    'bank_amount' => $bankAmount,
+                    'discount_amount' => 0,
+                    'payment_mode' => $paymentMode,
+                    'date' => today()->toDateString(),
+                    'selected_emi_ids' => [$emi->id],
+                    'selected_entry_ids' => [],
+                ]);
+                return;
+            }
+        }
+        
+        if ($emi->emi_type === 'Customer' && $emi->entity_id) {
+            $customer = \App\Models\Customer::find($emi->entity_id);
+            if ($customer) {
+                app(\App\Services\CustomerPaymentService::class)->record([
+                    'customer_id' => $customer->id,
+                    'payment_type' => 'Advance',
+                    'amount' => $totalAmount,
+                    'cod_amount' => $cashAmount,
+                    'bank_transfer_amount' => $bankAmount,
+                    'payment_mode' => $paymentMode,
+                    'date' => today()->toDateString(),
+                ]);
+                $emi->paid_amount += $totalAmount;
+                $emi->status = ($emi->paid_amount >= $emi->amount) ? 'Paid' : 'Partial';
+                $emi->save();
+                return;
+            }
+        }
+        
+        // Otherwise (Bank Loan), we manually update the EMI and create an Expense/Income
+        $emi->paid_amount += $totalAmount;
+        if ($emi->paid_amount >= $emi->amount) {
+            $emi->status = 'Paid';
+        } else {
+            $emi->status = 'Partial';
+        }
+        $emi->save();
+        
+        if ($emi->emi_type === 'Bank Loan') {
+            // Bank Loan repayment is an expense
+            if ($cashAmount > 0) {
+                \App\Models\Expense::create([
+                    'date' => today(),
+                    'category' => 'Misc',
+                    'description' => 'EMI Payment: ' . $emi->loan_name,
+                    'amount' => $cashAmount,
+                    'payment_method' => 'Cash'
+                ]);
+            }
+            if ($bankAmount > 0) {
+                \App\Models\Expense::create([
+                    'date' => today(),
+                    'category' => 'Misc',
+                    'description' => 'EMI Payment: ' . $emi->loan_name,
+                    'amount' => $bankAmount,
+                    'payment_method' => 'Bank Transfer'
+                ]);
+            }
+            app(\App\Services\CashBankLedgerService::class)->recalculateForDate(today());
+        }
     }
 
     public function update(Request $request, Expense $expense): RedirectResponse

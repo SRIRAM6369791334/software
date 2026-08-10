@@ -10,12 +10,20 @@ class Emi extends Model
     use HasFactory;
     protected $table = 'emis';
 
-    protected $fillable = ['loan_name', 'bank_name', 'amount', 'due_date', 'status', 'emi_type', 'entity_id'];
+    protected $fillable = ['loan_name', 'bank_name', 'amount', 'paid_amount', 'due_date', 'status', 'emi_type', 'entity_id'];
 
     protected $casts = [
-        'due_date' => 'date',
-        'amount'   => 'decimal:2',
+        'due_date'    => 'date',
+        'amount'      => 'decimal:2',
+        'paid_amount' => 'decimal:2',
     ];
+
+    protected $appends = ['remaining_amount'];
+
+    public function getRemainingAmountAttribute()
+    {
+        return max(0, $this->amount - $this->paid_amount);
+    }
 
     public function customer()
     {

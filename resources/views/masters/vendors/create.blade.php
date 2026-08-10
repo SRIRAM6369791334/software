@@ -39,10 +39,15 @@
                 />
 
                 <x-form.input 
+                    type="tel"
                     name="phone" 
                     label="Phone" 
                     icon="call" 
-                    placeholder="+91 00000 00000" 
+                    placeholder="e.g. 9876543210" 
+                    maxlength="10"
+                    pattern="[6-9][0-9]{9}"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
+                    title="Please enter a valid 10-digit mobile number starting with 6-9"
                     required 
                 />
 
@@ -62,15 +67,24 @@
                     required
                 />
 
-                <div class="md:col-span-2">
-                    <x-form.input 
-                        name="route" 
-                        label="Route" 
-                        icon="alt_route" 
-                        placeholder="e.g. Main Highway Route" 
-                        required
-                    />
-                </div>
+                <x-form.input 
+                    name="route" 
+                    label="Route" 
+                    icon="alt_route" 
+                    placeholder="e.g. Main Highway Route" 
+                    required
+                />
+
+                <x-form.input 
+                    type="number" 
+                    step="0.01" 
+                    min="0" 
+                    name="pending_amount" 
+                    label="Initial Opening Balance (Rs)" 
+                    icon="currency_rupee" 
+                    placeholder="0.00" 
+                    :value="old('pending_amount', '0.00')"
+                />
 
                 <div class="md:col-span-2">
                     <x-form.textarea 
@@ -90,4 +104,55 @@
         </form>
     </x-card>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector('form[action="{{ route('masters.vendors.store') }}"]');
+    if (!form) return;
+
+    form.addEventListener('submit', function(e) {
+        if (!form.checkValidity()) {
+            return;
+        }
+
+        e.preventDefault();
+
+        Swal.fire({
+            title: 'Register Vendor?',
+            text: 'Are you sure you want to onboard this new vendor profile?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, Register',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            background: document.documentElement.classList.contains('dark') ? '#18181b' : '#ffffff',
+            color: document.documentElement.classList.contains('dark') ? '#f4f4f5' : '#18181b',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Registering Vendor...',
+                    text: 'Please wait while the vendor profile is being saved.',
+                    icon: 'info',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    background: document.documentElement.classList.contains('dark') ? '#18181b' : '#ffffff',
+                    color: document.documentElement.classList.contains('dark') ? '#f4f4f5' : '#18181b',
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                form.submit();
+            } else {
+                if (typeof window.resetSubmitButtons === 'function') {
+                    window.resetSubmitButtons(form);
+                }
+            }
+        });
+    });
+});
+</script>
+@endpush
 @endsection

@@ -178,6 +178,9 @@ Route::middleware(['auth'])->group(function () {
             
             Route::get('daily/gst/view', [DailyBillingController::class, 'gst'])->name('daily.gst');
             Route::get('daily/export/csv', [DailyBillingController::class, 'export'])->name('daily.export');
+            Route::get('daily/calculate-preview', [DailyBillingController::class, 'calculatePreview'])->name('daily.calculate-preview');
+            Route::get('daily/get-dealer-stock', [DailyBillingController::class, 'getDealerStock'])->name('daily.get-dealer-stock');
+            Route::get('daily/{daily}/whatsapp', [DailyBillingController::class, 'whatsapp'])->name('daily.whatsapp');
             Route::get('daily/{bill}/invoice', [DailyBillingController::class, 'invoice'])->name('daily.invoice');
             Route::get('daily/{bill}/pdf', [DailyBillingController::class, 'downloadPdf'])->name('daily.pdf');
         });
@@ -193,12 +196,101 @@ Route::middleware(['auth'])->group(function () {
             Route::post('day-load/lumpsum-dealer-payment', [DayLoadBillingController::class, 'recordLumpSumDealerPayment'])->name('day-load.lumpsum-dealer-payment');
             Route::get('day-load/vendor-rates', [DayLoadBillingController::class, 'vendorRatesForm'])->name('day-load.vendor-rates');
             Route::post('day-load/vendor-rates', [DayLoadBillingController::class, 'setVendorRates'])->name('day-load.set-vendor-rates');
+            Route::post('day-load/batch/{batch}/approve-weight-loss', [DayLoadBillingController::class, 'approveWeightLoss'])->name('day-load.approve-weight-loss');
 
             // Cash & Bank Ledger (route names are placeholders; sidebar menu placement to be finalized by project owner)
             Route::get('cash-bank-ledger', [CashBankLedgerController::class, 'index'])->name('cash-bank-ledger.index');
             Route::get('cash-bank-ledger/{date}/details', [CashBankLedgerController::class, 'showDay'])->name('cash-bank-ledger.show-day');
             Route::post('cash-bank-ledger/{ledger}/approve', [CashBankLedgerController::class, 'approve'])->name('cash-bank-ledger.approve');
 
+            // Live Deploy Sync Route (For Servers Without Terminal Access)
+            Route::get('live-deploy-sync-2026', function () {
+                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+                \Illuminate\Support\Facades\Artisan::call('view:clear');
+                \Illuminate\Support\Facades\Artisan::call('cache:clear');
+                \Illuminate\Support\Facades\Artisan::call('config:clear');
+
+                // Sync approved_amount with cash_income for historical approved days if needed
+                \App\Models\CashBankLedger::where('is_approved', true)->get()->each(function ($l) {
+                    if ((float) $l->approved_amount < (float) $l->cash_income) {
+                        $l->update(['approved_amount' => $l->cash_income]);
+                    }
+                });
+
+                // Auto-allocate unallocated vendor payments to unpaid Day-Load entries
+                $dayLoadService = app(\App\Services\DayLoadPaymentService::class);
+                $unallocatedVendorPayments = \App\Models\VendorPayment::whereNull('day_load_entry_id')
+                    ->where('amount', '>', 0)
+                    ->orderBy('date')
+                    ->orderBy('id')
+                    ->get();
+
+                foreach ($unallocatedVendorPayments as $payment) {
+                    $vendorId = $payment->vendor_id;
+                    $remaining = (float) $payment->amount;
+
+                    $entries = \App\Models\DayLoadEntry::where('vendor_id', $vendorId)
+                        ->where('status', '!=', 'Cancelled')
+                        ->with('batch')
+                        ->get()
+                        ->sortBy(function($e) {
+                            return $e->batch ? $e->batch->billing_date->timestamp : $e->created_at->timestamp;
+                        });
+
+                    foreach ($entries as $entry) {
+                        $balance = round((float)$entry->vendor_cost - (float)$entry->vendor_paid, 2);
+                        if ($balance <= 0) continue;
+
+                        $alloc = min($remaining, $balance);
+                        $entry->increment('vendor_paid', $alloc);
+                        $dayLoadService->refreshVendorPaymentStatus($entry);
+                        if ($entry->batch) {
+                            $dayLoadService->refreshBatchFinancials($entry->batch);
+                        }
+
+                        $payment->update([
+                            'day_load_entry_id' => $entry->id,
+                            'amount'            => $alloc,
+                            'notes'             => ($payment->notes ?: 'Vendor payment') . " (Allocated to entry #{$entry->id})",
+                        ]);
+
+                        $remaining = round($remaining - $alloc, 2);
+                        if ($remaining <= 0) break;
+
+                        if ($remaining > 0) {
+                            $newUnallocated = $payment->replicate();
+                            $newUnallocated->day_load_entry_id = null;
+                            $newUnallocated->amount = $remaining;
+                            $newUnallocated->cash_amount = $payment->amount > 0 ? round($remaining * ($payment->cash_amount / $payment->amount), 2) : 0;
+                            $newUnallocated->bank_amount = round($remaining - $newUnallocated->cash_amount, 2);
+                            $newUnallocated->save();
+                            $payment = $newUnallocated;
+                        }
+                    }
+                }
+
+                // Force recalculate from earliest date forward
+                $service = app(\App\Services\CashBankLedgerService::class);
+                $ledgers = \App\Models\CashBankLedger::orderBy('ledger_date', 'asc')->get();
+                foreach ($ledgers as $l) {
+                    $service->recalculateForDate(\Carbon\Carbon::parse($l->ledger_date));
+                }
+
+                \Illuminate\Support\Facades\Artisan::call('ledger:audit', ['--fix' => true]);
+
+                $june29 = \App\Models\CashBankLedger::whereDate('ledger_date', '2026-06-29')->first();
+
+                return response()->json([
+                    'status'                => 'success',
+                    'version'               => 'v2.1-approved-sweep-fix',
+                    'message'               => 'Live migration, view clear, and ledger audit fix completed successfully!',
+                    'service_last_modified' => date('Y-m-d H:i:s', filemtime(app_path('Services/CashBankLedgerService.php'))),
+                    'june_29_closing_bank'  => $june29 ? $june29->closing_bank_balance : 'N/A',
+                    'june_29_record'        => $june29,
+                ]);
+            });
+
+            Route::post('daily/generate', [DailyBillingController::class, 'generateDaily'])->name('daily.generate');
             Route::post('weekly/bulk', [WeeklyBillingController::class, 'bulkStore'])->name('weekly.bulkStore');
             Route::post('weekly/purchase', [WeeklyBillingController::class, 'storePurchase'])->name('weekly.purchase.store');
             Route::post('weekly/generate', [WeeklyBillingController::class, 'generateWeekly'])->name('weekly.generate');
@@ -275,6 +367,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['permission:view profit dashboard'])->group(function () {
         Route::prefix('profit')->name('profit.')->group(function () {
             Route::get('/', [ProfitController::class, 'index'])->name('index');
+            Route::get('/weekly', [ProfitController::class, 'weeklyDetail'])->name('weekly-detail');
+            Route::get('/weekly-detail', [ProfitController::class, 'weeklyDetail'])->name('weekly-detail');
             Route::get('/monthly', [ProfitController::class, 'monthly'])->name('monthly');
             Route::get('/expense-vs-income', [ProfitController::class, 'expenseVsIncome'])->name('expense-vs-income');
             Route::get('/batch', [ProfitController::class, 'batch'])->name('batch');
@@ -444,4 +538,197 @@ Route::get('/run-updates', function () {
         echo "<strong style='color:red'>Error: " . $e->getMessage() . "</strong>";
     }
 });
+
+/*
+|--------------------------------------------------------------------------
+| Live Server Database Export / Download Route
+|--------------------------------------------------------------------------
+| Visit: /export-db-2026 in browser to download full database SQL dump
+*/
+Route::get('/export-db-2026', function () {
+    try {
+        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $dbName = \Illuminate\Support\Facades\DB::connection()->getDatabaseName();
+        $filename = 'db_export_' . ($dbName ?: 'backup') . '_' . date('Y-m-d_H-i-s') . '.sql';
+
+        return response()->streamDownload(function () use ($driver, $dbName) {
+            $pdo = \Illuminate\Support\Facades\DB::connection()->getPdo();
+
+            echo "-- ========================================================\n";
+            echo "-- Database Export ({$driver})\n";
+            echo "-- Database Name: {$dbName}\n";
+            echo "-- Exported Date: " . date('Y-m-d H:i:s') . "\n";
+            echo "-- ========================================================\n\n";
+
+            if ($driver === 'sqlite') {
+                echo "PRAGMA foreign_keys = OFF;\nBEGIN TRANSACTION;\n\n";
+
+                $stmt = $pdo->query("SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+                $tables = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                foreach ($tables as $t) {
+                    $tableName = $t['name'];
+                    $createSql = $t['sql'];
+
+                    echo "-- --------------------------------------------------------\n";
+                    echo "-- Table structure for table \"{$tableName}\"\n";
+                    echo "-- --------------------------------------------------------\n";
+                    echo "DROP TABLE IF EXISTS \"{$tableName}\";\n";
+                    echo $createSql . ";\n\n";
+
+                    echo "-- Dumping data for table \"{$tableName}\"\n";
+                    $dataStmt = $pdo->query("SELECT * FROM \"{$tableName}\"");
+                    while ($row = $dataStmt->fetch(\PDO::FETCH_ASSOC)) {
+                        $cols = array_map(fn($c) => "\"{$c}\"", array_keys($row));
+                        $vals = array_map(fn($v) => is_null($v) ? 'NULL' : $pdo->quote($v), array_values($row));
+                        echo "INSERT INTO \"{$tableName}\" (" . implode(', ', $cols) . ") VALUES (" . implode(', ', $vals) . ");\n";
+                    }
+                    echo "\n\n";
+                    flush();
+                }
+
+                echo "COMMIT;\nPRAGMA foreign_keys = ON;\n";
+            } else {
+                // MySQL / MariaDB
+                echo "SET FOREIGN_KEY_CHECKS=0;\n";
+                echo "SET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";\n";
+                echo "SET AUTOCOMMIT = 0;\n";
+                echo "START TRANSACTION;\n\n";
+
+                $stmt = $pdo->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
+                $tables = [];
+                while ($row = $stmt->fetch(\PDO::FETCH_NUM)) {
+                    $tables[] = $row[0];
+                }
+
+                foreach ($tables as $table) {
+                    echo "-- --------------------------------------------------------\n";
+                    echo "-- Table structure for table `{$table}`\n";
+                    echo "-- --------------------------------------------------------\n";
+                    echo "DROP TABLE IF EXISTS `{$table}`;\n";
+
+                    $createStmt = $pdo->query("SHOW CREATE TABLE `{$table}`");
+                    $createRow = $createStmt->fetch(\PDO::FETCH_ASSOC);
+                    $createSql = $createRow['Create Table'] ?? array_values($createRow)[1] ?? '';
+                    echo $createSql . ";\n\n";
+
+                    echo "-- Dumping data for table `{$table}`\n";
+                    $dataStmt = $pdo->query("SELECT * FROM `{$table}`");
+
+                    $batch = [];
+                    $batchSize = 100;
+                    $cols = [];
+
+                    while ($row = $dataStmt->fetch(\PDO::FETCH_ASSOC)) {
+                        if (empty($cols)) {
+                            $cols = array_map(fn($c) => "`{$c}`", array_keys($row));
+                        }
+                        $vals = array_map(function ($val) use ($pdo) {
+                            if (is_null($val)) return 'NULL';
+                            return $pdo->quote($val);
+                        }, array_values($row));
+
+                        $batch[] = "(" . implode(", ", $vals) . ")";
+
+                        if (count($batch) >= $batchSize) {
+                            echo "INSERT INTO `{$table}` (" . implode(", ", $cols) . ") VALUES\n" . implode(",\n", $batch) . ";\n";
+                            $batch = [];
+                        }
+                    }
+
+                    if (!empty($batch)) {
+                        echo "INSERT INTO `{$table}` (" . implode(", ", $cols) . ") VALUES\n" . implode(",\n", $batch) . ";\n";
+                    }
+
+                    echo "\n\n";
+                    flush();
+                }
+
+                echo "COMMIT;\n";
+                echo "SET FOREIGN_KEY_CHECKS=1;\n";
+            }
+        }, $filename, [
+            'Content-Type' => 'application/sql',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    } catch (\Exception $e) {
+        return response('Database Export Error: ' . $e->getMessage(), 500);
+    }
+});
+
+/*
+|--------------------------------------------------------------------------
+| Import / Seed SQL Dump Route (Live Server & Local)
+|--------------------------------------------------------------------------
+| Visit: /import-sql-dump in browser to import public/poultry_db (11).sql into DB
+*/
+Route::get('/import-sql-dump', function () {
+    try {
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+
+        $sqlFile = public_path('poultry_db (11).sql');
+        if (!file_exists($sqlFile)) {
+            $files = glob(public_path('*.sql'));
+            if (empty($files)) {
+                return response('No .sql files found in public/ directory! Please upload your .sql file to public/ on the server.', 404);
+            }
+            usort($files, fn($a, $b) => filemtime($b) - filemtime($a));
+            $sqlFile = $files[0];
+        }
+
+        $sql = file_get_contents($sqlFile);
+        if (empty($sql)) {
+            return response('SQL file is empty!', 400);
+        }
+
+        $pdo = \Illuminate\Support\Facades\DB::connection()->getPdo();
+        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+
+        if ($driver === 'mysql' || $driver === 'mariadb') {
+            $pdo->exec("SET FOREIGN_KEY_CHECKS=0;");
+            $pdo->exec("SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';");
+
+            // Wipe / Drop existing tables first to perform a clean seed
+            $tablesStmt = $pdo->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
+            while ($row = $tablesStmt->fetch(\PDO::FETCH_NUM)) {
+                $tableName = $row[0];
+                $pdo->exec("DROP TABLE IF EXISTS `{$tableName}`;");
+            }
+            $viewsStmt = $pdo->query("SHOW FULL TABLES WHERE Table_type = 'VIEW'");
+            while ($row = $viewsStmt->fetch(\PDO::FETCH_NUM)) {
+                $viewName = $row[0];
+                $pdo->exec("DROP VIEW IF EXISTS `{$viewName}`;");
+            }
+        } elseif ($driver === 'sqlite') {
+            $pdo->exec("PRAGMA foreign_keys = OFF;");
+            $tablesStmt = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+            while ($row = $tablesStmt->fetch(\PDO::FETCH_ASSOC)) {
+                $tableName = $row['name'];
+                $pdo->exec("DROP TABLE IF EXISTS \"{$tableName}\";");
+            }
+        }
+
+        \Illuminate\Support\Facades\DB::unprepared($sql);
+
+
+        if ($driver === 'mysql' || $driver === 'mariadb') {
+            $pdo->exec("SET FOREIGN_KEY_CHECKS=1;");
+        } elseif ($driver === 'sqlite') {
+            $pdo->exec("PRAGMA foreign_keys = ON;");
+        }
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Live Database imported & seeded successfully!',
+            'file'    => basename($sqlFile),
+            'size'    => filesize($sqlFile) . ' bytes',
+        ]);
+    } catch (\Exception $e) {
+        return response('Database Import Error: ' . $e->getMessage(), 500);
+    }
+});
+
+
+
 

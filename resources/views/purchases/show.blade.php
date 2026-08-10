@@ -35,7 +35,7 @@
             <div class="flex flex-col gap-1">
                 <div class="flex items-center gap-2 text-xl font-black text-emerald-600 tracking-tight">
                     <span class="material-symbols-rounded text-[28px]">layers</span>
-                    <span>POULTRYPRO</span>
+                    <span>POULTRY</span>
                 </div>
                 <p class="text-xs text-zinc-500 uppercase tracking-widest font-semibold">Farm Management & Supply Chain</p>
             </div>

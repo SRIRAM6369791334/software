@@ -63,7 +63,17 @@ class VendorPaymentController extends Controller
 
         $pendingDayLoadCount = 0;
         $dayLoadEntries = collect();
+        $pendingEmis = collect();
+
+        $unallocatedPayments = 0;
+        $dayLoadEntriesTotal = 0;
+        $pendingEmisTotal = 0;
+
         if ($selected_vendor_id) {
+            $unallocatedPayments = (float) VendorPayment::where('vendor_id', $selected_vendor_id)
+                ->whereNull('day_load_entry_id')
+                ->sum('amount');
+
             $pendingDayLoadCount = DayLoadEntry::where('vendor_id', $selected_vendor_id)
                 ->whereIn('vendor_payment_status', ['Pending', 'Partial'])
                 ->where('status', '!=', 'Cancelled')
@@ -77,23 +87,49 @@ class VendorPaymentController extends Controller
                 ->sortBy(function($e) {
                     return $e->batch ? $e->batch->billing_date->timestamp : $e->created_at->timestamp;
                 });
+
+            $dayLoadEntriesTotal = $dayLoadEntries->sum(function($e) {
+                return (float)$e->vendor_cost - (float)$e->vendor_paid;
+            });
+
+            // Fetch pending EMIs for this vendor
+            $pendingEmis = \App\Models\Emi::where('emi_type', 'Vendor')
+                ->where('entity_id', $selected_vendor_id)
+                ->where('status', '!=', 'Paid')
+                ->orderBy('due_date')
+                ->get();
+
+            $pendingEmisTotal = $pendingEmis->sum('remaining_amount');
         }
 
-        return view('payments.vendors.create', compact('vendors', 'selected_vendor_id', 'pendingDayLoadCount', 'dayLoadEntries'));
+        return view('payments.vendors.create', compact(
+            'vendors', 'selected_vendor_id', 'pendingDayLoadCount', 'dayLoadEntries',
+            'unallocatedPayments', 'dayLoadEntriesTotal', 'pendingEmis', 'pendingEmisTotal'
+        ));
     }
 
     public function storeGeneralPayment(Request $request): RedirectResponse
     {
+        $paymentMode = $request->input('payment_mode');
+        if (!$paymentMode || $paymentMode === 'Bank Transfer') {
+            $paymentMode = ((float) ($request->input('bank_amount') ?? 0) > 0)
+                ? ($request->input('bank_transfer_type') ?: 'Bank Transfer')
+                : 'Cash';
+            $request->merge(['payment_mode' => $paymentMode]);
+        }
+
         $validated = $request->validate([
             'vendor_id'          => 'required|exists:vendors,id',
             'date'               => 'required|date',
             'cash_amount'        => 'required|numeric|min:0',
             'bank_amount'        => 'required|numeric|min:0',
-            'payment_mode'       => 'required|in:Cash,UPI,NEFT,Cheque',
+            'payment_mode'       => 'required|in:Cash,Bank Transfer,UPI,NEFT,RTGS,IMPS,Cheque,Other',
             'bank_transfer_type' => 'nullable|required_if:bank_amount,>0|in:UPI,Bank Transfer,NEFT,RTGS,IMPS,Cheque,Other',
             'notes'              => 'nullable|string',
             'selected_entry_ids' => 'nullable|array',
             'selected_entry_ids.*' => 'exists:day_load_entries,id',
+            'selected_emi_ids'   => 'nullable|array',
+            'selected_emi_ids.*' => 'exists:emis,id',
         ]);
 
         $cashAmount = (float) $validated['cash_amount'];
@@ -160,11 +196,19 @@ class VendorPaymentController extends Controller
 
     public function store(Request $request, Vendor $vendor): RedirectResponse
     {
+        $paymentMode = $request->input('payment_mode');
+        if (!$paymentMode || $paymentMode === 'Bank Transfer') {
+            $paymentMode = ((float) ($request->input('bank_amount') ?? 0) > 0)
+                ? ($request->input('bank_transfer_type') ?: 'Bank Transfer')
+                : 'Cash';
+            $request->merge(['payment_mode' => $paymentMode]);
+        }
+
         $validated = $request->validate([
             'date'               => 'required|date',
             'cash_amount'        => 'required|numeric|min:0',
             'bank_amount'        => 'required|numeric|min:0',
-            'payment_mode'       => 'required|in:Cash,UPI,NEFT,Cheque',
+            'payment_mode'       => 'required|in:Cash,Bank Transfer,UPI,NEFT,RTGS,IMPS,Cheque,Other',
             'bank_transfer_type' => 'nullable|required_if:bank_amount,>0|in:UPI,Bank Transfer,NEFT,RTGS,IMPS,Cheque,Other',
             'notes'              => 'nullable|string'
         ]);

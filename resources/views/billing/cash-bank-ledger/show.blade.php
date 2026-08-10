@@ -51,7 +51,7 @@
                     <p class="font-jetbrains font-bold text-emerald-600">+ Rs {{ number_format((float) $ledger->cash_income, 0) }}</p>
                 </div>
                 <div>
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-600/70 mb-1">Expense</p>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-600/70 mb-1">Expense + vendor payments </p>
                     <p class="font-jetbrains font-bold text-rose-600">- Rs {{ number_format((float) $ledger->cash_expense, 0) }}</p>
                 </div>
                 <div class="col-span-3 mt-1 pt-2 border-t border-emerald-200/50 dark:border-emerald-800/30">
@@ -75,7 +75,7 @@
                     <p class="font-jetbrains font-bold text-blue-600">+ Rs {{ number_format((float) $ledger->bank_income, 0) }}</p>
                 </div>
                 <div>
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-blue-600/70 mb-1">Expense</p>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-blue-600/70 mb-1">Expense + vendor payments </p>
                     <p class="font-jetbrains font-bold text-rose-600">- Rs {{ number_format((float) $ledger->bank_expense, 0) }}</p>
                 </div>
                 <div class="col-span-3 mt-1 pt-2 border-t border-blue-200/50 dark:border-blue-800/30">
@@ -121,7 +121,7 @@
                             @endif
                         </td>
                         <td class="px-6 py-4">
-                            <x-badge variant="{{ $p->payment_mode === 'Cash' ? 'emerald' : 'blue' }}">
+                            <x-badge variant="{{ $p->payment_mode === 'Cash' ? 'emerald' : ($p->payment_mode === 'Split' ? 'amber' : 'blue') }}">
                                 {{ $p->payment_mode }}
                             </x-badge>
                         </td>

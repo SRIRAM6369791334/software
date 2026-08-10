@@ -255,7 +255,7 @@
         {{-- Invoice Header --}}
         <div class="header">
             <div class="logo-block">
-                <h1>PoultryPro</h1>
+                <h1>POULTRY</h1>
                 <p>Farm Management & Analytics</p>
             </div>
             <div class="invoice-title">

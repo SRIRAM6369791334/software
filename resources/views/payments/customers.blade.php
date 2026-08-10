@@ -26,7 +26,7 @@
             color="emerald" />
         <x-stat-card 
             label="Total Outstanding" 
-            value="Rs {{ number_format($customers->sum('balance'), 0) }}" 
+            value="Rs {{ number_format($customers->where('balance', '>', 0)->sum('balance'), 0) }}" 
             icon="error" 
             color="rose" />
         <x-stat-card 
@@ -93,6 +93,10 @@
                         @if($p->balance_after > 0)
                             <span class="font-jetbrains text-rose-600 dark:text-rose-400 font-medium">
                                 <x-currency :amount="$p->balance_after" />
+                            </span>
+                        @elseif($p->balance_after < 0)
+                            <span class="font-jetbrains text-emerald-600 dark:text-emerald-400 font-medium">
+                                Advance: <x-currency :amount="abs($p->balance_after)" />
                             </span>
                         @else
                             <x-badge variant="success" class="font-jetbrains">CLEARED</x-badge>

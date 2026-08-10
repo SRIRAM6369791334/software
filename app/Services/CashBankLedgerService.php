@@ -103,6 +103,22 @@ class CashBankLedgerService
                 // BUG 5 FIX: Cascade-update the next day's opening balances
                 // so all subsequent days reflect the correct running balance.
                 $this->cascadeNextDayOpening($date, $closingCash, $closingBank);
+            } else {
+                // For approved days, new backdated income/expense is automatically swept into bank balance.
+                $approvedCashSwept = max(0, round($cashIncome - $cashExpense, 2));
+                $newClosingBank = round(
+                    (float) $ledger->opening_bank_balance + $bankIncome - $bankExpense + $approvedCashSwept,
+                    2
+                );
+
+                $ledger->updateQuietly([
+                    'approved_amount'      => $approvedCashSwept,
+                    'closing_cash_balance' => 0.00,
+                    'closing_bank_balance' => $newClosingBank,
+                ]);
+
+                // Cascade current closing balances forward to future days
+                $this->cascadeNextDayOpening($date, 0.00, $newClosingBank);
             }
 
             return $ledger->fresh();
@@ -115,33 +131,70 @@ class CashBankLedgerService
      */
     private function cascadeNextDayOpening(Carbon $date, float $closingCash, float $closingBank): void
     {
-        $nextDay = CashBankLedger::whereDate('ledger_date', $date->copy()->addDay())->first();
+        $nextDay = CashBankLedger::whereDate('ledger_date', '>', $date)
+            ->orderBy('ledger_date', 'asc')
+            ->first();
 
-        if (!$nextDay || $nextDay->is_approved) {
+        if (!$nextDay) {
             return;
         }
 
-        // Only update if values actually changed to avoid unnecessary DB writes
-        if (
-            (float) $nextDay->opening_cash_balance !== $closingCash ||
-            (float) $nextDay->opening_bank_balance !== $closingBank
-        ) {
-            $nextDay->updateQuietly([
-                'opening_cash_balance' => $closingCash,
-                'opening_bank_balance' => $closingBank,
-                // Recalculate closing for the next day too
-                'closing_cash_balance' => round($closingCash + (float) $nextDay->cash_income - (float) $nextDay->cash_expense, 2),
-                'closing_bank_balance' => round($closingBank + (float) $nextDay->bank_income - (float) $nextDay->bank_expense, 2),
-            ]);
+        $newOpeningCash = $closingCash;
+        $newOpeningBank = $closingBank;
 
-            // Recurse one level deeper (cascade forward)
-            $newClosingCash = round($closingCash + (float) $nextDay->cash_income - (float) $nextDay->cash_expense, 2);
-            $newClosingBank = round($closingBank + (float) $nextDay->bank_income - (float) $nextDay->bank_expense, 2);
-            $this->cascadeNextDayOpening(
-                Carbon::parse($nextDay->ledger_date),
-                $newClosingCash,
-                $newClosingBank
+        if ($nextDay->is_approved) {
+            // For approved days, closing cash was swept to bank via approved_amount.
+            // So closing cash remains 0, and closing bank = newOpeningBank + bank_income - bank_expense + approved_amount
+            $newClosingCash = 0.00;
+            $newClosingBank = round(
+                $newOpeningBank + (float) $nextDay->bank_income - (float) $nextDay->bank_expense + (float) ($nextDay->approved_amount ?? 0),
+                2
             );
+
+            if (
+                (float) $nextDay->opening_cash_balance !== $newOpeningCash ||
+                (float) $nextDay->opening_bank_balance !== $newOpeningBank ||
+                (float) $nextDay->closing_bank_balance !== $newClosingBank
+            ) {
+                $nextDay->updateQuietly([
+                    'opening_cash_balance' => $newOpeningCash,
+                    'opening_bank_balance' => $newOpeningBank,
+                    'closing_cash_balance' => $newClosingCash,
+                    'closing_bank_balance' => $newClosingBank,
+                ]);
+
+                // Recurse forward to subsequent days
+                $this->cascadeNextDayOpening(
+                    Carbon::parse($nextDay->ledger_date),
+                    $newClosingCash,
+                    $newClosingBank
+                );
+            }
+        } else {
+            // Unapproved day
+            $newClosingCash = round($newOpeningCash + (float) $nextDay->cash_income - (float) $nextDay->cash_expense, 2);
+            $newClosingBank = round($newOpeningBank + (float) $nextDay->bank_income - (float) $nextDay->bank_expense, 2);
+
+            if (
+                (float) $nextDay->opening_cash_balance !== $newOpeningCash ||
+                (float) $nextDay->opening_bank_balance !== $newOpeningBank ||
+                (float) $nextDay->closing_cash_balance !== $newClosingCash ||
+                (float) $nextDay->closing_bank_balance !== $newClosingBank
+            ) {
+                $nextDay->updateQuietly([
+                    'opening_cash_balance' => $newOpeningCash,
+                    'opening_bank_balance' => $newOpeningBank,
+                    'closing_cash_balance' => $newClosingCash,
+                    'closing_bank_balance' => $newClosingBank,
+                ]);
+
+                // Recurse forward to subsequent days
+                $this->cascadeNextDayOpening(
+                    Carbon::parse($nextDay->ledger_date),
+                    $newClosingCash,
+                    $newClosingBank
+                );
+            }
         }
     }
 

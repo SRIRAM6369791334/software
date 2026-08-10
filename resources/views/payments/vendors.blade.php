@@ -26,7 +26,7 @@
             color="purple" />
         <x-stat-card 
             label="Payable to Vendors" 
-            value="Rs {{ number_format($vendors->sum('outstanding_balance'), 0) }}" 
+            value="Rs {{ number_format($vendors->where('outstanding_balance', '>', 0)->sum('outstanding_balance'), 0) }}" 
             icon="error" 
             color="rose" />
         <x-stat-card 

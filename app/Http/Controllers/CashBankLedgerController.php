@@ -86,10 +86,28 @@ class CashBankLedgerController extends Controller
             ->whereDate('billing_date', $date)
             ->first();
 
-        $dealerPayments = DealerPayment::with('dealer')
+        $rawDealerPayments = DealerPayment::with('dealer')
             ->whereDate('date', $date)
             ->orderBy('created_at')
             ->get();
+
+        $dealerPayments = $rawDealerPayments->groupBy('dealer_id')->map(function ($group) {
+            $first = $group->first();
+            $cashSum = (float) $group->sum('cash_amount');
+            $bankSum = (float) $group->sum('bank_amount');
+            $modes = $group->pluck('payment_mode')->unique()->filter()->values();
+            $modeStr = $modes->count() > 1 ? 'Split' : ($modes->first() ?? 'Cash');
+            $refs = $group->pluck('reference_number')->filter()->unique()->implode(', ');
+
+            return (object) [
+                'dealer'           => $first->dealer,
+                'cash_amount'      => $cashSum,
+                'bank_amount'      => $bankSum,
+                'payment_mode'     => $modeStr,
+                'reference_number' => $refs ?: null,
+                'count'            => $group->count(),
+            ];
+        })->values();
 
         $customerPayments = CustomerPayment::with('customer')
             ->whereDate('date', $date)
@@ -100,10 +118,29 @@ class CashBankLedgerController extends Controller
             ->orderBy('created_at')
             ->get();
 
-        $vendorPayments = VendorPayment::with('vendor')
+        $rawVendorPayments = VendorPayment::with('vendor')
             ->whereDate('date', $date)
             ->orderBy('created_at')
             ->get();
+
+        $vendorPayments = $rawVendorPayments->groupBy('vendor_id')->map(function ($group) {
+            $first = $group->first();
+            $cashSum = (float) $group->sum('cash_amount');
+            $bankSum = (float) $group->sum('bank_amount');
+            $modes = $group->pluck('payment_mode')->unique()->filter()->values();
+            $modeStr = $modes->count() > 1 ? 'Split' : ($modes->first() ?? 'Cash');
+            $refs = $group->pluck('notes')->filter()->unique()->implode(', ');
+
+            return (object) [
+                'vendor'           => $first->vendor,
+                'cash_amount'      => $cashSum,
+                'bank_amount'      => $bankSum,
+                'payment_mode'     => $modeStr,
+                'reference_number' => $refs ?: null,
+                'notes'            => $refs ?: null,
+                'count'            => $group->count(),
+            ];
+        })->values();
 
         return view('billing.cash-bank-ledger.show', compact(
             'ledger', 'date', 'dayLoadBatch',

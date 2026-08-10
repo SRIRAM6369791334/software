@@ -13,6 +13,10 @@ use Illuminate\Support\Facades\Cache;
 
 class DashboardService
 {
+    public function __construct(
+        private ProfitService $profitService
+    ) {}
+
     public function getStats(): array
     {
         return Cache::remember('dashboard.stats', 60, function () {
@@ -24,14 +28,13 @@ class DashboardService
             $purchasesToday  = Purchase::whereDate('date', today())->sum('total_amount');
             $purchaseCount   = Purchase::whereDate('date', today())->count();
             
-            $startOfMonth = now()->startOfMonth();
-            $endOfMonth   = now()->endOfMonth();
+            $startOfMonth = now()->startOfMonth()->toDateString();
+            $endOfMonth   = now()->endOfMonth()->toDateString();
 
-            $monthlyRevenue  = WeeklyBill::whereBetween('period_end', [$startOfMonth, $endOfMonth])->sum('amount') +
-                               DailyBill::whereBetween('date', [$startOfMonth, $endOfMonth])->sum('amount') +
-                               DayLoadInvoice::whereBetween('invoice_date', [$startOfMonth, $endOfMonth])->sum('total_amount');
-                               
-            $monthlyPurchase = Purchase::whereBetween('date', [$startOfMonth, $endOfMonth])->sum('total_amount');
+            $profitBreakdown = $this->profitService->getProfitBreakdown($startOfMonth, $endOfMonth);
+
+            $monthlyRevenue  = $profitBreakdown['total_billed'];
+            $monthlyPurchase = $profitBreakdown['vendor_cost'];
             $activeDealers   = Dealer::where('pending_amount', '>', 0)->count();
 
             // Poultry operational stats
@@ -42,10 +45,11 @@ class DashboardService
             return compact(
                 'todayRevenue', 'totalCustomers', 'pendingPayments', 'pendingCount',
                 'purchasesToday', 'purchaseCount', 'monthlyRevenue', 'monthlyPurchase', 
-                'activeDealers', 'totalBirds', 'activeBatches', 'mortalityMTD'
+                'activeDealers', 'totalBirds', 'activeBatches', 'mortalityMTD', 'profitBreakdown'
             );
         });
     }
+
 
     public function getRecentSales(int $limit = 5): \Illuminate\Database\Eloquent\Collection
     {

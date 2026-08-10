@@ -44,16 +44,58 @@ class VendorPaymentService
             $totalAmount = round($cashAmount + $bankAmount, 2);
             $remainingTotal = $totalAmount;
 
-            $createdPayments = [];
+            // 0. Allocate to selected EMIs first
+            if (!empty($data['selected_emi_ids'])) {
+                $emis = \App\Models\Emi::whereIn('id', $data['selected_emi_ids'])->orderBy('due_date')->get();
+                foreach ($emis as $emi) {
+                    $due = max(0, $emi->amount - $emi->paid_amount);
+                    if ($due <= 0) continue;
+
+                    $alloc = min($remainingTotal, $due);
+                    $emi->paid_amount += $alloc;
+                    
+                    if ($emi->paid_amount >= $emi->amount) {
+                        $emi->status = 'Paid';
+                    } else if ($emi->paid_amount > 0) {
+                        $emi->status = 'Partial';
+                    }
+                    $emi->save();
+
+                    // Create a payment record for the EMI
+                    $recordCash = $totalAmount > 0 ? round($alloc * ($cashAmount / $totalAmount), 2) : 0.00;
+                    $recordBank = round($alloc - $recordCash, 2);
+                    $createdPayments[] = VendorPayment::create([
+                        'vendor_id'          => $vendor->id,
+                        'day_load_entry_id'  => null,
+                        'date'               => $data['date'],
+                        'amount'             => $alloc,
+                        'cash_amount'        => $recordCash,
+                        'bank_amount'        => $recordBank,
+                        'total_amount'       => $alloc,
+                        'pending_balance_after' => $vendor->outstanding_balance,
+                        'payment_mode'       => $data['payment_mode'],
+                        'bank_transfer_type' => $data['bank_transfer_type'] ?? null,
+                        'notes'              => "EMI Payment: " . ($emi->loan_name ?: 'EMI'),
+                        'reference_number'   => $data['notes'] ?? null, // UI's "Remarks / Reference"
+                    ]);
+
+                    $remainingTotal = round($remainingTotal - $alloc, 2);
+                    if ($remainingTotal <= 0) break;
+                }
+            }
 
             $dayLoadService = app(DayLoadPaymentService::class);
 
-            // 1. Allocate to selected day-load entries (FIFO)
-            if (!empty($data['selected_entry_ids'])) {
-                $entries = DayLoadEntry::where('vendor_id', $vendor->id)
-                    ->whereIn('id', $data['selected_entry_ids'])
-                    ->where('status', '!=', 'Cancelled')
-                    ->with('batch')
+            // 1. Allocate to day-load entries (FIFO)
+            if ($remainingTotal > 0) {
+                $entriesQuery = DayLoadEntry::where('vendor_id', $vendor->id)
+                    ->where('status', '!=', 'Cancelled');
+
+                if (!empty($data['selected_entry_ids'])) {
+                    $entriesQuery->whereIn('id', $data['selected_entry_ids']);
+                }
+
+                $entries = $entriesQuery->with('batch')
                     ->get()
                     ->sortBy(function($e) {
                         return $e->batch ? $e->batch->billing_date->timestamp : $e->created_at->timestamp;
@@ -61,14 +103,14 @@ class VendorPaymentService
 
                 foreach ($entries as $entry) {
                     $balance = round((float) $entry->vendor_cost - (float) $entry->vendor_paid, 2);
-                    if ($balance <= 0) {
-                        continue;
-                    }
+                    if ($balance <= 0) continue;
 
                     $alloc = min($remainingTotal, $balance);
                     $entry->increment('vendor_paid', $alloc);
                     $dayLoadService->refreshVendorPaymentStatus($entry);
-                    $dayLoadService->refreshBatchFinancials($entry->batch);
+                    if ($entry->batch) {
+                        $dayLoadService->refreshBatchFinancials($entry->batch);
+                    }
 
                     $recordCash = $totalAmount > 0 ? round($alloc * ($cashAmount / $totalAmount), 2) : 0.00;
                     $recordBank = round($alloc - $recordCash, 2);
@@ -80,6 +122,8 @@ class VendorPaymentService
                         'amount'           => $alloc,
                         'cash_amount'      => $recordCash,
                         'bank_amount'      => $recordBank,
+                        'total_amount'       => $alloc,
+                        'pending_balance_after' => $vendor->outstanding_balance,
                         'payment_mode'     => $data['payment_mode'],
                         'bank_transfer_type' => $data['bank_transfer_type'] ?? null,
                         'reference_number' => $data['reference_number'] ?? null,
@@ -106,7 +150,7 @@ class VendorPaymentService
                     'bank_amount'      => $totalAmount > 0 ? round($remainingTotal * ($bankAmount / $totalAmount), 2) : 0.00,
                     'payment_mode'     => $data['payment_mode'],
                     'bank_transfer_type' => $data['bank_transfer_type'] ?? null,
-                    'notes'            => ($data['notes'] ?? '') ?: 'Vendor payment',
+                    'notes'            => ($data['notes'] ?? '') ?: 'Unallocated General Vendor Payment',
                 ]);
 
                 $createdPayments[] = $payment;

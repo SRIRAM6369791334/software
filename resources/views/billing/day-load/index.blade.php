@@ -136,8 +136,9 @@
         <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">Load Entries</h2>
+                <x-badge variant="zinc">{{ $normalEntries->count() }} entries</x-badge>
                 @can('create bills')
-                    @if($entries->count() > 0)
+                    @if($allEntries->count() > 0)
                         <x-button
                             variant="primary"
                             size="sm"
@@ -173,7 +174,7 @@
         </div>
 
         <x-data-table :headers="['Date', 'Vendor', 'Dealer', 'Rates', 'Margin', 'Boxes', 'Weights', 'Amount', 'Dealer Payment', 'Vendor Payment', 'Status', 'Actions']">
-            @forelse($entries as $entry)
+            @forelse($normalEntries as $entry)
                 <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
                     <td class="px-6 py-4">
                         <p class="font-medium text-zinc-900 dark:text-zinc-100">{{ $entry->batch->billing_date->format('d M Y') }}</p>
@@ -278,6 +279,10 @@
                                             transferSourceWeight = {{ $entry->bird_weight }};
                                             transferSourceVendor = '{{ addslashes($entry->vendor->firm_name ?? '-') }}';
                                             transferSourceDealer = '{{ addslashes($entry->dealer->firm_name ?? '-') }}';
+                                            transferSourceVendorId = {{ $entry->vendor_id }};
+                                            transferTargetVendorId = {{ $entry->vendor_id }};
+                                            transferSourceCustomerRate = {{ $entry->customer_rate }};
+                                            transferTargetCustomerRate = {{ $entry->customer_rate }};
                                             transferBatchId = {{ $entry->batch_id }};
                                             transferDate = '{{ $entry->batch->billing_date->format('d M Y') }}';
                                             transferMaxWeight = {{ $entry->bird_weight }};
@@ -343,12 +348,220 @@
                     <x-empty-state icon="inventory_2" title="No load entries found" description="Record the first vendor-to-dealer load for this date." />
                 </x-slot:empty>
             @endforelse
+        </x-data-table>
+    </x-card>
 
-            @if($entries->hasPages())
-                <x-slot:pagination>
-                    {{ $entries->withQueryString()->links() }}
-                </x-slot:pagination>
-            @endif
+    {{-- Transferred Weight Entries Table (Downside Table) --}}
+    <x-card class="mt-8">
+        <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    <span class="material-symbols-rounded text-lg">swap_horiz</span>
+                </div>
+                <div>
+                    <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">Transferred Weight Entries</h2>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400">Entries modified or created via Weight Transfer action</p>
+                </div>
+                <x-badge variant="info">{{ $transferredEntries->count() }} entries</x-badge>
+            </div>
+        </div>
+
+        <x-data-table :headers="['Date', 'Vendor', 'Dealer', 'Transfer Info', 'Rates', 'Margin', 'Boxes', 'Weights', 'Amount', 'Dealer Payment', 'Vendor Payment', 'Status', 'Actions']">
+            @forelse($transferredEntries as $entry)
+                <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors bg-blue-50/5 dark:bg-blue-950/10">
+                    <td class="px-6 py-4">
+                        <p class="font-medium text-zinc-900 dark:text-zinc-100">{{ $entry->batch->billing_date->format('d M Y') }}</p>
+                        <p class="text-xs text-zinc-500">{{ $entry->batch->billing_date->format('l') }}</p>
+                    </td>
+                    <td class="px-6 py-4 font-bold text-zinc-900 dark:text-zinc-100">{{ $entry->vendor->firm_name ?? '-' }}</td>
+                    <td class="px-6 py-4">{{ $entry->dealer->firm_name ?? '-' }}</td>
+                    <td class="px-6 py-4 text-xs">
+                        @if($entry->parent_entry_id)
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-semibold text-[11px]">
+                                <span class="material-symbols-rounded text-xs">arrow_downward</span>
+                                Target (From Entry #{{ $entry->parent_entry_id }})
+                            </span>
+                            @if($entry->parentEntry && $entry->parentEntry->dealer)
+                                <p class="mt-1 text-[10px] text-zinc-500">Source Dealer: {{ $entry->parentEntry->dealer->firm_name }}</p>
+                            @endif
+                        @elseif($entry->status === 'Adjusted')
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-semibold text-[11px]">
+                                <span class="material-symbols-rounded text-xs">tune</span>
+                                Source Entry (Weight Transferred Out)
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-semibold text-[11px]">
+                                <span class="material-symbols-rounded text-xs">swap_horiz</span>
+                                Transferred
+                            </span>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4 text-xs">
+                        <div>Paper: <span class="font-jetbrains">Rs {{ number_format((float) $entry->paper_rate, 2) }}</span></div>
+                        <div>Vendor: <span class="font-jetbrains">@if((float) $entry->billing_rate > 0)Rs {{ number_format((float) $entry->billing_rate, 2) }}@else<span class="text-zinc-400">—</span>@endif</span></div>
+                        <div>Customer: <span class="font-jetbrains">Rs {{ number_format((float) $entry->customer_rate, 2) }}</span></div>
+                    </td>
+                    <td class="px-6 py-4">
+                        @php
+                            $diff = $entry->rate_difference;
+                        @endphp
+                        <span class="font-jetbrains font-bold {{ $diff >= 0 ? 'text-emerald-600' : 'text-rose-600' }}">
+                            {{ $diff >= 0 ? '+' : '-' }}Rs {{ number_format(abs($diff), 2) }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-center font-jetbrains font-bold">{{ $entry->no_of_boxes }}</td>
+                    <td class="px-6 py-4 text-xs">
+                        <div>Box: {{ number_format((float) $entry->box_weight, 2) }}</div>
+                        <div>Empty: {{ number_format((float) $entry->empty_weight, 2) }}</div>
+                        <div>Bird: {{ number_format((float) $entry->bird_weight, 2) }}</div>
+                        <div>Loss: {{ $entry->loss_weight === null ? '-' : number_format((float) $entry->loss_weight, 2) }}</div>
+                        <div>Total: {{ $entry->total_weight === null ? '-' : number_format((float) $entry->total_weight, 2) }}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-100">Rs {{ number_format((float) $entry->amount, 0) }}</span>
+                    </td>
+                    <td class="px-6 py-4 text-xs">
+                        @php
+                            $dStatus = $entry->dealer_payment_status;
+                            $dColor = match($dStatus) { 'Paid' => 'success', 'Partial' => 'warning', 'Overpaid' => 'info', default => 'zinc' };
+                        @endphp
+                        <div class="flex flex-col items-center gap-1">
+                            <x-badge :variant="$dColor">{{ $dStatus }}</x-badge>
+                            <span class="font-jetbrains text-[11px] {{ (float) $entry->dealer_collected > 0 ? 'text-emerald-600' : 'text-zinc-400' }}">
+                                Rs {{ number_format((float) $entry->dealer_collected, 0) }} / Rs {{ number_format($entry->dealer_income, 0) }}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-xs">
+                        @if($entry->effective_farm_weight !== null)
+                            @php
+                                $vStatus = $entry->vendor_payment_status;
+                                $vColor = match($vStatus) { 'Paid' => 'success', 'Partial' => 'warning', 'Overpaid' => 'info', default => 'zinc' };
+                            @endphp
+                            <div class="flex flex-col items-center gap-1">
+                                <x-badge :variant="$vColor">{{ $vStatus }}</x-badge>
+                                <span class="font-jetbrains text-[11px] {{ (float) $entry->vendor_paid > 0 ? 'text-violet-600' : 'text-zinc-400' }}">
+                                    Rs {{ number_format((float) $entry->vendor_paid, 0) }} / Rs {{ number_format($entry->vendor_cost, 0) }}
+                                </span>
+                            </div>
+                        @else
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="text-[10px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-0.5">
+                                    <span class="material-symbols-rounded text-[14px]">info</span>
+                                    Enter FW for price
+                                </span>
+                            </div>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <x-badge variant="{{ $entry->status === 'Adjusted' ? 'warning' : 'info' }}">{{ $entry->status }}</x-badge>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        @if($entry->status === 'Active' || $entry->status === 'Adjusted')
+                            <div class="flex items-center justify-center gap-2">
+                                <button
+                                    type="button"
+                                    x-on:click="
+                                        $dispatch('open-modal', 'edit-entry-modal');
+                                        $nextTick(() => {
+                                            editEntryId = {{ $entry->id }};
+                                            editFormAction = '{{ route('billing.day-load.update', $entry->id) }}';
+                                            editVendorId = {{ $entry->vendor_id }};
+                                            editDealerId = {{ $entry->dealer_id }};
+                                            editPaperRate = {{ $entry->paper_rate }};
+                                            editBillingRate = {{ $entry->billing_rate }};
+                                            editCustomerRate = {{ $entry->customer_rate }};
+                                            editNoOfBoxes = {{ $entry->no_of_boxes }};
+                                            editBoxWeight = {{ $entry->box_weight }};
+                                            editEmptyWeight = {{ $entry->empty_weight }};
+                                            editFarmWeight = '{{ $entry->farm_weight ?? '' }}';
+                                            editRemarks = '{{ $entry->remarks ?? '' }}';
+                                        });
+                                    "
+                                    class="inline-flex items-center gap-1 text-xs font-medium text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
+                                >
+                                    <span class="material-symbols-rounded text-sm">edit</span>
+                                </button>
+                                @if($entry->bird_weight > 0)
+                                <button
+                                    type="button"
+                                    x-on:click="
+                                        $dispatch('open-modal', 'transfer-boxes-modal');
+                                        $nextTick(() => {
+                                            transferSourceId = {{ $entry->id }};
+                                            transferSourceBoxes = {{ $entry->no_of_boxes }};
+                                            transferSourceWeight = {{ $entry->bird_weight }};
+                                            transferSourceVendor = '{{ addslashes($entry->vendor->firm_name ?? '-') }}';
+                                            transferSourceDealer = '{{ addslashes($entry->dealer->firm_name ?? '-') }}';
+                                            transferSourceVendorId = {{ $entry->vendor_id }};
+                                            transferTargetVendorId = {{ $entry->vendor_id }};
+                                            transferSourceCustomerRate = {{ $entry->customer_rate }};
+                                            transferTargetCustomerRate = {{ $entry->customer_rate }};
+                                            transferBatchId = {{ $entry->batch_id }};
+                                            transferDate = '{{ $entry->batch->billing_date->format('d M Y') }}';
+                                            transferMaxWeight = {{ $entry->bird_weight }};
+                                            transferWeight = {{ $entry->bird_weight }};
+                                            transferFormAction = '{{ route('billing.day-load.transfer', $entry->id) }}';
+                                        });
+                                    "
+                                    class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                                >
+                                    <span class="material-symbols-rounded text-sm">swap_horiz</span>
+                                </button>
+                                @endif
+                                <button
+                                    type="button"
+                                    x-on:click="
+                                        $dispatch('open-modal', 'dealer-payment-modal');
+                                        $nextTick(() => {
+                                            dpEntryId = {{ $entry->id }};
+                                            dpFormAction = '{{ route('billing.day-load.dealer-payment', $entry->id) }}';
+                                            dpEntryVendor = '{{ addslashes($entry->vendor->firm_name ?? '-') }}';
+                                            dpEntryDealer = '{{ addslashes($entry->dealer->firm_name ?? '-') }}';
+                                            dpEntryIncome = {{ $entry->dealer_income }};
+                                            dpEntryCollected = {{ (float) $entry->dealer_collected }};
+                                            dpCashAmount = {{ round($entry->dealer_income - (float) $entry->dealer_collected, 2) }};
+                                            dpBankAmount = 0;
+                                            dpBankTransferType = '';
+                                        });
+                                    "
+                                    class="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
+                                    title="Record Dealer Payment"
+                                >
+                                    <span class="material-symbols-rounded text-sm">payments</span>
+                                </button>
+                                @if($entry->effective_farm_weight !== null)
+                                <button
+                                    type="button"
+                                    x-on:click="
+                                        $dispatch('open-modal', 'vendor-payment-modal');
+                                        $nextTick(() => {
+                                            vpEntryId = {{ $entry->id }};
+                                            vpFormAction = '{{ route('billing.day-load.vendor-payment', $entry->id) }}';
+                                            vpEntryVendor = '{{ addslashes($entry->vendor->firm_name ?? '-') }}';
+                                            vpEntryDealer = '{{ addslashes($entry->dealer->firm_name ?? '-') }}';
+                                            vpEntryCost = {{ $entry->vendor_cost }};
+                                            vpEntryPaid = {{ (float) $entry->vendor_paid }};
+                                            vpCashAmount = {{ round($entry->vendor_cost - (float) $entry->vendor_paid, 2) }};
+                                            vpBankAmount = 0;
+                                            vpBankTransferType = '';
+                                        });
+                                    "
+                                    class="inline-flex items-center gap-1 text-xs font-medium text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300 transition-colors"
+                                    title="Record Vendor Payment"
+                                >
+                                    <span class="material-symbols-rounded text-sm">account_balance_wallet</span>
+                                </button>
+                                @endif
+                            </div>
+                        @endif
+                    </td>
+                </tr>
+            @empty
+                <x-slot:empty>
+                    <x-empty-state icon="swap_horiz" title="No transferred entries" description="Transferred or adjusted weight entries will appear in this table." />
+                </x-slot:empty>
+            @endforelse
         </x-data-table>
     </x-card>
 
@@ -458,7 +671,7 @@
                                 required 
                                 min="0.01" 
                                 step="0.01" 
-                                x-bind:max="transferMaxWeight" 
+                                x-bind:max="'transferMaxWeight'" 
                                 x-model.number="transferWeight" 
                                 icon="scale"
                             />
@@ -476,13 +689,26 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <x-form.select name="target_vendor_id" label="Target Vendor" required>
+                        <x-form.select name="target_vendor_id" label="Target Vendor" required x-model="transferTargetVendorId">
                             <option value="">Select vendor...</option>
                             @foreach($vendors as $vendor)
                                 <option value="{{ $vendor->id }}">{{ $vendor->firm_name }}{{ $vendor->is_shop ? ' (Shop)' : '' }}</option>
                             @endforeach
                         </x-form.select>
 
+                        <x-form.input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="target_customer_rate"
+                            label="Target Customer Rate (Rs/kg)"
+                            required
+                            x-model.number="transferTargetCustomerRate"
+                            icon="currency_rupee"
+                        />
+                    </div>
+
+                    <div class="mb-2">
                         <x-form.input type="text" name="reason" label="Reason" required placeholder="e.g. Reassign weight to correct dealer" icon="description" />
                     </div>
 
@@ -495,62 +721,60 @@
         </template>
 
         <template x-teleport="body">
-            <x-modal name="set-farm-weight-modal" title="Set Farm Weight" subtitle="Enter total farm weight — it will be set at the batch level" icon="scale" maxWidth="4xl">
-                <form id="set-farm-weight-form" action="{{ route('billing.day-load.set-farm-weight') }}" method="POST"
+            <x-modal name="set-farm-weight-modal" title="Set & Adjust Farm Weights" subtitle="Enter farm weight for each entry — total farm weight will be calculated automatically" icon="scale" maxWidth="6xl">
+                <form id="set-farm-weight-form" action="{{ route('billing.day-load.bulk-update') }}" method="POST"
                       x-data="{
-                          totalFarmWeight: '{{ $batch?->total_farm_weight ?? '' }}',
-                          totalBirdWeight: {{ (float) ($batch?->total_bird_weight ?? 0) }},
-                          entries: [
-                              @foreach($entries->where('status', 'Active') as $entry)
-                                  { id: {{ $entry->id }}, vendor: '{{ addslashes($entry->vendor->firm_name ?? '-') }}', dealer: '{{ addslashes($entry->dealer->firm_name ?? '-') }}', boxes: {{ $entry->no_of_boxes }}, birdWeight: {{ (float) $entry->bird_weight }} },
+                          items: [
+                              @foreach($allEntries as $entry)
+                                  {
+                                      id: {{ $entry->id }},
+                                      birdWeight: {{ (float) $entry->bird_weight }},
+                                      farmWeight: '{{ $entry->farm_weight ?? '' }}'
+                                  },
                               @endforeach
                           ],
+                          get totalBirdWeight() {
+                              return this.items.reduce((sum, item) => sum + item.birdWeight, 0);
+                          },
+                          get calculatedTotalFarmWeight() {
+                              let total = 0;
+                              let hasAny = false;
+                              this.items.forEach(item => {
+                                  if (item.farmWeight !== '' && item.farmWeight !== null && !isNaN(parseFloat(item.farmWeight))) {
+                                      total += parseFloat(item.farmWeight);
+                                      hasAny = true;
+                                  }
+                              });
+                              return hasAny ? total.toFixed(2) : null;
+                          },
                           get totalLoss() {
-                              if (!this.totalFarmWeight || this.totalFarmWeight === '') return 0;
-                              return (parseFloat(this.totalFarmWeight) - this.totalBirdWeight).toFixed(2);
+                              if (!this.calculatedTotalFarmWeight) return null;
+                              return (parseFloat(this.calculatedTotalFarmWeight) - this.totalBirdWeight).toFixed(2);
                           }
                       }"
                       class="space-y-6"
                 >
                     @csrf
-                    <input type="hidden" name="batch_id" value="{{ $batch?->id }}">
+                    <input type="hidden" name="_method" value="PUT">
 
-                    {{-- Note about batch-level setting --}}
-                    <div class="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 flex gap-3 text-xs text-amber-800 dark:text-amber-300">
-                        <span class="material-symbols-rounded text-lg">info</span>
-                        <div>
-                            <p class="font-bold mb-0.5">Batch-Level Weight Setting</p>
-                            <p>Setting the farm weight here applies it to the entire day's batch. Individual entries' weights will not be modified proportionally.</p>
-                        </div>
-                    </div>
-
-                    {{-- Summary Metrics & Main Input --}}
+                    {{-- Summary Metrics --}}
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
                         <div class="rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm flex flex-col justify-center">
                             <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Total Bird Weight</p>
                             <p class="font-jetbrains text-2xl font-black text-indigo-600 dark:text-indigo-400" x-text="totalBirdWeight.toFixed(2) + ' kg'"></p>
                         </div>
                         <div class="rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm flex flex-col justify-center">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Total Loss</p>
-                            <p class="font-jetbrains text-2xl font-black" :class="(totalFarmWeight && parseFloat(totalFarmWeight) > 0) ? (parseFloat(totalLoss) >= 0 ? 'text-emerald-600' : 'text-rose-600') : 'text-zinc-400'" x-text="(totalFarmWeight && parseFloat(totalFarmWeight) > 0) ? totalLoss + ' kg' : '—'"></p>
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Total Farm Weight (Sum)</p>
+                            <p class="font-jetbrains text-2xl font-black text-emerald-600 dark:text-emerald-400" x-text="calculatedTotalFarmWeight ? calculatedTotalFarmWeight + ' kg' : '—'"></p>
                         </div>
-                        <div>
-                            <x-form.input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                name="total_farm_weight"
-                                label="Enter Total Farm Weight (Kg)"
-                                x-model="totalFarmWeight"
-                                placeholder="0.00"
-                                required
-                                icon="scale"
-                            />
+                        <div class="rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm flex flex-col justify-center">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Total Loss</p>
+                            <p class="font-jetbrains text-2xl font-black" :class="(calculatedTotalFarmWeight && parseFloat(calculatedTotalFarmWeight) > 0) ? (parseFloat(totalLoss) >= 0 ? 'text-emerald-600' : 'text-rose-600') : 'text-zinc-400'" x-text="totalLoss !== null ? totalLoss + ' kg' : '—'"></p>
                         </div>
                     </div>
 
-                    {{-- Active Entries Table --}}
-                    <div class="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 max-h-[40vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+                    {{-- Entries Table --}}
+                    <div class="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 max-h-[50vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
                         <table class="w-full text-sm">
                             <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-750">
                                 <tr class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
@@ -558,17 +782,49 @@
                                     <th class="px-4 py-3 text-left">Dealer</th>
                                     <th class="px-4 py-3 text-center">Boxes</th>
                                     <th class="px-4 py-3 text-center">Bird Wt (Kg)</th>
+                                    <th class="px-4 py-3 text-center min-w-[130px] bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-600">Farm Weight (Kg)</th>
+                                    <th class="px-4 py-3 text-center text-rose-600">Loss (Kg)</th>
+                                    <th class="px-4 py-3 text-left min-w-[180px]">Remarks</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/80 bg-white dark:bg-zinc-900">
-                                <template x-for="(entry, index) in entries" :key="entry.id">
+                                @foreach($allEntries as $entry)
                                     <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 transition-colors">
-                                        <td class="px-4 py-3 font-bold text-zinc-900 dark:text-zinc-100 text-xs" x-text="entry.vendor"></td>
-                                        <td class="px-4 py-3 text-zinc-550 dark:text-zinc-450 text-xs" x-text="entry.dealer"></td>
-                                        <td class="px-4 py-3 text-center font-jetbrains font-bold text-xs text-zinc-500" x-text="entry.boxes"></td>
-                                        <td class="px-4 py-3 text-center font-jetbrains text-xs font-semibold text-zinc-700 dark:text-zinc-300" x-text="entry.birdWeight.toFixed(2)"></td>
+                                        <input type="hidden" name="entries[{{ $entry->id }}][id]" value="{{ $entry->id }}">
+                                        <td class="px-4 py-3">
+                                            <p class="font-bold text-zinc-900 dark:text-zinc-100 text-xs">{{ $entry->vendor->firm_name ?? '-' }}</p>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <p class="text-zinc-550 dark:text-zinc-450 text-xs truncate max-w-[120px]">{{ $entry->dealer->firm_name ?? '-' }}</p>
+                                        </td>
+                                        <td class="px-4 py-3 text-center font-jetbrains font-bold text-xs text-zinc-500">{{ $entry->no_of_boxes }}</td>
+                                        <td class="px-4 py-3 text-center font-jetbrains text-xs font-semibold text-zinc-700 dark:text-zinc-300">{{ number_format((float)$entry->bird_weight, 2) }}</td>
+                                        <td class="px-4 py-3 bg-emerald-50/20 dark:bg-emerald-950/10">
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                name="entries[{{ $entry->id }}][farm_weight]"
+                                                x-model="items.find(i => i.id === {{ $entry->id }}).farmWeight"
+                                                placeholder="0.00"
+                                                class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-jetbrains font-bold text-center focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-emerald-600"
+                                            >
+                                        </td>
+                                        <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold"
+                                            :class="(items.find(i => i.id === {{ $entry->id }}).farmWeight !== '' && !isNaN(parseFloat(items.find(i => i.id === {{ $entry->id }}).farmWeight))) ? 'text-rose-600' : 'text-zinc-400'"
+                                            x-text="(items.find(i => i.id === {{ $entry->id }}).farmWeight !== '' && !isNaN(parseFloat(items.find(i => i.id === {{ $entry->id }}).farmWeight))) ? ({{ (float)$entry->bird_weight }} - parseFloat(items.find(i => i.id === {{ $entry->id }}).farmWeight)).toFixed(2) : '-'">
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <input
+                                                type="text"
+                                                name="entries[{{ $entry->id }}][remarks]"
+                                                value="{{ $entry->remarks ?? '' }}"
+                                                placeholder="Optional remarks"
+                                                class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                            >
+                                        </td>
                                     </tr>
-                                </template>
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
@@ -587,100 +843,7 @@
 
                     <x-slot:footer>
                         <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'set-farm-weight-modal')">Cancel</x-button>
-                        <x-button type="submit" form="set-farm-weight-form" variant="primary" icon="check" class="px-8">Save & Set</x-button>
-                    </x-slot:footer>
-                </form>
-            </x-modal>
-        </template>
-
-        <template x-teleport="body">
-            <x-modal name="adjust-all-modal" title="Adjust All Entries" subtitle="Edit farm weight and remarks for all entries at once" icon="edit_note" maxWidth="6xl">
-                <form id="adjust-all-form" action="{{ route('billing.day-load.bulk-update') }}" method="POST" class="space-y-6">
-                    @csrf
-                    <input type="hidden" name="_method" value="PUT">
-
-                    {{-- Bulk Edit Table --}}
-                    <div class="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 max-h-[55vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-                        <table class="w-full text-sm">
-                            <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-750">
-                                <tr class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                                    <th class="px-4 py-3 text-left">Vendor</th>
-                                    <th class="px-4 py-3 text-left">Dealer</th>
-                                    <th class="px-4 py-3 text-center">Boxes</th>
-                                    <th class="px-4 py-3 text-center">Bird Wt (Kg)</th>
-                                    <th class="px-4 py-3 text-center min-w-[130px] bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-600">Farm Weight (Kg)</th>
-                                    <th class="px-4 py-3 text-center text-rose-600">Loss (Kg)</th>
-                                    <th class="px-4 py-3 text-center">Total (Kg)</th>
-                                    <th class="px-4 py-3 text-left min-w-[180px]">Remarks</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/80 bg-white dark:bg-zinc-900">
-                                @foreach($entries as $entry)
-                                    @if($entry->status === 'Active')
-                                    <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 transition-colors"
-                                        x-data="{
-                                            farmWeight: '{{ $entry->farm_weight ?? '' }}',
-                                            birdWeight: {{ (float) $entry->bird_weight }}
-                                        }"
-                                    >
-                                        <input type="hidden" name="entries[{{ $entry->id }}][id]" value="{{ $entry->id }}">
-                                        <td class="px-4 py-3">
-                                            <p class="font-bold text-zinc-900 dark:text-zinc-100 text-xs">{{ $entry->vendor->firm_name ?? '-' }}</p>
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            <p class="text-zinc-550 dark:text-zinc-450 text-xs truncate max-w-[120px]">{{ $entry->dealer->firm_name ?? '-' }}</p>
-                                        </td>
-                                        <td class="px-4 py-3 text-center font-jetbrains font-bold text-xs text-zinc-500">{{ $entry->no_of_boxes }}</td>
-                                        <td class="px-4 py-3 text-center font-jetbrains text-xs font-semibold text-zinc-700 dark:text-zinc-300" x-text="birdWeight.toFixed(2)"></td>
-                                        <td class="px-4 py-3 bg-emerald-50/20 dark:bg-emerald-950/10">
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                min="0"
-                                                name="entries[{{ $entry->id }}][farm_weight]"
-                                                x-model="farmWeight"
-                                                placeholder="0.00"
-                                                class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-jetbrains font-bold text-center focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-emerald-600"
-                                            >
-                                        </td>
-                                        <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold"
-                                            :class="farmWeight !== '' ? 'text-rose-600' : 'text-zinc-400'"
-                                            x-text="farmWeight !== '' ? (birdWeight - parseFloat(farmWeight || 0)).toFixed(2) : '-'">
-                                        </td>
-                                        <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold text-zinc-800 dark:text-zinc-200"
-                                            x-text="farmWeight !== '' ? (birdWeight - parseFloat(farmWeight || 0)).toFixed(2) : '-'">
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            <input
-                                                type="text"
-                                                name="entries[{{ $entry->id }}][remarks]"
-                                                value="{{ $entry->remarks ?? '' }}"
-                                                placeholder="Optional remarks"
-                                                class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                                            >
-                                        </td>
-                                    </tr>
-                                    @endif
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {{-- Audit & Action Reason --}}
-                    <div class="mb-2">
-                        <x-form.input
-                            type="text"
-                            name="reason"
-                            label="Reason for Adjustment"
-                            required
-                            placeholder="Why are you adjusting these entries?"
-                            icon="description"
-                        />
-                    </div>
-
-                    <x-slot:footer>
-                        <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'adjust-all-modal')">Cancel</x-button>
-                        <x-button type="submit" form="adjust-all-form" variant="primary" icon="check" class="px-8">Save All Changes</x-button>
+                        <x-button type="submit" form="set-farm-weight-form" variant="primary" icon="check" class="px-8">Save & Set All</x-button>
                     </x-slot:footer>
                 </form>
             </x-modal>
@@ -1056,8 +1219,10 @@
             transferSourceId: 0,
             transferSourceBoxes: 0,
             transferSourceWeight: 0,
-            transferSourceVendor: '',
-            transferSourceDealer: '',
+            transferSourceVendorId: 0,
+            transferTargetVendorId: 0,
+            transferSourceCustomerRate: 0,
+            transferTargetCustomerRate: 0,
             transferBatchId: 0,
             transferDate: '',
             transferMaxWeight: 0,

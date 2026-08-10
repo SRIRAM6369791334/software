@@ -21,18 +21,25 @@ class DayLoadBatch extends Model
         'total_farm_weight',
         'total_weight',
         'total_loss_weight',
+        'weight_loss_amount',
+        'is_weight_loss_approved',
+        'weight_loss_approved_by',
+        'weight_loss_approved_at',
         'invoice_id',
     ];
 
     protected $casts = [
-        'billing_date' => 'date',
-        'total_boxes' => 'decimal:2',
-        'total_box_weight' => 'decimal:2',
-        'total_empty_weight' => 'decimal:2',
-        'total_bird_weight' => 'decimal:2',
-        'total_farm_weight' => 'decimal:2',
-        'total_weight' => 'decimal:2',
-        'total_loss_weight' => 'decimal:2',
+        'billing_date'             => 'date',
+        'total_boxes'              => 'decimal:2',
+        'total_box_weight'         => 'decimal:2',
+        'total_empty_weight'       => 'decimal:2',
+        'total_bird_weight'        => 'decimal:2',
+        'total_farm_weight'        => 'decimal:2',
+        'total_weight'             => 'decimal:2',
+        'total_loss_weight'        => 'decimal:2',
+        'weight_loss_amount'       => 'decimal:2',
+        'is_weight_loss_approved'  => 'boolean',
+        'weight_loss_approved_at'  => 'datetime',
     ];
 
     public function entries(): HasMany
@@ -43,5 +50,10 @@ class DayLoadBatch extends Model
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(DayLoadInvoice::class, 'invoice_id');
+    }
+
+    public function weightLossApprovedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'weight_loss_approved_by');
     }
 }

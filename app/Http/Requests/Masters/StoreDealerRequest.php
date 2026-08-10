@@ -18,8 +18,7 @@ class StoreDealerRequest extends FormRequest
             'phone'          => [
                 'required',
                 'string',
-                'min:10',
-                'max:15',
+                'regex:/^[6-9]\d{9}$/',
                 Rule::unique('dealers', 'phone')->ignore($dealerId)->whereNull('deleted_at'),
             ],
             'contact_person' => 'nullable|string|max:255',
@@ -28,6 +27,15 @@ class StoreDealerRequest extends FormRequest
             'route'          => 'nullable|string|max:255',
             'route_id'       => 'nullable|exists:routes,id',
             'pending_amount' => 'nullable|numeric|min:0',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'phone.required' => 'The phone number field is required.',
+            'phone.regex'    => 'Please enter a valid 10-digit mobile number (e.g. 9876543210).',
+            'phone.unique'   => 'This phone number has already been registered.',
         ];
     }
 }

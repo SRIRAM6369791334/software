@@ -62,24 +62,18 @@
                     <x-form.input type="date" name="due_date" label="Due Date" value="{{ $emi->due_date->format('Y-m-d') }}" required />
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-                    <x-form.select name="status" label="Current Status" required>
-                        <option value="Upcoming" {{ $emi->status === 'Upcoming' ? 'selected' : '' }}>Upcoming</option>
-                        <option value="Paid" {{ $emi->status === 'Paid' ? 'selected' : '' }}>Paid</option>
-                        <option value="Overdue" {{ $emi->status === 'Overdue' ? 'selected' : '' }}>Overdue</option>
-                    </x-form.select>
+                <div class="grid grid-cols-1 gap-5 mb-6">
+                    <div class="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-xl p-4 flex gap-3">
+                        <span class="material-symbols-rounded text-blue-500 mt-0.5">info</span>
+                        <div>
+                            <p class="text-sm text-blue-800 dark:text-blue-300 font-medium">Status is calculated automatically</p>
+                            <p class="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">The EMI status (Upcoming, Partial, Paid, Overdue) is automatically determined based on the payments you record.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="pt-5 border-t border-zinc-200/50 dark:border-zinc-800/50 flex justify-between items-center gap-3">
-                    @if($emi->status !== 'Paid')
-                    <button type="submit" formmethod="POST" formaction="{{ route('expenses.emis.close-full', $emi) }}" 
-                            class="font-outfit text-sm font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-4 py-2 rounded-xl transition-all flex items-center gap-1.5"
-                            onclick="return confirm('Are you sure you want to close the entire loan group and mark all installments as Paid?')">
-                        <span class="material-symbols-rounded text-base">assignment_turned_in</span> Close Entire Loan
-                    </button>
-                    @else
                     <div></div>
-                    @endif
                     <div class="flex gap-3">
                         <x-button type="reset" variant="outline">Reset</x-button>
                         <x-button type="submit" variant="primary" icon="save">Update Installment</x-button>
@@ -89,4 +83,54 @@
         </div>
     </x-card>
 </div>
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector('form[action="{{ route('expenses.emis.update', $emi) }}"]');
+    if (!form) return;
+
+    form.addEventListener('submit', function(e) {
+        if (!form.checkValidity()) {
+            return;
+        }
+
+        e.preventDefault();
+
+        Swal.fire({
+            title: 'Update Installment?',
+            text: 'Are you sure you want to update this EMI installment details?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, Update',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            background: document.documentElement.classList.contains('dark') ? '#18181b' : '#ffffff',
+            color: document.documentElement.classList.contains('dark') ? '#f4f4f5' : '#18181b',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Updating EMI...',
+                    text: 'Please wait while the EMI details are being updated.',
+                    icon: 'info',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    background: document.documentElement.classList.contains('dark') ? '#18181b' : '#ffffff',
+                    color: document.documentElement.classList.contains('dark') ? '#f4f4f5' : '#18181b',
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                form.submit();
+            } else {
+                if (typeof window.resetSubmitButtons === 'function') {
+                    window.resetSubmitButtons(form);
+                }
+            }
+        });
+    });
+});
+</script>
+@endpush
 @endsection

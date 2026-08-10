@@ -143,6 +143,7 @@
                             <tr class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest bg-zinc-50/50 border-b border-zinc-200">
                                 <th class="px-6 py-3">Date</th>
                                 <th class="px-6 py-3">Vendor</th>
+                                <th class="px-6 py-3">Daily Bill Status</th>
                                 <th class="px-6 py-3 text-right">Weight (kg)</th>
                                 <th class="px-6 py-3 text-right">Customer Rate</th>
                                 <th class="px-6 py-3 text-right">Total</th>
@@ -154,6 +155,7 @@
                                     $kg    = (float) $entry->bird_weight;
                                     $rate  = (float) $entry->customer_rate;
                                     $total = round($kg * $rate, 2);
+                                    $collected = (float) ($entry->dealer_collected ?? 0);
                                 @endphp
                                 <tr class="hover:bg-zinc-50/50 transition-colors">
                                     <td class="px-6 py-3 font-medium text-zinc-800">
@@ -161,6 +163,24 @@
                                         <span class="block text-[10px] text-zinc-400">{{ $entry->batch?->billing_date?->format('l') }}</span>
                                     </td>
                                     <td class="px-6 py-3 text-zinc-600">{{ $entry->vendor?->firm_name ?? '—' }}</td>
+                                    <td class="px-6 py-3">
+                                        @if($entry->daily_bill_id || $entry->dailyBill)
+                                            <div class="space-y-1">
+                                                <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-violet-100 text-violet-800 border border-violet-200">
+                                                    #{{ $entry->dailyBill->invoice_no ?? 'Daily Bill' }}
+                                                </span>
+                                                @if($collected >= $total && $total > 0)
+                                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Paid: ₹{{ number_format($collected, 0) }} ✅</span>
+                                                @elseif($collected > 0)
+                                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Paid: ₹{{ number_format($collected, 0) }} ⏳</span>
+                                                @else
+                                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-100 text-zinc-700">Daily Bill Generated</span>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <span class="text-[11px] text-zinc-400 font-medium">Unbilled (Weekly Only)</span>
+                                        @endif
+                                    </td>
                                     <td class="px-6 py-3 text-right font-mono text-zinc-700">{{ number_format($kg, 2) }} kg</td>
                                     <td class="px-6 py-3 text-right font-mono text-zinc-700">₹{{ number_format($rate, 2) }}</td>
                                     <td class="px-6 py-3 text-right font-bold font-mono text-zinc-900">₹{{ number_format($total, 2) }}</td>
@@ -169,7 +189,7 @@
                         </tbody>
                         <tfoot>
                             <tr class="bg-zinc-50/50 border-t border-zinc-200">
-                                <td colspan="2" class="px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                                <td colspan="3" class="px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">
                                     Day-Load Total
                                 </td>
                                 <td class="px-6 py-3 text-right font-mono font-bold text-zinc-700">

@@ -16,6 +16,7 @@ class DayLoadEntry extends Model
         'vendor_id',
         'dealer_id',
         'weekly_bill_id',
+        'daily_bill_id',
         'paper_rate',
         'billing_rate',
         'customer_rate',
@@ -144,6 +145,11 @@ class DayLoadEntry extends Model
     public function weeklyBill(): BelongsTo
     {
         return $this->belongsTo(WeeklyBill::class, 'weekly_bill_id');
+    }
+
+    public function dailyBill(): BelongsTo
+    {
+        return $this->belongsTo(DailyBill::class, 'daily_bill_id');
     }
 
     public function parentEntry(): BelongsTo

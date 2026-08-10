@@ -1,6 +1,6 @@
 @extends('layouts.pdf')
 @section('title', 'Profit & Loss Statement')
-@section('meta', "Period: \Carbon\Carbon::parse(\$startDate)->format('d M Y') . ' - ' . \Carbon\Carbon::parse(\$endDate)->format('d M Y')")
+@section('meta', 'Period: ' . \Carbon\Carbon::parse($startDate)->format('d M Y') . ' - ' . \Carbon\Carbon::parse($endDate)->format('d M Y'))
 
 @section('content')
 

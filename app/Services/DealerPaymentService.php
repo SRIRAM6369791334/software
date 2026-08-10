@@ -41,13 +41,50 @@ class DealerPaymentService
 
             $totalToAllocate = round($amount + $discountAmount, 2);
             $remainingTotal = $totalToAllocate;
-            
+
             $paymentGroupId = (string) \Illuminate\Support\Str::uuid();
             $createdPayments = [];
             $discountAssigned = false;
-            
+
+            // 0. Allocate to selected EMIs first
+            if (!empty($data['selected_emi_ids'])) {
+                $emis = \App\Models\Emi::whereIn('id', $data['selected_emi_ids'])->orderBy('due_date')->get();
+                foreach ($emis as $emi) {
+                    $due = max(0, $emi->amount - $emi->paid_amount);
+                    if ($due <= 0) continue;
+
+                    $alloc = min($remainingTotal, $due);
+                    $emi->paid_amount += $alloc;
+                    
+                    if ($emi->paid_amount >= $emi->amount) {
+                        $emi->status = 'Paid';
+                    } else if ($emi->paid_amount > 0) {
+                        $emi->status = 'Partial';
+                    }
+                    $emi->save();
+
+                    // Create a payment record for the EMI
+                    $recordCash = $amount > 0 ? round($alloc * ($cashAmount / $amount), 2) : 0.00;
+                    $recordBank = round($alloc - $recordCash, 2);
+                    
+                    $paymentData = array_merge($data, [
+                        'amount'            => $alloc,
+                        'cash_amount'       => $recordCash,
+                        'bank_amount'       => $recordBank,
+                        'discount_amount'   => 0.00,
+                        'payment_group_id'  => $paymentGroupId,
+                        'day_load_entry_id' => null,
+                        'invoice_id'        => null,
+                        'notes'             => "EMI Payment: " . ($emi->loan_name ?: 'EMI'),
+                    ]);
+                    $createdPayments[] = DealerPayment::create($paymentData);
+
+                    $remainingTotal = round($remainingTotal - $alloc, 2);
+                    if ($remainingTotal <= 0) break;
+                }
+            }
             // 1. Allocate to base pending_amount (Only if selected_entry_ids is empty!)
-            if (empty($data['selected_entry_ids'])) {
+            if ($remainingTotal > 0 && empty($data['selected_entry_ids'])) {
                 $pendingAmount = (float) $dealer->pending_amount;
                 if ($pendingAmount > 0) {
                     $deduct = min($remainingTotal, $pendingAmount);

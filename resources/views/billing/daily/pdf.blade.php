@@ -1,16 +1,16 @@
 @extends('layouts.pdf')
-@section('title', 'TAX INVOICE')
+@section('title', 'DAILY TAX INVOICE')
 @section('meta', "Invoice No: {$bill->invoice_no}")
 
 @push('styles')
 <style>
-    .invoice-details { width: 100%; margin-bottom: 30px; }
+    .invoice-details { width: 100%; margin-bottom: 25px; }
     .invoice-details td { vertical-align: top; width: 50%; }
-    .section-label { font-size: 10px; font-weight: bold; color: #10b981; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-bottom: 10px; }
-    .total-box { float: right; width: 200px; background-color: #111827; color: #fff; padding: 20px; border-radius: 8px; margin-top: 20px; }
+    .section-label { font-size: 10px; font-weight: bold; color: #7c3aed; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-bottom: 10px; }
+    .total-box { float: right; width: 220px; background-color: #111827; color: #fff; padding: 20px; border-radius: 8px; margin-top: 20px; }
     .total-row { margin-bottom: 8px; font-size: 10px; text-transform: uppercase; opacity: 0.8; }
     .total-row span { float: right; }
-    .grand-total { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 16px; font-weight: bold; color: #34d399; }
+    .grand-total { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 16px; font-weight: bold; color: #a78bfa; }
     .grand-total span { float: right; }
 </style>
 @endpush
@@ -20,36 +20,76 @@
 <table class="invoice-details">
     <tr>
         <td>
-            <div class="section-label">Bill To Customer</div>
-            <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #111827;">{{ $bill->customer->name ?? 'N/A' }}</div>
+            <div class="section-label">Bill To Dealer / Client</div>
+            <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #111827;">{{ $bill->dealer?->firm_name ?? $bill->customer?->name ?? 'N/A' }}</div>
             <div style="color: #4b5563; line-height: 1.4;">
-                {{ $bill->customer->address ?? 'No address provided' }}<br>
-                <strong>Phone: {{ $bill->customer->phone ?? 'N/A' }}</strong>
-                @if($bill->customer->gst_number)
-                    <br><span style="font-size: 10px; color: #9ca3af;">GSTIN: {{ $bill->customer->gst_number }}</span>
+                {{ $bill->dealer?->location ?? $bill->customer?->address ?? 'No address provided' }}<br>
+                <strong>Phone: {{ $bill->dealer?->phone ?? $bill->customer?->phone ?? 'N/A' }}</strong>
+                @if($bill->dealer?->gst_number ?? $bill->customer?->gst_number ?? false)
+                    <br><span style="font-size: 10px; color: #9ca3af;">GSTIN: {{ $bill->dealer?->gst_number ?? $bill->customer?->gst_number }}</span>
                 @endif
             </div>
         </td>
         <td style="padding-left: 40px;">
-            <div class="section-label">Payment Summary</div>
+            <div class="section-label">Invoice Summary</div>
             <table style="font-size: 10px; width: 100%;">
                 <tr>
                     <td style="color: #6b7280; padding: 4px 0; border: none;">Status:</td>
                     <td class="text-right font-bold" style="border: none;">{{ strtoupper($bill->status) }}</td>
                 </tr>
                 <tr>
-                    <td style="color: #6b7280; padding: 4px 0; border: none;">Billing Type:</td>
-                    <td class="text-right font-bold" style="border: none;">Daily Retail Sale</td>
+                    <td style="color: #6b7280; padding: 4px 0; border: none;">Date:</td>
+                    <td class="text-right font-bold" style="border: none;">{{ $bill->date->format('d M Y') }}</td>
                 </tr>
                 <tr>
-                    <td style="color: #6b7280; padding: 4px 0; border: none;">Currency:</td>
-                    <td class="text-right font-bold" style="border: none;">INR</td>
+                    <td style="color: #6b7280; padding: 4px 0; border: none;">Billing Type:</td>
+                    <td class="text-right font-bold" style="border: none;">Daily Invoice</td>
                 </tr>
             </table>
         </td>
     </tr>
 </table>
 
+@if(isset($dayLoadEntries) && $dayLoadEntries->isNotEmpty())
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Vendor</th>
+            <th>Daily Status</th>
+            <th class="text-right">Weight (kg)</th>
+            <th class="text-right">Rate</th>
+            <th class="text-right">Total Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($dayLoadEntries as $entry)
+        @php
+            $kg = (float) $entry->bird_weight;
+            $rate = (float) $entry->customer_rate;
+            $total = round($kg * $rate, 2);
+            $collected = (float) ($entry->dealer_collected ?? 0);
+        @endphp
+        <tr>
+            <td>
+                <div class="font-bold text-zinc-900">{{ $entry->batch?->billing_date?->format('d M Y') }}</div>
+            </td>
+            <td>{{ $entry->vendor?->firm_name ?? '—' }}</td>
+            <td>
+                @if($entry->daily_bill_id)
+                    #{{ $entry->dailyBill?->invoice_no }} (Paid: ₹{{ number_format($collected, 0) }})
+                @else
+                    Unbilled
+                @endif
+            </td>
+            <td class="text-right">{{ number_format($kg, 2) }} kg</td>
+            <td class="text-right">Rs {{ number_format($rate, 2) }}</td>
+            <td class="text-right font-bold">Rs {{ number_format($total, 2) }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+</table>
+@else
 <table class="data-table">
     <thead>
         <tr>
@@ -64,28 +104,32 @@
         <tr>
             <td>
                 <div class="font-bold text-zinc-900">{{ $item->item_name }}</div>
-                <div style="font-size: 8px; color: #9ca3af; margin-top: 3px;">POULTRY PRODUCT</div>
             </td>
             <td class="text-center">{{ number_format($item->quantity_kg, 2) }} {{ $item->unit }}</td>
             <td class="text-right">Rs {{ number_format($item->rate_per_kg, 2) }}</td>
-            <td class="text-right font-bold text-emerald">Rs {{ number_format($item->quantity_kg * $item->rate_per_kg, 2) }}</td>
+            <td class="text-right font-bold">Rs {{ number_format($item->quantity_kg * $item->rate_per_kg, 2) }}</td>
         </tr>
         @endforeach
     </tbody>
 </table>
+@endif
 
 <div class="total-box">
     <div class="total-row">
-        Subtotal
-        <span>Rs {{ number_format($bill->amount, 2) }}</span>
+        Previous Outstanding
+        <span>Rs {{ number_format((float)$bill->previous_outstanding, 2) }}</span>
     </div>
-    <div class="total-row" style="margin-bottom: 15px;">
-        GST ({{ $bill->gst_percentage }}%)
-        <span>Rs {{ number_format($bill->gst_amount, 2) }}</span>
+    <div class="total-row">
+        Payments Today
+        <span>- Rs {{ number_format((float)$bill->payments_during_day, 2) }}</span>
+    </div>
+    <div class="total-row">
+        Discount
+        <span>- Rs {{ number_format((float)$bill->discount_amount, 2) }}</span>
     </div>
     <div class="grand-total">
-        Total Net
-        <span>Rs {{ number_format($bill->net_amount, 2) }}</span>
+        Net Payable
+        <span>Rs {{ number_format((float)$bill->net_amount, 2) }}</span>
     </div>
 </div>
 
@@ -93,8 +137,7 @@
     <div style="font-size: 9px; font-weight: bold; color: #9ca3af; text-transform: uppercase; margin-bottom: 10px;">
         NO SIGNATURE REQUIRED &bull; COMPUTER GENERATED &bull; AUTH VERIFIED
     </div>
-    <p style="font-weight: bold; color: #374151; margin: 5px 0;">Thank you for choosing {{ config('app.name', 'Poultry ') }}!</p>
-    <p style="font-size: 10px; color: #6b7280; margin: 0;">Please settle the payment according to the agreed credit terms.</p>
+    <p style="font-weight: bold; color: #374151; margin: 5px 0;">Thank you for choosing {{ config('app.name', 'Poultry BizTrack') }}!</p>
 </div>
 
 @endsection

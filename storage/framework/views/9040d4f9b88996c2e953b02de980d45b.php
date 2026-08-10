@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
-    <title><?php echo $__env->yieldContent('title', 'PoultryPro'); ?> | Management System</title>
+    <title><?php echo $__env->yieldContent('title', 'POULTRY'); ?> | Management System</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥚</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Cabinet+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -102,6 +102,20 @@
 <?php endif; ?>
 <?php echo $__env->yieldPushContent('scripts'); ?>
 <script>
+    // Global Helper to reset submit buttons if form submission is cancelled
+    window.resetSubmitButtons = function(form) {
+        if (!form) return;
+        const submitBtns = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+        submitBtns.forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            if (btn.hasAttribute('data-original-content')) {
+                btn.innerHTML = btn.getAttribute('data-original-content');
+                btn.removeAttribute('data-original-content');
+            }
+        });
+    };
+
     // Global Double-Submit Prevention for all forms
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('form').forEach(form => {
@@ -110,6 +124,7 @@
             if (method === 'GET') return;
             
             form.addEventListener('submit', function(e) {
+                if (e.defaultPrevented) return; // Skip if another listener cancelled submit (e.g. SweetAlert dialog)
                 if (!form.checkValidity()) return; // Let browser HTML5 validation happen
                 
                 const submitBtns = form.querySelectorAll('button[type="submit"], input[type="submit"]');
@@ -131,8 +146,50 @@
                 });
             });
         });
+
+        // Prevent mouse wheel scroll from accidentally changing number input values
+        document.addEventListener('wheel', function(e) {
+            if (document.activeElement && document.activeElement.type === 'number') {
+                document.activeElement.blur();
+            }
+        }, { passive: true });
     });
 </script>
+
+<?php if(session()->has('success')): ?>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: <?php echo json_encode(session('success'), 15, 512) ?>,
+            confirmButtonColor: '#10b981',
+            confirmButtonText: 'OK',
+            timer: 4000,
+            timerProgressBar: true,
+            background: document.documentElement.classList.contains('dark') ? '#18181b' : '#ffffff',
+            color: document.documentElement.classList.contains('dark') ? '#f4f4f5' : '#18181b',
+        });
+    });
+</script>
+<?php endif; ?>
+
+<?php if(session()->has('error')): ?>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: <?php echo json_encode(session('error'), 15, 512) ?>,
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'OK',
+            background: document.documentElement.classList.contains('dark') ? '#18181b' : '#ffffff',
+            color: document.documentElement.classList.contains('dark') ? '#f4f4f5' : '#18181b',
+        });
+    });
+</script>
+<?php endif; ?>
+
 <?php echo $__env->yieldPushContent('modals'); ?>
 </body>
 </html>

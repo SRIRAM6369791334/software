@@ -48,8 +48,11 @@
                     <div class="text-3xl font-extrabold tracking-tight font-jetbrains mb-2 text-rose-950 dark:text-white drop-shadow-sm">
                         Rs {{ number_format($outstandingBalance, 2) }}
                     </div>
-                    @if($totalDayLoadLiabilities > 0 || $totalCreditPurchases > 0 || $totalPaymentsPaid > 0)
+                    @if((float) $vendor->pending_amount > 0 || $totalDayLoadLiabilities > 0 || $totalCreditPurchases > 0 || $totalPaymentsPaid > 0)
                         <div class="text-[10px] font-medium text-rose-800/80 dark:text-rose-300/80 mb-6 leading-relaxed">
+                            @if((float) $vendor->pending_amount > 0)
+                                Old: Rs {{ number_format($vendor->pending_amount, 0) }} + 
+                            @endif
                             Purchases: Rs {{ number_format($totalCreditPurchases, 0) }} + Day-Load: Rs {{ number_format($totalDayLoadLiabilities, 0) }}<br>Paid: Rs {{ number_format($totalPaymentsPaid, 0) }}
                         </div>
                     @endif

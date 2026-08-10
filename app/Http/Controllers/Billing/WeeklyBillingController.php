@@ -30,10 +30,16 @@ class WeeklyBillingController extends Controller
         $search = $request->input('search');
 
         // Compute true totals from the full dataset (not paginated)
-        $outstandingDuesTotal = WeeklyBill::search($search)
-            ->where('status', 'Pending')
-            ->selectRaw('SUM(COALESCE(net_amount, amount)) as total')
-            ->value('total') ?? 0;
+        $pendingBills = WeeklyBill::search($search)->where('status', 'Pending')->get();
+        $outstandingDuesTotal = 0;
+        foreach ($pendingBills as $bill) {
+            $periodPaid = \App\Models\DealerPayment::where('dealer_id', $bill->dealer_id)
+                ->where(function($q) use ($bill) {
+                    $q->whereBetween('date', [$bill->period_start, $bill->period_end])
+                      ->orWhere('invoice_id', $bill->id);
+                })->sum('amount');
+            $outstandingDuesTotal += max(0, (float)$bill->net_amount - $periodPaid);
+        }
 
         $paidRevenueTotal = WeeklyBill::search($search)
             ->where('status', 'Paid')
@@ -165,6 +171,7 @@ class WeeklyBillingController extends Controller
                 'total_purchases' => $totals['total_purchases'],
                 'total_payments' => $totals['total_payments'],
                 'net_invoice_amount' => $totals['net_invoice_amount'],
+                'balance_due' => $totals['balance_due'],
                 'purchases_count' => $purchasesCount,
                 'discount_amount' => $discountAmount,
                 'exists' => $exists,
@@ -311,12 +318,16 @@ class WeeklyBillingController extends Controller
             ->orderBy('batch_id')
             ->get();
 
-        // All dealer payments during this bill's period (split + ledger)
+        $entryIds = $dayLoadEntries->pluck('id')->toArray();
         $allPayments = \App\Models\DealerPayment::where('dealer_id', $weekly->dealer_id)
-            ->whereBetween('date', [
-                $weekly->period_start->format('Y-m-d'),
-                $weekly->period_end->format('Y-m-d'),
-            ])
+            ->where(function($q) use ($weekly, $entryIds) {
+                $q->whereBetween('date', [
+                    $weekly->period_start->format('Y-m-d'),
+                    $weekly->period_end->format('Y-m-d'),
+                ])
+                ->orWhereIn('day_load_entry_id', $entryIds)
+                ->orWhere('invoice_id', $weekly->id);
+            })
             ->orderBy('date')
             ->orderBy('id')
             ->get();
@@ -379,12 +390,16 @@ class WeeklyBillingController extends Controller
             ->orderBy('batch_id')
             ->get();
 
-        // All dealer payments during this bill's period (split + ledger)
+        $entryIds = $dayLoadEntries->pluck('id')->toArray();
         $allPayments = \App\Models\DealerPayment::where('dealer_id', $weekly->dealer_id)
-            ->whereBetween('date', [
-                $weekly->period_start->format('Y-m-d'),
-                $weekly->period_end->format('Y-m-d'),
-            ])
+            ->where(function($q) use ($weekly, $entryIds) {
+                $q->whereBetween('date', [
+                    $weekly->period_start->format('Y-m-d'),
+                    $weekly->period_end->format('Y-m-d'),
+                ])
+                ->orWhereIn('day_load_entry_id', $entryIds)
+                ->orWhere('invoice_id', $weekly->id);
+            })
             ->orderBy('date')
             ->orderBy('id')
             ->get();

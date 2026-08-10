@@ -13,8 +13,8 @@
                     Customer Payments
                 </x-button>
             @endcan
-            @can('view bills')
-                <x-button href="{{ route('billing.daily.index') }}" variant="outline" icon="receipt_long">
+            @can('create bills')
+                <x-button href="{{ route('billing.daily.create') }}" variant="outline" icon="receipt_long">
                     Daily Billing
                 </x-button>
             @endcan

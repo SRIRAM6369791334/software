@@ -59,8 +59,18 @@ class DealerPaymentController extends Controller
         $pendingDayLoadCount = 0;
         $weeklyBills = collect();
         $dayLoadEntries = collect();
+        $pendingEmis = collect();
+
+        $unallocatedPayments = 0;
+        $dayLoadEntriesTotal = 0;
+        $pendingEmisTotal = 0;
 
         if ($selected_dealer_id) {
+            $unallocatedPayments = (float) \App\Models\DealerPayment::where('dealer_id', $selected_dealer_id)
+                ->whereNull('day_load_entry_id')
+                ->whereNull('invoice_id')
+                ->sum('amount');
+
             $pendingDayLoadCount = DayLoadEntry::where('dealer_id', $selected_dealer_id)
                 ->whereIn('dealer_payment_status', ['Pending', 'Partial'])
                 ->where('status', '!=', 'Cancelled')
@@ -81,9 +91,25 @@ class DealerPaymentController extends Controller
                 ->sortBy(function($e) {
                     return $e->batch ? $e->batch->billing_date->timestamp : $e->created_at->timestamp;
                 });
+
+            $dayLoadEntriesTotal = $dayLoadEntries->sum(function($e) {
+                return (float)$e->amount - (float)$e->dealer_collected;
+            });
+
+            // Fetch pending EMIs for this dealer
+            $pendingEmis = \App\Models\Emi::where('emi_type', 'Dealer')
+                ->where('entity_id', $selected_dealer_id)
+                ->where('status', '!=', 'Paid')
+                ->orderBy('due_date')
+                ->get();
+
+            $pendingEmisTotal = $pendingEmis->sum('remaining_amount');
         }
 
-        return view('payments.dealers.create', compact('dealers', 'selected_dealer_id', 'pendingDayLoadCount', 'weeklyBills', 'dayLoadEntries'));
+        return view('payments.dealers.create', compact(
+            'dealers', 'selected_dealer_id', 'pendingDayLoadCount', 'weeklyBills', 'dayLoadEntries',
+            'unallocatedPayments', 'dayLoadEntriesTotal', 'pendingEmis', 'pendingEmisTotal'
+        ));
     }
 
     public function store(StoreDealerPaymentRequest $request): RedirectResponse

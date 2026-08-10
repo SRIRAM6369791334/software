@@ -11,10 +11,11 @@ class Vendor extends Model
     use HasFactory;
     use SoftDeletes;
 
-    protected $fillable = ['firm_name', 'is_shop', 'gst_number', 'location', 'contact_person', 'phone', 'route', 'notes'];
+    protected $fillable = ['firm_name', 'is_shop', 'gst_number', 'location', 'contact_person', 'phone', 'route', 'notes', 'pending_amount'];
 
     protected $casts = [
-        'is_shop' => 'boolean',
+        'is_shop'        => 'boolean',
+        'pending_amount' => 'decimal:2',
     ];
 
     public function dayLoadEntries(): \Illuminate\Database\Eloquent\Relations\HasMany
@@ -32,6 +33,15 @@ class Vendor extends Model
         return $this->hasMany(VendorPayment::class);
     }
 
+    public function getEmiOutstandingAttribute(): float
+    {
+        return (float) \App\Models\Emi::where('emi_type', 'Vendor')
+            ->where('entity_id', $this->id)
+            ->where('status', '!=', 'Paid')
+            ->get()
+            ->sum('remaining_amount');
+    }
+
     public function getOutstandingBalanceAttribute(): float
     {
         $totalCreditPurchases = $this->relationLoaded('purchases') 
@@ -47,10 +57,14 @@ class Vendor extends Model
         });
 
         $totalPaymentsPaid = $this->relationLoaded('vendorPayments')
-            ? (float) $this->vendorPayments->sum('amount')
-            : (float) $this->vendorPayments()->sum('amount');
+            ? (float) $this->vendorPayments->filter(fn($p) => !str_starts_with($p->notes ?? '', 'EMI Payment'))->sum('amount')
+            : (float) $this->vendorPayments()->where(function($q) {
+                $q->whereNull('notes')->orWhere('notes', 'not like', 'EMI Payment%');
+            })->sum('amount');
         
-        return round(($totalCreditPurchases + $totalDayLoadLiabilities) - $totalPaymentsPaid, 2);
+        $openingOutstanding = (float) $this->pending_amount;
+
+        return round(($totalCreditPurchases + $totalDayLoadLiabilities + $openingOutstanding + $this->emi_outstanding) - $totalPaymentsPaid, 2);
     }
 
     public function scopeSearch($query, ?string $term)

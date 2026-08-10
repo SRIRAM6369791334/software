@@ -12,16 +12,23 @@ class DailyBill extends Model
     use HasFactory;
 
     protected $fillable = [
-        'customer_id', 'date', 'amount', 'gst_percentage', 'gst_amount',
-        'net_amount', 'payment_mode', 'bank_method', 'status', 'invoice_no'
+        'customer_id', 'dealer_id', 'date', 'date_from', 'date_to', 'amount', 'gst_percentage', 'gst_amount',
+        'net_amount', 'discount_percentage', 'discount_amount', 'payment_mode', 'bank_method',
+        'status', 'invoice_no', 'previous_outstanding', 'payments_during_day'
     ];
 
     protected $casts = [
-        'date'       => 'date',
-        'amount'     => 'decimal:2',
-        'gst_percentage' => 'decimal:2',
-        'gst_amount' => 'decimal:2',
-        'net_amount' => 'decimal:2',
+        'date'                 => 'date',
+        'date_from'            => 'date',
+        'date_to'              => 'date',
+        'amount'               => 'decimal:2',
+        'gst_percentage'       => 'decimal:2',
+        'gst_amount'           => 'decimal:2',
+        'net_amount'           => 'decimal:2',
+        'discount_percentage'  => 'decimal:2',
+        'discount_amount'      => 'decimal:2',
+        'previous_outstanding' => 'decimal:2',
+        'payments_during_day'  => 'decimal:2',
     ];
 
     public function customer(): BelongsTo
@@ -29,15 +36,26 @@ class DailyBill extends Model
         return $this->belongsTo(Customer::class);
     }
 
+    public function dealer(): BelongsTo
+    {
+        return $this->belongsTo(Dealer::class);
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(DailyBillItem::class);
     }
 
+    public function dayLoadEntries(): HasMany
+    {
+        return $this->hasMany(DayLoadEntry::class, 'daily_bill_id');
+    }
+
     public function scopeSearch($query, ?string $term)
     {
         if (!$term) return $query;
-        return $query->whereHas('customer', fn($q) => $q->where('name', 'like', "%{$term}%"))
+        return $query->whereHas('dealer', fn($q) => $q->where('firm_name', 'like', "%{$term}%"))
+                     ->orWhereHas('customer', fn($q) => $q->where('name', 'like', "%{$term}%"))
                      ->orWhereHas('items', fn($q) => $q->where('item_name', 'like', "%{$term}%"));
     }
 

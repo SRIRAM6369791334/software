@@ -31,7 +31,7 @@ class DayLoadBillingController extends Controller
         $date = $request->input('date', today()->format('Y-m-d'));
         $search = $request->input('search');
 
-        $entries = DayLoadEntry::with(['batch', 'vendor', 'dealer'])
+        $entriesQuery = DayLoadEntry::with(['batch', 'vendor', 'dealer', 'parentEntry', 'childEntries', 'adjustmentLogs'])
             ->whereHas('batch', fn ($query) => $query->whereDate('billing_date', $date))
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($nested) use ($search) {
@@ -39,11 +39,34 @@ class DayLoadBillingController extends Controller
                         ->whereHas('vendor', fn ($q) => $q->where('firm_name', 'like', "%{$search}%"))
                         ->orWhereHas('dealer', fn ($q) => $q->where('firm_name', 'like', "%{$search}%"));
                 });
-            })
-            ->latest()
-            ->paginate(15);
+            });
+
+        $allDateEntries = (clone $entriesQuery)->latest()->get();
+
+        $transferLogs = EntryAdjustmentLog::whereIn('action_type', ['Transfer', 'Split'])->get();
+        $transferIdsFromLogs = $transferLogs->pluck('entry_id')
+            ->concat($transferLogs->pluck('resulting_entry_id'))
+            ->filter()
+            ->unique()
+            ->toArray();
+
+        $transferredEntries = $allDateEntries->filter(function ($e) use ($transferIdsFromLogs) {
+            return $e->parent_entry_id !== null
+                || $e->status === 'Adjusted'
+                || in_array($e->id, $transferIdsFromLogs, true);
+        });
+
+        $normalEntries = $allDateEntries->reject(function ($e) use ($transferredEntries) {
+            return $transferredEntries->contains('id', $e->id);
+        });
+
+        $entries = $normalEntries; // for backward compatibility
 
         $batch = DayLoadBatch::whereDate('billing_date', $date)->first();
+        if ($batch) {
+            $this->dayLoadBillingService->refreshBatchTotals($batch);
+            $batch->refresh();
+        }
         $vendors = Vendor::orderBy('firm_name')->get();
         $dealers = Dealer::orderBy('firm_name')->get();
 
@@ -70,11 +93,11 @@ class DayLoadBillingController extends Controller
         ]));
 
         return view('billing.day-load.index', compact(
-            'entries', 'batch', 'vendors', 'dealers', 'date', 'search',
+            'entries', 'normalEntries', 'transferredEntries', 'batch', 'vendors', 'dealers', 'date', 'search',
             'totalDealerIncome', 'totalVendorCost', 'grossMargin',
             'totalDealerCollected', 'totalVendorPaid',
             'totalDealerDue', 'totalVendorDue', 'collectionPct',
-            'lsEntriesByDealer',
+            'lsEntriesByDealer', 'allEntries',
         ));
     }
 
@@ -102,10 +125,11 @@ class DayLoadBillingController extends Controller
     public function transfer(Request $request, DayLoadEntry $entry): RedirectResponse
     {
         $validated = $request->validate([
-            'transfer_weight'  => 'required|numeric|min:0.01',
-            'target_dealer_id' => 'required|exists:dealers,id',
-            'target_vendor_id' => 'required|exists:vendors,id',
-            'reason'           => 'required|string|max:255',
+            'transfer_weight'      => 'required|numeric|min:0.01',
+            'target_dealer_id'     => 'required|exists:dealers,id',
+            'target_vendor_id'     => 'required|exists:vendors,id',
+            'target_customer_rate' => 'nullable|numeric|min:0',
+            'reason'               => 'required|string|max:255',
         ]);
 
         $validated['target_batch_id'] = $entry->batch_id;
@@ -224,6 +248,17 @@ class DayLoadBillingController extends Controller
         $this->dayLoadBillingService->refreshBatchTotals($batch);
 
         return back()->with('success', 'Total farm weight updated at batch level.');
+    }
+
+    public function approveWeightLoss(DayLoadBatch $batch): RedirectResponse
+    {
+        try {
+            $this->dayLoadBillingService->approveWeightLoss($batch, auth()->id());
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Weight loss expense of Rs ' . number_format((float) $batch->weight_loss_amount, 2) . ' approved and added to Cash & Bank Ledger.');
     }
 
     public function recordDealerPayment(Request $request, DayLoadEntry $entry): RedirectResponse

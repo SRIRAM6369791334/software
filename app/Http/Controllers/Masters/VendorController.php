@@ -105,7 +105,7 @@ class VendorController extends Controller
             return $entry->vendor_cost;
         });
         $totalPaymentsPaid = (float) $vendor->vendorPayments()->sum('amount');
-        $outstandingBalance = round(($totalCreditPurchases + $totalDayLoadLiabilities) - $totalPaymentsPaid, 2);
+        $outstandingBalance = round(($totalCreditPurchases + $totalDayLoadLiabilities + (float) $vendor->pending_amount) - $totalPaymentsPaid, 2);
 
         return view('masters.vendors.show', compact(
             'vendor',

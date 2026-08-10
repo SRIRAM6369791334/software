@@ -97,11 +97,16 @@ class DayLoadBillingService
         $totalLossWeight = (float) $totals->total_loss_weight;
         $totalWeight = (float) $totals->total_weight;
 
-        if ($totalFarmWeight == 0 && (float) $batch->total_farm_weight > 0) {
-            $totalFarmWeight = (float) $batch->total_farm_weight;
+        if ($totalLossWeight == 0 && $totalFarmWeight > (float) $totals->total_bird_weight) {
             $totalLossWeight = round($totalFarmWeight - (float) $totals->total_bird_weight, 2);
             $totalWeight = (float) $totals->total_bird_weight;
         }
+
+        $entriesWithLoss = $batch->entries()->where('status', '!=', 'Cancelled')->get();
+        $weightLossAmount = (float) $entriesWithLoss->sum(function ($e) {
+            $rate = (float) ($e->billing_rate ?: ($e->vendor_rate ?: $e->paper_rate));
+            return (float) ($e->loss_weight ?? 0) * $rate;
+        });
 
         $batch->update([
             'total_boxes'        => $totals->total_boxes,
@@ -111,11 +116,50 @@ class DayLoadBillingService
             'total_farm_weight'  => $totalFarmWeight,
             'total_weight'       => $totalWeight,
             'total_loss_weight'  => $totalLossWeight,
+            'weight_loss_amount' => round($weightLossAmount, 2),
         ]);
 
         if ($batch->invoice) {
             $this->syncInvoice($batch);
         }
+    }
+
+    /**
+     * Approve Weight Loss Expense for a Day-Load Batch and sync into Cash & Bank Ledger.
+     */
+    public function approveWeightLoss(DayLoadBatch $batch, int $userId): DayLoadBatch
+    {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($batch, $userId) {
+            $this->refreshBatchTotals($batch);
+
+            $batch->update([
+                'is_weight_loss_approved' => true,
+                'weight_loss_approved_by' => $userId,
+                'weight_loss_approved_at' => now(),
+            ]);
+
+            $lossAmount = (float) $batch->weight_loss_amount;
+            if ($lossAmount > 0) {
+                $billingDate = $batch->billing_date->format('Y-m-d');
+                $desc = "Weight Loss Expense - ({$batch->total_loss_weight} kg)";
+
+                \App\Models\Expense::updateOrCreate(
+                    [
+                        'date'     => $billingDate,
+                        'category' => 'Weight Loss',
+                    ],
+                    [
+                        'description'    => $desc,
+                        'amount'         => $lossAmount,
+                        'payment_method' => 'Cash',
+                    ]
+                );
+
+                app(CashBankLedgerService::class)->recalculateForDate($batch->billing_date);
+            }
+
+            return $batch->fresh();
+        });
     }
 
     /**
@@ -238,35 +282,51 @@ class DayLoadBillingService
             $sourceBoxWeight = (float) $source->box_weight;
             $sourceEmptyWeight = (float) $source->empty_weight;
 
-            if (abs($transferWeight - (float) $source->bird_weight) < 0.01) {
+            $isFullTransfer = abs($transferWeight - (float) $source->bird_weight) < 0.01;
+
+            if ($isFullTransfer) {
                 $transferBoxes = (int) $source->no_of_boxes;
                 $transferBoxWeight = $sourceBoxWeight;
                 $transferEmptyWeight = $sourceEmptyWeight;
+                $remainingBoxes = 0;
+                $newStatus = 'Cancelled';
             } else {
                 $transferBoxWeight = round($sourceBoxWeight * $ratio, 2);
                 $transferEmptyWeight = round($sourceEmptyWeight * $ratio, 2);
-                $transferBoxes = (int) round((int) $source->no_of_boxes * $ratio);
+                $calculatedBoxes = (int) round((int) $source->no_of_boxes * $ratio);
 
-                // Prevent 0 boxes if ratio > 0
-                if ($transferBoxes <= 0 && $source->no_of_boxes > 0) {
+                $transferBoxes = max(1, $calculatedBoxes);
+                $remainingBoxes = max(1, (int) $source->no_of_boxes - $transferBoxes);
+
+                if ((int) $source->no_of_boxes === 1) {
                     $transferBoxes = 1;
+                    $remainingBoxes = 1;
                 }
-                // Cap to prevent transferring everything unless explicitly requested
-                if ($transferBoxes >= $source->no_of_boxes && $source->no_of_boxes > 1) {
-                    $transferBoxes = $source->no_of_boxes - 1;
-                }
+
+                $newStatus = 'Adjusted';
             }
 
-            $remainingBoxes = (int) $source->no_of_boxes - $transferBoxes;
+            $transferFarmWeight = null;
+            if ($source->farm_weight !== null) {
+                $sourceFarmWeight = (float) $source->farm_weight;
+                $transferFarmWeight = round($sourceFarmWeight * $ratio, 2);
+                $remainingFarmWeight = round($sourceFarmWeight - $transferFarmWeight, 2);
+            } else {
+                $remainingFarmWeight = null;
+            }
 
             // Shrink source entry
-            $source->update([
+            $sourceUpdateData = [
                 'no_of_boxes'  => $remainingBoxes,
                 'box_weight'   => round($sourceBoxWeight - $transferBoxWeight, 2),
                 'empty_weight' => round($sourceEmptyWeight - $transferEmptyWeight, 2),
-                'status'       => $remainingBoxes <= 0 ? 'Cancelled' : 'Adjusted',
+                'status'       => $newStatus,
                 'version'      => $source->version + 1,
-            ]);
+            ];
+            if ($source->farm_weight !== null) {
+                $sourceUpdateData['farm_weight'] = $remainingFarmWeight;
+            }
+            $source->update($sourceUpdateData);
 
             // Find existing target entry (same vendor + dealer + batch + Active)
             $targetEntry = DayLoadEntry::where('batch_id', $source->batch_id)
@@ -278,29 +338,40 @@ class DayLoadBillingService
 
             $newEntry = null;
 
+            $targetCustomerRate = isset($transferData['target_customer_rate']) && $transferData['target_customer_rate'] !== '' && $transferData['target_customer_rate'] !== null
+                ? (float) $transferData['target_customer_rate']
+                : (float) $source->customer_rate;
+
             if ($targetEntry) {
                 // Add to existing target entry
-                $targetEntry->update([
-                    'no_of_boxes'  => (int) $targetEntry->no_of_boxes + $transferBoxes,
-                    'box_weight'   => round((float) $targetEntry->box_weight + $transferBoxWeight, 2),
-                    'empty_weight' => round((float) $targetEntry->empty_weight + $transferEmptyWeight, 2),
-                    'version'      => $targetEntry->version + 1,
-                ]);
+                $targetUpdateData = [
+                    'no_of_boxes'   => (int) $targetEntry->no_of_boxes + $transferBoxes,
+                    'box_weight'    => round((float) $targetEntry->box_weight + $transferBoxWeight, 2),
+                    'empty_weight'  => round((float) $targetEntry->empty_weight + $transferEmptyWeight, 2),
+                    'customer_rate' => $targetCustomerRate,
+                    'version'       => $targetEntry->version + 1,
+                ];
+                if ($transferFarmWeight !== null) {
+                    $targetUpdateData['farm_weight'] = round((float) ($targetEntry->farm_weight ?? 0) + $transferFarmWeight, 2);
+                }
+                $targetEntry->update($targetUpdateData);
             } else {
                 // Create new entry for target
                 $newEntry = DayLoadEntry::create([
-                    'batch_id'     => $source->batch_id,
-                    'vendor_id'    => $targetVendorId,
-                    'dealer_id'    => $targetDealerId,
-                    'paper_rate'   => $source->paper_rate,
-                    'billing_rate' => $source->billing_rate,
-                    'customer_rate'=> $source->customer_rate,
-                    'no_of_boxes'  => $transferBoxes,
-                    'box_weight'   => $transferBoxWeight,
-                    'empty_weight' => $transferEmptyWeight,
-                    'status'       => 'Active',
-                    'version'      => 1,
-                    'remarks'      => $transferData['reason'] ?? null,
+                    'batch_id'        => $source->batch_id,
+                    'vendor_id'       => $targetVendorId,
+                    'dealer_id'       => $targetDealerId,
+                    'paper_rate'      => $source->paper_rate,
+                    'billing_rate'    => $source->billing_rate,
+                    'customer_rate'   => $targetCustomerRate,
+                    'no_of_boxes'     => $transferBoxes,
+                    'box_weight'      => $transferBoxWeight,
+                    'empty_weight'    => $transferEmptyWeight,
+                    'farm_weight'     => $transferFarmWeight,
+                    'status'          => 'Active',
+                    'parent_entry_id' => $source->id,
+                    'version'         => 1,
+                    'remarks'         => $transferData['reason'] ?? null,
                 ]);
             }
 
