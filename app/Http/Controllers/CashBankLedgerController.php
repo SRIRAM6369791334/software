@@ -142,9 +142,100 @@ class CashBankLedgerController extends Controller
             ];
         })->values();
 
+        $dealerAdjustments = [];
+        $dailyBills = \App\Models\DailyBill::with(['items', 'dealer'])
+            ->whereDate('date', $date)
+            ->whereNotNull('dealer_id')
+            ->whereNotNull('customer_id')
+            ->where('status', '!=', 'Cancelled')
+            ->get();
+            
+        foreach ($dailyBills as $bill) {
+            $dayLoadEntry = \App\Models\DayLoadEntry::where('dealer_id', $bill->dealer_id)
+                ->whereHas('batch', function($q) use ($date) {
+                    $q->whereDate('billing_date', $date);
+                })->first();
+            
+            $dealerRate = $dayLoadEntry ? (float) $dayLoadEntry->customer_rate : 0;
+            if ($dealerRate > 0) {
+                $qtySold = $bill->items->sum('quantity_kg');
+                $adj = $qtySold * $dealerRate;
+                
+                if (!isset($dealerAdjustments[$bill->dealer_id])) {
+                    $dealerAdjustments[$bill->dealer_id] = [
+                        'dealer_name' => $bill->dealer->firm_name ?? 'Dealer',
+                        'invoices' => [],
+                        'total_theoretical' => 0,
+                    ];
+                }
+                
+                $dealerAdjustments[$bill->dealer_id]['invoices'][] = (object)[
+                    'qty' => $qtySold,
+                    'rate' => $dealerRate,
+                    'amount' => $adj,
+                    'invoice' => $bill->invoice_number,
+                    'customer_name' => $bill->customer->name ?? 'Customer',
+                    'customer_amount' => (float) $bill->net_amount,
+                ];
+                $dealerAdjustments[$bill->dealer_id]['total_theoretical'] += $adj;
+            }
+        }
+
+        $dealerAdjustment = 0;
+        $adjustmentDetails = [];
+        
+        foreach ($dealerAdjustments as $dealerId => $data) {
+            $dealerCashPaid = (float) DealerPayment::whereDate('date', $date)
+                ->where('dealer_id', $dealerId)
+                ->sum('cash_amount');
+            $dealerBankPaid = (float) DealerPayment::whereDate('date', $date)
+                ->where('dealer_id', $dealerId)
+                ->sum('bank_amount');
+            $totalDealerPaid = $dealerCashPaid + $dealerBankPaid;
+                
+            $allowedAdjustment = min($data['total_theoretical'], $totalDealerPaid);
+            
+            if ($allowedAdjustment > 0) {
+                $dealerAdjustment += $allowedAdjustment;
+                
+                if ($allowedAdjustment < $data['total_theoretical']) {
+                    $totalQty = 0;
+                    $dealerRate = 0;
+                    $totalCustomerAmount = 0;
+                    foreach ($data['invoices'] as $inv) {
+                        $totalQty += $inv->qty;
+                        $dealerRate = $inv->rate;
+                        $totalCustomerAmount += $inv->customer_amount;
+                    }
+                     $adjustmentDetails[] = (object)[
+                        'dealer' => $data['dealer_name'],
+                        'invoice' => 'Multiple (Capped)',
+                        'qty' => $totalQty,
+                        'rate' => $dealerRate,
+                        'amount' => $allowedAdjustment,
+                        'customer_name' => 'Multiple Customers',
+                        'customer_amount' => $totalCustomerAmount,
+                     ];
+                } else {
+                     foreach ($data['invoices'] as $inv) {
+                         $adjustmentDetails[] = (object)[
+                             'dealer' => $data['dealer_name'],
+                             'invoice' => $inv->invoice,
+                             'qty' => $inv->qty,
+                             'rate' => $inv->rate,
+                             'amount' => $inv->amount,
+                             'customer_name' => $inv->customer_name ?? 'Customer',
+                             'customer_amount' => $inv->customer_amount ?? 0,
+                         ];
+                     }
+                }
+            }
+        }
+
         return view('billing.cash-bank-ledger.show', compact(
             'ledger', 'date', 'dayLoadBatch',
-            'dealerPayments', 'customerPayments', 'expenses', 'vendorPayments'
+            'dealerPayments', 'customerPayments', 'expenses', 'vendorPayments',
+            'dealerAdjustment', 'adjustmentDetails'
         ));
     }
 }

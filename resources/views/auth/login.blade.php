@@ -46,7 +46,10 @@
                 <div class="relative">
                     <input type="password" id="password" name="password" required
                            placeholder="••••••••"
-                           class="peer w-full rounded-2xl border border-white/80 bg-white/60 px-5 py-3.5 text-sm font-semibold text-zinc-900 placeholder-zinc-400 shadow-inner backdrop-blur-md transition-all duration-300 focus:border-emerald-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 hover:bg-white/80">
+                           class="peer w-full rounded-2xl border border-white/80 bg-white/60 px-5 py-3.5 pr-12 text-sm font-semibold text-zinc-900 placeholder-zinc-400 shadow-inner backdrop-blur-md transition-all duration-300 focus:border-emerald-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 hover:bg-white/80">
+                    <button type="button" id="toggle-password" class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center text-zinc-400 hover:text-emerald-600 transition-colors focus:outline-none">
+                        <span id="password-icon" class="material-symbols-rounded text-xl select-none">visibility</span>
+                    </button>
                 </div>
             </div>
 
@@ -126,6 +129,19 @@
                 ease: "elastic.out(1, 0.3)"
             });
         });
+
+        // Toggle Password Visibility Logic
+        const passwordInput = document.getElementById('password');
+        const togglePasswordBtn = document.getElementById('toggle-password');
+        const passwordIcon = document.getElementById('password-icon');
+
+        if (togglePasswordBtn && passwordInput && passwordIcon) {
+            togglePasswordBtn.addEventListener('click', () => {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                passwordIcon.textContent = type === 'password' ? 'visibility' : 'visibility_off';
+            });
+        }
     });
 </script>
 @endsection

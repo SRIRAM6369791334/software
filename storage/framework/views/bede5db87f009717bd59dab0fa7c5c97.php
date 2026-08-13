@@ -764,7 +764,7 @@
 <?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
 <?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
 <?php endif; ?>
-                        <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
+                        <!-- <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['variant' => 'outline','size' => 'sm','icon' => 'edit_note','xOn:click' => '$dispatch(\'open-modal\', \'adjust-all-modal\')']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('button'); ?>
@@ -805,7 +805,7 @@
 <?php if (isset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
 <?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
 <?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
-<?php endif; ?>
+<?php endif; ?> -->
                     <?php endif; ?>
                 <?php endif; ?>
             </div>
@@ -1880,7 +1880,8 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <?php if (isset($component)) { $__componentOriginal8cee41e4af1fe2df52d1d5acd06eed36 = $component; } ?>
+                        <div class="hidden">
+                            <?php if (isset($component)) { $__componentOriginal8cee41e4af1fe2df52d1d5acd06eed36 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal8cee41e4af1fe2df52d1d5acd06eed36 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.select','data' => ['name' => 'target_vendor_id','label' => 'Target Vendor','required' => true,'xModel' => 'transferTargetVendorId']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('form.select'); ?>
@@ -1890,11 +1891,11 @@
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
 <?php $component->withAttributes(['name' => 'target_vendor_id','label' => 'Target Vendor','required' => true,'x-model' => 'transferTargetVendorId']); ?>
-                            <option value="">Select vendor...</option>
-                            <?php $__currentLoopData = $vendors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $vendor): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($vendor->id); ?>"><?php echo e($vendor->firm_name); ?><?php echo e($vendor->is_shop ? ' (Shop)' : ''); ?></option>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                         <?php echo $__env->renderComponent(); ?>
+                                <option value="">Select vendor...</option>
+                                <?php $__currentLoopData = $vendors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $vendor): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($vendor->id); ?>"><?php echo e($vendor->firm_name); ?><?php echo e($vendor->is_shop ? ' (Shop)' : ''); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                             <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal8cee41e4af1fe2df52d1d5acd06eed36)): ?>
 <?php $attributes = $__attributesOriginal8cee41e4af1fe2df52d1d5acd06eed36; ?>
@@ -1904,6 +1905,7 @@
 <?php $component = $__componentOriginal8cee41e4af1fe2df52d1d5acd06eed36; ?>
 <?php unset($__componentOriginal8cee41e4af1fe2df52d1d5acd06eed36); ?>
 <?php endif; ?>
+                        </div>
 
                         <?php if (isset($component)) { $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b = $attributes; } ?>

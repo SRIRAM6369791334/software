@@ -147,7 +147,7 @@
                         >
                             Set Farm Weight
                         </x-button>
-                        <x-button
+                        <!-- <x-button
                             variant="outline"
                             size="sm"
                             icon="edit_note"
@@ -162,7 +162,7 @@
                             x-on:click="$dispatch('open-modal', 'lump-sum-payment-modal')"
                         >
                             Lump Payment
-                        </x-button>
+                        </x-button> -->
                     @endif
                 @endcan
             </div>
@@ -689,12 +689,14 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <x-form.select name="target_vendor_id" label="Target Vendor" required x-model="transferTargetVendorId">
-                            <option value="">Select vendor...</option>
-                            @foreach($vendors as $vendor)
-                                <option value="{{ $vendor->id }}">{{ $vendor->firm_name }}{{ $vendor->is_shop ? ' (Shop)' : '' }}</option>
-                            @endforeach
-                        </x-form.select>
+                        <div class="hidden">
+                            <x-form.select name="target_vendor_id" label="Target Vendor" required x-model="transferTargetVendorId" >
+                                <option value="">Select vendor...</option>
+                                @foreach($vendors as $vendor)
+                                    <option value="{{ $vendor->id }}">{{ $vendor->firm_name }}{{ $vendor->is_shop ? ' (Shop)' : '' }}</option>
+                                @endforeach
+                            </x-form.select>
+                        </div>
 
                         <x-form.input
                             type="number"

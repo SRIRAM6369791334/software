@@ -294,7 +294,7 @@
     const total = document.querySelector('input[name="amount"]');
     
     const dealerSelect = document.getElementById('dealer_id');
-    const dateInput = document.getElementById('billing_date');
+    const dateInput = document.getElementById('date');
     const stockDisplay = document.getElementById('stock_display');
     const stockAmount = document.getElementById('stock_amount');
     const totalReceived = document.getElementById('total_received');
@@ -306,25 +306,47 @@
 
     function calculate() {
         if (!qty || !rate || !total) return;
-        const q = parseFloat(qty.value) || 0;
+        let q = parseFloat(qty.value) || 0;
         const r = parseFloat(rate.value) || 0;
-        if (q && r) {
-            total.value = (q * r).toFixed(2);
+        
+        const isStockFetched = !stockDisplay.classList.contains('hidden');
+
+        // Auto-correct and show SweetAlert
+        if (isStockFetched && qty.value !== '' && q > currentAvailableStock) {
+            qty.value = currentAvailableStock > 0 ? currentAvailableStock : '';
+            q = currentAvailableStock > 0 ? currentAvailableStock : 0;
+            
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Limit Exceeded',
+                    text: 'Max available stock is ' + currentAvailableStock.toFixed(2) + ' kg',
+                    confirmButtonColor: '#10b981'
+                });
+            }
         }
+
+        total.value = (q && r) ? (q * r).toFixed(2) : '';
         
         // Stock warning visualization
-        if (currentAvailableStock > 0 && q > currentAvailableStock) {
-            qty.classList.add('border-red-500', 'focus:ring-red-500');
-            stockDisplay.classList.remove('border-emerald-200', 'bg-emerald-50/50');
-            stockDisplay.classList.add('border-red-200', 'bg-red-50/50');
-            stockIconBg.className = 'w-10 h-10 rounded-full flex items-center justify-center bg-red-100 text-red-600';
-            stockIcon.textContent = 'error';
-        } else if (currentAvailableStock > 0) {
-            qty.classList.remove('border-red-500', 'focus:ring-red-500');
-            stockDisplay.classList.remove('border-red-200', 'bg-red-50/50');
-            stockDisplay.classList.add('border-emerald-200', 'bg-emerald-50/50');
-            stockIconBg.className = 'w-10 h-10 rounded-full flex items-center justify-center bg-emerald-100 text-emerald-600';
-            stockIcon.textContent = 'inventory_2';
+        if (isStockFetched) {
+            if (currentAvailableStock === 0) {
+                qty.classList.add('border-red-500', 'focus:ring-red-500');
+                stockDisplay.classList.remove('border-emerald-200', 'bg-emerald-50/50');
+                stockDisplay.classList.add('border-red-200', 'bg-red-50/50');
+                stockIconBg.className = 'w-10 h-10 rounded-full flex items-center justify-center bg-red-100 text-red-600';
+                stockIcon.textContent = 'error';
+                qty.setCustomValidity('Out of stock');
+            } else {
+                qty.classList.remove('border-red-500', 'focus:ring-red-500');
+                stockDisplay.classList.remove('border-red-200', 'bg-red-50/50');
+                stockDisplay.classList.add('border-emerald-200', 'bg-emerald-50/50');
+                stockIconBg.className = 'w-10 h-10 rounded-full flex items-center justify-center bg-emerald-100 text-emerald-600';
+                stockIcon.textContent = 'inventory_2';
+                qty.setCustomValidity('');
+            }
+        } else {
+            qty.setCustomValidity('');
         }
     }
 
@@ -334,6 +356,10 @@
         
         if (!dealerId || !date) {
             stockDisplay.classList.add('hidden');
+            if (qty) {
+                qty.removeAttribute('max');
+                qty.setCustomValidity('');
+            }
             return;
         }
 
@@ -346,6 +372,11 @@
                 stockAmount.textContent = `${currentAvailableStock.toFixed(2)} kg`;
                 totalReceived.textContent = `${parseFloat(data.total_stock).toFixed(2)} kg`;
                 totalBilled.textContent = `${parseFloat(data.billed_stock).toFixed(2)} kg`;
+                
+                if (qty) {
+                    qty.setAttribute('max', currentAvailableStock);
+                    qty.setAttribute('min', '0.01');
+                }
                 
                 stockDisplay.classList.remove('hidden');
                 calculate(); // Trigger validation styles

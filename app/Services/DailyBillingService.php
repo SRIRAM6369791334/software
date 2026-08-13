@@ -58,8 +58,23 @@ class DailyBillingService
         $totalPayments = (float) $paymentsList->sum('amount');
 
         // 3. Outstanding balance before dateFrom
-        $currentPending = (float) $dealer->displayed_outstanding;
-        $previousOutstanding = $currentPending - $totalPurchases + $totalPayments;
+        $priorPurchases = (float) DayLoadEntry::where('dealer_id', $dealerId)
+            ->where('status', '!=', 'Cancelled')
+            ->whereHas('batch', fn($q) => $q->where('billing_date', '<', $dateFrom))
+            ->sum('amount');
+
+        $priorPayments = (float) \App\Models\DealerPayment::where('dealer_id', $dealerId)
+            ->where('date', '<', $dateFrom)
+            ->sum('amount');
+
+        $priorEmis = (float) \App\Models\Emi::where('emi_type', 'Dealer')
+            ->where('entity_id', $dealerId)
+            ->where('status', '!=', 'Paid')
+            ->where('due_date', '<', $dateFrom)
+            ->get()
+            ->sum('remaining_amount');
+
+        $previousOutstanding = max(0, (float) $dealer->pending_amount + $priorPurchases + $priorEmis - $priorPayments);
 
         // Net Invoice Amount = Previous Outstanding + Purchases - Discount (Gross Billed Amount)
         $netInvoiceAmount = $previousOutstanding + $totalPurchases - $discountAmount;
@@ -220,7 +235,7 @@ class DailyBillingService
     {
         return DB::transaction(function () use ($data, $createdBy) {
             $itemsData = $data['items'];
-            $gstPercent = $data['gst_percentage'] ?? 18;
+            $gstPercent = $data['gst_percentage'] ?? 0;
             $paymentMode = $data['payment_mode'] ?? 'Cash';
             $status = $data['status'] ?? 'Pending';
 
@@ -245,16 +260,39 @@ class DailyBillingService
             ]);
 
             if ($paymentMode === 'Credit' || $status === 'Pending') {
-                if (!empty($data['dealer_id'])) {
-                    $dealer = Dealer::find($data['dealer_id']);
-                    if ($dealer) {
-                        $dealer->increment('pending_amount', $gstData['net_amount']);
-                    }
-                } elseif (!empty($data['customer_id'])) {
+                // Customer takes priority for retail bills.
+                if (!empty($data['customer_id'])) {
                     $customer = Customer::find($data['customer_id']);
                     if ($customer) {
                         $customer->increment('balance', $gstData['net_amount']);
                     }
+                } elseif (!empty($data['dealer_id'])) {
+                    $dealer = Dealer::find($data['dealer_id']);
+                    if ($dealer) {
+                        $dealer->increment('pending_amount', $gstData['net_amount']);
+                    }
+                }
+            } elseif (in_array($status, ['Paid', 'COD', 'Bank'])) {
+                // Auto-record payment for Ledger and Payments page visibility
+                if (!empty($data['customer_id'])) {
+                    $codAmount = ($paymentMode === 'Cash' || $status === 'COD') ? $gstData['net_amount'] : 0;
+                    $bankAmount = (in_array($paymentMode, ['UPI', 'NEFT', 'Cheque(Bank Transfer)']) || $status === 'Bank') ? $gstData['net_amount'] : 0;
+
+                    $customer = Customer::find($data['customer_id']);
+                    
+                    \App\Models\CustomerPayment::create([
+                        'customer_id' => $data['customer_id'],
+                        'date' => $data['date'],
+                        'cod_amount' => $codAmount,
+                        'bank_transfer_amount' => $bankAmount,
+                        'amount' => $gstData['net_amount'],
+                        'payment_mode' => $paymentMode,
+                        'payment_type' => 'Invoice Payment',
+                        'notes' => 'Auto-generated for Invoice ' . $bill->invoice_no,
+                        'balance_after' => $customer ? $customer->balance : 0,
+                    ]);
+                    
+                    app(\App\Services\CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($data['date']));
                 }
             }
 
@@ -296,7 +334,7 @@ class DailyBillingService
     {
         return DB::transaction(function () use ($bill, $data, $updatedBy) {
             $itemsData = $data['items'];
-            $gstPercent = $data['gst_percentage'] ?? 18;
+            $gstPercent = $data['gst_percentage'] ?? 0;
             $paymentMode = $data['payment_mode'] ?? 'Cash';
             $status = $data['status'] ?? 'Pending';
 
@@ -307,10 +345,21 @@ class DailyBillingService
 
             $gstData = GSTCalculator::calculate($subtotal, $gstPercent);
 
-            if ($bill->customer_id && ($bill->payment_mode === 'Credit' || $bill->status === 'Pending')) {
-                $oldCustomer = Customer::find($bill->customer_id);
-                if ($oldCustomer) {
-                    $oldCustomer->decrement('balance', $bill->net_amount);
+            // 1. REVERSE OLD STATE
+            if ($bill->status === 'Pending' || $bill->payment_mode === 'Credit') {
+                if ($bill->customer_id) {
+                    Customer::find($bill->customer_id)?->decrement('balance', $bill->net_amount);
+                } elseif ($bill->dealer_id) {
+                    Dealer::find($bill->dealer_id)?->decrement('pending_amount', $bill->net_amount);
+                }
+            } else {
+                if ($bill->customer_id) {
+                    $existingPayment = \App\Models\CustomerPayment::where('customer_id', $bill->customer_id)
+                        ->where('notes', 'like', '%Auto-generated for Invoice ' . $bill->invoice_no . '%')
+                        ->first();
+                    if ($existingPayment) {
+                        $existingPayment->delete();
+                    }
                 }
             }
 
@@ -325,6 +374,35 @@ class DailyBillingService
                 'status'         => $status,
                 'payment_mode'   => $paymentMode,
             ]);
+
+            // 2. APPLY NEW STATE
+            if ($paymentMode === 'Credit' || $status === 'Pending') {
+                if (!empty($data['customer_id'])) {
+                    Customer::find($data['customer_id'])?->increment('balance', $gstData['net_amount']);
+                } elseif (!empty($data['dealer_id'])) {
+                    Dealer::find($data['dealer_id'])?->increment('pending_amount', $gstData['net_amount']);
+                }
+            } elseif (in_array($status, ['Paid', 'COD', 'Bank'])) {
+                if (!empty($data['customer_id'])) {
+                    $codAmount = ($paymentMode === 'Cash' || $status === 'COD') ? $gstData['net_amount'] : 0;
+                    $bankAmount = (in_array($paymentMode, ['UPI', 'NEFT', 'Cheque(Bank Transfer)']) || $status === 'Bank') ? $gstData['net_amount'] : 0;
+                    $customer = Customer::find($data['customer_id']);
+                    
+                    \App\Models\CustomerPayment::create([
+                        'customer_id' => $data['customer_id'],
+                        'date' => $data['date'],
+                        'cod_amount' => $codAmount,
+                        'bank_transfer_amount' => $bankAmount,
+                        'amount' => $gstData['net_amount'],
+                        'payment_mode' => $paymentMode,
+                        'payment_type' => 'Invoice Payment',
+                        'notes' => 'Auto-generated for Invoice ' . $bill->invoice_no,
+                        'balance_after' => $customer ? $customer->balance : 0,
+                    ]);
+                    
+                    app(\App\Services\CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($data['date']));
+                }
+            }
 
             $this->stockService->revertMovement(DailyBill::class, $bill->id);
 

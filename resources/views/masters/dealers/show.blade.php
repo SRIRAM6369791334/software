@@ -196,18 +196,6 @@
                                 <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Bird Weight</div>
                                 <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">{{ number_format($totalBirdWeight, 1) }} kg</div>
                             </div>
-                            <div class="p-4 rounded-2xl border border-white/60 dark:border-zinc-700 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl">
-                                <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Farm Weight</div>
-                                <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">{{ number_format($totalFarmWeight, 1) }} kg</div>
-                            </div>
-                            <div class="p-4 rounded-2xl border border-white/60 dark:border-zinc-700 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl">
-                                <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Loss Weight</div>
-                                <div class="text-lg font-bold text-rose-600 dark:text-rose-400 font-jetbrains">{{ number_format($totalLossWeight, 1) }} kg</div>
-                            </div>
-                            <div class="p-4 rounded-2xl border border-white/60 dark:border-zinc-700 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl">
-                                <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Loss Rate</div>
-                                <div class="text-lg font-bold {{ $lossRate > 5 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400' }} font-jetbrains">{{ $lossRate }}%</div>
-                            </div>
                         </div>
                     </div>
                 </div>

@@ -54,7 +54,7 @@
                             <option value="">Choose customer…</option>
                             @foreach($customers as $c)
                                 <option value="{{ $c->id }}" {{ $selected_customer_id == $c->id ? 'selected' : '' }}>
-                                    {{ $c->name }} — Pending: Rs {{ number_format($c->balance, 0) }}
+                                    {{ $c->name }} — Pending: Rs {{ number_format($c->balance, 2) }}
                                 </option>
                             @endforeach
                         </x-form.select>

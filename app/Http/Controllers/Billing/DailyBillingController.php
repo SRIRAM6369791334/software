@@ -105,7 +105,8 @@ class DailyBillingController extends Controller
         $billedStock = \App\Models\DailyBillItem::whereHas('dailyBill', function($q) use ($dealerId, $date) {
             $q->where('dealer_id', $dealerId)
               ->whereDate('date', $date)
-              ->where('status', '!=', 'Cancelled');
+              ->where('status', '!=', 'Cancelled')
+              ->whereDoesntHave('dayLoadEntries');
         })->sum('quantity_kg');
 
         $availableStock = max(0, $totalStock - $billedStock);
@@ -342,7 +343,8 @@ class DailyBillingController extends Controller
         $billedStock = \App\Models\DailyBillItem::whereHas('dailyBill', function($q) use ($dealerId, $date) {
             $q->where('dealer_id', $dealerId)
               ->whereDate('date', $date)
-              ->where('status', '!=', 'Cancelled');
+              ->where('status', '!=', 'Cancelled')
+              ->whereDoesntHave('dayLoadEntries');
         })->sum('quantity_kg');
 
         $availableStock = max(0, $totalStock - $billedStock);

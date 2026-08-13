@@ -15,7 +15,7 @@
             @endcan
             @can('create bills')
                 <x-button href="{{ route('billing.daily.create') }}" variant="outline" icon="receipt_long">
-                    Daily Billing
+                    Customer Billing
                 </x-button>
             @endcan
             @can('create customers')

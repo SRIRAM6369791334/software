@@ -57,12 +57,60 @@ class CashBankLedgerService
             $dateStr = $date->format('Y-m-d');
 
             // Cash Income = Dealer payments + Customer COD payments
-            $dealerCashIncome   = (float) DealerPayment::whereDate('date', $dateStr)->sum('cash_amount');
+            $rawDealerCashIncome = (float) DealerPayment::whereDate('date', $dateStr)->sum('cash_amount');
+            
+            // --- NEW: Calculate Dealer Adjustment Rebate ---
+            $dealerAdjustments = []; // dealer_id => amount
+            $dailyBills = \App\Models\DailyBill::with('items')
+                ->whereDate('date', $dateStr)
+                ->whereNotNull('dealer_id')
+                ->whereNotNull('customer_id')
+                ->where('status', '!=', 'Cancelled')
+                ->get();
+                
+            foreach ($dailyBills as $bill) {
+                $dayLoadEntry = \App\Models\DayLoadEntry::where('dealer_id', $bill->dealer_id)
+                    ->whereHas('batch', function($q) use ($dateStr) {
+                        $q->whereDate('billing_date', $dateStr);
+                    })->first();
+                
+                $dealerRate = $dayLoadEntry ? (float) $dayLoadEntry->customer_rate : 0;
+                if ($dealerRate > 0) {
+                    $qtySold = $bill->items->sum('quantity_kg');
+                    $amt = ($qtySold * $dealerRate);
+                    
+                    if (!isset($dealerAdjustments[$bill->dealer_id])) {
+                        $dealerAdjustments[$bill->dealer_id] = 0;
+                    }
+                    $dealerAdjustments[$bill->dealer_id] += $amt;
+                }
+            }
+
+            $dealerAdjustmentCash = 0;
+            $dealerAdjustmentBank = 0;
+            foreach ($dealerAdjustments as $dealerId => $adjustmentAmount) {
+                $dealerCashPaid = (float) DealerPayment::whereDate('date', $dateStr)
+                    ->where('dealer_id', $dealerId)
+                    ->sum('cash_amount');
+                $dealerBankPaid = (float) DealerPayment::whereDate('date', $dateStr)
+                    ->where('dealer_id', $dealerId)
+                    ->sum('bank_amount');
+                    
+                $adjCash = min($adjustmentAmount, $dealerCashPaid);
+                $remainingAdj = $adjustmentAmount - $adjCash;
+                $adjBank = min($remainingAdj, $dealerBankPaid);
+                
+                $dealerAdjustmentCash += $adjCash;
+                $dealerAdjustmentBank += $adjBank;
+            }
+
+            $dealerCashIncome   = round($rawDealerCashIncome - $dealerAdjustmentCash, 2);
             $customerCashIncome = (float) \App\Models\CustomerPayment::whereDate('date', $dateStr)->sum('cod_amount');
             $cashIncome         = round($dealerCashIncome + $customerCashIncome, 2);
 
             // Bank Income = Dealer bank payments + Customer bank transfer payments
-            $dealerBankIncome   = (float) DealerPayment::whereDate('date', $dateStr)->sum('bank_amount');
+            $rawDealerBankIncome = (float) DealerPayment::whereDate('date', $dateStr)->sum('bank_amount');
+            $dealerBankIncome   = round($rawDealerBankIncome - $dealerAdjustmentBank, 2);
             $customerBankIncome = (float) \App\Models\CustomerPayment::whereDate('date', $dateStr)->sum('bank_transfer_amount');
             $bankIncome         = round($dealerBankIncome + $customerBankIncome, 2);
 

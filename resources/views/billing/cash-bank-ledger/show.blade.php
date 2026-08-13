@@ -99,6 +99,67 @@
                 </span>
             </h2>
         </div>
+        @if(isset($dealerAdjustment) && $dealerAdjustment > 0)
+        <div class="p-4 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800/30">
+            <div class="flex items-center gap-2 text-amber-800 dark:text-amber-400 font-bold mb-2">
+                <span class="material-symbols-rounded text-[20px]">info</span>
+                Dealer Adjustment (Stock Sold to Customers)
+            </div>
+            <p class="text-sm text-amber-700 dark:text-amber-300 mb-2">
+                <strong>Why this adjustment?</strong> When stock is transferred from a Dealer and sold directly to a Customer, the payment is recorded under <strong>Customer Payments</strong>. To avoid counting the same stock's value twice, the Dealer's original cost for this transferred stock (<strong>Rs {{ number_format($dealerAdjustment, 0) }}</strong>) is automatically deducted from the Dealer's Income (Cash & Bank).
+            </p>
+            <div class="mt-3 bg-white/50 dark:bg-black/20 rounded-lg overflow-hidden border border-amber-200/50 dark:border-amber-700/50">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-amber-100/50 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
+                        <tr>
+                            <th class="px-4 py-2 font-semibold">Dealer -> Customer (Stock Transfer)</th>
+                            <th class="px-4 py-2 font-semibold text-right">Dealer Stock Cost</th>
+                            <th class="px-4 py-2 font-semibold text-right">Customer Paid</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-amber-100 dark:divide-amber-800/30">
+                        @foreach($adjustmentDetails as $adj)
+                        <tr>
+                            <td class="px-4 py-2">
+                                <span class="font-medium">{{ $adj->dealer }}</span> 
+                                <span class="material-symbols-rounded text-[14px] align-middle mx-1 text-amber-500">arrow_right_alt</span> 
+                                <span class="font-medium text-zinc-700 dark:text-zinc-300">{{ $adj->customer_name ?? 'Customer' }}</span>
+                                <div class="text-[10px] text-amber-600/70 mt-0.5">Inv: {{ $adj->invoice }} • {{ $adj->qty }} kg</div>
+                            </td>
+                            <td class="px-4 py-2 text-right">
+                                <div class="font-jetbrains font-semibold text-rose-600">- Rs {{ number_format($adj->amount, 0) }}</div>
+                                <div class="text-[10px] text-amber-600/70 mt-0.5">@ Rs {{ number_format($adj->rate, 2) }}/kg</div>
+                            </td>
+                            <td class="px-4 py-2 text-right">
+                                <div class="font-jetbrains font-semibold text-emerald-600">+ Rs {{ number_format($adj->customer_amount ?? 0, 0) }}</div>
+                                <div class="text-[10px] text-amber-600/70 mt-0.5">Added to Income</div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="bg-amber-50/50 dark:bg-amber-900/20 border-t border-amber-200/50 dark:border-amber-700/50">
+                        @php
+                            $totalDealerCost = collect($adjustmentDetails)->sum('amount');
+                            $totalCustomerPaid = collect($adjustmentDetails)->sum('customer_amount');
+                            $netDifference = $totalCustomerPaid - $totalDealerCost;
+                        @endphp
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-amber-800 dark:text-amber-300">Total Calculation</td>
+                            <td class="px-4 py-3 text-right">
+                                <div class="font-jetbrains font-bold text-rose-600">- Rs {{ number_format($totalDealerCost, 0) }}</div>
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <div class="font-jetbrains font-bold text-emerald-600">+ Rs {{ number_format($totalCustomerPaid, 0) }}</div>
+                                <div class="text-[11px] font-bold mt-1 px-2 py-1 rounded inline-block {{ $netDifference >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' }}">
+                                    Net Impact: {{ $netDifference >= 0 ? '+' : '' }}Rs {{ number_format($netDifference, 0) }}
+                                </div>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        @endif
         @if($dealerPayments->isEmpty())
             <x-empty-state icon="payments" title="No dealer payments" description="No dealer payments recorded for this date." />
         @else

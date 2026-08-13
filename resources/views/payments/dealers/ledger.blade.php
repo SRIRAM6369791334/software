@@ -129,9 +129,9 @@
                             <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Total Paid (Rs)</div>
                             <div class="text-lg font-bold text-emerald-600 dark:text-emerald-400 font-jetbrains">{{ number_format($totalCredit, 2) }}</div>
                         </div>
-                        <div class="p-3 rounded-xl border border-purple-200 bg-purple-50 dark:border-purple-900/50 dark:bg-purple-900/20">
-                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Balance (Kg)</div>
-                            <div class="text-lg font-bold {{ ($totalDebit - $totalCredit) > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400' }} font-jetbrains">{{ number_format($totalDebit - $totalCredit, 1) }}</div>
+                        <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-900/20">
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Outstanding (Rs)</div>
+                            <div class="text-lg font-bold text-rose-600 dark:text-rose-400 font-jetbrains">{{ number_format($dealer->displayed_outstanding, 2) }}</div>
                         </div>
                     </div>
 

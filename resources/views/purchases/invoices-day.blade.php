@@ -73,10 +73,11 @@
                         <th class="px-6 py-3 text-left">Vendor</th>
                         <th class="px-6 py-3 text-left">Dealer</th>
                         <th class="px-6 py-3 text-center">Boxes</th>
+                        <th class="px-6 py-3 text-center">Box Wt</th>
+                        <th class="px-6 py-3 text-center">Empty Wt</th>
                         <th class="px-6 py-3 text-center">Bird Wt</th>
-                        <th class="px-6 py-3 text-center">Farm Wt</th>
-                        <th class="px-6 py-3 text-center">Loss</th>
-                        <th class="px-6 py-3 text-center">Total</th>
+                        <th class="px-6 py-3 text-center">Customer Rate</th>
+                        <th class="px-6 py-3 text-center">Total Rate</th>
                         <th class="px-6 py-3 text-center">Status</th>
                     </tr>
                 </thead>
@@ -90,14 +91,11 @@
                                 <span class="text-zinc-600 dark:text-zinc-400 text-xs">{{ $entry->dealer->firm_name ?? '-' }}</span>
                             </td>
                             <td class="px-6 py-4 text-center font-jetbrains font-bold text-xs">{{ $entry->no_of_boxes }}</td>
-                            <td class="px-6 py-4 text-center font-jetbrains text-xs">{{ number_format((float) $entry->bird_weight, 2) }}</td>
-                            <td class="px-6 py-4 text-center font-jetbrains text-xs">{{ $entry->farm_weight ? number_format((float) $entry->farm_weight, 2) : '—' }}</td>
-                            <td class="px-6 py-4 text-center font-jetbrains text-xs {{ $entry->loss_weight ? 'text-rose-600 font-bold' : 'text-zinc-400' }}">
-                                {{ $entry->loss_weight ? number_format((float) $entry->loss_weight, 2) : '—' }}
-                            </td>
-                            <td class="px-6 py-4 text-center font-jetbrains text-xs {{ $entry->total_weight ? 'text-emerald-600 font-bold' : 'text-zinc-400' }}">
-                                {{ $entry->total_weight ? number_format((float) $entry->total_weight, 2) : '—' }}
-                            </td>
+                            <td class="px-6 py-4 text-center font-jetbrains text-xs">{{ number_format((float) ($entry->box_weight ?? 0), 2) }} kg</td>
+                            <td class="px-6 py-4 text-center font-jetbrains text-xs">{{ number_format((float) ($entry->empty_weight ?? 0), 2) }} kg</td>
+                            <td class="px-6 py-4 text-center font-jetbrains text-xs">{{ number_format((float) $entry->bird_weight, 2) }} kg</td>
+                            <td class="px-6 py-4 text-center font-jetbrains text-xs">Rs {{ number_format((float) $entry->customer_rate, 2) }}</td>
+                            <td class="px-6 py-4 text-center font-jetbrains font-bold text-xs text-emerald-600 dark:text-emerald-400">Rs {{ number_format((float) $entry->amount, 2) }}</td>
                             <td class="px-6 py-4 text-center">
                                 <x-badge variant="success">{{ $entry->status }}</x-badge>
                             </td>
@@ -108,10 +106,11 @@
                     <tr class="font-bold text-xs">
                         <td class="px-6 py-3 text-zinc-500" colspan="2">Totals</td>
                         <td class="px-6 py-3 text-center font-jetbrains text-blue-600 dark:text-blue-400">{{ $dayLoadBatch->total_boxes }}</td>
-                        <td class="px-6 py-3 text-center font-jetbrains">{{ number_format((float) $dayLoadBatch->total_bird_weight, 2) }}</td>
-                        <td class="px-6 py-3 text-center font-jetbrains">{{ number_format((float) $dayLoadBatch->total_farm_weight, 2) }}</td>
-                        <td class="px-6 py-3 text-center font-jetbrains text-rose-600">{{ number_format((float) $dayLoadBatch->total_loss_weight, 2) }}</td>
-                        <td class="px-6 py-3 text-center font-jetbrains text-emerald-600">{{ number_format((float) $dayLoadBatch->total_weight, 2) }}</td>
+                        <td class="px-6 py-3 text-center font-jetbrains">{{ number_format((float) $dayLoadBatch->entries->sum('box_weight'), 2) }} kg</td>
+                        <td class="px-6 py-3 text-center font-jetbrains">{{ number_format((float) $dayLoadBatch->entries->sum('empty_weight'), 2) }} kg</td>
+                        <td class="px-6 py-3 text-center font-jetbrains">{{ number_format((float) $dayLoadBatch->total_bird_weight, 2) }} kg</td>
+                        <td class="px-6 py-3 text-center font-jetbrains">—</td>
+                        <td class="px-6 py-3 text-center font-jetbrains text-emerald-600">Rs {{ number_format((float) $dayLoadBatch->entries->sum('amount'), 2) }}</td>
                         <td></td>
                     </tr>
                 </tfoot>

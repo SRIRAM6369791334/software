@@ -22,8 +22,8 @@
         ['label' => 'Vendors', 'icon' => 'inventory_2', 'route' => 'masters.vendors.index', 'permission' => 'view vendors'],
         
         ['header' => 'Operations'],
-        ['label' => 'Daily Billing', 'icon' => 'receipt', 'route' => 'billing.daily.index', 'permission' => 'view bills'],
-        ['label' => 'Weekly Billing', 'icon' => 'receipt_long', 'route' => 'billing.weekly.index', 'permission' => 'view bills'],
+        ['label' => 'Daily Billing Generate', 'icon' => 'receipt', 'route' => 'billing.daily.index', 'permission' => 'view bills'],
+        ['label' => 'Weekly Billing Generate', 'icon' => 'receipt_long', 'route' => 'billing.weekly.index', 'permission' => 'view bills'],
         ['label' => 'Purchases', 'icon' => 'shopping_cart', 'route' => 'purchases.entry', 'permission' => 'view purchases'],
         ['label' => 'Purchase Invoices', 'icon' => 'receipt', 'route' => 'purchases.invoices', 'permission' => 'view purchases'],
 

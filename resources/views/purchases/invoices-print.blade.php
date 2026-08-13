@@ -215,9 +215,11 @@
             <th>Vendor</th>
             <th>Dealer</th>
             <th class="text-center">Boxes</th>
+            <th class="text-right">Box Wt</th>
+            <th class="text-right">Empty Wt</th>
             <th class="text-right">Bird Wt</th>
-            <th class="text-right">Farm Wt</th>
-            <th class="text-right">Loss</th>
+            <th class="text-right">Customer Rate</th>
+            <th class="text-right">Total Rate</th>
         </tr>
     </thead>
     <tbody>
@@ -227,9 +229,11 @@
             <td><strong>{{ $entry->vendor->firm_name ?? '-' }}</strong></td>
             <td>{{ $entry->dealer->firm_name ?? '-' }}</td>
             <td class="text-center font-bold font-mono">{{ $entry->no_of_boxes }}</td>
+            <td class="text-right font-mono">{{ number_format((float) ($entry->box_weight ?? 0), 2) }}</td>
+            <td class="text-right font-mono">{{ number_format((float) ($entry->empty_weight ?? 0), 2) }}</td>
             <td class="text-right font-mono">{{ number_format((float) $entry->bird_weight, 2) }}</td>
-            <td class="text-right font-mono">{{ $entry->farm_weight ? number_format((float) $entry->farm_weight, 2) : '—' }}</td>
-            <td class="text-right font-mono {{ ($entry->loss_weight ?? 0) > 0 ? 'text-rose' : 'text-muted' }}" style="{{ ($entry->loss_weight ?? 0) > 0 ? 'color:#e11d48;font-weight:700;' : '' }}">{{ $entry->loss_weight ? number_format((float) $entry->loss_weight, 2) : '—' }}</td>
+            <td class="text-right font-mono">Rs {{ number_format((float) $entry->customer_rate, 2) }}</td>
+            <td class="text-right font-mono font-bold text-emerald">Rs {{ number_format((float) $entry->amount, 2) }}</td>
         </tr>
         @endforeach
     </tbody>
@@ -237,9 +241,11 @@
         <tr>
             <td colspan="3" style="text-transform:uppercase;font-size:11px;">Total</td>
             <td class="text-center font-bold font-mono" style="color:#2563eb;">{{ $dayLoadEntries->sum('no_of_boxes') }}</td>
+            <td class="text-right font-bold font-mono">{{ number_format((float) $dayLoadEntries->sum('box_weight'), 2) }}</td>
+            <td class="text-right font-bold font-mono">{{ number_format((float) $dayLoadEntries->sum('empty_weight'), 2) }}</td>
             <td class="text-right font-bold font-mono">{{ number_format((float) $dayLoadEntries->sum('bird_weight'), 2) }}</td>
-            <td class="text-right font-bold font-mono">{{ number_format((float) ($dayLoadBatch?->total_farm_weight ?? $dayLoadEntries->sum('farm_weight')), 2) }}</td>
-            <td class="text-right font-bold font-mono text-rose">{{ number_format((float) ($dayLoadBatch?->total_loss_weight ?? $dayLoadEntries->sum('loss_weight')), 2) }}</td>
+            <td class="text-right font-bold font-mono">—</td>
+            <td class="text-right font-bold font-mono text-emerald">Rs {{ number_format((float) $dayLoadEntries->sum('amount'), 2) }}</td>
         </tr>
     </tfoot>
 </table>

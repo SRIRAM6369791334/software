@@ -117,7 +117,7 @@
                         <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">Day-Load History</h4>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="grid grid-cols-2 gap-4 mb-6">
                         <div class="p-3 rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-900/20">
                             <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Total Boxes</div>
                             <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">{{ number_format($totalBoxes) }}</div>
@@ -126,13 +126,9 @@
                             <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Bird Weight</div>
                             <div class="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-jetbrains">{{ number_format($totalBirdWeight, 1) }} kg</div>
                         </div>
-                        <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-900/20">
-                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Loss Weight</div>
-                            <div class="text-lg font-bold text-rose-600 dark:text-rose-400 font-jetbrains">{{ number_format($totalLossWeight, 1) }} kg</div>
-                        </div>
                     </div>
 
-                    <x-data-table :headers="['Date', 'Vendor', ['label' => 'Boxes', 'align' => 'right'], ['label' => 'Bird Weight', 'align' => 'right'], ['label' => 'Farm Weight', 'align' => 'right'], ['label' => 'Loss', 'align' => 'right']]">
+                    <x-data-table :headers="['Date', 'Vendor', ['label' => 'Boxes', 'align' => 'right'], ['label' => 'Box Weight', 'align' => 'right'], ['label' => 'Empty Weight', 'align' => 'right'], ['label' => 'Bird Weight', 'align' => 'right'], ['label' => 'Customer Rate', 'align' => 'right'], ['label' => 'Total Rate', 'align' => 'right']]">
                         @forelse($dayLoadEntries as $entry)
                             <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
                                 <td class="px-6 py-4 font-bold text-sm">{{ $entry->batch->billing_date->format('d M Y') }}</td>
@@ -140,18 +136,14 @@
                                     <div class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $entry->vendor->firm_name ?? '-' }}</div>
                                 </td>
                                 <td class="px-6 py-4 text-right font-jetbrains text-sm">{{ $entry->no_of_boxes }}</td>
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm">{{ number_format($entry->box_weight ?? 0, 1) }} kg</td>
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm">{{ number_format($entry->empty_weight ?? 0, 1) }} kg</td>
                                 <td class="px-6 py-4 text-right font-jetbrains text-sm">{{ number_format($entry->bird_weight, 1) }} kg</td>
-                                <td class="px-6 py-4 text-right font-jetbrains text-sm">{{ number_format($entry->farm_weight ?? 0, 1) }} kg</td>
-                                <td class="px-6 py-4 text-right font-jetbrains text-sm">
-                                    @if(($entry->loss_weight ?? 0) > 0)
-                                        <span class="text-rose-600 dark:text-rose-400">{{ number_format($entry->loss_weight, 1) }} kg</span>
-                                    @else
-                                        <span class="text-emerald-600 dark:text-emerald-400">0 kg</span>
-                                    @endif
-                                </td>
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm">Rs {{ number_format($entry->customer_rate, 2) }}</td>
+                                <td class="px-6 py-4 text-right font-jetbrains text-sm font-bold text-emerald-600 dark:text-emerald-400">Rs {{ number_format($entry->amount, 2) }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="text-center py-8 text-zinc-500">No day-load entries found.</td></tr>
+                            <tr><td colspan="8" class="text-center py-8 text-zinc-500">No day-load entries found.</td></tr>
                         @endforelse
                         @if($dayLoadEntries->hasPages())
                             <x-slot:pagination>

@@ -111,8 +111,23 @@ class WeeklyBillingService
         $totalPayments = (float) $paymentsQuery->sum('amount');
 
         // 3. Outstanding balance before this week
-        $currentPending = (float) $dealer->displayed_outstanding;
-        $previousOutstanding = $currentPending - $totalPurchases + $totalPayments;
+        $priorPurchases = (float) DayLoadEntry::where('dealer_id', $dealerId)
+            ->where('status', '!=', 'Cancelled')
+            ->whereHas('batch', fn($q) => $q->where('billing_date', '<', $startDate))
+            ->sum('amount');
+
+        $priorPayments = (float) DealerPayment::where('dealer_id', $dealerId)
+            ->where('date', '<', $startDate)
+            ->sum('amount');
+
+        $priorEmis = (float) \App\Models\Emi::where('emi_type', 'Dealer')
+            ->where('entity_id', $dealerId)
+            ->where('status', '!=', 'Paid')
+            ->where('due_date', '<', $startDate)
+            ->get()
+            ->sum('remaining_amount');
+
+        $previousOutstanding = max(0, (float) $dealer->pending_amount + $priorPurchases + $priorEmis - $priorPayments);
 
         // Net Invoice Amount = Previous Outstanding + Purchases - Discount (Gross Billed Amount)
         $netInvoiceAmount = $previousOutstanding + $totalPurchases - $discountAmount;
