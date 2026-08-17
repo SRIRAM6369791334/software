@@ -2,9 +2,15 @@
 @section('title', 'Cash & Bank Ledger')
 
 @section('content')
-<div class="animate-fade-in">
+<div class="animate-fade-in space-y-6">
     <x-page-header title="Cash & Bank Ledger" subtitle="Daily cash-in-hand and bank transfer running balances">
         <x-slot:actions>
+            <x-button variant="outline" href="{{ route('billing.investments.index') }}" icon="savings">
+                Capital & Investments
+            </x-button>
+            <x-button variant="outline" href="{{ route('masters.vendors.index') }}" icon="local_shipping">
+                Vendor Advances
+            </x-button>
             <x-button variant="outline" href="{{ route('payments.dealers.create') }}" icon="payments" target="_blank">
                 Dealer Payment
             </x-button>
@@ -17,13 +23,81 @@
         </x-slot:actions>
     </x-page-header>
 
+    {{-- Consolidated Business Liquidity & Capital Ribbon --}}
+    <div class="p-4 rounded-2xl bg-gradient-to-r from-indigo-50 via-emerald-50/50 to-amber-50/50 dark:from-indigo-950/40 dark:via-emerald-950/20 dark:to-amber-950/20 border border-indigo-200/60 dark:border-indigo-800/40 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
+                <span class="material-symbols-rounded text-xl">account_balance_wallet</span>
+            </div>
+            <div>
+                <span class="text-[10px] font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Consolidated Business Liquidity
+                </span>
+                <p class="text-xs text-zinc-500">Cash in Hand + Bank Accounts + Capital Investment Reserve</p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-4 sm:gap-6">
+            {{-- Cash in Hand --}}
+            <div class="text-right">
+                <span class="block text-[10px] font-bold text-zinc-500 uppercase">💵 Cash in Hand</span>
+                <span class="font-jetbrains font-bold text-sm text-emerald-600 dark:text-emerald-400">
+                    Rs {{ number_format($latestCashBalance, 2) }}
+                </span>
+            </div>
+
+            {{-- Bank Balance --}}
+            <div class="text-right">
+                <span class="block text-[10px] font-bold text-zinc-500 uppercase">🏦 Bank Accounts</span>
+                <span class="font-jetbrains font-bold text-sm text-blue-600 dark:text-blue-400">
+                    Rs {{ number_format($latestBankBalance, 2) }}
+                </span>
+            </div>
+
+            {{-- Investment Pool --}}
+            <div class="text-right">
+                <a href="{{ route('billing.investments.index') }}" class="group block">
+                    <span class="block text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase group-hover:underline flex items-center justify-end gap-0.5">
+                        🏛️ Investment Pool
+                        <span class="material-symbols-rounded text-[12px]">arrow_forward</span>
+                    </span>
+                    <span class="font-jetbrains font-bold text-sm text-indigo-700 dark:text-indigo-300">
+                        Rs {{ number_format($currentInvestmentBalance, 2) }}
+                    </span>
+                </a>
+            </div>
+
+            {{-- Vendor Advances --}}
+            <div class="text-right">
+                <a href="{{ route('masters.vendors.index') }}" class="group block">
+                    <span class="block text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase group-hover:underline flex items-center justify-end gap-0.5">
+                        🚚 Active Advances
+                        <span class="material-symbols-rounded text-[12px]">arrow_forward</span>
+                    </span>
+                    <span class="font-jetbrains font-bold text-sm text-amber-700 dark:text-amber-300">
+                        Rs {{ number_format($totalActiveVendorAdvances, 2) }}
+                    </span>
+                </a>
+            </div>
+
+            {{-- Total Consolidated Liquidity --}}
+            <div class="pl-4 border-l border-zinc-300 dark:border-zinc-700 text-right">
+                <span class="block text-[10px] font-black text-indigo-900 dark:text-indigo-100 uppercase">💎 Total Liquidity</span>
+                <span class="font-jetbrains font-black text-base text-indigo-600 dark:text-indigo-400">
+                    Rs {{ number_format($totalConsolidatedLiquidity, 2) }}
+                </span>
+            </div>
+        </div>
+    </div>
+
     {{-- Summary Cards --}}
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-6 mb-8">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 sm:gap-6">
         <x-stat-card label="Total Cash Income" value="Rs {{ number_format($totalCashIncome, 0) }}" icon="payments" color="emerald" />
         <x-stat-card label="Total Bank Income" value="Rs {{ number_format($totalBankIncome, 0) }}" icon="account_balance" color="blue" />
         <x-stat-card label="Total Cash Expense" value="Rs {{ number_format($totalCashExpense, 0) }}" icon="money_off" color="rose" />
         <x-stat-card label="Total Bank Expense" value="Rs {{ number_format($totalBankExpense, 0) }}" icon="account_balance" color="amber" />
-        <x-stat-card label="Current Total Balance" value="Rs {{ number_format($currentTotalBalance, 0) }}" icon="account_balance_wallet" color="indigo" />
+        <x-stat-card label="Operating Cash & Bank" value="Rs {{ number_format($currentTotalBalance, 0) }}" icon="account_balance_wallet" color="indigo" subtitle="In Hand + Bank" />
     </div>
 
     <x-card>
@@ -102,10 +176,28 @@
                 @endphp
                 <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors">
                     <td class="px-6 py-4">
-                        <a href="{{ route('billing.cash-bank-ledger.show-day', $ledger->ledger_date->format('Y-m-d')) }}" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
+                        @php
+                            $dStr = $ledger->ledger_date->format('Y-m-d');
+                            $dayCaps = isset($dateCapitalMap) ? ($dateCapitalMap->get($dStr) ?? collect()) : collect();
+                            $hasWithdrawal = $dayCaps->where('type', 'Withdrawal')->sum('amount');
+                            $hasInvestment = $dayCaps->where('type', 'Investment')->sum('amount');
+                        @endphp
+                        <a href="{{ route('billing.cash-bank-ledger.show-day', $dStr) }}" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
                             <p class="font-medium text-zinc-900 dark:text-zinc-100">{{ $ledger->ledger_date->format('d M Y') }}</p>
                             <p class="text-xs text-zinc-500">{{ $ledger->ledger_date->format('l') }}</p>
                         </a>
+                        @if($hasWithdrawal > 0)
+                            <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800" title="Owner Drawings / Capital Withdrawn from Pool">
+                                <span class="material-symbols-rounded text-[12px]">money_off</span>
+                                Drawings: -Rs {{ number_format($hasWithdrawal, 0) }}
+                            </span>
+                        @endif
+                        @if($hasInvestment > 0)
+                            <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800" title="Capital Inflow into Pool">
+                                <span class="material-symbols-rounded text-[12px]">savings</span>
+                                Capital: +Rs {{ number_format($hasInvestment, 0) }}
+                            </span>
+                        @endif
                     </td>
                     <td class="px-6 py-4">
                         <span class="font-jetbrains font-bold text-emerald-600">Rs {{ number_format((float) $ledger->cash_income, 0) }}</span>

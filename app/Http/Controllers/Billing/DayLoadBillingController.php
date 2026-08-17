@@ -93,34 +93,197 @@ class DayLoadBillingController extends Controller
             'due'              => max(0, round($e->dealer_income - (float) $e->dealer_collected, 2)),
         ]));
 
+        $activeAdvances = \App\Models\VendorAdvance::where('status', '!=', 'Fully Adjusted')
+            ->with('vendor')
+            ->get();
+        $activeAdvancesByVendor = $activeAdvances->groupBy('vendor_id')->map(function($advs) {
+            return [
+                'total_remaining' => (float) $advs->sum(fn($a) => $a->remaining_amount),
+                'advances' => $advs->map(fn($a) => [
+                    'id' => $a->id,
+                    'date' => $a->date->format('d M Y'),
+                    'total' => (float) $a->total_amount,
+                    'remaining' => (float) $a->remaining_amount,
+                ])->values(),
+            ];
+        });
+
         return view('billing.day-load.index', compact(
             'entries', 'normalEntries', 'transferredEntries', 'batch', 'vendors', 'dealers', 'date', 'search',
             'totalDealerIncome', 'totalVendorCost', 'grossMargin',
             'totalDealerCollected', 'totalVendorPaid',
             'totalDealerDue', 'totalVendorDue', 'collectionPct',
             'lsEntriesByDealer', 'allEntries',
+            'activeAdvances', 'activeAdvancesByVendor'
         ));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'billing_date'  => 'required|date',
-            'vendor_id'     => 'required|exists:vendors,id',
-            'dealer_id'     => 'required|exists:dealers,id',
-            'paper_rate'    => 'required|numeric|min:0',
-            'billing_rate'  => 'nullable|numeric|min:0',
-            'customer_rate' => 'required|numeric|min:0',
-            'no_of_boxes'   => 'required|integer|min:1',
-            'box_weight'    => 'required|numeric|min:0',
-            'empty_weight'  => 'required|numeric|min:0',
-            'farm_weight'   => 'nullable|numeric|min:0',
-            'remarks'       => 'nullable|string|max:255',
+            'billing_date'         => 'required|date',
+            'vendor_id'            => 'required|exists:vendors,id',
+            'dealer_id'            => 'required|exists:dealers,id',
+            'paper_rate'           => 'required|numeric|min:0',
+            'billing_rate'         => 'nullable|numeric|min:0',
+            'customer_rate'        => 'required|numeric|min:0',
+            'no_of_boxes'          => 'required|integer|min:1',
+            'box_weight'           => 'required|numeric|min:0',
+            'empty_weight'         => 'required|numeric|min:0',
+            'farm_weight'          => 'nullable|numeric|min:0',
+            'remarks'              => 'nullable|string|max:255',
+            'vendor_advance_id'    => 'nullable|exists:vendor_advances,id',
+            'apply_advance_amount' => 'nullable|numeric|min:0',
         ]);
 
-        $this->dayLoadBillingService->createEntry($validated);
+        $entry = $this->dayLoadBillingService->createEntry($validated);
+
+        // Apply vendor advance if selected
+        $advanceId = $request->input('vendor_advance_id');
+        $applyAmount = (float) $request->input('apply_advance_amount', 0);
+
+        if ($advanceId && $applyAmount > 0) {
+            $advance = \App\Models\VendorAdvance::findOrFail($advanceId);
+            $entryVendorCost = (float) $entry->vendor_cost;
+            $maxApplicable = max(0, $entryVendorCost > 0 ? $entryVendorCost : $applyAmount);
+            $actualApply = min($applyAmount, $advance->remaining_amount, $maxApplicable);
+
+            if ($actualApply > 0) {
+                \Illuminate\Support\Facades\DB::transaction(function () use ($advance, $entry, $actualApply) {
+                    $entry->increment('vendor_paid', $actualApply);
+
+                    $newAdjusted = round((float) $advance->adjusted_amount + $actualApply, 2);
+                    $advance->update([
+                        'adjusted_amount' => $newAdjusted,
+                        'status'          => $newAdjusted >= (float) $advance->total_amount ? 'Fully Adjusted' : 'Partially Adjusted',
+                    ]);
+
+                    $paymentDate = $entry->batch ? $entry->batch->billing_date : now();
+
+                    \App\Models\VendorAdvanceAdjustment::create([
+                        'vendor_advance_id' => $advance->id,
+                        'day_load_entry_id' => $entry->id,
+                        'amount'            => $actualApply,
+                        'date'              => $paymentDate,
+                        'notes'             => "Adjusted against Day-Load Entry #{$entry->id}",
+                    ]);
+
+                    \App\Models\VendorPayment::create([
+                        'vendor_id'             => $entry->vendor_id,
+                        'day_load_entry_id'     => $entry->id,
+                        'date'                  => $paymentDate,
+                        'amount'                => $actualApply,
+                        'payment_mode'          => 'Advance Adjustment',
+                        'cash_amount'           => 0.00,
+                        'bank_amount'           => 0.00,
+                        'notes'                 => "Adjusted from Advance #{$advance->id} (Day-Load Entry #{$entry->id})",
+                        'pending_balance_after' => $entry->vendor->fresh()->outstanding_balance,
+                    ]);
+
+                    $this->dayLoadPaymentService->refreshVendorPaymentStatus($entry);
+                    if ($entry->batch) {
+                        $this->dayLoadPaymentService->refreshBatchFinancials($entry->batch);
+                    }
+                });
+            }
+        }
 
         return back()->with('success', 'Daily load entry recorded successfully.');
+    }
+
+    public function applyAdvance(Request $request, DayLoadEntry $entry): RedirectResponse
+    {
+        $validated = $request->validate([
+            'vendor_advance_id' => 'required|exists:vendor_advances,id',
+            'amount'            => 'required|numeric|min:0.01',
+        ]);
+
+        $advance = \App\Models\VendorAdvance::findOrFail($validated['vendor_advance_id']);
+        $requestedAmount = (float) $validated['amount'];
+        $remainingDue = max(0, (float) $entry->vendor_cost - (float) $entry->vendor_paid);
+        $actualApply = min($requestedAmount, $advance->remaining_amount, $remainingDue);
+
+        if ($actualApply <= 0) {
+            return back()->with('error', 'Cannot apply advance. Either no remaining advance or entry is already fully paid.');
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($advance, $entry, $actualApply) {
+            $entry->increment('vendor_paid', $actualApply);
+
+            $newAdjusted = round((float) $advance->adjusted_amount + $actualApply, 2);
+            $advance->update([
+                'adjusted_amount' => $newAdjusted,
+                'status'          => $newAdjusted >= (float) $advance->total_amount ? 'Fully Adjusted' : 'Partially Adjusted',
+            ]);
+
+            $paymentDate = $entry->batch ? $entry->batch->billing_date : now();
+
+            \App\Models\VendorAdvanceAdjustment::create([
+                'vendor_advance_id' => $advance->id,
+                'day_load_entry_id' => $entry->id,
+                'amount'            => $actualApply,
+                'date'              => $paymentDate,
+                'notes'             => "Manual advance adjustment against Entry #{$entry->id}",
+            ]);
+
+            \App\Models\VendorPayment::create([
+                'vendor_id'             => $entry->vendor_id,
+                'day_load_entry_id'     => $entry->id,
+                'date'                  => $paymentDate,
+                'amount'                => $actualApply,
+                'payment_mode'          => 'Advance Adjustment',
+                'cash_amount'           => 0.00,
+                'bank_amount'           => 0.00,
+                'notes'                 => "Adjusted from Advance #{$advance->id} (Day-Load Entry #{$entry->id})",
+                'pending_balance_after' => $entry->vendor->fresh()->outstanding_balance,
+            ]);
+
+            $this->dayLoadPaymentService->refreshVendorPaymentStatus($entry);
+            if ($entry->batch) {
+                $this->dayLoadPaymentService->refreshBatchFinancials($entry->batch);
+            }
+        });
+
+        return back()->with('success', "Advance of Rs " . number_format($actualApply, 2) . " applied to Entry #{$entry->id}.");
+    }
+
+    public function removeAdvanceAdjustment(\App\Models\VendorAdvanceAdjustment $adjustment): RedirectResponse
+    {
+        $advance = $adjustment->advance;
+        $entry   = $adjustment->dayLoadEntry;
+        $amount  = (float) $adjustment->amount;
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($adjustment, $advance, $entry, $amount) {
+            if ($entry) {
+                $entry->decrement('vendor_paid', min($amount, (float) $entry->vendor_paid));
+                $this->dayLoadPaymentService->refreshVendorPaymentStatus($entry);
+                if ($entry->batch) {
+                    $this->dayLoadPaymentService->refreshBatchFinancials($entry->batch);
+                }
+
+                \App\Models\VendorPayment::where('day_load_entry_id', $entry->id)
+                    ->where('payment_mode', 'Advance Adjustment')
+                    ->where(function ($q) use ($advance) {
+                        if ($advance) {
+                            $q->where('notes', 'like', "%Advance #{$advance->id}%");
+                        }
+                    })
+                    ->limit(1)
+                    ->delete();
+            }
+
+            if ($advance) {
+                $newAdjusted = max(0, round((float) $advance->adjusted_amount - $amount, 2));
+                $advance->update([
+                    'adjusted_amount' => $newAdjusted,
+                    'status'          => $newAdjusted <= 0 ? 'Pending' : 'Partially Adjusted',
+                ]);
+            }
+
+            $adjustment->delete();
+        });
+
+        return back()->with('success', 'Advance adjustment reverted.');
     }
 
     public function transfer(Request $request, DayLoadEntry $entry): RedirectResponse

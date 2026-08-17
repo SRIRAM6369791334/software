@@ -40,6 +40,7 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-1 space-y-6">
+            {{-- Outstanding Payable Card --}}
             <div class="rounded-3xl p-6 bg-rose-500/40 dark:bg-rose-900/40 backdrop-blur-2xl text-rose-900 dark:text-rose-100 shadow-[0_8px_32px_rgba(244,63,94,0.15)] border border-rose-300/50 dark:border-rose-700/50 relative overflow-hidden transition-all duration-300 hover:shadow-[0_8px_32px_rgba(244,63,94,0.25)] hover:-translate-y-1">
                 <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/20 dark:bg-rose-400/10 rounded-full blur-2xl"></div>
                 <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-rose-400/20 dark:bg-rose-600/20 rounded-full blur-2xl"></div>
@@ -66,6 +67,51 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Active Advance Balance Card --}}
+            <div class="rounded-3xl p-6 bg-gradient-to-br from-amber-400/30 via-amber-500/20 to-orange-400/20 dark:from-amber-900/40 dark:via-amber-950/30 dark:to-orange-900/30 backdrop-blur-2xl text-amber-950 dark:text-amber-100 shadow-[0_8px_32px_rgba(245,158,11,0.15)] border border-amber-300/60 dark:border-amber-700/60 relative overflow-hidden transition-all duration-300 hover:shadow-[0_8px_32px_rgba(245,158,11,0.25)] hover:-translate-y-1">
+                <div class="absolute -right-8 -top-8 w-32 h-32 bg-amber-300/30 dark:bg-amber-500/10 rounded-full blur-xl"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="text-xs font-black uppercase tracking-widest text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                            <span class="material-symbols-rounded text-[18px] text-amber-600">local_shipping</span>
+                            Active Advance Balance
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100/80 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-300/60">
+                            {{ $advances->where('status', '!=', 'Fully Adjusted')->count() }} Active
+                        </span>
+                    </div>
+
+                    <div class="text-3xl font-extrabold tracking-tight font-jetbrains my-2 text-amber-950 dark:text-white drop-shadow-sm text-center">
+                        Rs {{ number_format($totalActiveAdvanceBalance, 2) }}
+                    </div>
+
+                    <div class="p-3 rounded-2xl bg-white/60 dark:bg-black/20 border border-amber-200/60 dark:border-amber-800/40 space-y-1.5 text-xs mb-4">
+                        <div class="flex justify-between text-zinc-600 dark:text-zinc-300">
+                            <span>Total Advances Given:</span>
+                            <strong class="font-jetbrains text-zinc-900 dark:text-zinc-100">Rs {{ number_format($totalAdvanceGiven, 2) }}</strong>
+                        </div>
+                        <div class="flex justify-between text-zinc-600 dark:text-zinc-300">
+                            <span>Adjusted against Bills:</span>
+                            <strong class="font-jetbrains text-emerald-600">Rs {{ number_format($totalAdvanceAdjusted, 2) }}</strong>
+                        </div>
+                        <div class="flex justify-between pt-1.5 border-t border-amber-200/60 dark:border-amber-800/40 font-bold text-amber-900 dark:text-amber-200">
+                            <span>Net Settlement Payable:</span>
+                            <strong class="font-jetbrains {{ $netSettlementBalance > 0 ? 'text-rose-600' : 'text-emerald-600' }}">
+                                Rs {{ number_format($netSettlementBalance, 2) }}
+                            </strong>
+                        </div>
+                    </div>
+
+                    <button type="button" 
+                            @click="$dispatch('open-modal', 'record-vendor-advance-modal')"
+                            class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-sm flex items-center justify-center gap-1.5 transition-all">
+                        <span class="material-symbols-rounded text-[18px]">add_circle</span>
+                        + Issue Advance Deposit
+                    </button>
+                </div>
+            </div>
+
             <x-card title="Profile Credentials" icon="contact_page">
                 <div class="space-y-4">
                     <div class="flex items-start gap-3">
@@ -108,11 +154,11 @@
             @endif
         </div>
 
-        <div class="lg:col-span-2">
+        <div class="lg:col-span-2 space-y-6">
             <div id="cm-tabs-container" class="bg-white/30 dark:bg-zinc-900/40 backdrop-blur-2xl border border-white/60 dark:border-zinc-800/80 rounded-[2rem] overflow-hidden shadow-[0_8px_32px_rgba(31,38,135,0.07)] z-10 relative">
                 <div class="flex flex-wrap p-2 m-4 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md rounded-2xl border border-white/50 dark:border-zinc-700/50 gap-2">
                     <a href="{{ route('masters.vendors.show', $vendor) }}" class="flex-1 text-center py-3 text-sm font-bold text-teal-700 dark:text-teal-400 bg-white/70 dark:bg-zinc-800/80 shadow-sm rounded-xl transition-all duration-300">
-                        Quick Look
+                        Quick Look & Activity
                     </a>
                     @can('view vendor purchases')
                     <a href="{{ route('masters.vendors.purchase-history', $vendor) }}" class="flex-1 text-center py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300">
@@ -198,7 +244,185 @@
                     @endif
                 </div>
             </div>
+
+            {{-- Advance Deposit History Section --}}
+            <x-card title="Advance Deposits & Adjustments" icon="local_shipping">
+                <div class="p-4">
+                    @if($advances->isEmpty())
+                        <div class="py-8 text-center">
+                            <span class="material-symbols-rounded text-4xl text-zinc-300 dark:text-zinc-600 mb-2">account_balance_wallet</span>
+                            <p class="text-sm font-semibold text-zinc-600 dark:text-zinc-400">No Advance Deposits Recorded</p>
+                            <p class="text-xs text-zinc-400 mt-1">Click the "+ Issue Advance Deposit" button to log an advance payment.</p>
+                        </div>
+                    @else
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/50 text-zinc-500 uppercase tracking-wider font-bold">
+                                        <th class="px-4 py-3">Date</th>
+                                        <th class="px-4 py-3">Total Advance</th>
+                                        <th class="px-4 py-3">Funding Split</th>
+                                        <th class="px-4 py-3">Adjusted</th>
+                                        <th class="px-4 py-3">Remaining Balance</th>
+                                        <th class="px-4 py-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
+                                    @foreach($advances as $adv)
+                                    <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors">
+                                        <td class="px-4 py-3 whitespace-nowrap font-medium text-zinc-900 dark:text-zinc-100">
+                                            {{ $adv->date->format('d M Y') }}
+                                            <span class="block text-[10px] text-zinc-400">{{ $adv->date->format('l') }}</span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap font-jetbrains font-bold text-sm text-amber-600 dark:text-amber-400">
+                                            Rs {{ number_format($adv->total_amount, 2) }}
+                                        </td>
+                                        <td class="px-4 py-3 text-[11px] text-zinc-600 dark:text-zinc-300">
+                                            @if($adv->cash_amount > 0)
+                                                <span class="inline-block px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-mono mr-1">Cash: {{ number_format($adv->cash_amount, 0) }}</span>
+                                            @endif
+                                            @if($adv->bank_amount > 0)
+                                                <span class="inline-block px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-mono mr-1">Bank: {{ number_format($adv->bank_amount, 0) }}</span>
+                                            @endif
+                                            @if($adv->investment_amount > 0)
+                                                <span class="inline-block px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-mono mr-1">Pool: {{ number_format($adv->investment_amount, 0) }}</span>
+                                            @endif
+                                            @if($adv->reference_number)
+                                                <span class="block text-[10px] text-zinc-400 font-mono mt-0.5">Ref: {{ $adv->reference_number }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap font-jetbrains text-emerald-600">
+                                            Rs {{ number_format($adv->adjusted_amount, 2) }}
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap font-jetbrains font-bold {{ $adv->remaining_amount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-400' }}">
+                                            Rs {{ number_format($adv->remaining_amount, 2) }}
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap">
+                                            @if($adv->status === 'Fully Adjusted')
+                                                <x-badge color="green">Fully Adjusted</x-badge>
+                                            @elseif($adv->adjusted_amount > 0)
+                                                <x-badge color="teal">Partially Adjusted</x-badge>
+                                            @else
+                                                <x-badge color="amber">Active</x-badge>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+            </x-card>
         </div>
     </div>
 </div>
+
+@push('modals')
+{{-- Record Vendor Advance Modal for this specific Vendor --}}
+<x-modal name="record-vendor-advance-modal" title="Record Vendor Advance" subtitle="Issue advance deposit to {{ $vendor->firm_name }}" icon="local_shipping" maxWidth="720" :show="$errors->any()">
+    <form id="record-vendor-advance-form" 
+          action="{{ route('payments.vendors.advances.store') }}" 
+          method="POST"
+          x-data="{
+              advDate: '{{ now()->format('Y-m-d') }}',
+              advCash: '',
+              advBank: '',
+              advInvestment: '',
+              advBankType: 'UPI',
+              advRef: '',
+              advNotes: '',
+
+              get totalAdvance() {
+                  let c = parseFloat(this.advCash) || 0;
+                  let b = parseFloat(this.advBank) || 0;
+                  let i = parseFloat(this.advInvestment) || 0;
+                  return (c + b + i).toFixed(2);
+              }
+          }">
+        @csrf
+        <input type="hidden" name="vendor_id" value="{{ $vendor->id }}">
+
+        {{-- Date Field --}}
+        <div class="mb-6">
+            <x-form.input type="date" name="date" label="Payment Date" required x-model="advDate" icon="calendar_month" />
+        </div>
+
+        {{-- Funding Source Split --}}
+        <div class="mb-6 p-4 rounded-2xl bg-zinc-50/80 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-700/80">
+            <div class="flex items-center justify-between mb-3 border-b border-zinc-200/60 dark:border-zinc-700/60 pb-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                    <span class="material-symbols-rounded text-amber-500 text-lg">account_balance_wallet</span>
+                    Funding Source Split
+                </span>
+                <span class="text-xs font-bold text-zinc-500">
+                    Total Advance: <strong class="font-jetbrains text-sm font-black text-amber-600 dark:text-amber-400">Rs <span x-text="totalAdvance"></span></strong>
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {{-- Cash Input --}}
+                <div class="p-3.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
+                            <span class="material-symbols-rounded text-emerald-500 text-base">payments</span> Cash
+                        </span>
+                        <button type="button" @click="advCash = '{{ $currentCashBalance }}'" class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase hover:underline">Max</button>
+                    </div>
+                    <div class="text-[10px] text-zinc-400 mb-2 font-mono">Avail: Rs {{ number_format($currentCashBalance, 2) }}</div>
+                    <input type="number" step="0.01" min="0" name="cash_amount" x-model="advCash" placeholder="0.00" class="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/50 px-2.5 py-1.5 text-xs font-jetbrains font-bold focus:border-emerald-500 focus:ring-0">
+                </div>
+
+                {{-- Bank Input --}}
+                <div class="p-3.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
+                            <span class="material-symbols-rounded text-blue-500 text-base">account_balance</span> Bank
+                        </span>
+                        <button type="button" @click="advBank = '{{ $currentBankBalance }}'" class="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase hover:underline">Max</button>
+                    </div>
+                    <div class="text-[10px] text-zinc-400 mb-2 font-mono">Avail: Rs {{ number_format($currentBankBalance, 2) }}</div>
+                    <input type="number" step="0.01" min="0" name="bank_amount" x-model="advBank" placeholder="0.00" class="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/50 px-2.5 py-1.5 text-xs font-jetbrains font-bold focus:border-blue-500 focus:ring-0">
+                </div>
+
+                {{-- Investment Pool Input --}}
+                <div class="p-3.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
+                            <span class="material-symbols-rounded text-indigo-500 text-base">savings</span> Pool
+                        </span>
+                        <button type="button" @click="advInvestment = '{{ $currentInvestmentBalance }}'" class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase hover:underline">Max</button>
+                    </div>
+                    <div class="text-[10px] text-zinc-400 mb-2 font-mono">Avail: Rs {{ number_format($currentInvestmentBalance, 2) }}</div>
+                    <input type="number" step="0.01" min="0" name="investment_amount" x-model="advInvestment" placeholder="0.00" class="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/50 px-2.5 py-1.5 text-xs font-jetbrains font-bold focus:border-indigo-500 focus:ring-0">
+                </div>
+            </div>
+        </div>
+
+        {{-- Dynamic Bank Channel when Bank is funded --}}
+        <div x-show="parseFloat(advBank) > 0" x-cloak class="mb-4 p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+            <x-form.select name="bank_transfer_type" label="Bank Channel / Transfer Mode" x-model="advBankType">
+                <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
+                <option value="NEFT">NEFT</option>
+                <option value="IMPS">IMPS</option>
+                <option value="RTGS">RTGS</option>
+                <option value="Cheque">Cheque</option>
+                <option value="Other">Other Bank Transfer</option>
+            </x-form.select>
+        </div>
+
+        {{-- Reference & Notes in 2 columns --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-2">
+            <x-form.input name="reference_number" label="Reference / UTR Number" x-model="advRef" placeholder="Optional transaction ID..." icon="tag" />
+            <x-form.input name="notes" label="Notes & Purpose" x-model="advNotes" placeholder="e.g. Advance deposit for batch load" icon="description" />
+        </div>
+
+        {{-- Footer Buttons --}}
+        <x-slot:footer>
+            <x-button type="button" variant="outline" x-on:click="show = false">Cancel</x-button>
+            <x-button type="submit" form="record-vendor-advance-form" variant="primary" icon="check" class="px-8 !bg-emerald-600 hover:!bg-emerald-700">Record Advance</x-button>
+        </x-slot:footer>
+    </form>
+</x-modal>
+@endpush
 @endsection

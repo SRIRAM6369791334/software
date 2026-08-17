@@ -19,7 +19,7 @@ class VendorController extends Controller
         $search  = $request->input('search');
         $routeFilter = $request->input('route');
         
-        $vendorsQuery = Vendor::with(['purchases', 'dayLoadEntries.batch', 'vendorPayments'])->search($search);
+        $vendorsQuery = Vendor::with(['purchases', 'dayLoadEntries.batch', 'vendorPayments', 'advances'])->search($search);
         if ($routeFilter) {
             $vendorsQuery->where('route', $routeFilter);
         }
@@ -27,8 +27,9 @@ class VendorController extends Controller
         $vendorsCollection = $vendorsQuery->orderBy('firm_name')->get();
 
         // Calculate stats on all matching vendors
-        $totalPayable = $vendorsCollection->sum(fn($v) => $v->outstanding_balance);
-        $activeVendorsCount = $vendorsCollection->filter(fn($v) => $v->outstanding_balance > 0)->count();
+        $totalPayable = (float) $vendorsCollection->sum(fn($v) => (float) $v->outstanding_balance);
+        $totalAdvanceBalance = (float) $vendorsCollection->sum(fn($v) => (float) $v->active_advance_balance);
+        $activeVendorsCount = $vendorsCollection->filter(fn($v) => (float) $v->outstanding_balance > 0)->count();
 
         // Paginate the collection manually
         $page = (int) $request->input('page', 1);
@@ -49,11 +50,20 @@ class VendorController extends Controller
         $activeRoutes  = Vendor::distinct('route')->count('route');
         $gstRegistered = Vendor::whereNotNull('gst_number')->count();
         $unregistered  = Vendor::whereNull('gst_number')->count();
+
+        $ledgerService = app(\App\Services\CashBankLedgerService::class);
+        $todayLedger = $ledgerService->getOrCreateForDate(now());
+        $currentCashBalance = (float) $todayLedger->closing_cash_balance;
+        $currentBankBalance = (float) $todayLedger->closing_bank_balance;
+        $currentInvestmentBalance = \App\Models\CapitalTransaction::getCurrentBalance();
+        $allVendors = Vendor::orderBy('firm_name')->get(['id', 'firm_name', 'contact_person']);
         
         return view('masters.vendors.index', compact(
             'vendors', 'search', 'routeFilter', 'routes',
             'totalVendors', 'activeRoutes', 'gstRegistered', 'unregistered',
-            'totalPayable', 'activeVendorsCount'
+            'totalPayable', 'activeVendorsCount', 'totalAdvanceBalance',
+            'currentCashBalance', 'currentBankBalance', 'currentInvestmentBalance',
+            'allVendors'
         ));
     }
 
@@ -107,12 +117,28 @@ class VendorController extends Controller
         $totalPaymentsPaid = (float) $vendor->vendorPayments()->sum('amount');
         $outstandingBalance = round(($totalCreditPurchases + $totalDayLoadLiabilities + (float) $vendor->pending_amount) - $totalPaymentsPaid, 2);
 
+        // Advance statistics
+        $advances = $vendor->advances()->with('adjustments.dayLoadEntry')->latest('date')->get();
+        $totalAdvanceGiven = (float) $vendor->advances()->sum('total_amount');
+        $totalAdvanceAdjusted = (float) $vendor->advances()->sum('adjusted_amount');
+        $totalActiveAdvanceBalance = (float) $vendor->active_advance_balance;
+        $netSettlementBalance = round($outstandingBalance - $totalActiveAdvanceBalance, 2);
+
+        // Account balances for advance modal
+        $ledgerService = app(\App\Services\CashBankLedgerService::class);
+        $todayLedger = $ledgerService->getOrCreateForDate(now());
+        $currentCashBalance = (float) $todayLedger->closing_cash_balance;
+        $currentBankBalance = (float) $todayLedger->closing_bank_balance;
+        $currentInvestmentBalance = \App\Models\CapitalTransaction::getCurrentBalance();
+
         return view('masters.vendors.show', compact(
             'vendor',
             'totalPurchaseAmount', 'totalPurchaseCount', 'lastPurchaseDate',
             'totalBoxesLoaded', 'totalBirdWeight', 'totalFarmWeight', 'totalLossWeight',
             'avgRateVariance', 'loadCount',
-            'totalCreditPurchases', 'totalDayLoadLiabilities', 'totalPaymentsPaid', 'outstandingBalance'
+            'totalCreditPurchases', 'totalDayLoadLiabilities', 'totalPaymentsPaid', 'outstandingBalance',
+            'advances', 'totalAdvanceGiven', 'totalAdvanceAdjusted', 'totalActiveAdvanceBalance', 'netSettlementBalance',
+            'currentCashBalance', 'currentBankBalance', 'currentInvestmentBalance'
         ));
     }
 

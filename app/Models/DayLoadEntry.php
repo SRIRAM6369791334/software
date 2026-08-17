@@ -162,6 +162,11 @@ class DayLoadEntry extends Model
         return $this->hasMany(DayLoadEntry::class, 'parent_entry_id');
     }
 
+    public function advanceAdjustments(): HasMany
+    {
+        return $this->hasMany(VendorAdvanceAdjustment::class, 'day_load_entry_id');
+    }
+
     public function adjustmentLogs(): HasMany
     {
         return $this->hasMany(EntryAdjustmentLog::class, 'entry_id');

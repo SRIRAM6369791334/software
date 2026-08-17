@@ -30,7 +30,8 @@
         ['header' => 'Finance & Payments'],
         ['label' => 'Dealer Payments', 'icon' => 'payments', 'route' => 'payments.dealers.index', 'permission' => 'view payments'],
         ['label' => 'Vendor Payments', 'icon' => 'credit_card', 'route' => 'payments.vendors.index', 'permission' => 'view vendor payments'],
-        ['label' => 'Cash & Bank Ledger', 'icon' => 'account_balance', 'route' => 'billing.cash-bank-ledger.index', 'permission' => 'create bills'],
+        ['label' => 'Cash & Bank Ledger', 'icon' => 'account_balance', 'route' => 'billing.cash-bank-ledger.index'],
+        ['label' => 'Capital & Investments', 'icon' => 'savings', 'route' => 'billing.investments.index'],
         ['label' => 'Expenses', 'icon' => 'account_balance_wallet', 'route' => 'expenses.index', 'permission' => 'view expenses'],
         ['label' => 'EMI Records', 'icon' => 'notifications_active', 'route' => 'expenses.emis.index', 'permission' => 'view emis'],
         

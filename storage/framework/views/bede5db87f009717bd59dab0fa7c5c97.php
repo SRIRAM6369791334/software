@@ -408,19 +408,63 @@
             <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">New Load Entry</h2>
         </div>
 
-        <form action="<?php echo e(route('billing.day-load.store')); ?>" method="POST" x-data="{ paperRate: 0, billingRate: 0, customerRate: 0, get activeVendorRate() { return this.billingRate > 0 ? this.billingRate : this.paperRate; } }">
+        <form action="<?php echo e(route('billing.day-load.store')); ?>" method="POST" x-data="{ 
+            paperRate: 0, 
+            billingRate: 0, 
+            customerRate: 0, 
+            boxWeight: '',
+            emptyWeight: '',
+            farmWeight: '',
+            selectedVendorId: '',
+            billingDate: '<?php echo e($date); ?>',
+            advancesByVendor: <?php echo e(json_encode($activeAdvancesByVendor ?? [])); ?>,
+            selectedAdvanceId: '',
+            applyAdvanceAmount: '',
+            get activeVendorRate() { return this.billingRate > 0 ? this.billingRate : this.paperRate; },
+            get dayOfWeek() {
+                if (!this.billingDate) return '';
+                const parts = this.billingDate.split('-');
+                if (parts.length === 3) {
+                    const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                    return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d.getDay()] || '';
+                }
+                return '';
+            },
+            get availableAdvance() {
+                if (!this.selectedVendorId || !this.advancesByVendor[this.selectedVendorId]) return null;
+                return this.advancesByVendor[this.selectedVendorId];
+            },
+            get estimatedVendorCost() {
+                let fw = parseFloat(this.farmWeight) || 0;
+                let bw = parseFloat(this.boxWeight) || 0;
+                let ew = parseFloat(this.emptyWeight) || 0;
+                let weight = fw > 0 ? fw : Math.max(0, bw - ew);
+                let rate = this.activeVendorRate || 0;
+                return weight * rate;
+            },
+            fillMaxAdvance() {
+                if (!this.availableAdvance) return;
+                let maxAdv = this.availableAdvance.total_remaining || 0;
+                let cost = this.estimatedVendorCost;
+                let fillAmount = (cost > 0 && cost < maxAdv) ? cost : maxAdv;
+                this.applyAdvanceAmount = fillAmount > 0 ? fillAmount.toFixed(2) : '';
+                if (this.availableAdvance.advances && this.availableAdvance.advances.length) {
+                    this.selectedAdvanceId = this.availableAdvance.advances[0].id;
+                }
+            }
+        }">
             <?php echo csrf_field(); ?>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-5 items-start">
                 <?php if (isset($component)) { $__componentOriginal8cee41e4af1fe2df52d1d5acd06eed36 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal8cee41e4af1fe2df52d1d5acd06eed36 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.select','data' => ['name' => 'vendor_id','label' => 'Vendor / Company Name','required' => true]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.select','data' => ['name' => 'vendor_id','label' => 'Vendor / Company Name','required' => true,'xModel' => 'selectedVendorId']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('form.select'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['name' => 'vendor_id','label' => 'Vendor / Company Name','required' => true]); ?>
+<?php $component->withAttributes(['name' => 'vendor_id','label' => 'Vendor / Company Name','required' => true,'x-model' => 'selectedVendorId']); ?>
                     <option value="">Select vendor...</option>
                     <?php $__currentLoopData = $vendors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $vendor): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <option value="<?php echo e($vendor->id); ?>"><?php echo e($vendor->firm_name); ?><?php echo e($vendor->is_shop ? ' (Shop)' : ''); ?></option>
@@ -463,14 +507,14 @@
 
                 <?php if (isset($component)) { $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'date','name' => 'billing_date','label' => 'Date','required' => true,'value' => ''.e($date).'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'date','name' => 'billing_date','label' => 'Date','required' => true,'xModel' => 'billingDate']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('form.input'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['type' => 'date','name' => 'billing_date','label' => 'Date','required' => true,'value' => ''.e($date).'']); ?>
+<?php $component->withAttributes(['type' => 'date','name' => 'billing_date','label' => 'Date','required' => true,'x-model' => 'billingDate']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b)): ?>
@@ -483,14 +527,14 @@
 <?php endif; ?>
                 <?php if (isset($component)) { $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'text','label' => 'Day','value' => ''.e(\Carbon\Carbon::parse($date)->format('l')).'','readonly' => true]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'text','label' => 'Day','xBind:value' => 'dayOfWeek','readonly' => true]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('form.input'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['type' => 'text','label' => 'Day','value' => ''.e(\Carbon\Carbon::parse($date)->format('l')).'','readonly' => true]); ?>
+<?php $component->withAttributes(['type' => 'text','label' => 'Day','x-bind:value' => 'dayOfWeek','readonly' => true]); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b)): ?>
@@ -503,7 +547,34 @@
 <?php endif; ?>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
+            
+            <div x-show="availableAdvance && availableAdvance.total_remaining > 0" x-cloak class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex flex-wrap items-center justify-between gap-4 mb-5">
+                <div class="flex items-center gap-2.5">
+                    <span class="material-symbols-rounded text-amber-600 text-2xl">local_shipping</span>
+                    <div>
+                        <p class="text-xs font-bold text-amber-900 dark:text-amber-200">
+                            Vendor Advance Available: <span class="font-jetbrains text-sm">Rs <span x-text="availableAdvance ? availableAdvance.total_remaining.toFixed(2) : '0.00'"></span></span>
+                        </p>
+                        <p class="text-[11px] text-amber-700 dark:text-amber-400">You can optionally deduct from this advance deposit for this entry.</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <div>
+                        <select name="vendor_advance_id" x-model="selectedAdvanceId" class="rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-zinc-900 text-xs px-3 py-2.5 font-semibold shadow-xs">
+                            <option value="">-- Select Advance Deposit --</option>
+                            <template x-for="adv in (availableAdvance ? availableAdvance.advances : [])" :key="adv.id">
+                                <option :value="adv.id" x-text="adv.date + ' (Bal: Rs ' + adv.remaining + ')'"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <input type="number" step="0.01" min="0" name="apply_advance_amount" x-model="applyAdvanceAmount" placeholder="Amount to adjust" class="w-36 rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-zinc-900 text-xs px-3 py-2.5 font-jetbrains font-bold shadow-xs">
+                        <button type="button" @click="fillMaxAdvance()" class="text-[11px] uppercase font-bold text-amber-800 bg-amber-200/80 px-3 py-2.5 rounded-xl hover:bg-amber-300 transition-all shadow-xs" title="Auto-fill up to entry total cost">Max</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-5 items-end">
                 <?php if (isset($component)) { $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'number','step' => '0.01','name' => 'paper_rate','label' => 'Paper Rate','required' => true,'xModel.number' => 'paperRate']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -564,15 +635,15 @@
 <?php $component = $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b; ?>
 <?php unset($__componentOriginal5c2a97ab476b69c1189ee85d1a95204b); ?>
 <?php endif; ?>
-                <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-4">
-                    <p class="text-xs font-bold uppercase text-zinc-500">Customer vs Vendor</p>
-                    <p class="mt-2 font-jetbrains text-2xl font-black" :class="(customerRate - activeVendorRate) >= 0 ? 'text-emerald-600' : 'text-rose-600'">
+                <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/70 p-3 h-[74px] flex flex-col justify-center">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Customer vs Vendor</p>
+                    <p class="mt-0.5 font-jetbrains text-2xl font-black" :class="(customerRate - activeVendorRate) >= 0 ? 'text-emerald-600' : 'text-rose-600'">
                         <span x-text="(customerRate - activeVendorRate) >= 0 ? '+' : '-'"></span>Rs <span x-text="Math.abs(customerRate - activeVendorRate).toFixed(2)"></span>
                     </p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-5 mb-6">
                 <?php if (isset($component)) { $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'number','name' => 'no_of_boxes','label' => 'Boxes','required' => true,'min' => '1']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -595,14 +666,14 @@
 <?php endif; ?>
                 <?php if (isset($component)) { $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'number','step' => '0.01','name' => 'box_weight','label' => 'Box Weight','required' => true]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'number','step' => '0.01','name' => 'box_weight','label' => 'Box Weight','required' => true,'xModel' => 'boxWeight']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('form.input'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['type' => 'number','step' => '0.01','name' => 'box_weight','label' => 'Box Weight','required' => true]); ?>
+<?php $component->withAttributes(['type' => 'number','step' => '0.01','name' => 'box_weight','label' => 'Box Weight','required' => true,'x-model' => 'boxWeight']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b)): ?>
@@ -615,14 +686,14 @@
 <?php endif; ?>
                 <?php if (isset($component)) { $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'number','step' => '0.01','name' => 'empty_weight','label' => 'Empty Weight','required' => true]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'number','step' => '0.01','name' => 'empty_weight','label' => 'Empty Weight','required' => true,'xModel' => 'emptyWeight']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('form.input'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['type' => 'number','step' => '0.01','name' => 'empty_weight','label' => 'Empty Weight','required' => true]); ?>
+<?php $component->withAttributes(['type' => 'number','step' => '0.01','name' => 'empty_weight','label' => 'Empty Weight','required' => true,'x-model' => 'emptyWeight']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b)): ?>
@@ -635,14 +706,14 @@
 <?php endif; ?>
                 <?php if (isset($component)) { $__componentOriginal5c2a97ab476b69c1189ee85d1a95204b = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'number','step' => '0.01','name' => 'farm_weight','label' => 'Farm Weight']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.form.input','data' => ['type' => 'number','step' => '0.01','name' => 'farm_weight','label' => 'Farm Weight','xModel' => 'farmWeight']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('form.input'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['type' => 'number','step' => '0.01','name' => 'farm_weight','label' => 'Farm Weight']); ?>
+<?php $component->withAttributes(['type' => 'number','step' => '0.01','name' => 'farm_weight','label' => 'Farm Weight','x-model' => 'farmWeight']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal5c2a97ab476b69c1189ee85d1a95204b)): ?>

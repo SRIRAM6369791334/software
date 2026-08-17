@@ -53,6 +53,11 @@ class CashBankLedgerController extends Controller
         $currentTotalBalance  = $latestRow
             ? ((float) $latestRow->closing_cash_balance + (float) $latestRow->closing_bank_balance)
             : 0;
+        $currentInvestmentBalance   = \App\Models\CapitalTransaction::getCurrentBalance();
+        $totalActiveVendorAdvances = (float) \App\Models\VendorAdvance::where('status', '!=', 'Fully Adjusted')->sum(\Illuminate\Support\Facades\DB::raw('total_amount - adjusted_amount'));
+        $totalConsolidatedLiquidity = (float) $currentTotalBalance + (float) $currentInvestmentBalance;
+        $latestCashBalance = $latestRow ? (float) $latestRow->closing_cash_balance : 0;
+        $latestBankBalance = $latestRow ? (float) $latestRow->closing_bank_balance : 0;
 
         // Paginated ledger rows (respects all filters)
         $ledgers = (clone $baseQuery)
@@ -60,9 +65,16 @@ class CashBankLedgerController extends Controller
             ->paginate(20)
             ->withQueryString();
 
+        $dates = $ledgers->pluck('ledger_date')->map(fn($d) => $d->format('Y-m-d'))->toArray();
+        $dateCapitalMap = \App\Models\CapitalTransaction::whereIn('date', $dates)
+            ->get()
+            ->groupBy(fn($item) => $item->date->format('Y-m-d'));
+
         return view('billing.cash-bank-ledger.index', compact(
             'ledgers', 'startDate', 'endDate', 'status',
-            'totalCashIncome', 'totalBankIncome', 'totalCashExpense', 'totalBankExpense', 'currentTotalBalance'
+            'totalCashIncome', 'totalBankIncome', 'totalCashExpense', 'totalBankExpense', 'currentTotalBalance',
+            'currentInvestmentBalance', 'totalActiveVendorAdvances', 'totalConsolidatedLiquidity',
+            'latestCashBalance', 'latestBankBalance', 'dateCapitalMap'
         ));
     }
 
@@ -232,10 +244,38 @@ class CashBankLedgerController extends Controller
             }
         }
 
+        $capitalInflows = \App\Models\CapitalTransaction::whereDate('date', $date)
+            ->whereIn('type', ['Investment', 'Transfer to Cash', 'Transfer to Bank'])
+            ->get();
+
+        $capitalOutflows = \App\Models\CapitalTransaction::whereDate('date', $date)
+            ->whereIn('type', ['Withdrawal', 'Transfer from Cash', 'Transfer from Bank'])
+            ->get();
+
+        $vendorAdvances = \App\Models\VendorAdvance::whereDate('date', $date)
+            ->with('vendor')
+            ->get();
+
+        $currentInvestmentBalance = \App\Models\CapitalTransaction::getCurrentBalance();
+        $totalActiveVendorAdvances = (float) \App\Models\VendorAdvance::where('status', '!=', 'Fully Adjusted')->sum(\Illuminate\Support\Facades\DB::raw('total_amount - adjusted_amount'));
+        $dayAdvancesTotal = (float) $vendorAdvances->sum('total_amount');
+        $dayAdvancesCash = (float) $vendorAdvances->sum('cash_amount');
+        $dayAdvancesBank = (float) $vendorAdvances->sum('bank_amount');
+        $dayAdvancesInvestment = (float) $vendorAdvances->sum('investment_amount');
+        
+        $dayInvestments = (float) \App\Models\CapitalTransaction::whereDate('date', $date)->where('type', 'Investment')->sum('amount');
+        $dayTransfersToBusiness = (float) \App\Models\CapitalTransaction::whereDate('date', $date)->whereIn('type', ['Transfer to Cash', 'Transfer to Bank'])->sum('amount');
+        $dayTransfersFromBusiness = (float) \App\Models\CapitalTransaction::whereDate('date', $date)->whereIn('type', ['Transfer from Cash', 'Transfer from Bank'])->sum('amount');
+        $dayDrawings = (float) \App\Models\CapitalTransaction::whereDate('date', $date)->where('type', 'Withdrawal')->sum('amount');
+
         return view('billing.cash-bank-ledger.show', compact(
             'ledger', 'date', 'dayLoadBatch',
             'dealerPayments', 'customerPayments', 'expenses', 'vendorPayments',
-            'dealerAdjustment', 'adjustmentDetails'
+            'dealerAdjustment', 'adjustmentDetails',
+            'capitalInflows', 'capitalOutflows', 'vendorAdvances',
+            'currentInvestmentBalance', 'totalActiveVendorAdvances',
+            'dayAdvancesTotal', 'dayAdvancesCash', 'dayAdvancesBank', 'dayAdvancesInvestment',
+            'dayInvestments', 'dayTransfersToBusiness', 'dayTransfersFromBusiness', 'dayDrawings'
         ));
     }
 }

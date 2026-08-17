@@ -62,7 +62,7 @@ class PurchaseController extends Controller
         $dateFrom     = $request->input('date_from');
         $dateTo       = $request->input('date_to');
 
-        $vendorDayLoadsQuery = \App\Models\DayLoadEntry::with(['vendor', 'batch'])
+        $vendorDayLoadsQuery = \App\Models\DayLoadEntry::with(['vendor', 'batch', 'dealer'])
             ->where('status', '!=', 'Cancelled');
 
         if ($vendorFilter) {
@@ -75,10 +75,60 @@ class PurchaseController extends Controller
             $vendorDayLoadsQuery->whereHas('batch', fn($q) => $q->whereDate('billing_date', '<=', $dateTo));
         }
 
-        $vendorDayLoads          = (clone $vendorDayLoadsQuery)->latest()->paginate(15, ['*'], 'vendor_dayload_page');
         $vendorDayLoadTotalBoxes = (clone $vendorDayLoadsQuery)->sum('no_of_boxes');
         $vendorDayLoadTotalBird  = (clone $vendorDayLoadsQuery)->sum('bird_weight');
         $vendorDayLoadTotalFarm  = (clone $vendorDayLoadsQuery)->sum('farm_weight');
+
+        // Group entries by vendor + date into single rows
+        $allVendorEntries = (clone $vendorDayLoadsQuery)->get();
+        $groupedEntries = $allVendorEntries->groupBy(function ($entry) {
+            return $entry->vendor_id . '|' . ($entry->batch ? $entry->batch->billing_date->format('Y-m-d') : '');
+        })->map(function ($entries) {
+            $first = $entries->first();
+            $hasVendorRate = $entries->every(fn($e) => (float) ($e->billing_rate ?: 0) > 0);
+            $totalPrice = $hasVendorRate
+                ? round($entries->sum(fn($e) => (float) ($e->farm_weight ?? 0) * (float) ($e->billing_rate ?: $e->paper_rate)), 2)
+                : 0;
+            return (object) [
+                'date'              => $first->batch ? $first->batch->billing_date : null,
+                'vendor_name'       => $first->vendor->firm_name ?? '-',
+                'total_boxes'       => $entries->sum('no_of_boxes'),
+                'total_bird_weight' => round($entries->sum('bird_weight'), 2),
+                'paper_rate'        => (float) $first->paper_rate,
+                'vendor_rate'       => (float) ($first->billing_rate ?: 0),
+                'total_farm_weight' => round($entries->sum('farm_weight'), 2),
+                'has_vendor_rate'   => $hasVendorRate,
+                'total_price'       => $totalPrice,
+                'entry_count'       => $entries->count(),
+                'entries'           => $entries->map(function ($e) {
+                    $vr = (float) ($e->billing_rate ?: 0);
+                    $fw = (float) ($e->farm_weight ?? 0);
+                    return (object) [
+                        'id'           => $e->id,
+                        'boxes'        => $e->no_of_boxes,
+                        'bird_weight'  => (float) $e->bird_weight,
+                        'paper_rate'   => (float) $e->paper_rate,
+                        'vendor_rate'  => $vr,
+                        'farm_weight'  => $fw,
+                        'vendor_cost'  => $vr > 0 ? round($fw * $vr, 2) : 0,
+                        'dealer_name'  => $e->dealer->firm_name ?? '-',
+                        'customer_rate'=> (float) $e->customer_rate,
+                        'amount'       => (float) $e->amount,
+                        'status'       => $e->status,
+                    ];
+                })->values(),
+            ];
+        })->sortByDesc('date')->values();
+
+        $perPage = 15;
+        $currentPage = (int) $request->input('vendor_dayload_page', 1);
+        $vendorDayLoads = new \Illuminate\Pagination\LengthAwarePaginator(
+            $groupedEntries->forPage($currentPage, $perPage)->values(),
+            $groupedEntries->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'pageName' => 'vendor_dayload_page', 'query' => $request->query()]
+        );
         
         return view('purchases.index', compact(
             'purchases', 'search', 'vendors', 'items', 'batches', 'warehouses',
@@ -158,6 +208,9 @@ class PurchaseController extends Controller
             ) + ['vendors' => Vendor::orderBy('firm_name')->get()]);
         }
 
+        $dateFrom = $request->input('date_from');
+        $dateTo   = $request->input('date_to');
+
         // Date list view: combine dates from both purchases and day-load batches
         $purchaseDates = Purchase::select(
                 'date',
@@ -168,6 +221,8 @@ class PurchaseController extends Controller
                 DB::raw('0 as total_boxes'),
                 DB::raw('0 as total_bird_weight')
             )
+            ->when($dateFrom, fn ($q) => $q->whereDate('date', '>=', $dateFrom))
+            ->when($dateTo, fn ($q) => $q->whereDate('date', '<=', $dateTo))
             ->groupBy('date');
 
         $dayloadDates = DayLoadBatch::select(
@@ -179,6 +234,8 @@ class PurchaseController extends Controller
                 DB::raw('SUM(total_boxes) as total_boxes'),
                 DB::raw('SUM(total_bird_weight) as total_bird_weight')
             )
+            ->when($dateFrom, fn ($q) => $q->whereDate('billing_date', '>=', $dateFrom))
+            ->when($dateTo, fn ($q) => $q->whereDate('billing_date', '<=', $dateTo))
             ->groupBy('billing_date', 'id');
 
         $dateGroups = DB::table($purchaseDates->unionAll($dayloadDates))
@@ -197,7 +254,7 @@ class PurchaseController extends Controller
             ->withQueryString();
 
         return view('purchases.invoices', compact(
-            'dateGroups', 'search', 'totalPurchases', 'totalExpenditure', 'totalTaxPaid', 'totalDayLoads', 'totalBirdsLoaded'
+            'dateGroups', 'search', 'dateFrom', 'dateTo', 'totalPurchases', 'totalExpenditure', 'totalTaxPaid', 'totalDayLoads', 'totalBirdsLoaded'
         ));
     }
 

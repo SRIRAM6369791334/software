@@ -23,7 +23,7 @@
     </x-page-header>
 
     {{-- Stats Grid (Bento Box) --}}
-    <section class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 mb-8">
+    <section class="grid grid-cols-1 gap-6 md:grid-cols-3 mb-8">
         @php
             $pb = $stats['profitBreakdown'] ?? [];
             $statCards = [
@@ -47,13 +47,6 @@
                     'subtitle' => 'MTD Operating Burn & EMIs', 
                     'icon'     => 'trending_up', 
                     'color'    => 'rose'
-                ],
-                [
-                    'label'    => 'Net Profit / Loss', 
-                    'value'    => '₹' . number_format($pb['net_profit'] ?? 0, 2), 
-                    'subtitle' => 'MTD Net Profit Margin', 
-                    'icon'     => 'account_balance_wallet', 
-                    'color'    => ($pb['net_profit'] ?? 0) >= 0 ? 'emerald' : 'rose'
                 ],
             ];
         @endphp

@@ -74,7 +74,7 @@
 </x-card>
 
 {{-- Overall 8 Financial Metrics Summary Cards --}}
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
     <x-stat-card label="1. Total Billed Amount" value="Rs {{ number_format($breakdown['total_billed'], 2) }}" icon="receipt_long" color="emerald" />
     <x-stat-card label="2. Dealer Paid Amount" value="Rs {{ number_format($breakdown['dealer_paid'], 2) }}" icon="payments" color="teal" />
     <x-stat-card label="3. Dealer Pending Balance" value="Rs {{ number_format($breakdown['dealer_pending'], 2) }}" icon="pending_actions" color="amber" />
@@ -83,6 +83,48 @@
     <x-stat-card label="6. Vendor Pending Payable" value="Rs {{ number_format($breakdown['vendor_pending'], 2) }}" icon="account_balance" color="indigo" />
     <x-stat-card label="7. Total Expenses" value="Rs {{ number_format($breakdown['total_expenses'], 2) }}" icon="trending_up" color="rose" />
     <x-stat-card label="8. Net Profit / Loss" value="Rs {{ number_format($breakdown['net_profit'], 2) }}" icon="account_balance_wallet" color="{{ $breakdown['net_profit'] >= 0 ? 'emerald' : 'rose' }}" />
+</div>
+
+{{-- Capital & Owner Drawings Summary --}}
+<div class="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/60 dark:border-zinc-700/60 mb-8">
+    <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-rounded text-indigo-600 dark:text-indigo-400 text-lg">savings</span>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">Capital Movements & Owner Drawings</h3>
+        </div>
+        <a href="{{ route('billing.investments.index') }}" class="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 flex items-center gap-1">
+            Manage Capital Account <span class="material-symbols-rounded text-sm">arrow_forward</span>
+        </a>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Capital Invested (Period)</p>
+                <p class="text-lg font-black font-jetbrains text-emerald-600 dark:text-emerald-400 mt-0.5">
+                    Rs {{ number_format($breakdown['capital_invested'] ?? 0, 2) }}
+                </p>
+            </div>
+            <span class="material-symbols-rounded text-emerald-500 text-2xl">add_circle</span>
+        </div>
+        <div class="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Owner Withdrawals (Period)</p>
+                <p class="text-lg font-black font-jetbrains text-rose-600 dark:text-rose-400 mt-0.5">
+                    Rs {{ number_format($breakdown['capital_withdrawn'] ?? 0, 2) }}
+                </p>
+            </div>
+            <span class="material-symbols-rounded text-rose-500 text-2xl">money_off</span>
+        </div>
+        <div class="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Net Capital Movement</p>
+                <p class="text-lg font-black font-jetbrains text-indigo-600 dark:text-indigo-400 mt-0.5">
+                    Rs {{ number_format(($breakdown['capital_invested'] ?? 0) - ($breakdown['capital_withdrawn'] ?? 0), 2) }}
+                </p>
+            </div>
+            <span class="material-symbols-rounded text-indigo-500 text-2xl">account_balance_wallet</span>
+        </div>
+    </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

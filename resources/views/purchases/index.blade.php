@@ -362,6 +362,10 @@
                     <span class="material-symbols-rounded text-[14px] align-text-bottom">scale</span>
                     {{ number_format($vendorDayLoadTotalBird, 1) }} kg Bird
                 </span>
+                <span class="px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                    <span class="material-symbols-rounded text-[14px] align-text-bottom">agriculture</span>
+                    {{ number_format($vendorDayLoadTotalFarm, 1) }} kg Farm
+                </span>
             </div>
         </div>
 
@@ -420,34 +424,154 @@
             </form>
         </div>
 
-        <x-data-table :headers="['Date', 'Vendor', ['label' => 'Boxes', 'align' => 'right'], ['label' => 'Box Weight', 'align' => 'right'], ['label' => 'Empty Weight', 'align' => 'right'], ['label' => 'Bird Weight', 'align' => 'right'], ['label' => 'Customer Rate', 'align' => 'right'], ['label' => 'Total Rate', 'align' => 'right']]">
-            @forelse($vendorDayLoads as $entry)
-                <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50">
-                    <td class="px-4 py-3 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                        {{ $entry->batch->billing_date->format('d M Y') }}
-                    </td>
-                    <td class="px-4 py-3">
-                        <div class="flex items-center gap-2">
-                            <x-avatar name="{{ $entry->vendor->firm_name ?? '-' }}" size="sm" />
-                            <span class="font-bold text-zinc-900 dark:text-zinc-100 text-sm">{{ $entry->vendor->firm_name ?? '-' }}</span>
-                        </div>
-                    </td>
-                    <td class="px-4 py-3 text-right font-jetbrains text-sm">{{ $entry->no_of_boxes }}</td>
-                    <td class="px-4 py-3 text-right font-jetbrains text-sm">{{ number_format($entry->box_weight ?? 0, 1) }} kg</td>
-                    <td class="px-4 py-3 text-right font-jetbrains text-sm">{{ number_format($entry->empty_weight ?? 0, 1) }} kg</td>
-                    <td class="px-4 py-3 text-right font-jetbrains text-sm">{{ number_format($entry->bird_weight, 1) }} kg</td>
-                    <td class="px-4 py-3 text-right font-jetbrains text-sm">Rs {{ number_format($entry->customer_rate, 2) }}</td>
-                    <td class="px-4 py-3 text-right font-jetbrains text-sm font-bold text-emerald-600 dark:text-emerald-400">Rs {{ number_format($entry->amount, 2) }}</td>
-                </tr>
-            @empty
-                <tr><td colspan="8" class="text-center py-8 text-zinc-500">No vendor day-load entries found.</td></tr>
-            @endforelse
+        <div class="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl rounded-[2rem] border border-white/60 dark:border-zinc-800/50 shadow-xl shadow-zinc-200/50 overflow-hidden transition-all duration-300">
+            <div class="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <table class="w-full text-sm text-left text-zinc-600 dark:text-zinc-400 font-outfit">
+                    <thead class="text-xs text-zinc-500 dark:text-zinc-400 uppercase bg-transparent border-b border-zinc-200/50 dark:border-zinc-700/50 font-cabinet [&_th]:px-6 [&_th]:py-4 [&_th]:font-semibold [&_th]:tracking-wider [&_th]:whitespace-nowrap">
+                        <tr>
+                            <th>Date</th>
+                            <th>Vendor</th>
+                            <th class="text-right">Box</th>
+                            <th class="text-right">Bird Weight</th>
+                            <th class="text-right">Paper Rate</th>
+                            <th class="text-right">Vendor Rate</th>
+                            <th class="text-right">Farm Weight</th>
+                            <th class="text-right">Total Price</th>
+                            <th class="text-center" style="width:80px"></th>
+                        </tr>
+                    </thead>
+                    @forelse($vendorDayLoads as $idx => $entry)
+                        <tbody x-data="{ open: false }">
+                            <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50 transition-colors border-b border-zinc-100 dark:border-zinc-800"
+                                :class="{ 'cursor-pointer': {{ $entry->entry_count }} > 1 }"
+                                @click="if({{ $entry->entry_count }} > 1) open = !open">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                                    {{ $entry->date ? $entry->date->format('d M Y') : '-' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-2">
+                                        <x-avatar name="{{ $entry->vendor_name }}" size="sm" />
+                                        <div>
+                                            <span class="font-bold text-zinc-900 dark:text-zinc-100 text-sm">{{ $entry->vendor_name }}</span>
+                                            @if($entry->entry_count > 1)
+                                                <span class="ml-1.5 px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-900/20 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">{{ $entry->entry_count }} entries</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right font-jetbrains text-sm">{{ $entry->total_boxes }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right font-jetbrains text-sm">{{ number_format($entry->total_bird_weight, 1) }} kg</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right font-jetbrains text-sm">Rs {{ number_format($entry->paper_rate, 2) }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right font-jetbrains text-sm">
+                                    @if($entry->vendor_rate > 0)
+                                        Rs {{ number_format($entry->vendor_rate, 2) }}
+                                    @else
+                                        <span class="text-zinc-400">—</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right font-jetbrains text-sm font-bold text-emerald-600 dark:text-emerald-400">{{ number_format($entry->total_farm_weight, 1) }} kg</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    @if($entry->has_vendor_rate)
+                                        <span class="font-jetbrains text-sm font-bold text-zinc-900 dark:text-zinc-100">Rs {{ number_format($entry->total_price, 2) }}</span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-[10px] font-bold text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                                            <span class="material-symbols-rounded text-[12px]">warning</span>
+                                            Enter vendor price
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    @if($entry->entry_count > 1)
+                                        <button type="button" @click.stop="open = !open"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200"
+                                            :class="open ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 dark:hover:bg-indigo-900/20 dark:hover:text-indigo-400 dark:hover:border-indigo-800'">
+                                            <span class="material-symbols-rounded text-[14px] transition-transform duration-200" :class="open ? 'rotate-180' : ''">expand_more</span>
+                                            <span x-text="open ? 'Hide' : 'View'"></span>
+                                        </button>
+                                    @else
+                                        <span class="text-zinc-300 dark:text-zinc-700 text-xs">—</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            {{-- Expandable detail row --}}
+                            @if($entry->entry_count > 1)
+                            <tr x-show="open" x-cloak
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0"
+                                x-transition:enter-end="opacity-100"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100"
+                                x-transition:leave-end="opacity-0"
+                                class="bg-zinc-50/80 dark:bg-zinc-800/40">
+                                <td colspan="9" class="px-6 py-3">
+                                    <div class="border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden">
+                                        <table class="w-full text-left text-sm">
+                                            <thead class="bg-zinc-100 dark:bg-zinc-700/50">
+                                                <tr>
+                                                    <th class="px-3 py-2 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase">#</th>
+                                                    <th class="px-3 py-2 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase">Dealer</th>
+                                                    <th class="px-3 py-2 text-right text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase">Box</th>
+                                                    <th class="px-3 py-2 text-right text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase">Bird Wt</th>
+                                                    <th class="px-3 py-2 text-right text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase">Paper Rate</th>
+                                                    <th class="px-3 py-2 text-right text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase">Vendor Rate</th>
+                                                    <th class="px-3 py-2 text-right text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase">Farm Wt</th>
+                                                    <th class="px-3 py-2 text-right text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase">Total Amount</th>
+                                                    <th class="px-3 py-2 text-center text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-zinc-100 dark:divide-zinc-700">
+                                                @foreach($entry->entries as $i => $sub)
+                                                    <tr class="hover:bg-white dark:hover:bg-zinc-800/60 transition-colors">
+                                                        <td class="px-3 py-2 text-xs text-zinc-400 font-mono">{{ $i + 1 }}</td>
+                                                        <td class="px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-300">{{ $sub->dealer_name }}</td>
+                                                        <td class="px-3 py-2 text-right text-xs font-jetbrains text-zinc-600 dark:text-zinc-400">{{ $sub->boxes }}</td>
+                                                        <td class="px-3 py-2 text-right text-xs font-jetbrains text-zinc-600 dark:text-zinc-400">{{ number_format($sub->bird_weight, 1) }} kg</td>
+                                                        <td class="px-3 py-2 text-right text-xs font-jetbrains text-zinc-600 dark:text-zinc-400">Rs {{ number_format($sub->paper_rate, 2) }}</td>
+                                                        <td class="px-3 py-2 text-right text-xs font-jetbrains text-zinc-600 dark:text-zinc-400">
+                                                            @if($sub->vendor_rate > 0)
+                                                                Rs {{ number_format($sub->vendor_rate, 2) }}
+                                                            @else
+                                                                <span class="text-zinc-400">—</span>
+                                                            @endif
+                                                        </td>
+                                                        <td class="px-3 py-2 text-right text-xs font-jetbrains text-zinc-600 dark:text-zinc-400">{{ number_format($sub->farm_weight, 1) }} kg</td>
+                                                        <td class="px-3 py-2 text-right text-xs font-jetbrains font-bold text-zinc-700 dark:text-zinc-300">
+                                                            @if($sub->vendor_cost > 0)
+                                                                Rs {{ number_format($sub->vendor_cost, 2) }}
+                                                            @else
+                                                                <span class="text-amber-500 text-[10px] font-bold">—</span>
+                                                            @endif
+                                                        </td>
+                                                        <td class="px-3 py-2 text-center">
+                                                            @php
+                                                                $sc = match($sub->status) {
+                                                                    'Active' => 'emerald', 'Adjusted' => 'amber', 'Split' => 'sky', 'Cancelled' => 'rose', default => 'zinc',
+                                                                };
+                                                            @endphp
+                                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-{{ $sc }}-50 dark:bg-{{ $sc }}-900/20 text-{{ $sc }}-700 dark:text-{{ $sc }}-400 border border-{{ $sc }}-200 dark:border-{{ $sc }}-800">{{ $sub->status }}</span>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endif
+                        </tbody>
+                    @empty
+                        <tbody>
+                            <tr><td colspan="9" class="px-6 py-8 text-center text-zinc-500">No vendor day-load entries found.</td></tr>
+                        </tbody>
+                    @endforelse
+                </table>
+            </div>
             @if($vendorDayLoads->hasPages())
-                <x-slot:pagination>
+                <div class="p-4 border-t border-zinc-200/50 dark:border-zinc-800/50">
                     {{ $vendorDayLoads->links() }}
-                </x-slot:pagination>
+                </div>
             @endif
-        </x-data-table>
+        </div>
     </x-card>
 
     <!-- {{-- 5. All Purchase History --}}

@@ -28,6 +28,7 @@ class VendorPaymentController extends Controller
         $dateFrom     = $request->input('date_from');
         $dateTo       = $request->input('date_to');
         $modeFilter   = $request->input('payment_mode');
+        $tab          = $request->input('tab', 'payouts');
 
         $paymentsQuery = VendorPayment::query()
             ->when($search, function ($q) use ($search) {
@@ -46,10 +47,146 @@ class VendorPaymentController extends Controller
         $payments = $paymentsQuery->with('vendor')->latest('date')->paginate(15);
         $vendors = Vendor::orderBy('firm_name')->get();
 
+        // Vendor Advances Query
+        $advancesQuery = \App\Models\VendorAdvance::with(['vendor', 'adjustments.dayLoadEntry'])
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($nested) use ($search) {
+                    $nested->whereHas('vendor', fn($v) => $v->where('firm_name', 'like', "%{$search}%"))
+                           ->orWhere('reference_number', 'like', "%{$search}%");
+                });
+            })
+            ->when($vendorFilter, fn($q) => $q->where('vendor_id', $vendorFilter))
+            ->when($dateFrom, fn($q) => $q->whereDate('date', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->whereDate('date', '<=', $dateTo));
+
+        $totalAdvancesGiven = (clone $advancesQuery)->sum('total_amount');
+        $totalAdvancesRemaining = (clone $advancesQuery)->where('status', '!=', 'Fully Adjusted')->get()->sum(fn($a) => $a->remaining_amount);
+        $advances = (clone $advancesQuery)->latest('date')->paginate(15, ['*'], 'advances_page');
+
+        // Current Balances for Multi-Source Advance Payment
+        $todayLedger = app(\App\Services\CashBankLedgerService::class)->getOrCreateForDate(now());
+        $currentCashBalance = (float) $todayLedger->closing_cash_balance;
+        $currentBankBalance = (float) $todayLedger->closing_bank_balance;
+
+        $totalInvested = (float) \App\Models\CapitalTransaction::where('type', 'Investment')->sum('amount');
+        $totalTransferredToBusiness = (float) \App\Models\CapitalTransaction::whereIn('type', ['Transfer to Cash', 'Transfer to Bank'])->sum('amount');
+        $totalTransferredFromBusiness = (float) \App\Models\CapitalTransaction::whereIn('type', ['Transfer from Cash', 'Transfer from Bank'])->sum('amount');
+        $totalWithdrawn = (float) \App\Models\CapitalTransaction::where('type', 'Withdrawal')->sum('amount');
+        $totalVendorAdvanceFunded = (float) \App\Models\CapitalTransaction::where('type', 'Vendor Advance Outflow')->sum('amount');
+
+        $currentInvestmentBalance = round(
+            $totalInvested + $totalTransferredFromBusiness - $totalTransferredToBusiness - $totalWithdrawn - $totalVendorAdvanceFunded,
+            2
+        );
+
         return view('payments.vendors', compact(
-            'payments', 'vendors', 'search',
-            'vendorFilter', 'dateFrom', 'dateTo', 'modeFilter', 'totalPaidOut'
+            'payments', 'advances', 'vendors', 'search',
+            'vendorFilter', 'dateFrom', 'dateTo', 'modeFilter', 'tab',
+            'totalPaidOut', 'totalAdvancesGiven', 'totalAdvancesRemaining',
+            'currentCashBalance', 'currentBankBalance', 'currentInvestmentBalance'
         ));
+    }
+
+    public function storeAdvance(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'vendor_id'          => 'required|exists:vendors,id',
+            'date'               => 'required|date',
+            'cash_amount'        => 'nullable|numeric|min:0',
+            'bank_amount'        => 'nullable|numeric|min:0',
+            'investment_amount'  => 'nullable|numeric|min:0',
+            'payment_mode'       => 'nullable|string',
+            'bank_transfer_type' => 'nullable|string',
+            'reference_number'   => 'nullable|string|max:100',
+            'notes'              => 'nullable|string|max:500',
+        ]);
+
+        $cashAmount = (float) ($validated['cash_amount'] ?? 0);
+        $bankAmount = (float) ($validated['bank_amount'] ?? 0);
+        $investmentAmount = (float) ($validated['investment_amount'] ?? 0);
+        $totalAmount = round($cashAmount + $bankAmount + $investmentAmount, 2);
+
+        if ($totalAmount <= 0) {
+            return back()->with('error', 'Total advance amount must be greater than zero.');
+        }
+
+        // Determine payment mode automatically from funding source split
+        $sources = [];
+        if ($cashAmount > 0) $sources[] = 'Cash';
+        if ($bankAmount > 0) $sources[] = 'Bank (' . ($validated['bank_transfer_type'] ?? 'UPI') . ')';
+        if ($investmentAmount > 0) $sources[] = 'Pool';
+        $computedMode = count($sources) > 1 ? implode(' + ', $sources) : ($sources[0] ?? 'Cash');
+        $paymentMode = !empty($validated['payment_mode']) ? $validated['payment_mode'] : $computedMode;
+
+        $vendor = Vendor::findOrFail($validated['vendor_id']);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $vendor, $cashAmount, $bankAmount, $investmentAmount, $totalAmount, $paymentMode) {
+            // 1. If funded from investment pool, log CapitalTransaction
+            if ($investmentAmount > 0) {
+                \App\Models\CapitalTransaction::create([
+                    'type'               => 'Vendor Advance Outflow',
+                    'date'               => $validated['date'],
+                    'amount'             => $investmentAmount,
+                    'payment_mode'       => 'Investment Pool',
+                    'person_name'        => $vendor->firm_name,
+                    'reference_number'   => $validated['reference_number'] ?? null,
+                    'notes'              => "Advance payment for {$vendor->firm_name} (funded from investment)",
+                    'created_by'         => auth()->id(),
+                ]);
+            }
+
+            // 2. Create Vendor Advance
+            \App\Models\VendorAdvance::create([
+                'vendor_id'          => $vendor->id,
+                'date'               => $validated['date'],
+                'total_amount'       => $totalAmount,
+                'cash_amount'        => $cashAmount,
+                'bank_amount'        => $bankAmount,
+                'investment_amount'  => $investmentAmount,
+                'adjusted_amount'    => 0.00,
+                'payment_mode'       => $paymentMode,
+                'bank_transfer_type' => $validated['bank_transfer_type'] ?? null,
+                'status'             => 'Pending',
+                'reference_number'   => $validated['reference_number'] ?? null,
+                'notes'              => $validated['notes'] ?? 'Vendor advance',
+                'created_by'         => auth()->id(),
+            ]);
+
+            // 3. Recalculate Cash/Bank ledger for that date
+            if ($cashAmount > 0 || $bankAmount > 0) {
+                app(\App\Services\CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($validated['date']));
+            }
+        });
+
+        return back()->with('success', "Advance of Rs " . number_format($totalAmount, 2) . " recorded for {$vendor->firm_name}.");
+    }
+
+    public function destroyAdvance(\App\Models\VendorAdvance $advance): RedirectResponse
+    {
+        if ((float) $advance->adjusted_amount > 0) {
+            return back()->with('error', 'Cannot delete an advance that has already been partially or fully adjusted against Day-Load entries.');
+        }
+
+        $advDate = $advance->date;
+        $invAmount = (float) $advance->investment_amount;
+        $vendorName = $advance->vendor->firm_name ?? 'Vendor';
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($advance, $advDate, $invAmount, $vendorName) {
+            if ($invAmount > 0) {
+                \App\Models\CapitalTransaction::where('type', 'Vendor Advance Outflow')
+                    ->whereDate('date', $advDate)
+                    ->where('amount', $invAmount)
+                    ->where('person_name', $vendorName)
+                    ->latest()
+                    ->first()?->delete();
+            }
+
+            $advance->delete();
+
+            app(\App\Services\CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($advDate));
+        });
+
+        return back()->with('success', 'Vendor advance deleted and ledger balances updated.');
     }
 
     public function create(Request $request): View

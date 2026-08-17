@@ -33,6 +33,20 @@ class Vendor extends Model
         return $this->hasMany(VendorPayment::class);
     }
 
+    public function advances(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(VendorAdvance::class);
+    }
+
+    public function getActiveAdvanceBalanceAttribute(): float
+    {
+        $advs = $this->relationLoaded('advances')
+            ? $this->advances->where('status', '!=', 'Fully Adjusted')
+            : $this->advances()->where('status', '!=', 'Fully Adjusted')->get();
+
+        return (float) $advs->sum(fn($a) => $a->remaining_amount);
+    }
+
     public function getEmiOutstandingAttribute(): float
     {
         return (float) \App\Models\Emi::where('emi_type', 'Vendor')
@@ -64,7 +78,7 @@ class Vendor extends Model
         
         $openingOutstanding = (float) $this->pending_amount;
 
-        return round(($totalCreditPurchases + $totalDayLoadLiabilities + $openingOutstanding + $this->emi_outstanding) - $totalPaymentsPaid, 2);
+        return round(($totalCreditPurchases + $totalDayLoadLiabilities + $openingOutstanding + $this->emi_outstanding) - $totalPaymentsPaid - $this->active_advance_balance, 2);
     }
 
     public function scopeSearch($query, ?string $term)

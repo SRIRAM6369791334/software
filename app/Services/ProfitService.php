@@ -300,20 +300,31 @@ class ProfitService
         $netProfit = $totalBilled - $vendorCost - $totalExpenses;
         $cashProfit = $dealerPaid - $vendorPaid - $totalExpenses;
 
+        // 9. Capital Inflow & Withdrawals
+        $capitalInvested = (float) \App\Models\CapitalTransaction::whereBetween('date', [$startDate, $endDate])
+            ->where('type', 'Investment')
+            ->sum('amount');
+
+        $capitalWithdrawn = (float) \App\Models\CapitalTransaction::whereBetween('date', [$startDate, $endDate])
+            ->where('type', 'Withdrawal')
+            ->sum('amount');
+
         return [
-            'total_billed'      => round($totalBilled, 2),
-            'dealer_paid'       => round($dealerPaid, 2),
-            'dealer_pending'    => round($dealerPending, 2),
-            'vendor_cost'       => round($vendorCost, 2),
-            'vendor_paid'       => round($vendorPaid, 2),
-            'vendor_pending'    => round($vendorPending, 2),
-            'total_expenses'    => round($totalExpenses, 2),
-            'net_profit'        => round($netProfit, 2),
-            'cash_profit'       => round($cashProfit, 2),
+            'total_billed'        => round($totalBilled, 2),
+            'dealer_paid'         => round($dealerPaid, 2),
+            'dealer_pending'      => round($dealerPending, 2),
+            'vendor_cost'         => round($vendorCost, 2),
+            'vendor_paid'         => round($vendorPaid, 2),
+            'vendor_pending'      => round($vendorPending, 2),
+            'total_expenses'      => round($totalExpenses, 2),
+            'net_profit'          => round($netProfit, 2),
+            'cash_profit'         => round($cashProfit, 2),
+            'capital_invested'    => round($capitalInvested, 2),
+            'capital_withdrawn'   => round($capitalWithdrawn, 2),
             // Legacy fallbacks for compatibility
-            'total_collections' => round($dealerPaid, 2),
-            'total_vendor_pay'  => round($vendorPaid, 2),
-            'pending_collection' => round($dealerPending, 2),
+            'total_collections'   => round($dealerPaid, 2),
+            'total_vendor_pay'    => round($vendorPaid, 2),
+            'pending_collection'  => round($dealerPending, 2),
         ];
     }
 

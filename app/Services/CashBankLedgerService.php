@@ -104,31 +104,59 @@ class CashBankLedgerService
                 $dealerAdjustmentBank += $adjBank;
             }
 
+            // Capital Transfers into Operating Cash & Bank
+            // ONLY 'Transfer to Cash' injects funds into operating Cash in Hand
+            // ONLY 'Transfer to Bank' injects funds into operating Bank Accounts
+            // ('Investment' deposits into the Capital Pool Reserve, NOT daily sales income)
+            $capitalCashIn  = (float) \App\Models\CapitalTransaction::whereDate('date', $dateStr)
+                ->where('type', 'Transfer to Cash')
+                ->where('payment_mode', 'Cash')
+                ->sum('amount');
+
+            $capitalBankIn  = (float) \App\Models\CapitalTransaction::whereDate('date', $dateStr)
+                ->where('type', 'Transfer to Bank')
+                ->where('payment_mode', '!=', 'Cash')
+                ->sum('amount');
+
+            // Capital Outflows (Transfers from Cash/Bank back to Pool)
+            // (Note: Owner 'Withdrawal' is drawn directly from Capital Pool Reserve, not from daily operating sales cash)
+            $capitalCashOut = (float) \App\Models\CapitalTransaction::whereDate('date', $dateStr)
+                ->where('type', 'Transfer from Cash')
+                ->sum('amount');
+
+            $capitalBankOut = (float) \App\Models\CapitalTransaction::whereDate('date', $dateStr)
+                ->where('type', 'Transfer from Bank')
+                ->sum('amount');
+
+            // Vendor Advances (Cash & Bank funding)
+            $vendorAdvanceCash = (float) \App\Models\VendorAdvance::whereDate('date', $dateStr)->sum('cash_amount');
+            $vendorAdvanceBank = (float) \App\Models\VendorAdvance::whereDate('date', $dateStr)->sum('bank_amount');
+
             $dealerCashIncome   = round($rawDealerCashIncome - $dealerAdjustmentCash, 2);
             $customerCashIncome = (float) \App\Models\CustomerPayment::whereDate('date', $dateStr)->sum('cod_amount');
-            $cashIncome         = round($dealerCashIncome + $customerCashIncome, 2);
+            $cashIncome         = round($dealerCashIncome + $customerCashIncome + $capitalCashIn, 2);
 
-            // Bank Income = Dealer bank payments + Customer bank transfer payments
+            // Bank Income = Dealer bank payments + Customer bank transfer payments + Capital Bank In
             $rawDealerBankIncome = (float) DealerPayment::whereDate('date', $dateStr)->sum('bank_amount');
             $dealerBankIncome   = round($rawDealerBankIncome - $dealerAdjustmentBank, 2);
             $customerBankIncome = (float) \App\Models\CustomerPayment::whereDate('date', $dateStr)->sum('bank_transfer_amount');
-            $bankIncome         = round($dealerBankIncome + $customerBankIncome, 2);
+            $bankIncome         = round($dealerBankIncome + $customerBankIncome + $capitalBankIn, 2);
 
-            // Cash Expense = Cash Expenses + Vendor Cash Payments
+            // Cash Expense = Cash Expenses + Vendor Cash Payments + Vendor Advances (Cash) + Capital Cash Out
             $expenseCash = (float) Expense::whereDate('date', $dateStr)->where('payment_method', 'Cash')->sum('amount');
             $vendorCash  = (float) \App\Models\VendorPayment::whereDate('date', $dateStr)->sum('cash_amount');
-            $cashExpense = round($expenseCash + $vendorCash, 2);
+            $cashExpense = round($expenseCash + $vendorCash + $vendorAdvanceCash + $capitalCashOut, 2);
 
-            // BUG 1 FIX: Bank Expense = Bank Transfer Expenses + Vendor Bank Payments — now saved to DB
+            // Bank Expense = Bank Transfer Expenses + Vendor Bank Payments + Vendor Advances (Bank) + Capital Bank Out
             $expenseBank = (float) Expense::whereDate('date', $dateStr)->where('payment_method', 'Bank Transfer')->sum('amount');
             $vendorBank  = (float) \App\Models\VendorPayment::whereDate('date', $dateStr)->sum('bank_amount');
-            $bankExpense = round($expenseBank + $vendorBank, 2);
+            $bankExpense = round($expenseBank + $vendorBank + $vendorAdvanceBank + $capitalBankOut, 2);
 
             $ledger->update([
                 'cash_income'  => $cashIncome,
                 'bank_income'  => $bankIncome,
                 'cash_expense' => $cashExpense,
-                'bank_expense' => $bankExpense, // BUG 1 FIX: persist bank_expense
+                'bank_expense' => $bankExpense,
             ]);
 
             // Only update closing balances if the day is NOT approved

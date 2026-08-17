@@ -40,11 +40,53 @@
 
     {{-- Date List --}}
     <x-card>
-        <div class="p-4 border-b border-zinc-200/50 dark:border-zinc-800/50 flex justify-between items-center">
+        <div class="flex flex-col sm:flex-row gap-4 mb-6 justify-between items-center">
             <h2 class="font-cabinet text-lg font-bold text-zinc-900 dark:text-zinc-50">All Days</h2>
-            <form method="GET" class="relative w-full max-w-sm">
-                <span class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-[20px]">search</span>
-                <input type="text" name="search" value="{{ $search }}" placeholder="Search by vendor name..." class="w-full pl-10 pr-4 py-2 border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 rounded-lg text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors dark:text-zinc-100">
+        </div>
+
+        {{-- Filter Form --}}
+        <div class="mb-6 p-4 bg-zinc-50/50 dark:bg-zinc-800/30 rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50"
+             x-data="{
+                setDates(period) {
+                    const now = new Date();
+                    const to = now.toISOString().split('T')[0];
+                    let from;
+                    if (period === 'today') {
+                        from = to;
+                    } else if (period === '7d') {
+                        from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                    } else if (period === '30d') {
+                        from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                    } else if (period === 'month') {
+                        from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                    }
+                    $refs.dateFrom.value = from;
+                    $refs.dateTo.value = to;
+                    $refs.filterForm.submit();
+                }
+             }">
+            <form method="GET" action="{{ route('purchases.invoices') }}" x-ref="filterForm" class="flex flex-wrap gap-3 items-end">
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">From</label>
+                    <input type="date" name="date_from" x-ref="dateFrom" value="{{ $dateFrom }}" class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase mb-1">To</label>
+                    <input type="date" name="date_to" x-ref="dateTo" value="{{ $dateTo }}" class="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm">
+                </div>
+                <x-button type="submit" variant="primary" icon="filter_alt" size="sm">Filter</x-button>
+                @if($dateFrom || $dateTo || $search)
+                    <a href="{{ route('purchases.invoices') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 dark:hover:bg-rose-900/20 dark:hover:border-rose-800 dark:hover:text-rose-400 transition-all">
+                        <span class="material-symbols-rounded text-[16px]">close</span>
+                        Clear Filters
+                    </a>
+                @endif
+                <div class="flex gap-1.5 ml-auto">
+                    <button type="button" @click="setDates('today')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:border-emerald-800 dark:hover:text-emerald-400 transition-all">Today</button>
+                    <button type="button" @click="setDates('7d')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:border-emerald-800 dark:hover:text-emerald-400 transition-all">7 Days</button>
+                    <button type="button" @click="setDates('30d')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:border-emerald-800 dark:hover:text-emerald-400 transition-all">30 Days</button>
+                    <button type="button" @click="setDates('month')" class="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 dark:hover:bg-emerald-900/20 dark:hover:border-emerald-800 dark:hover:text-emerald-400 transition-all">This Month</button>
+                </div>
             </form>
         </div>
 

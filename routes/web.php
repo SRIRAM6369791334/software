@@ -198,10 +198,16 @@ Route::middleware(['auth'])->group(function () {
             Route::post('day-load/vendor-rates', [DayLoadBillingController::class, 'setVendorRates'])->name('day-load.set-vendor-rates');
             Route::post('day-load/batch/{batch}/approve-weight-loss', [DayLoadBillingController::class, 'approveWeightLoss'])->name('day-load.approve-weight-loss');
 
+            Route::post('day-load/{entry}/apply-advance', [DayLoadBillingController::class, 'applyAdvance'])->name('day-load.apply-advance');
+            Route::delete('day-load/advance-adjustments/{adjustment}', [DayLoadBillingController::class, 'removeAdvanceAdjustment'])->name('day-load.remove-advance-adjustment');
+
             // Cash & Bank Ledger (route names are placeholders; sidebar menu placement to be finalized by project owner)
             Route::get('cash-bank-ledger', [CashBankLedgerController::class, 'index'])->name('cash-bank-ledger.index');
             Route::get('cash-bank-ledger/{date}/details', [CashBankLedgerController::class, 'showDay'])->name('cash-bank-ledger.show-day');
             Route::post('cash-bank-ledger/{ledger}/approve', [CashBankLedgerController::class, 'approve'])->name('cash-bank-ledger.approve');
+
+            // Capital Investments & Drawings
+            Route::resource('investments', \App\Http\Controllers\CapitalTransactionController::class)->names('investments')->only(['index', 'store', 'destroy']);
 
             // Live Deploy Sync Route (For Servers Without Terminal Access)
             Route::get('live-deploy-sync-2026', function () {
@@ -319,6 +325,8 @@ Route::middleware(['auth'])->group(function () {
             Route::post('vendors', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'storeGeneralPayment'])->name('vendors.storeGeneralPayment');
             Route::get('vendors/export', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'export'])->name('vendors.export');
 
+            Route::post('vendors/advances', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'storeAdvance'])->name('vendors.advances.store');
+            Route::delete('vendors/advances/{advance}', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'destroyAdvance'])->name('vendors.advances.destroy');
             Route::get('vendors/{vendor}/ledger', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'ledger'])->name('vendors.ledger');
             Route::post('vendors/{vendor}/payments', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'store'])->name('vendors.payments.store');
             Route::delete('vendors/{vendor}/payments/{payment}', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'destroy'])->name('vendors.payments.destroy');
