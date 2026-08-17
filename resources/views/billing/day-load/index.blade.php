@@ -267,12 +267,16 @@
                         </span>
                     </td>
                     <td class="px-6 py-4 text-center font-jetbrains font-bold">{{ $entry->no_of_boxes }}</td>
-                    <td class="px-6 py-4 text-xs">
-                        <div>Box: {{ number_format((float) $entry->box_weight, 2) }}</div>
-                        <div>Empty: {{ number_format((float) $entry->empty_weight, 2) }}</div>
-                        <div>Bird: {{ number_format((float) $entry->bird_weight, 2) }}</div>
-                        <div>Loss: {{ $entry->loss_weight === null ? '-' : number_format((float) $entry->loss_weight, 2) }}</div>
-                        <div>Total: {{ $entry->total_weight === null ? '-' : number_format((float) $entry->total_weight, 2) }}</div>
+                    <td class="px-6 py-4 text-xs space-y-0.5">
+                        <div class="text-zinc-500">Box: <span class="font-jetbrains font-medium text-zinc-700 dark:text-zinc-300">{{ number_format((float) $entry->box_weight, 2) }}</span></div>
+                        <div class="text-zinc-500">Empty: <span class="font-jetbrains font-medium text-zinc-700 dark:text-zinc-300">{{ number_format((float) $entry->empty_weight, 2) }}</span></div>
+                        <div class="font-bold text-zinc-900 dark:text-zinc-100">Bird: <span class="font-jetbrains text-indigo-600 dark:text-indigo-400">{{ number_format((float) $entry->bird_weight, 2) }}</span></div>
+                        @if($entry->effective_farm_weight !== null)
+                            <div class="text-emerald-700 dark:text-emerald-400 font-bold">Farm: <span class="font-jetbrains">{{ number_format((float) $entry->effective_farm_weight, 2) }}</span></div>
+                        @endif
+                        @if($entry->loss_weight !== null && (float)$entry->loss_weight != 0)
+                            <div class="text-amber-600 font-bold">Loss: <span class="font-jetbrains">{{ number_format((float) $entry->loss_weight, 2) }}</span></div>
+                        @endif
                     </td>
                     <td class="px-6 py-4">
                         <span class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-100">Rs {{ number_format((float) $entry->amount, 0) }}</span>
@@ -481,12 +485,16 @@
                         </span>
                     </td>
                     <td class="px-6 py-4 text-center font-jetbrains font-bold">{{ $entry->no_of_boxes }}</td>
-                    <td class="px-6 py-4 text-xs">
-                        <div>Box: {{ number_format((float) $entry->box_weight, 2) }}</div>
-                        <div>Empty: {{ number_format((float) $entry->empty_weight, 2) }}</div>
-                        <div>Bird: {{ number_format((float) $entry->bird_weight, 2) }}</div>
-                        <div>Loss: {{ $entry->loss_weight === null ? '-' : number_format((float) $entry->loss_weight, 2) }}</div>
-                        <div>Total: {{ $entry->total_weight === null ? '-' : number_format((float) $entry->total_weight, 2) }}</div>
+                    <td class="px-6 py-4 text-xs space-y-0.5">
+                        <div class="text-zinc-500">Box: <span class="font-jetbrains font-medium text-zinc-700 dark:text-zinc-300">{{ number_format((float) $entry->box_weight, 2) }}</span></div>
+                        <div class="text-zinc-500">Empty: <span class="font-jetbrains font-medium text-zinc-700 dark:text-zinc-300">{{ number_format((float) $entry->empty_weight, 2) }}</span></div>
+                        <div class="font-bold text-zinc-900 dark:text-zinc-100">Bird: <span class="font-jetbrains text-indigo-600 dark:text-indigo-400">{{ number_format((float) $entry->bird_weight, 2) }}</span></div>
+                        @if($entry->effective_farm_weight !== null)
+                            <div class="text-emerald-700 dark:text-emerald-400 font-bold">Farm: <span class="font-jetbrains">{{ number_format((float) $entry->effective_farm_weight, 2) }}</span></div>
+                        @endif
+                        @if($entry->loss_weight !== null && (float)$entry->loss_weight != 0)
+                            <div class="text-amber-600 font-bold">Loss: <span class="font-jetbrains">{{ number_format((float) $entry->loss_weight, 2) }}</span></div>
+                        @endif
                     </td>
                     <td class="px-6 py-4">
                         <span class="font-jetbrains font-bold text-zinc-900 dark:text-zinc-100">Rs {{ number_format((float) $entry->amount, 0) }}</span>
@@ -794,112 +802,175 @@
         </template>
 
         <template x-teleport="body">
-            <x-modal name="set-farm-weight-modal" title="Set & Adjust Farm Weights" subtitle="Enter farm weight for each entry — total farm weight will be calculated automatically" icon="scale" maxWidth="6xl">
-                <form id="set-farm-weight-form" action="{{ route('billing.day-load.bulk-update') }}" method="POST"
+            <x-modal name="set-farm-weight-modal" title="Set Overall Farm Weight" subtitle="Enter the total farm weight — system automatically calculates and distributes average weight & loss to each entry" icon="scale" maxWidth="5xl">
+                <form id="set-farm-weight-form" action="{{ route('billing.day-load.set-farm-weight') }}" method="POST"
                       x-data="{
-                          items: [
+                          overallFarmWeight: '{{ ($batch?->total_farm_weight > 0) ? (float)$batch->total_farm_weight : '' }}',
+                          reason: 'Farm weighbridge overall weight applied',
+                          submitting: false,
+                          entries: [
                               @foreach($allEntries as $entry)
                                   {
                                       id: {{ $entry->id }},
+                                      vendor: '{{ addslashes($entry->vendor->firm_name ?? '-') }}',
+                                      dealer: '{{ addslashes($entry->dealer->firm_name ?? '-') }}',
+                                      boxes: {{ (int) $entry->no_of_boxes }},
                                       birdWeight: {{ (float) $entry->bird_weight }},
-                                      farmWeight: '{{ $entry->farm_weight ?? '' }}'
+                                      rate: {{ (float) ($entry->billing_rate > 0 ? $entry->billing_rate : $entry->paper_rate) }}
                                   },
                               @endforeach
                           ],
                           get totalBirdWeight() {
-                              return this.items.reduce((sum, item) => sum + item.birdWeight, 0);
+                              return this.entries.reduce((sum, e) => sum + e.birdWeight, 0);
                           },
-                          get calculatedTotalFarmWeight() {
-                              let total = 0;
-                              let hasAny = false;
-                              this.items.forEach(item => {
-                                  if (item.farmWeight !== '' && item.farmWeight !== null && !isNaN(parseFloat(item.farmWeight))) {
-                                      total += parseFloat(item.farmWeight);
-                                      hasAny = true;
-                                  }
-                              });
-                              return hasAny ? total.toFixed(2) : null;
+                          get totalBoxes() {
+                              return this.entries.reduce((sum, e) => sum + e.boxes, 0);
+                          },
+                          get totalEntriesCount() {
+                              return this.entries.length;
+                          },
+                          get totalFarmWeightNum() {
+                              let val = parseFloat(this.overallFarmWeight);
+                              return (!isNaN(val) && val > 0) ? val : 0;
                           },
                           get totalLoss() {
-                              if (!this.calculatedTotalFarmWeight) return null;
-                              return (parseFloat(this.calculatedTotalFarmWeight) - this.totalBirdWeight).toFixed(2);
+                              if (this.totalFarmWeightNum <= 0 || this.totalBirdWeight <= 0) return 0;
+                              return (this.totalFarmWeightNum - this.totalBirdWeight).toFixed(2);
+                          },
+                          get lossPercentage() {
+                              if (this.totalFarmWeightNum <= 0) return 0;
+                              return ((parseFloat(this.totalLoss) / this.totalFarmWeightNum) * 100).toFixed(2);
+                          },
+                          getEntryFarmWeight(birdWeight) {
+                              if (this.totalFarmWeightNum <= 0 || this.totalBirdWeight <= 0) return birdWeight.toFixed(2);
+                              let ratio = birdWeight / this.totalBirdWeight;
+                              return (ratio * this.totalFarmWeightNum).toFixed(2);
+                          },
+                          getEntryLoss(birdWeight) {
+                              if (this.totalFarmWeightNum <= 0 || this.totalBirdWeight <= 0) return '0.00';
+                              let fw = parseFloat(this.getEntryFarmWeight(birdWeight));
+                              return (fw - birdWeight).toFixed(2);
+                          },
+                          getEntryLossPct(birdWeight) {
+                              let fw = parseFloat(this.getEntryFarmWeight(birdWeight));
+                              if (fw <= 0) return '0.0';
+                              let loss = parseFloat(this.getEntryLoss(birdWeight));
+                              return ((loss / fw) * 100).toFixed(1);
                           }
                       }"
+                      @submit="if (submitting || totalFarmWeightNum <= 0) { $event.preventDefault(); return false; } submitting = true;"
                       class="space-y-6"
                 >
                     @csrf
-                    <input type="hidden" name="_method" value="PUT">
+                    <input type="hidden" name="batch_id" value="{{ $batch?->id }}">
 
-                    {{-- Summary Metrics --}}
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                        <div class="rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm flex flex-col justify-center">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Total Bird Weight</p>
-                            <p class="font-jetbrains text-2xl font-black text-indigo-600 dark:text-indigo-400" x-text="totalBirdWeight.toFixed(2) + ' kg'"></p>
-                        </div>
-                        <div class="rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm flex flex-col justify-center">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Total Farm Weight (Sum)</p>
-                            <p class="font-jetbrains text-2xl font-black text-emerald-600 dark:text-emerald-400" x-text="calculatedTotalFarmWeight ? calculatedTotalFarmWeight + ' kg' : '—'"></p>
-                        </div>
-                        <div class="rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm flex flex-col justify-center">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Total Loss</p>
-                            <p class="font-jetbrains text-2xl font-black" :class="(calculatedTotalFarmWeight && parseFloat(calculatedTotalFarmWeight) > 0) ? (parseFloat(totalLoss) >= 0 ? 'text-emerald-600' : 'text-rose-600') : 'text-zinc-400'" x-text="totalLoss !== null ? totalLoss + ' kg' : '—'"></p>
+                    {{-- Main Single Overall Farm Weight Input --}}
+                    <div class="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-indigo-50/40 dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-indigo-950/20 border-2 border-emerald-500/30 dark:border-emerald-500/20 shadow-sm">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300 mb-1 flex items-center gap-1.5">
+                                    <span class="material-symbols-rounded text-emerald-600 text-lg">scale</span>
+                                    Enter Overall Farm Weight (Kg) *
+                                </label>
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                                    Enter the total weighbridge weight from the farm. It will be distributed proportionally across all dealers.
+                                </p>
+                            </div>
+                            <div class="w-full sm:w-64">
+                                <div class="relative">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0.01"
+                                        name="total_farm_weight"
+                                        x-model="overallFarmWeight"
+                                        required
+                                        placeholder="0.00"
+                                        class="w-full rounded-xl border-2 border-emerald-400 dark:border-emerald-600 bg-white dark:bg-zinc-900 px-4 py-3 text-lg font-jetbrains font-black text-emerald-700 dark:text-emerald-300 text-right focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-inner"
+                                        autofocus
+                                    >
+                                    <span class="absolute left-3 top-3.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">KG</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {{-- Entries Table --}}
-                    <div class="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 max-h-[50vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-                        <table class="w-full text-sm">
-                            <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-750">
-                                <tr class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                                    <th class="px-4 py-3 text-left">Vendor</th>
-                                    <th class="px-4 py-3 text-left">Dealer</th>
-                                    <th class="px-4 py-3 text-center">Boxes</th>
-                                    <th class="px-4 py-3 text-center">Bird Wt (Kg)</th>
-                                    <th class="px-4 py-3 text-center min-w-[130px] bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-600">Farm Weight (Kg)</th>
-                                    <th class="px-4 py-3 text-center text-rose-600">Loss (Kg)</th>
-                                    <th class="px-4 py-3 text-left min-w-[180px]">Remarks</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/80 bg-white dark:bg-zinc-900">
-                                @foreach($allEntries as $entry)
-                                    <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 transition-colors">
-                                        <input type="hidden" name="entries[{{ $entry->id }}][id]" value="{{ $entry->id }}">
-                                        <td class="px-4 py-3">
-                                            <p class="font-bold text-zinc-900 dark:text-zinc-100 text-xs">{{ $entry->vendor->firm_name ?? '-' }}</p>
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            <p class="text-zinc-550 dark:text-zinc-450 text-xs truncate max-w-[120px]">{{ $entry->dealer->firm_name ?? '-' }}</p>
-                                        </td>
-                                        <td class="px-4 py-3 text-center font-jetbrains font-bold text-xs text-zinc-500">{{ $entry->no_of_boxes }}</td>
-                                        <td class="px-4 py-3 text-center font-jetbrains text-xs font-semibold text-zinc-700 dark:text-zinc-300">{{ number_format((float)$entry->bird_weight, 2) }}</td>
-                                        <td class="px-4 py-3 bg-emerald-50/20 dark:bg-emerald-950/10">
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                min="0"
-                                                name="entries[{{ $entry->id }}][farm_weight]"
-                                                x-model="items.find(i => i.id === {{ $entry->id }}).farmWeight"
-                                                placeholder="0.00"
-                                                class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-jetbrains font-bold text-center focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-emerald-600"
-                                            >
-                                        </td>
-                                        <td class="px-4 py-3 text-center font-jetbrains text-xs font-bold"
-                                            :class="(items.find(i => i.id === {{ $entry->id }}).farmWeight !== '' && !isNaN(parseFloat(items.find(i => i.id === {{ $entry->id }}).farmWeight))) ? 'text-rose-600' : 'text-zinc-400'"
-                                            x-text="(items.find(i => i.id === {{ $entry->id }}).farmWeight !== '' && !isNaN(parseFloat(items.find(i => i.id === {{ $entry->id }}).farmWeight))) ? ({{ (float)$entry->bird_weight }} - parseFloat(items.find(i => i.id === {{ $entry->id }}).farmWeight)).toFixed(2) : '-'">
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            <input
-                                                type="text"
-                                                name="entries[{{ $entry->id }}][remarks]"
-                                                value="{{ $entry->remarks ?? '' }}"
-                                                placeholder="Optional remarks"
-                                                class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                                            >
-                                        </td>
+                    {{-- Live Summary Metrics Cards --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="rounded-2xl border border-zinc-200/60 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Total Received Bird Wt</p>
+                            <p class="font-jetbrains text-2xl font-black text-indigo-600 dark:text-indigo-400" x-text="totalBirdWeight.toFixed(2) + ' kg'"></p>
+                            <p class="text-[10px] text-zinc-400 mt-0.5">Sum of all shop weights</p>
+                        </div>
+                        <div class="rounded-2xl border border-zinc-200/60 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Overall Farm Weight</p>
+                            <p class="font-jetbrains text-2xl font-black text-emerald-600 dark:text-emerald-400" x-text="totalFarmWeightNum > 0 ? totalFarmWeightNum.toFixed(2) + ' kg' : '—'"></p>
+                            <p class="text-[10px] text-emerald-600/70 mt-0.5" x-show="totalFarmWeightNum > 0">Entered Farm Total</p>
+                            <p class="text-[10px] text-zinc-400 mt-0.5" x-show="!totalFarmWeightNum || totalFarmWeightNum <= 0">Awaiting input</p>
+                        </div>
+                        <div class="rounded-2xl border border-zinc-200/60 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 p-4 shadow-sm">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Calculated Transit Loss</p>
+                            <p class="font-jetbrains text-2xl font-black" :class="totalFarmWeightNum > 0 ? (parseFloat(totalLoss) >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600') : 'text-zinc-400'" x-text="totalFarmWeightNum > 0 ? (totalLoss >= 0 ? '+' : '') + totalLoss + ' kg' : '—'"></p>
+                            <p class="text-[10px] font-bold mt-0.5" :class="totalFarmWeightNum > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-400'" x-text="totalFarmWeightNum > 0 ? 'Loss: ' + lossPercentage + '%' : '—'"></p>
+                        </div>
+                    </div>
+
+                    {{-- Live Distributed Preview Table --}}
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
+                                <span class="material-symbols-rounded text-indigo-500 text-sm">table_view</span>
+                                Proportional Weight & Loss Distribution (Preview)
+                            </h4>
+                            <span class="text-[11px] text-zinc-400" x-show="totalFarmWeightNum > 0">
+                                Distributed proportionally based on Bird Weight
+                            </span>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 max-h-[42vh] overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800">
+                            <table class="w-full text-sm">
+                                <thead class="sticky top-0 z-10 bg-zinc-100/95 dark:bg-zinc-800/95 backdrop-blur-xs border-b border-zinc-200 dark:border-zinc-750">
+                                    <tr class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                                        <th class="px-4 py-3 text-left">Vendor</th>
+                                        <th class="px-4 py-3 text-left">Dealer</th>
+                                        <th class="px-4 py-3 text-center">Boxes</th>
+                                        <th class="px-4 py-3 text-center">Bird Wt (Kg)</th>
+                                        <th class="px-4 py-3 text-center bg-emerald-100/50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">Auto Farm Wt (Kg)</th>
+                                        <th class="px-4 py-3 text-center text-amber-600">Loss (Kg)</th>
+                                        <th class="px-4 py-3 text-center text-amber-600">Loss %</th>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/80 bg-white dark:bg-zinc-900">
+                                    <template x-for="entry in entries" :key="entry.id">
+                                        <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 transition-colors">
+                                            <td class="px-4 py-3 font-bold text-zinc-900 dark:text-zinc-100 text-xs" x-text="entry.vendor"></td>
+                                            <td class="px-4 py-3 text-zinc-600 dark:text-zinc-300 text-xs truncate max-w-[130px]" x-text="entry.dealer"></td>
+                                            <td class="px-4 py-3 text-center font-jetbrains font-bold text-xs text-zinc-500" x-text="entry.boxes"></td>
+                                            <td class="px-4 py-3 text-center font-jetbrains text-xs font-semibold text-zinc-800 dark:text-zinc-200" x-text="entry.birdWeight.toFixed(2)"></td>
+                                            <td class="px-4 py-3 text-center font-jetbrains font-black text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10" x-text="getEntryFarmWeight(entry.birdWeight)"></td>
+                                            <td class="px-4 py-3 text-center font-jetbrains font-bold text-xs" :class="parseFloat(getEntryLoss(entry.birdWeight)) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-400'" x-text="getEntryLoss(entry.birdWeight)"></td>
+                                            <td class="px-4 py-3 text-center font-jetbrains text-xs text-zinc-500" x-text="getEntryLossPct(entry.birdWeight) + '%'"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                                {{-- Total Summary Footer Row --}}
+                                <tfoot class="sticky bottom-0 z-10 bg-zinc-100/95 dark:bg-zinc-800/95 backdrop-blur-xs border-t-2 border-zinc-300 dark:border-zinc-700 font-jetbrains font-bold text-xs shadow-md">
+                                    <tr>
+                                        <td colspan="2" class="px-4 py-3 text-left font-cabinet font-extrabold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider text-[11px]">
+                                            <span class="flex items-center gap-1.5">
+                                                <span class="material-symbols-rounded text-indigo-500 text-sm">functions</span>
+                                                Total (<span x-text="totalEntriesCount"></span> <span x-text="totalEntriesCount === 1 ? 'Entry' : 'Entries'"></span>)
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 text-center text-zinc-800 dark:text-zinc-200 font-bold" x-text="totalBoxes + ' Boxes'"></td>
+                                        <td class="px-4 py-3 text-center text-indigo-600 dark:text-indigo-400 font-black" x-text="totalBirdWeight.toFixed(2) + ' kg'"></td>
+                                        <td class="px-4 py-3 text-center text-emerald-600 dark:text-emerald-400 font-black bg-emerald-100/40 dark:bg-emerald-950/30" x-text="totalFarmWeightNum > 0 ? totalFarmWeightNum.toFixed(2) + ' kg' : '—'"></td>
+                                        <td class="px-4 py-3 text-center font-black" :class="totalFarmWeightNum > 0 ? (parseFloat(totalLoss) >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600') : 'text-zinc-400'" x-text="totalFarmWeightNum > 0 ? (parseFloat(totalLoss) >= 0 ? '+' : '') + totalLoss + ' kg' : '—'"></td>
+                                        <td class="px-4 py-3 text-center font-bold" :class="totalFarmWeightNum > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-400'" x-text="totalFarmWeightNum > 0 ? lossPercentage + '%' : '—'"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     </div>
 
                     {{-- Reason / Audit --}}
@@ -909,14 +980,17 @@
                             name="reason"
                             label="Reason for setting farm weight"
                             required
-                            placeholder="Why are you setting farm weight?"
+                            x-model="reason"
+                            placeholder="e.g. Farm weighbridge slip #1234"
                             icon="description"
                         />
                     </div>
 
                     <x-slot:footer>
                         <x-button type="button" variant="outline" x-on:click="$dispatch('close-modal', 'set-farm-weight-modal')">Cancel</x-button>
-                        <x-button type="submit" form="set-farm-weight-form" variant="primary" icon="check" class="px-8">Save & Set All</x-button>
+                        <x-button type="submit" form="set-farm-weight-form" variant="primary" icon="check_circle" class="px-8 !bg-emerald-600 hover:!bg-emerald-700" x-bind:disabled="!totalFarmWeightNum || totalFarmWeightNum <= 0 || submitting">
+                            <span x-text="submitting ? 'Calculating & Saving...' : 'Save & Apply to All'"></span>
+                        </x-button>
                     </x-slot:footer>
                 </form>
             </x-modal>
