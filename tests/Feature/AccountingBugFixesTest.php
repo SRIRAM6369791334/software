@@ -125,6 +125,7 @@ class AccountingBugFixesTest extends TestCase
             'dealer_id' => $this->dealer->id,
             'date' => now(),
             'invoice_no' => 'DB-1',
+            'amount' => 10000,
             'net_amount' => 10000
         ]);
         $entry->update(['daily_bill_id' => $dailyBill->id]);
