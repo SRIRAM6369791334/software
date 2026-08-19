@@ -196,35 +196,41 @@ class ProfitService
         $month = sprintf('%02d', now()->month);
         $year  = (string)now()->year;
 
+        // BUG FIX: Exclude DayLoad entries that are already claimed by DailyBill, WeeklyBill, or DayLoadInvoice
         $dayLoadBilled = \App\Models\DayLoadEntry::whereHas('batch', function($q) use ($month, $year) {
             $q->whereMonth('billing_date', $month)->whereYear('billing_date', $year);
-        })->get()->sum(function($entry) {
+        })
+        ->whereNull('daily_bill_id')
+        ->whereNull('weekly_bill_id')
+        ->whereDoesntHave('batch.invoice')
+        ->get()->sum(function($entry) {
             return (float)$entry->bird_weight * (float)($entry->customer_rate ?: $entry->rate);
         });
 
+        // BUG FIX: Revenue should only come from billed amounts (accrual basis), never CustomerPayment/DealerPayment.
         $revenue = $dayLoadBilled
             + DailyBill::whereMonth('date', $month)->whereYear('date', $year)->sum('net_amount')
-            + CustomerPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount')
-            + DealerPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
+            + WeeklyBill::whereMonth('period_end', $month)->whereYear('period_end', $year)->where('invoice_no', 'NOT LIKE', 'INV-DL-%')->sum('net_amount')
+            + \App\Models\DayLoadInvoice::whereMonth('invoice_date', $month)->whereYear('invoice_date', $year)->sum('total_amount');
         
         $vendorPay  = VendorPayment::whereMonth('date', $month)->whereYear('date', $year)->sum('amount')
             + Purchase::whereMonth('date', $month)->whereYear('date', $year)->whereNotIn('payment_mode', ['Credit', 'Pending'])->sum('total_amount');
         
         $expensesAmt = Expense::whereMonth('date', $month)->whereYear('date', $year)->sum('amount');
         
-        // To-Pay EMIs
-        $toPayEmisAmt = Emi::where('status', 'Paid')
+        // BUG FIX: EMIs shouldn't be gated by 'Paid' status alone, and should sum 'paid_amount'
+        $toPayEmisAmt = Emi::whereIn('status', ['Paid', 'Partial'])
             ->whereIn('emi_type', ['Vendor', 'Bank Loan'])
             ->whereMonth('due_date', $month)->whereYear('due_date', $year)
-            ->sum('amount');
+            ->sum('paid_amount');
         
         $expenses = $expensesAmt + $toPayEmisAmt;
 
-        // To-Receive EMIs (add to Revenue)
-        $toReceiveEmisAmt = Emi::where('status', 'Paid')
+        // BUG FIX: To-Receive EMIs
+        $toReceiveEmisAmt = Emi::whereIn('status', ['Paid', 'Partial'])
             ->whereIn('emi_type', ['Customer', 'Dealer'])
             ->whereMonth('due_date', $month)->whereYear('due_date', $year)
-            ->sum('amount');
+            ->sum('paid_amount');
         
         $revenue += $toReceiveEmisAmt;
 
@@ -241,17 +247,22 @@ class ProfitService
 
     public function getProfitBreakdown($startDate, $endDate): array
     {
-        // 1. Total Billed Amount (Dealer & Customer Sales)
+        // BUG FIX: Exclude DayLoad entries that are already claimed
         $dayLoadBilled = \App\Models\DayLoadEntry::whereHas('batch', function($q) use ($startDate, $endDate) {
             $q->whereBetween('billing_date', [$startDate, $endDate]);
-        })->get()->sum(function($entry) {
+        })
+        ->whereNull('daily_bill_id')
+        ->whereNull('weekly_bill_id')
+        ->whereDoesntHave('batch.invoice')
+        ->get()->sum(function($entry) {
             return (float)$entry->bird_weight * (float)($entry->customer_rate ?: $entry->rate);
         });
 
+        // BUG FIX: DayLoadInvoice is now added back safely since dayLoadBilled excludes its entries
         $totalBilled = $dayLoadBilled
             + DailyBill::whereBetween('date', [$startDate, $endDate])->sum('net_amount')
             + WeeklyBill::whereBetween('period_end', [$startDate, $endDate])->where('invoice_no', 'NOT LIKE', 'INV-DL-%')->sum('net_amount')
-            + DayLoadInvoice::whereBetween('invoice_date', [$startDate, $endDate])->sum('total_amount');
+            + \App\Models\DayLoadInvoice::whereBetween('invoice_date', [$startDate, $endDate])->sum('total_amount');
 
         // 2. Dealer Paid Amount (Total Collections Received)
         $dealerPaid = DealerPayment::whereBetween('date', [$startDate, $endDate])->sum('amount')
@@ -280,18 +291,19 @@ class ProfitService
         $vendorPending = max(0, $vendorCost - $vendorPaid);
 
         // 7. Total Expenses (General + Weight Loss + To-Pay EMIs)
-        $toPayEmisAmt = Emi::where('status', 'Paid')
+        // BUG FIX: EMIs shouldn't be gated by 'Paid' status alone, sum paid_amount
+        $toPayEmisAmt = Emi::whereIn('status', ['Paid', 'Partial'])
             ->whereIn('emi_type', ['Vendor', 'Bank Loan'])
             ->whereBetween('due_date', [$startDate, $endDate])
-            ->sum('amount');
+            ->sum('paid_amount');
         
         $totalExpenses = Expense::whereBetween('date', [$startDate, $endDate])->sum('amount') + $toPayEmisAmt;
 
         // Add To-Receive EMIs to Total Billed (Revenue) and Dealer Paid (Cash Flow)
-        $toReceiveEmisAmt = Emi::where('status', 'Paid')
+        $toReceiveEmisAmt = Emi::whereIn('status', ['Paid', 'Partial'])
             ->whereIn('emi_type', ['Customer', 'Dealer'])
             ->whereBetween('due_date', [$startDate, $endDate])
-            ->sum('amount');
+            ->sum('paid_amount');
         
         $totalBilled += $toReceiveEmisAmt;
         $dealerPaid += $toReceiveEmisAmt;

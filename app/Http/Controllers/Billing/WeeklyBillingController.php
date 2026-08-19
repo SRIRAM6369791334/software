@@ -110,6 +110,8 @@ class WeeklyBillingController extends Controller
             $dealerId = $request->input('dealer_id');
             $earliestEntry = DayLoadEntry::where('dealer_id', $dealerId)
                 ->whereNull('weekly_bill_id')
+                ->whereNull('daily_bill_id')
+                ->whereDoesntHave('batch.invoice')
                 ->where('status', '!=', 'Cancelled')
                 ->whereIn('dealer_payment_status', ['Pending', 'Partial'])
                 ->whereHas('batch')
@@ -197,6 +199,8 @@ class WeeklyBillingController extends Controller
         $dealerId = $request->input('dealer_id');
         $earliestEntry = DayLoadEntry::where('dealer_id', $dealerId)
             ->whereNull('weekly_bill_id')
+            ->whereNull('daily_bill_id')
+            ->whereDoesntHave('batch.invoice')
             ->where('status', '!=', 'Cancelled')
             ->whereIn('dealer_payment_status', ['Pending', 'Partial'])
             ->whereHas('batch')

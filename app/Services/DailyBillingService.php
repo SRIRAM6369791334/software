@@ -39,6 +39,8 @@ class DailyBillingService
 
         $purchasesQuery = DayLoadEntry::where('dealer_id', $dealerId)
             ->where('status', '!=', 'Cancelled')
+            ->whereNull('weekly_bill_id')
+            ->whereDoesntHave('batch.invoice')
             ->where(function ($q) use ($existingBillIds) {
                 $q->whereNull('daily_bill_id');
                 if (!empty($existingBillIds)) {

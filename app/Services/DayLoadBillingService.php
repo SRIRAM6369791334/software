@@ -359,7 +359,7 @@ class DayLoadBillingService
                     [
                         'description'    => $desc,
                         'amount'         => $lossAmount,
-                        'payment_method' => 'Cash',
+                        'payment_method' => 'Book Entry',
                     ]
                 );
 
@@ -699,9 +699,11 @@ class DayLoadBillingService
                 $this->syncInvoice($batch);
                 $invoice = $batch->invoice;
             } else {
-                $totalAmount = (float) $batch->entries()
-                    ->where('status', '!=', 'Cancelled')
-                    ->sum('amount');
+        $totalAmount = (float) $batch->entries()
+            ->where('status', '!=', 'Cancelled')
+            ->whereNull('daily_bill_id')
+            ->whereNull('weekly_bill_id')
+            ->sum('amount');
 
                 $invoice = DayLoadInvoice::create([
                     'batch_id'           => $batch->id,
@@ -742,6 +744,8 @@ class DayLoadBillingService
 
         $totalAmount = (float) $batch->entries()
             ->where('status', '!=', 'Cancelled')
+            ->whereNull('daily_bill_id')
+            ->whereNull('weekly_bill_id')
             ->sum('amount');
 
         $invoice->update([
