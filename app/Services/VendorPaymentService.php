@@ -190,4 +190,67 @@ class VendorPaymentService
     {
         return VendorPayment::with('vendor')->orderByDesc('date')->get();
     }
+
+    public function deletePayment(VendorPayment $payment): bool
+    {
+        return DB::transaction(function () use ($payment) {
+            $paymentDate = $payment->date ? $payment->date->format('Y-m-d') : null;
+
+            if ($payment->day_load_entry_id) {
+                $entry = DayLoadEntry::with('batch')->find($payment->day_load_entry_id);
+                if ($entry) {
+                    $entry->vendor_paid = max(0, (float)$entry->vendor_paid - (float)$payment->amount);
+                    $dayLoadService = app(DayLoadPaymentService::class);
+                    $dayLoadService->refreshVendorPaymentStatus($entry);
+                    if ($entry->batch) {
+                        $dayLoadService->refreshBatchFinancials($entry->batch);
+                    }
+                    $entry->save();
+                }
+            }
+
+            $payment->delete();
+
+            if ($paymentDate) {
+                app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($paymentDate));
+            }
+
+            return true;
+        });
+    }
+
+    public function updatePayment(VendorPayment $payment, array $data): VendorPayment
+    {
+        return DB::transaction(function () use ($payment, $data) {
+            $oldDate = $payment->date ? $payment->date->format('Y-m-d') : null;
+
+            // 1. Rollback old allocation
+            if ($payment->day_load_entry_id) {
+                $entry = DayLoadEntry::with('batch')->find($payment->day_load_entry_id);
+                if ($entry) {
+                    $entry->vendor_paid = max(0, (float)$entry->vendor_paid - (float)$payment->amount);
+                    $dayLoadService = app(DayLoadPaymentService::class);
+                    $dayLoadService->refreshVendorPaymentStatus($entry);
+                    if ($entry->batch) {
+                        $dayLoadService->refreshBatchFinancials($entry->batch);
+                    }
+                    $entry->save();
+                }
+            }
+
+            $payment->delete();
+
+            // 2. Re-record with new values
+            $data['vendor_id'] = $data['vendor_id'] ?? $payment->vendor_id;
+            $newPayment = $this->record($data);
+
+            // 3. Recalculate Cash/Bank Ledger for all old and new dates
+            $allDates = array_unique(array_filter([$oldDate, $newPayment->date->format('Y-m-d')]));
+            foreach ($allDates as $dStr) {
+                app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($dStr));
+            }
+
+            return $newPayment;
+        });
+    }
 }

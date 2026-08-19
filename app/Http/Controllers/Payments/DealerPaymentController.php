@@ -251,6 +251,37 @@ class DealerPaymentController extends Controller
         );
     }
 
+    public function edit(DealerPayment $payment): View
+    {
+        $dealer = $payment->dealer;
+        return view('payments.dealers.edit', compact('payment', 'dealer'));
+    }
+
+    public function update(Request $request, DealerPayment $payment): RedirectResponse
+    {
+        $validated = $request->validate([
+            'date'               => 'required|date|before_or_equal:today',
+            'cash_amount'        => 'required|numeric|min:0',
+            'bank_amount'        => 'required|numeric|min:0',
+            'payment_mode'       => 'nullable|string',
+            'bank_transfer_type' => 'nullable|string',
+            'notes'              => 'nullable|string|max:500',
+        ]);
+
+        if ((float)$validated['cash_amount'] + (float)$validated['bank_amount'] <= 0) {
+            return back()->with('error', 'Total payment amount must be greater than zero.');
+        }
+
+        $validated['dealer_id'] = $payment->dealer_id;
+        $validated['payment_mode'] = (float)$validated['bank_amount'] > 0
+            ? ((float)$validated['cash_amount'] > 0 ? 'Split' : ($validated['bank_transfer_type'] ?: 'Bank Transfer'))
+            : 'Cash';
+
+        $this->service->updatePayment($payment, $validated);
+
+        return redirect()->route('payments.dealers.index')->with('success', 'Dealer payment updated and balances synchronized.');
+    }
+
     public function destroy(DealerPayment $payment): RedirectResponse
     {
         $this->service->deletePayment($payment);

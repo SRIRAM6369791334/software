@@ -252,18 +252,21 @@ class DealerPaymentService
                 : collect([$payment]);
 
             $uniqueDates = [];
+            $dayLoadPaymentService = app(DayLoadPaymentService::class);
 
             foreach ($payments as $p) {
                 if ($p->day_load_entry_id) {
-                    $entry = \App\Models\DayLoadEntry::find($p->day_load_entry_id);
+                    $entry = \App\Models\DayLoadEntry::with('batch.invoice')->find($p->day_load_entry_id);
                     if ($entry) {
                         $entry->dealer_collected = max(0, (float)$entry->dealer_collected - (float)$p->amount);
-                        if ($entry->dealer_collected <= 0) {
-                            $entry->dealer_payment_status = 'Pending';
-                        } elseif ($entry->dealer_collected < $entry->amount) {
-                            $entry->dealer_payment_status = 'Partial';
-                        }
-                        $entry->save();
+                        $dayLoadPaymentService->refreshDealerPaymentStatus($entry);
+                        $dayLoadPaymentService->refreshBatchFinancials($entry->batch);
+                        $dayLoadPaymentService->refreshInvoicePayment($entry->batch?->invoice);
+                    }
+                } elseif ($p->notes === 'Allocated to base pending balance' && $p->dealer_id) {
+                    $dealer = \App\Models\Dealer::find($p->dealer_id);
+                    if ($dealer) {
+                        $dealer->increment('pending_amount', (float)$p->amount + (float)$p->discount_amount);
                     }
                 }
 
@@ -276,6 +279,51 @@ class DealerPaymentService
             }
 
             return true;
+        });
+    }
+
+    public function updatePayment(DealerPayment $payment, array $data): DealerPayment
+    {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($payment, $data) {
+            $oldDates = [];
+            $oldPayments = $payment->payment_group_id
+                ? DealerPayment::where('payment_group_id', $payment->payment_group_id)->get()
+                : collect([$payment]);
+
+            $dayLoadPaymentService = app(DayLoadPaymentService::class);
+
+            // 1. Rollback old allocations
+            foreach ($oldPayments as $p) {
+                if ($p->day_load_entry_id) {
+                    $entry = \App\Models\DayLoadEntry::with('batch.invoice')->find($p->day_load_entry_id);
+                    if ($entry) {
+                        $entry->dealer_collected = max(0, (float)$entry->dealer_collected - (float)$p->amount);
+                        $dayLoadPaymentService->refreshDealerPaymentStatus($entry);
+                        $dayLoadPaymentService->refreshBatchFinancials($entry->batch);
+                        $dayLoadPaymentService->refreshInvoicePayment($entry->batch?->invoice);
+                    }
+                } elseif ($p->notes === 'Allocated to base pending balance' && $p->dealer_id) {
+                    $dealer = \App\Models\Dealer::find($p->dealer_id);
+                    if ($dealer) {
+                        $dealer->increment('pending_amount', (float)$p->amount + (float)$p->discount_amount);
+                    }
+                }
+
+                $oldDates[] = $p->date ? $p->date->format('Y-m-d') : null;
+                $p->delete();
+            }
+
+            // 2. Prepare payload and re-record with new values
+            $data['dealer_id'] = $data['dealer_id'] ?? $payment->dealer_id;
+            $newPayment = $this->record($data);
+
+            // 3. Recalculate Cash/Bank Ledger for all old and new dates
+            $allDates = array_unique(array_filter(array_merge($oldDates, [$newPayment->date->format('Y-m-d')])));
+            foreach ($allDates as $dStr) {
+                app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($dStr));
+            }
+
+            return $newPayment;
         });
     }
 }

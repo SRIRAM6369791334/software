@@ -330,6 +330,9 @@ Route::middleware(['auth'])->group(function () {
             Route::post('vendors/advances', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'storeAdvance'])->name('vendors.advances.store');
             Route::delete('vendors/advances/{advance}', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'destroyAdvance'])->name('vendors.advances.destroy');
             Route::get('vendors/{vendor}/ledger', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'ledger'])->name('vendors.ledger');
+            Route::get('vendors/{payment}/edit', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'edit'])->name('vendors.edit');
+            Route::put('vendors/{payment}', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'update'])->name('vendors.update');
+            Route::delete('vendors/{payment}', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'destroySingle'])->name('vendors.destroy');
             Route::post('vendors/{vendor}/payments', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'store'])->name('vendors.payments.store');
             Route::delete('vendors/{vendor}/payments/{payment}', [\App\Http\Controllers\Payments\VendorPaymentController::class, 'destroy'])->name('vendors.payments.destroy');
         });
@@ -338,6 +341,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('dealers', [DealerPaymentController::class, 'index'])->name('dealers.index')->middleware('permission:view payments');
         Route::get('dealers/create', [DealerPaymentController::class, 'create'])->name('dealers.create')->middleware('permission:create payments');
         Route::post('dealers', [DealerPaymentController::class, 'store'])->name('dealers.store')->middleware('permission:create payments');
+        Route::get('dealers/{payment}/edit', [DealerPaymentController::class, 'edit'])->name('dealers.edit');
+        Route::put('dealers/{payment}', [DealerPaymentController::class, 'update'])->name('dealers.update');
         Route::delete('dealers/{payment}', [DealerPaymentController::class, 'destroy'])->name('dealers.destroy');
     });
 

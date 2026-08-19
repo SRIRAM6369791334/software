@@ -370,12 +370,46 @@ class VendorPaymentController extends Controller
         return back()->with('success', 'Payment recorded successfully.');
     }
 
+    public function edit(VendorPayment $payment): View
+    {
+        $vendor = $payment->vendor;
+        return view('payments.vendors.edit', compact('payment', 'vendor'));
+    }
+
+    public function update(Request $request, VendorPayment $payment): RedirectResponse
+    {
+        $validated = $request->validate([
+            'date'               => 'required|date|before_or_equal:today',
+            'cash_amount'        => 'required|numeric|min:0',
+            'bank_amount'        => 'required|numeric|min:0',
+            'payment_mode'       => 'nullable|string',
+            'bank_transfer_type' => 'nullable|string',
+            'notes'              => 'nullable|string|max:500',
+        ]);
+
+        if ((float)$validated['cash_amount'] + (float)$validated['bank_amount'] <= 0) {
+            return back()->with('error', 'Total payment amount must be greater than zero.');
+        }
+
+        $validated['vendor_id'] = $payment->vendor_id;
+        $validated['payment_mode'] = (float)$validated['bank_amount'] > 0
+            ? ((float)$validated['cash_amount'] > 0 ? 'Split' : ($validated['bank_transfer_type'] ?: 'Bank Transfer'))
+            : 'Cash';
+
+        $this->service->updatePayment($payment, $validated);
+
+        return redirect()->route('payments.vendors.index')->with('success', 'Vendor payment updated and balances synchronized.');
+    }
+
+    public function destroySingle(VendorPayment $payment): RedirectResponse
+    {
+        $this->service->deletePayment($payment);
+        return back()->with('success', 'Vendor payment deleted and balances updated.');
+    }
+
     public function destroy(Vendor $vendor, VendorPayment $payment): RedirectResponse
     {
-        $paymentDate = $payment->date;
-        $payment->delete();
-        app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($paymentDate));
-        
+        $this->service->deletePayment($payment);
         return back()->with('success', 'Payment deleted successfully.');
     }
 

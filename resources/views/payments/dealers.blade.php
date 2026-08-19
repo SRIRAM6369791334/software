@@ -179,6 +179,9 @@
                             <x-button variant="outline" href="{{ route('payments.dealers.ledger', $p->dealer_id) }}" size="sm">
                                 Ledger
                             </x-button>
+                            <a href="{{ route('payments.dealers.edit', $p->id) }}" class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:text-blue-700 transition-all" title="Edit Payment">
+                                <span class="material-symbols-rounded text-[18px]">edit</span>
+                            </a>
                             <form action="{{ route('payments.dealers.destroy', $p->id) }}" method="POST" class="inline" onsubmit="return confirm('Undo/Delete this payment of Rs {{ number_format($p->amount, 2) }}?');">
                                 @csrf
                                 @method('DELETE')

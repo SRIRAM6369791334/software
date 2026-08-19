@@ -235,9 +235,21 @@
                             <x-currency :amount="$p->pending_balance_after" />
                         </td>
                         <td class="px-6 py-4 text-center">
-                            <x-button variant="outline" href="{{ route('payments.vendors.ledger', $p->vendor_id) }}" size="sm">
-                                Ledger
-                            </x-button>
+                            <div class="flex items-center justify-center gap-1.5">
+                                <x-button variant="outline" href="{{ route('payments.vendors.ledger', $p->vendor_id) }}" size="sm">
+                                    Ledger
+                                </x-button>
+                                <a href="{{ route('payments.vendors.edit', $p->id) }}" class="p-1.5 rounded-lg text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-700 transition-all" title="Edit Payment">
+                                    <span class="material-symbols-rounded text-[18px]">edit</span>
+                                </a>
+                                <form action="{{ route('payments.vendors.destroy', $p->id) }}" method="POST" class="inline" onsubmit="return confirm('Undo/Delete this vendor payment of Rs {{ number_format($p->amount, 2) }}?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 transition-all" title="Delete / Undo Payment">
+                                        <span class="material-symbols-rounded text-[18px]">delete</span>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 @empty
