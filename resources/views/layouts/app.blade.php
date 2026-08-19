@@ -13,6 +13,11 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .swal2-container {
+            z-index: 100000 !important;
+        }
+    </style>
     <!-- Chart.js for Dashboards -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Alpine.js for UI interactivity -->

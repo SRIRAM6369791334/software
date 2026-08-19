@@ -250,4 +250,10 @@ class DealerPaymentController extends Controller
             $rows
         );
     }
+
+    public function destroy(DealerPayment $payment): RedirectResponse
+    {
+        $this->service->deletePayment($payment);
+        return back()->with('success', 'Dealer payment removed and balances updated.');
+    }
 }

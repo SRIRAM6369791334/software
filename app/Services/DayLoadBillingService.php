@@ -37,17 +37,65 @@ class DayLoadBillingService
 
             $isLateEntry = $batch->status === 'Invoiced';
 
+            $existing = DayLoadEntry::where('batch_id', $batch->id)
+                ->where('vendor_id', $data['vendor_id'])
+                ->where('dealer_id', $data['dealer_id'])
+                ->where('status', 'Active')
+                ->first();
+
+            $billingRate = isset($data['billing_rate']) && $data['billing_rate'] !== null && $data['billing_rate'] !== ''
+                ? (float)$data['billing_rate']
+                : (isset($data['paper_rate']) ? (float)$data['paper_rate'] : 0.00);
+
+            if ($existing) {
+                $oldValues = $existing->toArray();
+                $addedBoxes = (int) $data['no_of_boxes'];
+                $addedBoxWeight = (float) $data['box_weight'];
+                $addedEmptyWeight = (float) $data['empty_weight'];
+
+                $newBoxes = $existing->no_of_boxes + $addedBoxes;
+                $newBoxWeight = round((float) $existing->box_weight + $addedBoxWeight, 2);
+                $newEmptyWeight = round((float) $existing->empty_weight + $addedEmptyWeight, 2);
+
+                $remarksList = array_filter([$existing->remarks, $data['remarks'] ?? null]);
+                $newRemarks = !empty($remarksList) ? implode(' | ', $remarksList) : null;
+
+                $existing->update([
+                    'paper_rate'    => (float)$data['paper_rate'],
+                    'billing_rate'  => $billingRate ?: $existing->billing_rate,
+                    'customer_rate' => (float)$data['customer_rate'],
+                    'no_of_boxes'   => $newBoxes,
+                    'box_weight'    => $newBoxWeight,
+                    'empty_weight'  => $newEmptyWeight,
+                    'remarks'       => $newRemarks,
+                ]);
+
+                EntryAdjustmentLog::create([
+                    'entry_id'           => $existing->id,
+                    'action_type'        => 'Edit',
+                    'old_values'         => $oldValues,
+                    'new_values'         => $existing->fresh()->toArray(),
+                    'resulting_entry_id' => null,
+                    'reason'             => "Auto-merged load: added {$addedBoxes} boxes ({$addedBoxWeight} kg)",
+                    'adjusted_by'        => auth()->id(),
+                ]);
+
+                $this->refreshBatchTotals($batch);
+
+                return $existing;
+            }
+
             $entry = DayLoadEntry::create([
                 'batch_id'     => $batch->id,
                 'vendor_id'    => $data['vendor_id'],
                 'dealer_id'    => $data['dealer_id'],
-                'paper_rate'   => $data['paper_rate'],
-                'billing_rate' => $data['billing_rate'],
-                'customer_rate'=> $data['customer_rate'],
-                'no_of_boxes'  => $data['no_of_boxes'],
-                'box_weight'   => $data['box_weight'],
-                'empty_weight' => $data['empty_weight'],
-                'farm_weight'  => $data['farm_weight'] ?? null,
+                'paper_rate'   => (float)$data['paper_rate'],
+                'billing_rate' => $billingRate,
+                'customer_rate'=> (float)$data['customer_rate'],
+                'no_of_boxes'  => (int)$data['no_of_boxes'],
+                'box_weight'   => (float)$data['box_weight'],
+                'empty_weight' => (float)$data['empty_weight'],
+                'farm_weight'  => isset($data['farm_weight']) && is_numeric($data['farm_weight']) ? (float)$data['farm_weight'] : null,
                 'remarks'      => $data['remarks'] ?? null,
             ]);
 
@@ -68,6 +116,166 @@ class DayLoadBillingService
             $this->refreshBatchTotals($batch);
 
             return $entry;
+        });
+    }
+
+    /**
+     * Create multiple day-load entries for a single vendor across multiple dealers.
+     *
+     * @param array $masterData  ['billing_date', 'vendor_id', 'paper_rate', 'billing_rate']
+     * @param array $dealersData array of ['dealer_id', 'customer_rate', 'no_of_boxes', 'box_weight', 'empty_weight', 'farm_weight', 'remarks']
+     * @param int|null $advanceId
+     * @param float $applyAdvanceAmount
+     * @return array Array of created DayLoadEntry models
+     * @throws BatchLockedException if batch is Locked
+     */
+    public function createBulkEntries(array $masterData, array $dealersData, ?int $advanceId = null, float $applyAdvanceAmount = 0): array
+    {
+        return DB::transaction(function () use ($masterData, $dealersData, $advanceId, $applyAdvanceAmount) {
+            $batch = DayLoadBatch::firstOrCreate(
+                ['billing_date' => $masterData['billing_date']],
+                ['status' => 'Open']
+            );
+
+            if ($batch->status === 'Locked') {
+                throw new BatchLockedException(
+                    "Cannot add entries: batch for {$batch->billing_date->format('Y-m-d')} is locked."
+                );
+            }
+
+            $isLateEntry = $batch->status === 'Invoiced';
+            $createdEntries = [];
+
+            $masterBillingRate = isset($masterData['billing_rate']) && $masterData['billing_rate'] !== null && $masterData['billing_rate'] !== ''
+                ? (float)$masterData['billing_rate']
+                : (isset($masterData['paper_rate']) ? (float)$masterData['paper_rate'] : 0.00);
+
+            foreach ($dealersData as $d) {
+                $existing = DayLoadEntry::where('batch_id', $batch->id)
+                    ->where('vendor_id', $masterData['vendor_id'])
+                    ->where('dealer_id', $d['dealer_id'])
+                    ->where('status', 'Active')
+                    ->first();
+
+                if ($existing) {
+                    $oldValues = $existing->toArray();
+                    $addedBoxes = (int) $d['no_of_boxes'];
+                    $addedBoxWeight = (float) $d['box_weight'];
+                    $addedEmptyWeight = (float) $d['empty_weight'];
+
+                    $newBoxes = $existing->no_of_boxes + $addedBoxes;
+                    $newBoxWeight = round((float) $existing->box_weight + $addedBoxWeight, 2);
+                    $newEmptyWeight = round((float) $existing->empty_weight + $addedEmptyWeight, 2);
+
+                    $remarksList = array_filter([$existing->remarks, $d['remarks'] ?? null]);
+                    $newRemarks = !empty($remarksList) ? implode(' | ', $remarksList) : null;
+
+                    $existing->update([
+                        'paper_rate'    => (float)$masterData['paper_rate'],
+                        'billing_rate'  => $masterBillingRate ?: $existing->billing_rate,
+                        'customer_rate' => (float)$d['customer_rate'],
+                        'no_of_boxes'   => $newBoxes,
+                        'box_weight'    => $newBoxWeight,
+                        'empty_weight'  => $newEmptyWeight,
+                        'remarks'       => $newRemarks,
+                    ]);
+
+                    EntryAdjustmentLog::create([
+                        'entry_id'           => $existing->id,
+                        'action_type'        => 'Edit',
+                        'old_values'         => $oldValues,
+                        'new_values'         => $existing->fresh()->toArray(),
+                        'resulting_entry_id' => null,
+                        'reason'             => "Auto-merged load: added {$addedBoxes} boxes ({$addedBoxWeight} kg)",
+                        'adjusted_by'        => auth()->id(),
+                    ]);
+
+                    $createdEntries[] = $existing;
+                } else {
+                    $entry = DayLoadEntry::create([
+                        'batch_id'      => $batch->id,
+                        'vendor_id'     => $masterData['vendor_id'],
+                        'dealer_id'     => $d['dealer_id'],
+                        'paper_rate'    => (float)$masterData['paper_rate'],
+                        'billing_rate'  => $masterBillingRate,
+                        'customer_rate' => (float)$d['customer_rate'],
+                        'no_of_boxes'   => (int) $d['no_of_boxes'],
+                        'box_weight'    => (float) $d['box_weight'],
+                        'empty_weight'  => (float) $d['empty_weight'],
+                        'farm_weight'   => isset($d['farm_weight']) && is_numeric($d['farm_weight']) ? (float) $d['farm_weight'] : null,
+                        'remarks'       => $d['remarks'] ?? null,
+                    ]);
+
+                    $logReason = $isLateEntry
+                        ? 'Bulk Entry created (added after batch was invoiced — invoice version bumped to sync)'
+                        : 'Bulk Entry created';
+
+                    EntryAdjustmentLog::create([
+                        'entry_id'           => $entry->id,
+                        'action_type'        => 'Create',
+                        'old_values'         => null,
+                        'new_values'         => $entry->toArray(),
+                        'resulting_entry_id' => null,
+                        'reason'             => $logReason,
+                        'adjusted_by'        => auth()->id(),
+                    ]);
+
+                    $createdEntries[] = $entry;
+                }
+            }
+
+            // Apply vendor advance across created entries if specified
+            if ($advanceId && $applyAdvanceAmount > 0 && !empty($createdEntries)) {
+                $advance = \App\Models\VendorAdvance::find($advanceId);
+                if ($advance && (float) $advance->remaining_amount > 0) {
+                    $remainingToApply = min($applyAdvanceAmount, (float) $advance->remaining_amount);
+
+                    foreach ($createdEntries as $entry) {
+                        if ($remainingToApply <= 0) break;
+
+                        $entryVendorCost = (float) $entry->vendor_cost;
+                        $entryApplicable = $entryVendorCost > 0 ? min($entryVendorCost, $remainingToApply) : $remainingToApply;
+                        $actualApply = min($remainingToApply, (float) $advance->fresh()->remaining_amount, $entryApplicable);
+
+                        if ($actualApply > 0) {
+                            $entry->increment('vendor_paid', $actualApply);
+                            $newAdjusted = round((float) $advance->adjusted_amount + $actualApply, 2);
+                            $advance->update([
+                                'adjusted_amount' => $newAdjusted,
+                                'status'          => $newAdjusted >= (float) $advance->total_amount ? 'Fully Adjusted' : 'Partially Adjusted',
+                            ]);
+
+                            $paymentDate = $batch->billing_date ?? now();
+
+                            \App\Models\VendorAdvanceAdjustment::create([
+                                'vendor_advance_id' => $advance->id,
+                                'day_load_entry_id' => $entry->id,
+                                'amount'            => $actualApply,
+                                'date'              => $paymentDate,
+                                'notes'             => "Adjusted against Day-Load Entry #{$entry->id}",
+                            ]);
+
+                            \App\Models\VendorPayment::create([
+                                'vendor_id'             => $entry->vendor_id,
+                                'day_load_entry_id'     => $entry->id,
+                                'date'                  => $paymentDate,
+                                'amount'                => $actualApply,
+                                'payment_mode'          => 'Advance Adjustment',
+                                'cash_amount'           => 0.00,
+                                'bank_amount'           => 0.00,
+                                'notes'                 => "Adjusted from Advance #{$advance->id} (Day-Load Entry #{$entry->id})",
+                                'pending_balance_after' => $entry->vendor->fresh()->outstanding_balance,
+                            ]);
+
+                            $remainingToApply = round($remainingToApply - $actualApply, 2);
+                        }
+                    }
+                }
+            }
+
+            $this->refreshBatchTotals($batch);
+
+            return $createdEntries;
         });
     }
 
@@ -438,16 +646,20 @@ class DayLoadBillingService
 
         $oldValues = $entry->toArray();
 
+        $billingRate = isset($data['billing_rate']) && $data['billing_rate'] !== null && $data['billing_rate'] !== ''
+            ? (float)$data['billing_rate']
+            : (isset($data['paper_rate']) ? (float)$data['paper_rate'] : (float)$entry->billing_rate);
+
         $entry->update([
             'vendor_id'    => $data['vendor_id'],
             'dealer_id'    => $data['dealer_id'],
-            'paper_rate'   => $data['paper_rate'],
-            'billing_rate' => $data['billing_rate'],
-            'customer_rate'=> $data['customer_rate'],
-            'no_of_boxes'  => $data['no_of_boxes'],
-            'box_weight'   => $data['box_weight'],
-            'empty_weight' => $data['empty_weight'],
-            'farm_weight'  => $data['farm_weight'] ?? null,
+            'paper_rate'   => (float)$data['paper_rate'],
+            'billing_rate' => $billingRate,
+            'customer_rate'=> (float)$data['customer_rate'],
+            'no_of_boxes'  => (int)$data['no_of_boxes'],
+            'box_weight'   => (float)$data['box_weight'],
+            'empty_weight' => (float)$data['empty_weight'],
+            'farm_weight'  => isset($data['farm_weight']) && is_numeric($data['farm_weight']) ? (float)$data['farm_weight'] : null,
             'remarks'      => $data['remarks'] ?? null,
         ]);
 

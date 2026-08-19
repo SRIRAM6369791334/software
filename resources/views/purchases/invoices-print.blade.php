@@ -247,6 +247,23 @@
             <td class="text-right font-bold font-mono">—</td>
             <td class="text-right font-bold font-mono text-emerald">Rs {{ number_format((float) $dayLoadEntries->sum('amount'), 2) }}</td>
         </tr>
+        @php
+            $farmWt = (float)($dayLoadBatch->total_farm_weight ?? $dayLoadEntries->sum('farm_weight') ?? 0);
+            $birdWt = (float)($dayLoadBatch->total_bird_weight ?? $dayLoadEntries->sum('bird_weight') ?? 0);
+            $lossWt = (float)($dayLoadBatch->total_loss_weight ?? 0);
+            if ($lossWt == 0 && $farmWt > $birdWt) {
+                $lossWt = round($farmWt - $birdWt, 2);
+            }
+            $lossPct = $farmWt > 0 ? round(($lossWt / $farmWt) * 100, 2) : 0;
+        @endphp
+        @if($farmWt > 0 || $lossWt > 0)
+        <tr style="background:#fffbeb;font-weight:bold;font-size:12px;border-top:1px solid #fde68a;">
+            <td colspan="3" style="color:#b45309;">Farm & Weight Loss:</td>
+            <td colspan="2" class="text-center">Farm Wt: <strong>{{ number_format($farmWt, 2) }} kg</strong></td>
+            <td colspan="2" class="text-center" style="color:#e11d48;">Loss Wt: <strong>- {{ number_format($lossWt, 2) }} kg @if($lossPct > 0)({{ $lossPct }}%)@endif</strong></td>
+            <td colspan="2" class="text-right" style="color:#047857;">Billed Net: <strong>{{ number_format($birdWt, 2) }} kg</strong></td>
+        </tr>
+        @endif
     </tfoot>
 </table>
 @endif

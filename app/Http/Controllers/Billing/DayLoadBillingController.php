@@ -13,6 +13,7 @@ use App\Services\DayLoadPaymentService;
 use App\Services\ExportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -108,14 +109,56 @@ class DayLoadBillingController extends Controller
             ];
         });
 
+        $existingRatesByVendor = $allEntries->groupBy('vendor_id')->map(function ($entries) {
+            $first = $entries->first();
+            return [
+                'paper_rate'   => (float) $first->paper_rate,
+                'billing_rate' => $first->billing_rate !== null ? (float) $first->billing_rate : null,
+            ];
+        });
+
         return view('billing.day-load.index', compact(
             'entries', 'normalEntries', 'transferredEntries', 'batch', 'vendors', 'dealers', 'date', 'search',
             'totalDealerIncome', 'totalVendorCost', 'grossMargin',
             'totalDealerCollected', 'totalVendorPaid',
             'totalDealerDue', 'totalVendorDue', 'collectionPct',
             'lsEntriesByDealer', 'allEntries',
-            'activeAdvances', 'activeAdvancesByVendor'
+            'activeAdvances', 'activeAdvancesByVendor', 'existingRatesByVendor'
         ));
+    }
+
+    public function getRatesForVendorAndDate(Request $request): JsonResponse
+    {
+        $vendorId = $request->input('vendor_id');
+        $date = $request->input('date');
+
+        if (!$vendorId || !$date) {
+            return response()->json(['paper_rate' => null, 'billing_rate' => null, 'dealer_rates' => (object)[], 'found' => false]);
+        }
+
+        $entries = DayLoadEntry::where('vendor_id', $vendorId)
+            ->where('status', '!=', 'Cancelled')
+            ->whereHas('batch', fn ($q) => $q->whereDate('billing_date', $date))
+            ->get();
+
+        if ($entries->isNotEmpty()) {
+            $first = $entries->first();
+            $dealerRates = [];
+            foreach ($entries as $e) {
+                if ($e->customer_rate > 0) {
+                    $dealerRates[(string) $e->dealer_id] = (float) $e->customer_rate;
+                }
+            }
+
+            return response()->json([
+                'paper_rate'   => (float) $first->paper_rate,
+                'billing_rate' => $first->billing_rate !== null ? (float) $first->billing_rate : null,
+                'dealer_rates' => (object) $dealerRates,
+                'found'        => true,
+            ]);
+        }
+
+        return response()->json(['paper_rate' => null, 'billing_rate' => null, 'dealer_rates' => (object)[], 'found' => false]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -189,6 +232,67 @@ class DayLoadBillingController extends Controller
         }
 
         return back()->with('success', 'Daily load entry recorded successfully.');
+    }
+
+    public function bulkStore(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'billing_date'         => 'required|date',
+            'vendor_id'            => 'required|exists:vendors,id',
+            'paper_rate'           => 'required|numeric|min:0',
+            'billing_rate'         => 'nullable|numeric|min:0',
+            'vendor_advance_id'    => 'nullable|exists:vendor_advances,id',
+            'apply_advance_amount' => 'nullable|numeric|min:0',
+            'dealers'              => 'required|array',
+            'dealers.*.dealer_id'    => 'required|exists:dealers,id',
+            'dealers.*.customer_rate'=> 'nullable|numeric|min:0',
+            'dealers.*.no_of_boxes'  => 'nullable|integer|min:0',
+            'dealers.*.box_weight'   => 'nullable|numeric|min:0',
+            'dealers.*.empty_weight' => 'nullable|numeric|min:0',
+            'dealers.*.farm_weight'  => 'nullable|numeric|min:0',
+            'dealers.*.remarks'      => 'nullable|string|max:255',
+        ]);
+
+        // Filter valid dealer rows: must have no_of_boxes > 0, box_weight > 0 and customer_rate >= 0
+        $activeDealerEntries = collect($validated['dealers'])->filter(function ($d) {
+            $boxes = isset($d['no_of_boxes']) && $d['no_of_boxes'] !== '' ? (int) $d['no_of_boxes'] : 0;
+            $boxWeight = isset($d['box_weight']) && $d['box_weight'] !== '' ? (float) $d['box_weight'] : 0;
+            $customerRate = isset($d['customer_rate']) && $d['customer_rate'] !== '' ? (float) $d['customer_rate'] : null;
+            return $boxes > 0 && $boxWeight > 0 && $customerRate !== null;
+        })->values()->all();
+
+        if (empty($activeDealerEntries)) {
+            return back()->with('error', 'No dealer entries filled. Please enter Boxes, Box Weight, and Customer Rate for at least one dealer.')->withInput();
+        }
+
+        $masterData = [
+            'billing_date' => $validated['billing_date'],
+            'vendor_id'    => $validated['vendor_id'],
+            'paper_rate'   => $validated['paper_rate'],
+            'billing_rate' => $validated['billing_rate'] ?? null,
+        ];
+
+        $advanceId = $request->input('vendor_advance_id') ? (int) $request->input('vendor_advance_id') : null;
+        $applyAmount = (float) $request->input('apply_advance_amount', 0);
+
+        try {
+            $createdEntries = $this->dayLoadBillingService->createBulkEntries(
+                $masterData,
+                $activeDealerEntries,
+                $advanceId,
+                $applyAmount
+            );
+
+            $count = count($createdEntries);
+            $vendor = \App\Models\Vendor::find($validated['vendor_id']);
+            $vendorName = $vendor->firm_name ?? 'Vendor';
+
+            return back()->with('success', "Successfully recorded {$count} load " . ($count > 1 ? 'entries' : 'entry') . " for {$vendorName}.");
+        } catch (\App\Exceptions\BatchLockedException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to save load entries: ' . $e->getMessage())->withInput();
+        }
     }
 
     public function applyAdvance(Request $request, DayLoadEntry $entry): RedirectResponse

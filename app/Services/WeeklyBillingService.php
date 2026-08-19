@@ -180,23 +180,22 @@ class WeeklyBillingService
             }
 
             $totals = $this->calculateWeeklyTotals($dealerId, $startDate, $endDate, $discountAmount);
-            $netAmount = $totals['net_invoice_amount'];
-
-            $baseAmount = round($netAmount / 1.18, 2);
-            $gstAmount = round($netAmount - $baseAmount, 2);
+            $grossPurchases = (float) $totals['total_purchases'];
+            $discountPct = $grossPurchases > 0 ? round(($discountAmount / $grossPurchases) * 100, 2) : 0.00;
+            $netAmount = max(0, round($grossPurchases - $discountAmount, 2));
 
             $bill = WeeklyBill::create([
                 'dealer_id'             => $dealerId,
                 'period_start'          => $startDate,
                 'period_end'            => $endDate,
                 'invoice_no'            => $invoiceNo ?: $this->invoiceService->generateUnique('INV-W', 'weekly_bills'),
-                'amount'                => $baseAmount,
-                'gst_percentage'        => 18,
-                'gst_amount'            => $gstAmount,
+                'amount'                => $grossPurchases,
+                'gst_percentage'        => 0.00,
+                'gst_amount'            => 0.00,
                 'net_amount'            => $netAmount,
-                'discount_percentage'   => 0.00,
+                'discount_percentage'   => $discountPct,
                 'discount_amount'       => $discountAmount,
-                'status'                => $netAmount > 0 ? 'Pending' : 'Paid',
+                'status'                => $totals['balance_due'] > 0 ? 'Pending' : 'Paid',
                 'payment_mode'          => 'Credit',
                 'previous_outstanding'  => $totals['previous_outstanding'],
                 'payments_during_week'  => $totals['total_payments'],
@@ -208,7 +207,7 @@ class WeeklyBillingService
                     'item_name'    => 'Day-Load Batch #' . $purchase->batch_id . ' (' . ($purchase->vendor->firm_name ?? '-') . ')',
                     'quantity_kg'  => $purchase->bird_weight,
                     'rate_per_kg'  => $purchase->customer_rate,
-                    'tax_amount'   => round($purchase->amount * 0.18, 2),
+                    'tax_amount'   => 0.00,
                     'total_amount' => $purchase->amount,
                 ]);
                 $purchase->update(['weekly_bill_id' => $bill->id]);

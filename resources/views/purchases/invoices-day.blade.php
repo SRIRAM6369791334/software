@@ -30,27 +30,47 @@
     </x-page-header>
 
     {{-- Day Stats --}}
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    @php
+        $batchFarmWt = (float)($dayLoadBatch?->total_farm_weight ?? $dayLoadBatch?->entries?->sum('farm_weight') ?? 0);
+        $batchBirdWt = (float)($dayLoadBatch?->total_bird_weight ?? $dayLoadBatch?->entries?->sum('bird_weight') ?? 0);
+        $batchLossWt = (float)($dayLoadBatch?->total_loss_weight ?? 0);
+        if ($batchLossWt == 0 && $batchFarmWt > $batchBirdWt) {
+            $batchLossWt = round($batchFarmWt - $batchBirdWt, 2);
+        }
+    @endphp
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
         <x-stat-card
             label="Day-Load Batches"
             value="{{ $dayStats['dayload_count'] }}"
             icon="local_shipping"
             color="blue" />
         <x-stat-card
-            label="Birds Loaded"
+            label="Boxes Loaded"
             value="{{ number_format($dayStats['dayload_boxes']) }} boxes"
             icon="inventory_2"
             color="indigo" />
         <x-stat-card
-            label="Purchases"
-            value="{{ $dayStats['purchase_count'] }}"
-            icon="receipt_long"
+            label="Net Bird Weight"
+            value="{{ number_format($batchBirdWt, 2) }} kg"
+            icon="scale"
             color="emerald" />
+        @if($batchFarmWt > 0 || $batchLossWt > 0)
         <x-stat-card
-            label="Purchase Total"
+            label="Farm Weight"
+            value="{{ number_format($batchFarmWt, 2) }} kg"
+            icon="agriculture"
+            color="amber" />
+        <x-stat-card
+            label="Loss Weight"
+            value="{{ number_format($batchLossWt, 2) }} kg"
+            icon="trending_down"
+            color="rose" />
+        @endif
+        <x-stat-card
+            label="Day Total"
             value="Rs {{ number_format($dayStats['purchase_total'], 2) }}"
             icon="payments"
-            color="amber" />
+            color="emerald" />
     </div>
 
     {{-- Day-Load Entries Section --}}
@@ -102,7 +122,7 @@
                         </tr>
                     @endforeach
                 </tbody>
-                <tfoot class="border-t-2 border-zinc-200 dark:border-zinc-700">
+                <tfoot class="border-t-2 border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/30">
                     <tr class="font-bold text-xs">
                         <td class="px-6 py-3 text-zinc-500" colspan="2">Totals</td>
                         <td class="px-6 py-3 text-center font-jetbrains text-blue-600 dark:text-blue-400">{{ $dayLoadBatch->total_boxes }}</td>
@@ -113,6 +133,36 @@
                         <td class="px-6 py-3 text-center font-jetbrains text-emerald-600">Rs {{ number_format((float) $dayLoadBatch->entries->sum('amount'), 2) }}</td>
                         <td></td>
                     </tr>
+                    @php
+                        $farmWt = (float)($dayLoadBatch->total_farm_weight ?? $dayLoadBatch->entries->sum('farm_weight') ?? 0);
+                        $birdWt = (float)($dayLoadBatch->total_bird_weight ?? $dayLoadBatch->entries->sum('bird_weight') ?? 0);
+                        $lossWt = (float)($dayLoadBatch->total_loss_weight ?? 0);
+                        if ($lossWt == 0 && $farmWt > $birdWt) {
+                            $lossWt = round($farmWt - $birdWt, 2);
+                        }
+                        $lossPct = $farmWt > 0 ? round(($lossWt / $farmWt) * 100, 2) : 0;
+                    @endphp
+                    @if($farmWt > 0 || $lossWt > 0)
+                    <tr class="font-bold text-xs border-t border-zinc-200 dark:border-zinc-700 bg-amber-50/40 dark:bg-amber-950/20">
+                        <td class="px-6 py-3 text-amber-800 dark:text-amber-300 font-bold" colspan="3">
+                            <span class="flex items-center gap-1.5 font-bold">
+                                <span class="material-symbols-rounded text-base">agriculture</span> Farm & Weight Loss:
+                            </span>
+                        </td>
+                        <td class="px-6 py-3 text-center font-jetbrains" colspan="2">
+                            <span class="text-[10px] text-zinc-500 dark:text-zinc-400 block uppercase font-medium">Farm Weight</span>
+                            <span class="font-mono font-black text-zinc-900 dark:text-zinc-100 text-sm">{{ number_format($farmWt, 2) }} kg</span>
+                        </td>
+                        <td class="px-6 py-3 text-center font-jetbrains" colspan="2">
+                            <span class="text-[10px] text-rose-500 block uppercase font-medium">Loss Weight</span>
+                            <span class="font-mono font-black text-rose-600 dark:text-rose-400 text-sm">- {{ number_format($lossWt, 2) }} kg @if($lossPct > 0)<span class="text-xs font-normal">({{ $lossPct }}%)</span>@endif</span>
+                        </td>
+                        <td class="px-6 py-3 text-center font-jetbrains text-emerald-700 dark:text-emerald-400" colspan="2">
+                            <span class="text-[10px] text-emerald-600 block uppercase font-medium">Net Billed Weight</span>
+                            <span class="font-mono font-black text-sm">{{ number_format($birdWt, 2) }} kg</span>
+                        </td>
+                    </tr>
+                    @endif
                 </tfoot>
             </table>
         </div>

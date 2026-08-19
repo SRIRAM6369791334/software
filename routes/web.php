@@ -164,6 +164,7 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('billing')->name('billing.')->group(function () {
         Route::middleware(['permission:view bills'])->group(function () {
             Route::get('day-load', [DayLoadBillingController::class, 'index'])->name('day-load.index');
+            Route::get('day-load/get-rates', [DayLoadBillingController::class, 'getRatesForVendorAndDate'])->name('day-load.get-rates');
             Route::get('day-load/export/csv', [DayLoadBillingController::class, 'export'])->name('day-load.export');
             Route::get('day-load/{date}/invoice', [DayLoadBillingController::class, 'invoice'])->name('day-load.invoice');
             Route::get('day-load/{date}/pdf', [DayLoadBillingController::class, 'downloadPdf'])->name('day-load.pdf');
@@ -187,6 +188,7 @@ Route::middleware(['auth'])->group(function () {
         
         Route::middleware(['permission:create bills'])->group(function () {
             Route::post('day-load', [DayLoadBillingController::class, 'store'])->name('day-load.store');
+            Route::post('day-load/bulk-store', [DayLoadBillingController::class, 'bulkStore'])->name('day-load.bulk-store');
             Route::post('day-load/{entry}/transfer', [DayLoadBillingController::class, 'transfer'])->name('day-load.transfer');
             Route::put('day-load/{entry}/update', [DayLoadBillingController::class, 'update'])->name('day-load.update');
             Route::put('day-load/bulk-update', [DayLoadBillingController::class, 'bulkUpdate'])->name('day-load.bulk-update');
@@ -336,6 +338,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('dealers', [DealerPaymentController::class, 'index'])->name('dealers.index')->middleware('permission:view payments');
         Route::get('dealers/create', [DealerPaymentController::class, 'create'])->name('dealers.create')->middleware('permission:create payments');
         Route::post('dealers', [DealerPaymentController::class, 'store'])->name('dealers.store')->middleware('permission:create payments');
+        Route::delete('dealers/{payment}', [DealerPaymentController::class, 'destroy'])->name('dealers.destroy');
     });
 
     /*

@@ -220,11 +220,20 @@ class DailyBillingController extends Controller
         $dayLoadTotal = round($dayLoadEntries->sum(
             fn($e) => (float) $e->bird_weight * (float) $e->customer_rate
         ), 2);
+        if ($dayLoadTotal == 0 && (float)$bill->amount > 0) {
+            $dayLoadTotal = (float)$bill->amount;
+        }
+
+        $prevOutstanding = (float)($bill->previous_outstanding ?? 0);
+        $discountAmount = (float)($bill->discount_amount ?? 0);
+        $netInvoiceAmount = max(0, round($dayLoadTotal - $discountAmount, 2));
+        $totalPayable = round($prevOutstanding + $netInvoiceAmount, 2);
+
         $totalPaid = round($allPayments->sum('amount'), 2);
-        $remainingDue = max(0, round((float) $bill->net_amount - $totalPaid, 2));
+        $remainingDue = max(0, round($totalPayable - $totalPaid, 2));
 
         return view('billing.invoice', array_merge(
-            compact('bill', 'dayLoadEntries', 'allPayments', 'dayLoadTotal', 'totalPaid', 'remainingDue'),
+            compact('bill', 'dayLoadEntries', 'allPayments', 'dayLoadTotal', 'totalPaid', 'remainingDue', 'prevOutstanding', 'totalPayable', 'netInvoiceAmount'),
             ['weekly' => $bill]
         ));
     }

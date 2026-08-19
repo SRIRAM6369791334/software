@@ -27,8 +27,14 @@ class VendorController extends Controller
         $vendorsCollection = $vendorsQuery->orderBy('firm_name')->get();
 
         // Calculate stats on all matching vendors
-        $totalPayable = (float) $vendorsCollection->sum(fn($v) => (float) $v->outstanding_balance);
-        $totalAdvanceBalance = (float) $vendorsCollection->sum(fn($v) => (float) $v->active_advance_balance);
+        $grossPayable = (float) $vendorsCollection->filter(fn($v) => (float) $v->outstanding_balance > 0)->sum(fn($v) => (float) $v->outstanding_balance);
+        $totalAdvanceBalance = (float) $vendorsCollection->sum(function($v) {
+            $adv = (float) $v->active_advance_balance;
+            $excess = (float) $v->outstanding_balance < 0 ? abs((float) $v->outstanding_balance) : 0;
+            return $adv + $excess;
+        });
+        $netPayable = $grossPayable - $totalAdvanceBalance;
+        $totalPayable = $grossPayable; // Matches the exact sum of positive outstanding dues in the table
         $activeVendorsCount = $vendorsCollection->filter(fn($v) => (float) $v->outstanding_balance > 0)->count();
 
         // Paginate the collection manually

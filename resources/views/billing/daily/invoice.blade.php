@@ -143,10 +143,20 @@
                     <span>Subtotal</span>
                     <span>Rs {{ number_format($bill->amount, 2) }}</span>
                 </div>
-                <div class="flex justify-between items-center text-xs opacity-60 font-bold uppercase tracking-widest pb-4 border-b border-zinc-200">
-                    <span>GST ({{ $bill->gst_percentage }}%)</span>
-                    <span>Rs {{ number_format($bill->gst_amount, 2) }}</span>
-                </div>
+                @if((float)($bill->discount_amount ?? 0) > 0)
+                    @php
+                        $discPct = (float)($bill->discount_percentage ?? 0);
+                        if ($discPct <= 0 && (float)$bill->amount > 0) {
+                            $discPct = round(((float)$bill->discount_amount / (float)$bill->amount) * 100, 2);
+                        }
+                    @endphp
+                    <div class="flex justify-between items-center text-xs font-bold uppercase tracking-widest pb-4 border-b border-zinc-200 text-rose-600">
+                        <span>Discount @if($discPct > 0)({{ $discPct }}%)@endif</span>
+                        <span>- Rs {{ number_format((float)$bill->discount_amount, 2) }}</span>
+                    </div>
+                @else
+                    <div class="pb-2 border-b border-zinc-200"></div>
+                @endif
                 <div class="flex justify-between items-center pt-2">
                     <span class="text-xs font-black uppercase tracking-[0.2em] text-emerald-600">Total Net</span>
                     <span class="text-3xl font-black font-mono">Rs {{ number_format($bill->net_amount, 2) }}</span>

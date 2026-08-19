@@ -243,4 +243,39 @@ class DealerPaymentService
     {
         return DealerPayment::with('dealer')->orderByDesc('date')->get();
     }
+
+    public function deletePayment(DealerPayment $payment): bool
+    {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($payment) {
+            $payments = $payment->payment_group_id
+                ? DealerPayment::where('payment_group_id', $payment->payment_group_id)->get()
+                : collect([$payment]);
+
+            $uniqueDates = [];
+
+            foreach ($payments as $p) {
+                if ($p->day_load_entry_id) {
+                    $entry = \App\Models\DayLoadEntry::find($p->day_load_entry_id);
+                    if ($entry) {
+                        $entry->dealer_collected = max(0, (float)$entry->dealer_collected - (float)$p->amount);
+                        if ($entry->dealer_collected <= 0) {
+                            $entry->dealer_payment_status = 'Pending';
+                        } elseif ($entry->dealer_collected < $entry->amount) {
+                            $entry->dealer_payment_status = 'Partial';
+                        }
+                        $entry->save();
+                    }
+                }
+
+                $uniqueDates[] = $p->date ? $p->date->format('Y-m-d') : null;
+                $p->delete();
+            }
+
+            foreach (array_unique(array_filter($uniqueDates)) as $dStr) {
+                app(CashBankLedgerService::class)->recalculateForDate(\Carbon\Carbon::parse($dStr));
+            }
+
+            return true;
+        });
+    }
 }

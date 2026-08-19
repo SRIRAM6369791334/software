@@ -24,8 +24,8 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <x-stat-card title="Total Suppliers" value="{{ $totalVendors }}" icon="inventory_2" color="teal" />
-        <x-stat-card title="Outstanding Payable" value="{{ number_format($totalPayable, 0) }}" icon="warning" color="rose" prefix="Rs " subtitle="Net after advances" />
-        <x-stat-card title="Active Advances" value="{{ number_format($totalAdvanceBalance, 0) }}" icon="local_shipping" color="amber" prefix="Rs " subtitle="Unadjusted balance" />
+        <x-stat-card title="Outstanding Payable" value="{{ number_format($totalPayable, 0) }}" icon="warning" color="rose" prefix="Rs " subtitle="Total vendor dues" />
+        <x-stat-card title="Advances & Credits" value="{{ number_format($totalAdvanceBalance, 0) }}" icon="local_shipping" color="amber" prefix="Rs " subtitle="Unadjusted / Excess" />
         <x-stat-card title="Active Accounts" value="{{ $activeVendorsCount }}" icon="account_balance" color="purple" subtitle="With dues" />
         <x-stat-card title="GST Registered" value="{{ $gstRegistered }}" icon="verified" color="blue" />
     </div>
@@ -53,7 +53,7 @@
             </form>
         </div>
 
-        <x-data-table :headers="['Firm & Location', 'Point of Contact', 'Route', 'GSTIN', 'Advance Balance', 'Outstanding Payable', 'Actions']">
+        <x-data-table :headers="['Firm & Location', 'Point of Contact', 'Route', 'GSTIN', 'Advance / Credit', 'Outstanding Payable', 'Actions']">
             @forelse($vendors as $vendor)
                 <tr class="hover:bg-white/80 dark:hover:bg-zinc-800/50 transition-all duration-300 group">
                     <td class="px-6 py-4">
@@ -84,10 +84,15 @@
 
                     {{-- Advance Balance Column --}}
                     <td class="px-6 py-4 font-jetbrains">
-                        @if($vendor->active_advance_balance > 0)
+                        @php
+                            $vendorAdv = (float) $vendor->active_advance_balance;
+                            $vendorExcess = $vendor->outstanding_balance < 0 ? abs((float) $vendor->outstanding_balance) : 0;
+                            $displayAdv = $vendorAdv + $vendorExcess;
+                        @endphp
+                        @if($displayAdv > 0)
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 text-xs">
                                 <span class="material-symbols-rounded text-sm">local_shipping</span>
-                                Rs {{ number_format($vendor->active_advance_balance, 2) }}
+                                Rs {{ number_format($displayAdv, 2) }}
                             </span>
                         @else
                             <span class="text-zinc-400 text-xs font-mono">Rs 0.00</span>
@@ -99,6 +104,10 @@
                         @if($vendor->outstanding_balance > 0)
                             <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-rose-50 text-rose-500 dark:bg-rose-500/10 dark:text-rose-400 font-bold border border-rose-100 dark:border-rose-500/20 text-xs">
                                 Rs {{ number_format($vendor->outstanding_balance, 2) }}
+                            </span>
+                        @elseif($vendor->outstanding_balance < 0)
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 font-medium text-xs">
+                                Advance
                             </span>
                         @else
                             <span class="text-emerald-600 dark:text-emerald-400 font-bold text-xs">Rs 0.00</span>

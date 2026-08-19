@@ -42,9 +42,22 @@
 <body class="bg-zinc-100 min-h-screen py-12 px-4">
     <div class="max-w-4xl mx-auto">
 
+        @php
+            $isDaily = ($bill instanceof \App\Models\DailyBill) || !empty($bill->date);
+            $grossTotal = (float)($dayLoadTotal ?? $bill->amount);
+            $discountAmt = (float)($bill->discount_amount ?? 0);
+            $discountPct = (float)($bill->discount_percentage ?? 0);
+            if ($discountPct <= 0 && $grossTotal > 0 && $discountAmt > 0) {
+                $discountPct = round(($discountAmt / $grossTotal) * 100, 2);
+            }
+            $netAmt = max(0, round($grossTotal - $discountAmt, 2));
+            $prevOutstanding = (float)($bill->previous_outstanding ?? 0);
+            $totalPayable = round($prevOutstanding + $netAmt, 2);
+        @endphp
+
         {{-- ===== TOOLBAR ===== --}}
         <div class="flex justify-between items-center mb-6 no-print">
-            <a href="{{ route('billing.weekly.index') }}"
+            <a href="{{ $isDaily ? route('billing.daily.index') : route('billing.weekly.index') }}"
                class="inline-flex items-center gap-2 px-4 py-2 border border-zinc-300 bg-white text-zinc-600 text-sm font-bold rounded-xl hover:bg-zinc-50 transition-all shadow-sm">
                 <span class="material-symbols-rounded text-[18px]">arrow_back</span> Back to Bills
             </a>
@@ -53,12 +66,12 @@
                         class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-all shadow-md">
                     <span class="material-symbols-rounded text-[18px]">print</span> Print
                 </button>
-                <a href="{{ route('billing.weekly.pdf', $bill->id) }}"
+                <a href="{{ $isDaily ? route('billing.daily.pdf', $bill->id) : route('billing.weekly.pdf', $bill->id) }}"
                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-all shadow-md">
                     <span class="material-symbols-rounded text-[18px]">download</span> Download PDF
                 </a>
                 @if(!$bill->is_approved ?? true)
-                    <a href="{{ route('billing.weekly.whatsapp', $bill->id) }}"
+                    <a href="{{ $isDaily ? route('billing.daily.whatsapp', $bill->id) : route('billing.weekly.whatsapp', $bill->id) }}"
                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-xl transition-all shadow-md"
                        target="_blank">
                         <span class="material-symbols-rounded text-[18px]">chat</span> WhatsApp
@@ -78,27 +91,31 @@
                     
                     <div class="mt-6 text-xs text-zinc-500 space-y-1">
                         <p class="font-bold text-zinc-700 uppercase tracking-wider text-[10px]">Bill To</p>
-                        <p class="text-sm font-bold text-zinc-900">{{ $bill->dealer?->firm_name ?? 'N/A' }}</p>
-                        <p>{{ $bill->dealer?->location ?? '' }}</p>
-                        <p>📞 {{ $bill->dealer?->phone ?? 'N/A' }}</p>
-                        @if($bill->dealer?->gst_number)
-                            <p>GSTIN: <span class="font-mono text-zinc-600">{{ $bill->dealer->gst_number }}</span></p>
+                        <p class="text-sm font-bold text-zinc-900">{{ $bill->dealer?->firm_name ?? ($bill->customer?->name ?? 'N/A') }}</p>
+                        <p>{{ $bill->dealer?->location ?? ($bill->customer?->address ?? '') }}</p>
+                        <p>📞 {{ $bill->dealer?->phone ?? ($bill->customer?->phone ?? 'N/A') }}</p>
+                        @if($bill->dealer?->gst_number ?? $bill->customer?->gst_number ?? null)
+                            <p>GSTIN: <span class="font-mono text-zinc-600">{{ $bill->dealer?->gst_number ?? $bill->customer?->gst_number }}</span></p>
                         @endif
                     </div>
                 </div>
                 <div class="text-right">
                     <span class="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 mb-3">
-                        Weekly Invoice
+                        {{ $isDaily ? 'Daily Tax Invoice' : 'Weekly Invoice' }}
                     </span>
                     <p class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Invoice No</p>
-                    <p class="text-xl font-black font-mono text-zinc-900">{{ $bill->invoice_no ?? ('INV-W-' . str_pad($bill->id, 4, '0', STR_PAD_LEFT)) }}</p>
+                    <p class="text-xl font-black font-mono text-zinc-900">{{ $bill->invoice_no ?? ($bill->invoice_number ?? ('INV-' . str_pad($bill->id, 4, '0', STR_PAD_LEFT))) }}</p>
                     <span class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider
                         {{ $bill->status === 'Paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
-                        {{ $bill->status }}
+                        {{ $bill->status ?? 'Active' }}
                     </span>
 
                     <div class="mt-4 text-xs text-zinc-500 space-y-1">
-                        <p><span class="font-bold text-zinc-700">Period:</span> {{ $bill->period_start?->format('d M Y') }} — {{ $bill->period_end?->format('d M Y') }}</p>
+                        @if($isDaily)
+                            <p><span class="font-bold text-zinc-700">Billing Date:</span> {{ $bill->date?->format('d M Y (l)') ?? now()->format('d M Y') }}</p>
+                        @else
+                            <p><span class="font-bold text-zinc-700">Period:</span> {{ $bill->period_start?->format('d M Y') }} — {{ $bill->period_end?->format('d M Y') }}</p>
+                        @endif
                         <p><span class="font-bold text-zinc-700">Generated:</span> {{ now()->format('d M Y') }}</p>
                         <p><span class="font-bold text-zinc-700">Payment Mode:</span> {{ $bill->payment_mode ?? 'Credit' }}</p>
                     </div>
@@ -112,16 +129,23 @@
                     <p class="text-lg font-black font-mono text-blue-800">₹{{ number_format((float)($bill->previous_outstanding ?? 0), 2) }}</p>
                 </div>
                 <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/30 text-center">
-                    <p class="text-[9px] font-bold text-emerald-600 uppercase tracking-wider mb-1">This Week's Day-Load</p>
-                    <p class="text-lg font-black font-mono text-emerald-800">+ ₹{{ number_format($dayLoadTotal ?? $bill->amount, 2) }}</p>
+                    <p class="text-[9px] font-bold text-emerald-600 uppercase tracking-wider mb-1">Gross Amount</p>
+                    <p class="text-lg font-black font-mono text-emerald-800">+ ₹{{ number_format($grossTotal, 2) }}</p>
                 </div>
+                @if($discountAmt > 0)
+                <div class="p-4 rounded-xl border border-rose-200 bg-rose-50/30 text-center">
+                    <p class="text-[9px] font-bold text-rose-600 uppercase tracking-wider mb-1">Discount @if($discountPct > 0)({{ $discountPct }}%)@endif</p>
+                    <p class="text-lg font-black font-mono text-rose-800">- ₹{{ number_format($discountAmt, 2) }}</p>
+                </div>
+                @else
                 <div class="p-4 rounded-xl border border-amber-200 bg-amber-50/30 text-center">
-                    <p class="text-[9px] font-bold text-amber-600 uppercase tracking-wider mb-1">Payments During Week</p>
-                    <p class="text-lg font-black font-mono text-amber-800">- ₹{{ number_format((float)($bill->payments_during_week ?? 0), 2) }}</p>
+                    <p class="text-[9px] font-bold text-amber-600 uppercase tracking-wider mb-1">Payments Received</p>
+                    <p class="text-lg font-black font-mono text-amber-800">- ₹{{ number_format($totalPaid ?? (float)($bill->payments_during_day ?? $bill->payments_during_week ?? 0), 2) }}</p>
                 </div>
+                @endif
                 <div class="p-4 rounded-xl border border-purple-200 bg-purple-50/30 text-center">
                     <p class="text-[9px] font-bold text-purple-600 uppercase tracking-wider mb-1">Net Invoice Amount</p>
-                    <p class="text-lg font-black font-mono text-purple-800">₹{{ number_format((float)($bill->net_amount ?? $bill->amount), 2) }}</p>
+                    <p class="text-lg font-black font-mono text-purple-800">₹{{ number_format($netAmt, 2) }}</p>
                 </div>
             </div>
 
@@ -142,9 +166,8 @@
                         <thead>
                             <tr class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest bg-zinc-50/50 border-b border-zinc-200">
                                 <th class="px-6 py-3">Date</th>
-                                <th class="px-6 py-3">Vendor</th>
-                                <th class="px-6 py-3">Daily Bill Status</th>
-                                <th class="px-6 py-3 text-right">Weight (kg)</th>
+                                <th class="px-6 py-3">Bill / Status</th>
+                                <th class="px-6 py-3 text-right">Net Weight (kg)</th>
                                 <th class="px-6 py-3 text-right">Customer Rate</th>
                                 <th class="px-6 py-3 text-right">Total</th>
                             </tr>
@@ -162,7 +185,6 @@
                                         {{ $entry->batch?->billing_date?->format('d M Y') ?? '—' }}
                                         <span class="block text-[10px] text-zinc-400">{{ $entry->batch?->billing_date?->format('l') }}</span>
                                     </td>
-                                    <td class="px-6 py-3 text-zinc-600">{{ $entry->vendor?->firm_name ?? '—' }}</td>
                                     <td class="px-6 py-3">
                                         @if($entry->daily_bill_id || $entry->dailyBill)
                                             <div class="space-y-1">
@@ -178,7 +200,7 @@
                                                 @endif
                                             </div>
                                         @else
-                                            <span class="text-[11px] text-zinc-400 font-medium">Unbilled (Weekly Only)</span>
+                                            <span class="text-[11px] text-zinc-400 font-medium">Recorded Load</span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-3 text-right font-mono text-zinc-700">{{ number_format($kg, 2) }} kg</td>
@@ -189,7 +211,7 @@
                         </tbody>
                         <tfoot>
                             <tr class="bg-zinc-50/50 border-t border-zinc-200">
-                                <td colspan="3" class="px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                                <td colspan="2" class="px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">
                                     Day-Load Total
                                 </td>
                                 <td class="px-6 py-3 text-right font-mono font-bold text-zinc-700">
@@ -197,7 +219,7 @@
                                 </td>
                                 <td></td>
                                 <td class="px-6 py-3 text-right font-black font-mono text-emerald-600 text-base">
-                                    ₹{{ number_format($dayLoadTotal ?? 0, 2) }}
+                                    ₹{{ number_format($grossTotal, 2) }}
                                 </td>
                             </tr>
                         </tfoot>
@@ -300,20 +322,38 @@
                     </div>
                 @endif
 
-                {{-- Payment Summary Footer --}}
-                <div class="px-8 py-4 bg-zinc-50 border-t border-zinc-200">
-                    <div class="flex justify-between items-center max-w-sm ml-auto">
-                        <div class="grid grid-cols-2 gap-x-12 gap-y-1 w-full text-xs">
-                            <span class="text-zinc-500">Total Invoice Amount</span>
-                            <span class="text-right font-mono font-bold text-zinc-800">₹{{ number_format((float)($bill->net_amount ?? 0), 2) }}</span>
+                {{-- Payment & Discount Summary Footer --}}
+                <div class="px-8 py-5 bg-zinc-50 border-t border-zinc-200">
+                    <div class="flex justify-between items-center max-w-md ml-auto">
+                        <div class="grid grid-cols-2 gap-x-10 gap-y-2 w-full text-xs">
+                            <span class="text-zinc-500 font-medium">Gross Subtotal</span>
+                            <span class="text-right font-mono font-bold text-zinc-800">₹{{ number_format($grossTotal, 2) }}</span>
 
-                            <span class="text-zinc-500">Total Paid</span>
-                            <span class="text-right font-mono font-bold text-emerald-600">₹{{ number_format($totalPaid ?? 0, 2) }}</span>
-
-                            <span class="font-bold {{ ($remainingDue ?? 0) <= 0 ? 'text-emerald-700' : 'text-rose-600' }} text-sm pt-2 border-t border-zinc-200">
-                                {{ ($remainingDue ?? 0) <= 0 ? '✅ Fully Paid' : '⏳ Remaining Due' }}
+                            @if($discountAmt > 0)
+                            <span class="text-rose-600 font-bold flex items-center gap-1">
+                                <span class="material-symbols-rounded text-sm">sell</span> Discount @if($discountPct > 0)({{ $discountPct }}%)@endif
                             </span>
-                            <span class="text-right font-black font-mono text-base pt-2 border-t border-zinc-200 {{ ($remainingDue ?? 0) <= 0 ? 'text-emerald-600' : 'text-rose-600' }}">
+                            <span class="text-right font-mono font-bold text-rose-600">- ₹{{ number_format($discountAmt, 2) }}</span>
+                            @endif
+
+                            <span class="text-zinc-700 font-bold">Today's Net Amount</span>
+                            <span class="text-right font-mono font-bold text-zinc-900">₹{{ number_format($netAmt, 2) }}</span>
+
+                            @if($prevOutstanding > 0)
+                            <span class="text-blue-700 font-semibold">Previous Outstanding</span>
+                            <span class="text-right font-mono font-bold text-blue-700">+ ₹{{ number_format($prevOutstanding, 2) }}</span>
+
+                            <span class="text-zinc-800 font-extrabold pt-2 border-t border-zinc-200">Total Payable</span>
+                            <span class="text-right font-mono font-black text-zinc-900 pt-2 border-t border-zinc-200 text-sm">₹{{ number_format($totalPayable, 2) }}</span>
+                            @endif
+
+                            <span class="text-zinc-500 font-medium">Total Paid / Received</span>
+                            <span class="text-right font-mono font-bold text-emerald-600">- ₹{{ number_format($totalPaid ?? 0, 2) }}</span>
+
+                            <span class="font-black {{ ($remainingDue ?? 0) <= 0 ? 'text-emerald-700' : 'text-rose-600' }} text-sm pt-2 border-t-2 border-zinc-300">
+                                {{ ($remainingDue ?? 0) <= 0 ? '✅ Fully Settled' : '⏳ Remaining Due' }}
+                            </span>
+                            <span class="text-right font-black font-mono text-base pt-2 border-t-2 border-zinc-300 {{ ($remainingDue ?? 0) <= 0 ? 'text-emerald-600' : 'text-rose-600' }}">
                                 ₹{{ number_format($remainingDue ?? 0, 2) }}
                             </span>
                         </div>
