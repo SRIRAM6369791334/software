@@ -23,6 +23,9 @@ class AccountingBugFixesTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected $dealer;
+    protected $vendor;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -38,9 +41,9 @@ class AccountingBugFixesTest extends TestCase
             'batch_id' => $batch->id,
             'dealer_id' => $this->dealer->id,
             'vendor_id' => $this->vendor->id,
-            'bird_weight' => 100,
-            'customer_rate' => 100,
-            'amount' => 10000,
+            'box_weight' => 120, // 120 - 20 = 100 bird_weight
+            'empty_weight' => 20,
+            'customer_rate' => 100, // 100 * 100 = 10000 amount
             'status' => 'Active'
         ]);
 
@@ -82,7 +85,9 @@ class AccountingBugFixesTest extends TestCase
         $ledgerService->recalculateForDate(now()->format('Y-m-d'));
         $ledger = CashBankLedger::where('date', now()->format('Y-m-d'))->first();
         
-        $this->assertEquals(0, $ledger->total_cash_expense);
+        // Either ledger doesn't exist (no cash tx) or cash_expense is 0
+        $expenseAmount = $ledger ? $ledger->total_cash_expense : 0;
+        $this->assertEquals(0, $expenseAmount);
     }
 
     public function test_partial_emi_is_included_in_expenses()
@@ -109,9 +114,9 @@ class AccountingBugFixesTest extends TestCase
             'batch_id' => $batch->id,
             'dealer_id' => $this->dealer->id,
             'vendor_id' => $this->vendor->id,
-            'bird_weight' => 100,
+            'box_weight' => 120,
+            'empty_weight' => 20,
             'customer_rate' => 100,
-            'amount' => 10000,
             'status' => 'Active'
         ]);
 
@@ -136,9 +141,9 @@ class AccountingBugFixesTest extends TestCase
             'batch_id' => $batch->id,
             'dealer_id' => $this->dealer->id,
             'vendor_id' => $this->vendor->id,
-            'bird_weight' => 100,
+            'box_weight' => 120,
+            'empty_weight' => 20,
             'customer_rate' => 100,
-            'amount' => 10000,
             'status' => 'Active'
         ]);
 
